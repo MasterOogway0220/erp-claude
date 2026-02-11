@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__ide__executeCode",
+      "Bash(dir:*)",
+      "Bash(python:*)",
+      "Bash(python3 << 'PYTHON_EOF'\nimport xml.etree.ElementTree as ET\nimport os\n\ndef extract_document_text\\(docx_path, extract_dir\\):\n    \"\"\"Extract all text from a DOCX file\"\"\"\n    os.system\\(f'cd /tmp && unzip -q \"{docx_path}\" -d {extract_dir} 2>&1'\\)\n    \n    tree = ET.parse\\(f'/tmp/{extract_dir}/word/document.xml'\\)\n    root = tree.getroot\\(\\)\n    \n    # Define namespace\n    ns = {'w': 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'}\n    \n    # Extract all text elements\n    text_elements = []\n    for elem in root.findall\\('.//w:t', ns\\):\n        if elem.text:\n            text_elements.append\\(elem.text\\)\n    \n    return ' '.join\\(text_elements\\)\n\n# Document 1\ndoc1_text = extract_document_text\\(\n    \"/e/erp/documents/Erp Screen Mapping – Sop To System Functional Mapping.docx\",\n    \"docx1\"\n\\)\n\nprint\\(\"=\" * 80\\)\nprint\\(\"DOCUMENT 1: ERP Screen Mapping - SOP to System Functional Mapping\"\\)\nprint\\(\"=\" * 80\\)\nprint\\(doc1_text\\)\nprint\\(\"\\\\n\"\\)\n\nPYTHON_EOF)",
+      "Bash(python3:*)",
+      "Bash(unzip:*)",
+      "Bash(ls:*)",
+      "Bash(node --version:*)",
+      "Bash(npm:*)",
+      "Bash(npx create-next-app@latest:*)",
+      "Bash(npx shadcn@latest init:*)",
+      "Bash(npx shadcn@latest add button input table dialog select dropdown-menu badge card tabs form toast sheet separator label textarea scroll-area avatar tooltip sonner --yes)",
+      "Bash(npx shadcn@latest add:*)",
+      "Bash(npx prisma init)",
+      "Bash(cd:*)",
+      "Bash(node -e:*)",
+      "Bash(where:*)",
+      "Bash(docker:*)",
+      "Bash(npx prisma validate:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(npx prisma dev:*)",
+      "Bash(npx prisma db seed:*)",
+      "Bash(npx next build)",
+      "Bash(timeout 15 npx next dev:*)",
+      "Bash(timeout 20 npx next dev:*)",
+      "Bash(npx ts-node:*)",
+      "Bash(npx prisma db push:*)",
+      "Bash(npx prisma migrate:*)",
+      "Bash(taskkill:*)",
+      "Bash(npx kill-port:*)"
+    ]
+  }
+}

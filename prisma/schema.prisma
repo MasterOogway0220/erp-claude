@@ -1,0 +1,1047 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==================== ENUMS ====================
+
+enum UserRole {
+  ADMIN
+  SALES
+  PURCHASE
+  QC
+  STORES
+  ACCOUNTS
+  MANAGEMENT
+}
+
+enum StockStatus {
+  UNDER_INSPECTION
+  ACCEPTED
+  REJECTED
+  HOLD
+  RESERVED
+  DISPATCHED
+}
+
+enum QuotationType {
+  DOMESTIC
+  EXPORT
+  BOM
+}
+
+enum QuotationStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  REVISED
+  SENT
+  WON
+  LOST
+}
+
+enum SOStatus {
+  OPEN
+  PARTIALLY_DISPATCHED
+  FULLY_DISPATCHED
+  CLOSED
+}
+
+enum POStatus {
+  DRAFT
+  OPEN
+  PARTIALLY_RECEIVED
+  FULLY_RECEIVED
+  CLOSED
+  CANCELLED
+}
+
+enum PRStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  PO_CREATED
+}
+
+enum NCRStatus {
+  OPEN
+  UNDER_INVESTIGATION
+  CLOSED
+}
+
+enum NCRDisposition {
+  RETURN_TO_VENDOR
+  REWORK
+  SCRAP
+  USE_AS_IS
+}
+
+enum InspectionResult {
+  PASS
+  FAIL
+  HOLD
+}
+
+enum PaymentMode {
+  RTGS
+  NEFT
+  CHEQUE
+  LC
+  TT
+  CASH
+}
+
+enum InvoiceType {
+  DOMESTIC
+  EXPORT
+  PROFORMA
+  CREDIT_NOTE
+  DEBIT_NOTE
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PARTIALLY_PAID
+  PAID
+  CANCELLED
+}
+
+enum EnquiryStatus {
+  OPEN
+  QUOTATION_PREPARED
+  WON
+  LOST
+  CANCELLED
+}
+
+enum EnquiryMode {
+  EMAIL
+  PHONE
+  WALK_IN
+}
+
+enum POAcceptanceStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  HOLD
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+enum PipeType {
+  CS_AS
+  SS_DS
+}
+
+enum EndType {
+  BE
+  PE
+  NPTM
+  BSPT
+}
+
+enum MTCType {
+  MTC_3_1
+  MTC_3_2
+}
+
+enum ReservationStatus {
+  RESERVED
+  RELEASED
+  DISPATCHED
+}
+
+// ==================== USER & AUTH ====================
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         UserRole @default(SALES)
+  isActive     Boolean  @default(true)
+  lastLogin    DateTime?
+  ipAddress    String?
+  phone        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  preparedQuotations  Quotation[]         @relation("PreparedBy")
+  approvedQuotations  Quotation[]         @relation("ApprovedBy")
+  approvedPRs         PurchaseRequisition[] @relation("PRApprovedBy")
+  receivedGRNs        GoodsReceiptNote[]  @relation("ReceivedBy")
+  inspections         Inspection[]        @relation("InspectorUser")
+  closedNCRs          NCR[]               @relation("NCRClosedBy")
+  generatedLabLetters LabLetter[]         @relation("LabLetterGeneratedBy")
+  auditLogs           AuditLog[]
+
+  @@index([email])
+}
+
+// ==================== MASTER DATA ====================
+
+model CustomerMaster {
+  id            String   @id @default(cuid())
+  name          String
+  addressLine1  String?
+  addressLine2  String?
+  city          String?
+  state         String?
+  country       String   @default("India")
+  pincode       String?
+  gstNo         String?
+  contactPerson String?
+  email         String?
+  phone         String?
+  paymentTerms  String?
+  currency      String   @default("INR")
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  enquiries       Enquiry[]
+  quotations      Quotation[]
+  salesOrders     SalesOrder[]
+  invoices        Invoice[]
+  paymentReceipts PaymentReceipt[]
+}
+
+model VendorMaster {
+  id               String   @id @default(cuid())
+  name             String
+  addressLine1     String?
+  city             String?
+  state            String?
+  country          String   @default("India")
+  approvedStatus   Boolean  @default(true)
+  productsSupplied String?
+  avgLeadTimeDays  Int?
+  performanceScore Decimal? @db.Decimal(3, 1)
+  contactPerson    String?
+  email            String?
+  phone            String?
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  purchaseRequisitions PurchaseRequisition[] @relation("PRVendor")
+  purchaseOrders       PurchaseOrder[]
+  goodsReceiptNotes    GoodsReceiptNote[]
+  ncrs                 NCR[]
+}
+
+model ProductSpecMaster {
+  id             String   @id @default(cuid())
+  product        String
+  material       String?
+  additionalSpec String?
+  ends           String?
+  length         String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model PipeSizeMaster {
+  id        String   @id @default(cuid())
+  sizeLabel String
+  od        Decimal  @db.Decimal(10, 3)
+  wt        Decimal  @db.Decimal(10, 3)
+  weight    Decimal  @db.Decimal(10, 4)
+  pipeType  PipeType
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  quotationItems QuotationItem[]
+
+  @@index([pipeType])
+  @@index([sizeLabel])
+}
+
+model TestingMaster {
+  id            String   @id @default(cuid())
+  testName      String
+  applicableFor String?
+  isMandatory   Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model TaxMaster {
+  id         String   @id @default(cuid())
+  name       String
+  percentage Decimal  @db.Decimal(5, 2)
+  taxType    String?
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model CurrencyMaster {
+  id           String   @id @default(cuid())
+  code         String   @unique
+  name         String
+  symbol       String
+  exchangeRate Decimal  @db.Decimal(10, 4)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model UomMaster {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PaymentTermsMaster {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  days        Int      @default(30)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model DeliveryTermsMaster {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model InspectionAgencyMaster {
+  id        String   @id @default(cuid())
+  name      String
+  code      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CertificationTypeMaster {
+  id        String   @id @default(cuid())
+  name      String
+  code      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DimensionalStandardMaster {
+  id        String   @id @default(cuid())
+  name      String
+  code      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TransporterMaster {
+  id            String   @id @default(cuid())
+  name          String
+  contactPerson String?
+  phone         String?
+  vehicleTypes  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  dispatchNotes DispatchNote[]
+}
+
+// ==================== ENQUIRY & QUOTATION ====================
+
+model Enquiry {
+  id                String        @id @default(cuid())
+  enquiryNo         String        @unique
+  enquiryDate       DateTime      @default(now())
+  customerId        String
+  buyerName         String?
+  buyerDesignation  String?
+  buyerEmail        String?
+  buyerContact      String?
+  clientInquiryNo   String?
+  clientInquiryDate DateTime?
+  enquiryMode       EnquiryMode   @default(EMAIL)
+  projectName       String?
+  status            EnquiryStatus @default(OPEN)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  customer   CustomerMaster @relation(fields: [customerId], references: [id])
+  items      EnquiryItem[]
+  quotations Quotation[]
+
+  @@index([enquiryNo])
+  @@index([customerId])
+}
+
+model EnquiryItem {
+  id             String   @id @default(cuid())
+  enquiryId      String
+  sNo            Int
+  product        String?
+  material       String?
+  additionalSpec String?
+  size           String?
+  ends           String?
+  quantity       Decimal? @db.Decimal(10, 3)
+  uom            String?
+  remarks        String?
+
+  // Relations
+  enquiry Enquiry @relation(fields: [enquiryId], references: [id], onDelete: Cascade)
+
+  @@index([enquiryId])
+}
+
+model Quotation {
+  id                String          @id @default(cuid())
+  quotationNo       String          @unique
+  quotationDate     DateTime        @default(now())
+  enquiryId         String?
+  customerId        String
+  quotationType     QuotationType   @default(DOMESTIC)
+  status            QuotationStatus @default(DRAFT)
+  version           Int             @default(1)
+  parentQuotationId String?
+  validUpto         DateTime?
+  currency          String          @default("INR")
+  preparedById      String?
+  approvedById      String?
+  approvalDate      DateTime?
+  approvalRemarks   String?
+  sentDate          DateTime?
+  sentTo            String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  // Relations
+  enquiry         Enquiry?        @relation(fields: [enquiryId], references: [id])
+  customer        CustomerMaster  @relation(fields: [customerId], references: [id])
+  parentQuotation Quotation?      @relation("QuotationRevisions", fields: [parentQuotationId], references: [id])
+  childQuotations Quotation[]     @relation("QuotationRevisions")
+  preparedBy      User?           @relation("PreparedBy", fields: [preparedById], references: [id])
+  approvedBy      User?           @relation("ApprovedBy", fields: [approvedById], references: [id])
+  items           QuotationItem[]
+  terms           QuotationTerm[]
+  salesOrders     SalesOrder[]
+
+  @@index([quotationNo])
+  @@index([customerId])
+  @@index([enquiryId])
+}
+
+model QuotationItem {
+  id                String   @id @default(cuid())
+  quotationId       String
+  sNo               Int
+  product           String?
+  material          String?
+  additionalSpec    String?
+  sizeId            String?
+  sizeLabel         String?
+  od                Decimal? @db.Decimal(10, 3)
+  wt                Decimal? @db.Decimal(10, 3)
+  length            String?
+  ends              String?
+  quantity          Decimal  @db.Decimal(10, 3)
+  unitRate          Decimal  @db.Decimal(12, 2)
+  amount            Decimal  @db.Decimal(14, 2)
+  delivery          String?
+  remark            String?
+  unitWeight        Decimal? @db.Decimal(10, 4)
+  totalWeightMT     Decimal? @db.Decimal(12, 4)
+  tagNo             String?
+  drawingRef        String?
+  itemType          String?
+  wtType            String?
+  tubeLength        String?
+  tubeCount         Int?
+  componentPosition String?
+
+  // Relations
+  quotation Quotation       @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  pipeSize  PipeSizeMaster? @relation(fields: [sizeId], references: [id])
+
+  @@index([quotationId])
+}
+
+model QuotationTerm {
+  id          String  @id @default(cuid())
+  quotationId String
+  termNo      Int
+  termName    String
+  termValue   String
+  isDefault   Boolean @default(true)
+
+  // Relations
+  quotation Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+
+  @@index([quotationId])
+}
+
+// ==================== SALES ORDER ====================
+
+model SalesOrder {
+  id                 String             @id @default(cuid())
+  soNo               String             @unique
+  soDate             DateTime           @default(now())
+  customerId         String
+  quotationId        String?
+  customerPoNo       String?
+  customerPoDate     DateTime?
+  customerPoDocument String?
+  poAcceptanceStatus POAcceptanceStatus @default(PENDING)
+  status             SOStatus           @default(OPEN)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  // Relations
+  customer             CustomerMaster        @relation(fields: [customerId], references: [id])
+  quotation            Quotation?            @relation(fields: [quotationId], references: [id])
+  items                SalesOrderItem[]
+  purchaseRequisitions PurchaseRequisition[]
+  purchaseOrders       PurchaseOrder[]       @relation("POSalesOrder")
+  packingLists         PackingList[]
+  dispatchNotes        DispatchNote[]
+  invoices             Invoice[]
+
+  @@index([soNo])
+  @@index([customerId])
+}
+
+model SalesOrderItem {
+  id             String    @id @default(cuid())
+  salesOrderId   String
+  sNo            Int
+  product        String?
+  material       String?
+  additionalSpec String?
+  sizeLabel      String?
+  od             Decimal?  @db.Decimal(10, 3)
+  wt             Decimal?  @db.Decimal(10, 3)
+  ends           String?
+  quantity       Decimal   @db.Decimal(10, 3)
+  unitRate       Decimal   @db.Decimal(12, 2)
+  amount         Decimal   @db.Decimal(14, 2)
+  deliveryDate   DateTime?
+  unitWeight     Decimal?  @db.Decimal(10, 4)
+  totalWeightMT  Decimal?  @db.Decimal(12, 4)
+
+  // Relations
+  salesOrder        SalesOrder        @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
+  stockReservations StockReservation[]
+
+  @@index([salesOrderId])
+}
+
+model StockReservation {
+  id               String            @id @default(cuid())
+  salesOrderItemId String
+  inventoryStockId String
+  reservedQtyMtr   Decimal           @db.Decimal(10, 3)
+  reservedPieces   Int               @default(0)
+  reservedDate     DateTime          @default(now())
+  status           ReservationStatus @default(RESERVED)
+
+  // Relations
+  salesOrderItem SalesOrderItem @relation(fields: [salesOrderItemId], references: [id])
+  inventoryStock InventoryStock @relation(fields: [inventoryStockId], references: [id])
+
+  @@index([salesOrderItemId])
+  @@index([inventoryStockId])
+}
+
+// ==================== PURCHASE ====================
+
+model PurchaseRequisition {
+  id                String    @id @default(cuid())
+  prNo              String    @unique
+  prDate            DateTime  @default(now())
+  salesOrderId      String?
+  requiredByDate    DateTime?
+  suggestedVendorId String?
+  status            PRStatus  @default(DRAFT)
+  approvedById      String?
+  approvalDate      DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  salesOrder      SalesOrder?    @relation(fields: [salesOrderId], references: [id])
+  suggestedVendor VendorMaster?  @relation("PRVendor", fields: [suggestedVendorId], references: [id])
+  approvedBy      User?          @relation("PRApprovedBy", fields: [approvedById], references: [id])
+  items           PRItem[]
+  purchaseOrders  PurchaseOrder[]
+
+  @@index([prNo])
+}
+
+model PRItem {
+  id             String  @id @default(cuid())
+  prId           String
+  sNo            Int
+  product        String?
+  material       String?
+  additionalSpec String?
+  sizeLabel      String?
+  quantity       Decimal @db.Decimal(10, 3)
+  uom            String?
+  remarks        String?
+
+  // Relations
+  purchaseRequisition PurchaseRequisition @relation(fields: [prId], references: [id], onDelete: Cascade)
+
+  @@index([prId])
+}
+
+model PurchaseOrder {
+  id                  String    @id @default(cuid())
+  poNo                String    @unique
+  poDate              DateTime  @default(now())
+  vendorId            String
+  prId                String?
+  salesOrderId        String?
+  version             Int       @default(1)
+  parentPoId          String?
+  deliveryDate        DateTime?
+  specialRequirements String?
+  status              POStatus  @default(DRAFT)
+  totalAmount         Decimal?  @db.Decimal(14, 2)
+  currency            String    @default("INR")
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  // Relations
+  vendor              VendorMaster         @relation(fields: [vendorId], references: [id])
+  purchaseRequisition PurchaseRequisition? @relation(fields: [prId], references: [id])
+  salesOrder          SalesOrder?          @relation("POSalesOrder", fields: [salesOrderId], references: [id])
+  parentPo            PurchaseOrder?       @relation("POAmendments", fields: [parentPoId], references: [id])
+  childPos            PurchaseOrder[]      @relation("POAmendments")
+  items               POItem[]
+  goodsReceiptNotes   GoodsReceiptNote[]
+  mtcDocuments        MTCDocument[]
+  ncrs                NCR[]
+
+  @@index([poNo])
+  @@index([vendorId])
+}
+
+model POItem {
+  id             String    @id @default(cuid())
+  poId           String
+  sNo            Int
+  product        String?
+  material       String?
+  additionalSpec String?
+  sizeLabel      String?
+  quantity       Decimal   @db.Decimal(10, 3)
+  unitRate       Decimal   @db.Decimal(12, 2)
+  amount         Decimal   @db.Decimal(14, 2)
+  deliveryDate   DateTime?
+
+  // Relations
+  purchaseOrder PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Cascade)
+
+  @@index([poId])
+}
+
+// ==================== INVENTORY & GRN ====================
+
+model GoodsReceiptNote {
+  id           String   @id @default(cuid())
+  grnNo        String   @unique
+  grnDate      DateTime @default(now())
+  poId         String
+  vendorId     String
+  receivedById String
+  remarks      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  purchaseOrder PurchaseOrder @relation(fields: [poId], references: [id])
+  vendor        VendorMaster  @relation(fields: [vendorId], references: [id])
+  receivedBy    User          @relation("ReceivedBy", fields: [receivedById], references: [id])
+  items         GRNItem[]
+  mtcDocuments  MTCDocument[]
+
+  @@index([grnNo])
+  @@index([poId])
+}
+
+model GRNItem {
+  id                 String    @id @default(cuid())
+  grnId              String
+  sNo                Int
+  product            String?
+  material           String?
+  specification      String?
+  additionalSpec     String?
+  dimensionStd       String?
+  sizeLabel          String?
+  ends               String?
+  length             String?
+  heatNo             String?
+  make               String?
+  receivedQtyMtr     Decimal   @db.Decimal(10, 3)
+  pieces             Int       @default(0)
+  mtcNo              String?
+  mtcDate            DateTime?
+  mtcType            String?
+  tpiAgency          String?
+  mtcDocumentPath    String?
+  tpiCertificatePath String?
+
+  // Relations
+  grn             GoodsReceiptNote @relation(fields: [grnId], references: [id], onDelete: Cascade)
+  inventoryStocks InventoryStock[]
+  inspections     Inspection[]
+  ncrs            NCR[]
+
+  @@index([grnId])
+  @@index([heatNo])
+}
+
+model InventoryStock {
+  id             String      @id @default(cuid())
+  form           String?
+  product        String?
+  specification  String?
+  additionalSpec String?
+  dimensionStd   String?
+  sizeLabel      String?
+  od             Decimal?    @db.Decimal(10, 3)
+  wt             Decimal?    @db.Decimal(10, 3)
+  ends           String?
+  length         String?
+  heatNo         String?
+  make           String?
+  quantityMtr    Decimal     @db.Decimal(10, 3)
+  pieces         Int         @default(0)
+  mtcNo          String?
+  mtcDate        DateTime?
+  mtcType        MTCType?
+  tpiAgency      String?
+  location       String?
+  rackNo         String?
+  notes          String?
+  status         StockStatus @default(UNDER_INSPECTION)
+  grnItemId      String?
+  reservedForSO  String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  // Relations
+  grnItem           GRNItem?           @relation(fields: [grnItemId], references: [id])
+  stockReservations StockReservation[]
+  inspections       Inspection[]
+  mtcDocuments      MTCDocument[]
+  ncrs              NCR[]
+  packingListItems  PackingListItem[]
+
+  @@index([heatNo])
+  @@index([status])
+  @@index([sizeLabel])
+  @@index([grnItemId])
+}
+
+// ==================== QUALITY CONTROL ====================
+
+model Inspection {
+  id               String           @id @default(cuid())
+  inspectionNo     String           @unique
+  inspectionDate   DateTime         @default(now())
+  grnItemId        String?
+  inventoryStockId String?
+  inspectorId      String
+  overallResult    InspectionResult @default(HOLD)
+  remarks          String?
+  reportPath       String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  // Relations
+  grnItem        GRNItem?              @relation(fields: [grnItemId], references: [id])
+  inventoryStock InventoryStock?       @relation(fields: [inventoryStockId], references: [id])
+  inspector      User                  @relation("InspectorUser", fields: [inspectorId], references: [id])
+  parameters     InspectionParameter[]
+
+  @@index([inspectionNo])
+  @@index([grnItemId])
+  @@index([inventoryStockId])
+}
+
+model InspectionParameter {
+  id            String  @id @default(cuid())
+  inspectionId  String
+  parameterName String
+  parameterType String  @default("PASS_FAIL")
+  resultValue   String?
+  standardValue String?
+  tolerance     String?
+  result        String?
+  remarks       String?
+
+  // Relations
+  inspection Inspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+
+  @@index([inspectionId])
+}
+
+model MTCDocument {
+  id               String            @id @default(cuid())
+  mtcNo            String
+  heatNo           String?
+  filePath         String?
+  uploadDate       DateTime          @default(now())
+  poId             String?
+  grnId            String?
+  inventoryStockId String?
+  remarks          String?
+
+  // Relations
+  purchaseOrder  PurchaseOrder?    @relation(fields: [poId], references: [id])
+  grn            GoodsReceiptNote? @relation(fields: [grnId], references: [id])
+  inventoryStock InventoryStock?   @relation(fields: [inventoryStockId], references: [id])
+
+  @@index([heatNo])
+  @@index([mtcNo])
+}
+
+model NCR {
+  id                 String          @id @default(cuid())
+  ncrNo              String          @unique
+  ncrDate            DateTime        @default(now())
+  grnItemId          String?
+  inventoryStockId   String?
+  heatNo             String?
+  poId               String?
+  vendorId           String?
+  nonConformanceType String?
+  description        String?
+  rootCause          String?
+  correctiveAction   String?
+  preventiveAction   String?
+  disposition        NCRDisposition?
+  status             NCRStatus       @default(OPEN)
+  closedDate         DateTime?
+  closedById         String?
+  evidencePaths      Json?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  // Relations
+  grnItem        GRNItem?        @relation(fields: [grnItemId], references: [id])
+  inventoryStock InventoryStock? @relation(fields: [inventoryStockId], references: [id])
+  purchaseOrder  PurchaseOrder?  @relation(fields: [poId], references: [id])
+  vendor         VendorMaster?   @relation(fields: [vendorId], references: [id])
+  closedBy       User?           @relation("NCRClosedBy", fields: [closedById], references: [id])
+
+  @@index([ncrNo])
+  @@index([heatNo])
+}
+
+model LabLetter {
+  id            String   @id @default(cuid())
+  letterNo      String
+  letterDate    DateTime @default(now())
+  heatNo        String?
+  specification String?
+  sizeLabel     String?
+  testIds       Json?
+  generatedPath String?
+  generatedById String?
+
+  // Relations
+  generatedBy User? @relation("LabLetterGeneratedBy", fields: [generatedById], references: [id])
+
+  @@index([heatNo])
+}
+
+// ==================== DISPATCH & FINANCE ====================
+
+model PackingList {
+  id           String   @id @default(cuid())
+  plNo         String   @unique
+  plDate       DateTime @default(now())
+  salesOrderId String
+  remarks      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  salesOrder    SalesOrder      @relation(fields: [salesOrderId], references: [id])
+  items         PackingListItem[]
+  dispatchNotes DispatchNote[]
+
+  @@index([plNo])
+}
+
+model PackingListItem {
+  id               String   @id @default(cuid())
+  packingListId    String
+  inventoryStockId String
+  heatNo           String?
+  sizeLabel        String?
+  material         String?
+  quantityMtr      Decimal  @db.Decimal(10, 3)
+  pieces           Int      @default(0)
+  bundleNo         String?
+  grossWeightKg    Decimal? @db.Decimal(10, 3)
+  netWeightKg      Decimal? @db.Decimal(10, 3)
+  markingDetails   String?
+
+  // Relations
+  packingList    PackingList    @relation(fields: [packingListId], references: [id], onDelete: Cascade)
+  inventoryStock InventoryStock @relation(fields: [inventoryStockId], references: [id])
+
+  @@index([packingListId])
+}
+
+model DispatchNote {
+  id            String   @id @default(cuid())
+  dnNo          String   @unique
+  dispatchDate  DateTime @default(now())
+  packingListId String
+  salesOrderId  String
+  vehicleNo     String?
+  lrNo          String?
+  transporterId String?
+  destination   String?
+  ewayBillNo    String?
+  remarks       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  packingList PackingList        @relation(fields: [packingListId], references: [id])
+  salesOrder  SalesOrder         @relation(fields: [salesOrderId], references: [id])
+  transporter TransporterMaster? @relation(fields: [transporterId], references: [id])
+  invoices    Invoice[]
+
+  @@index([dnNo])
+}
+
+model Invoice {
+  id             String        @id @default(cuid())
+  invoiceNo      String        @unique
+  invoiceDate    DateTime      @default(now())
+  invoiceType    InvoiceType   @default(DOMESTIC)
+  dispatchNoteId String?
+  salesOrderId   String
+  customerId     String
+  subtotal       Decimal       @db.Decimal(14, 2)
+  cgst           Decimal       @default(0) @db.Decimal(14, 2)
+  sgst           Decimal       @default(0) @db.Decimal(14, 2)
+  igst           Decimal       @default(0) @db.Decimal(14, 2)
+  totalAmount    Decimal       @db.Decimal(14, 2)
+  currency       String        @default("INR")
+  dueDate        DateTime?
+  status         InvoiceStatus @default(DRAFT)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  // Relations
+  dispatchNote    DispatchNote?    @relation(fields: [dispatchNoteId], references: [id])
+  salesOrder      SalesOrder       @relation(fields: [salesOrderId], references: [id])
+  customer        CustomerMaster   @relation(fields: [customerId], references: [id])
+  items           InvoiceItem[]
+  paymentReceipts PaymentReceipt[]
+
+  @@index([invoiceNo])
+  @@index([customerId])
+}
+
+model InvoiceItem {
+  id          String   @id @default(cuid())
+  invoiceId   String
+  sNo         Int
+  description String?
+  heatNo      String?
+  sizeLabel   String?
+  quantity    Decimal  @db.Decimal(10, 3)
+  unitRate    Decimal  @db.Decimal(12, 2)
+  amount      Decimal  @db.Decimal(14, 2)
+  hsnCode     String?
+  taxRate     Decimal? @db.Decimal(5, 2)
+
+  // Relations
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+}
+
+model PaymentReceipt {
+  id             String      @id @default(cuid())
+  receiptNo      String      @unique
+  receiptDate    DateTime    @default(now())
+  invoiceId      String
+  customerId     String
+  amountReceived Decimal     @db.Decimal(14, 2)
+  paymentMode    PaymentMode @default(NEFT)
+  referenceNo    String?
+  bankName       String?
+  tdsAmount      Decimal     @default(0) @db.Decimal(14, 2)
+  remarks        String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  // Relations
+  invoice  Invoice        @relation(fields: [invoiceId], references: [id])
+  customer CustomerMaster @relation(fields: [customerId], references: [id])
+
+  @@index([receiptNo])
+  @@index([invoiceId])
+}
+
+// ==================== SYSTEM TABLES ====================
+
+model AuditLog {
+  id        String      @id @default(cuid())
+  tableName String
+  recordId  String
+  action    AuditAction
+  fieldName String?
+  oldValue  String?
+  newValue  String?
+  userId    String?
+  timestamp DateTime    @default(now())
+  ipAddress String?
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([tableName, recordId])
+  @@index([userId])
+  @@index([timestamp])
+}
+
+model DocumentSequence {
+  id            String @id @default(cuid())
+  documentType  String @unique
+  prefix        String
+  currentNumber Int    @default(0)
+  financialYear String
+  resetMonth    Int    @default(4)
+
+  @@index([documentType])
+}
