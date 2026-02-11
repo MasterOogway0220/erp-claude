@@ -31,7 +31,8 @@
       "Bash(npx prisma db push:*)",
       "Bash(npx prisma migrate:*)",
       "Bash(taskkill:*)",
-      "Bash(npx kill-port:*)"
+      "Bash(npx kill-port:*)",
+      "Bash(git add:*)"
     ]
   }
 }
