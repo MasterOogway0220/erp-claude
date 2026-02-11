@@ -48,7 +48,7 @@ const prStatusColors: Record<string, string> = {
   PENDING_APPROVAL: "bg-yellow-500",
   APPROVED: "bg-green-500",
   REJECTED: "bg-red-500",
-  CONVERTED: "bg-blue-500",
+  PO_CREATED: "bg-blue-500",
 };
 
 const poStatusColors: Record<string, string> = {
@@ -275,8 +275,11 @@ export default function PurchasePage() {
 
         <TabsContent value="requisitions" className="space-y-4">
           {loading ? (
-            <div className="rounded-lg border p-8 text-center text-muted-foreground">
-              Loading purchase requisitions...
+            <div className="space-y-3">
+              <div className="h-10 w-48 bg-muted animate-pulse rounded" />
+              <div className="space-y-2">
+                {[...Array(5)].map((_, i) => <div key={i} className="h-12 bg-muted animate-pulse rounded" />)}
+              </div>
             </div>
           ) : (
             <DataTable
@@ -290,8 +293,11 @@ export default function PurchasePage() {
 
         <TabsContent value="orders" className="space-y-4">
           {loading ? (
-            <div className="rounded-lg border p-8 text-center text-muted-foreground">
-              Loading purchase orders...
+            <div className="space-y-3">
+              <div className="h-10 w-48 bg-muted animate-pulse rounded" />
+              <div className="space-y-2">
+                {[...Array(5)].map((_, i) => <div key={i} className="h-12 bg-muted animate-pulse rounded" />)}
+              </div>
             </div>
           ) : (
             <DataTable

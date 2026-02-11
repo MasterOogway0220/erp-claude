@@ -9,6 +9,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   FileText,
   ShoppingCart,
@@ -118,6 +127,41 @@ export default function DashboardPage() {
           </Card>
         ))}
       </div>
+
+      {metrics?.lowStockAlerts?.length > 0 && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-base">Low Stock Alerts</CardTitle>
+            <Badge variant="destructive">{metrics.lowStockAlerts.length} items</Badge>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Product</TableHead>
+                  <TableHead>Size</TableHead>
+                  <TableHead className="text-right">Available (Mtr)</TableHead>
+                  <TableHead className="text-right">Stock Entries</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {metrics.lowStockAlerts.map((alert: any, i: number) => (
+                  <TableRow key={i}>
+                    <TableCell className="font-medium">{alert.product || "—"}</TableCell>
+                    <TableCell className="font-mono text-sm">{alert.sizeLabel || "—"}</TableCell>
+                    <TableCell className="text-right">
+                      <span className={alert.availableQty < 10 ? "text-red-600 font-semibold" : "text-orange-600"}>
+                        {alert.availableQty.toFixed(3)}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">{alert.pieces}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

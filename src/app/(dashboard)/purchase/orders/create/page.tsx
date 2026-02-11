@@ -8,7 +8,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { ProductMaterialSelect } from "@/components/shared/product-material-select";
+import { PipeSizeSelect } from "@/components/shared/pipe-size-select";
 import { Plus, Trash2, Save, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -254,69 +263,74 @@ function CreatePOPage() {
             <CardTitle>PO Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="vendorId">Vendor *</Label>
-                <select
-                  id="vendorId"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2"
+                <Select
                   value={formData.vendorId}
-                  onChange={(e) =>
-                    setFormData({ ...formData, vendorId: e.target.value })
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, vendorId: value })
                   }
-                  required
                 >
-                  <option value="">Select Vendor</option>
-                  {vendors.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {v.code} - {v.name}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Vendor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {vendors.map((v) => (
+                      <SelectItem key={v.id} value={v.id}>
+                        {v.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="prId">PR Reference (Optional)</Label>
-                <select
-                  id="prId"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2"
+                <Select
                   value={formData.prId}
-                  onChange={(e) =>
-                    setFormData({ ...formData, prId: e.target.value })
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, prId: value })
                   }
                 >
-                  <option value="">Select PR (if applicable)</option>
-                  {prs.map((pr) => (
-                    <option key={pr.id} value={pr.id}>
-                      {pr.prNo}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select PR (if applicable)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {prs.map((pr) => (
+                      <SelectItem key={pr.id} value={pr.id}>
+                        {pr.prNo}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="salesOrderId">SO Reference (Optional)</Label>
-                <select
-                  id="salesOrderId"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2"
+                <Select
                   value={formData.salesOrderId}
-                  onChange={(e) =>
-                    setFormData({ ...formData, salesOrderId: e.target.value })
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, salesOrderId: value })
                   }
                 >
-                  <option value="">Select SO (if applicable)</option>
-                  {salesOrders.map((so) => (
-                    <option key={so.id} value={so.id}>
-                      {so.soNo}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select SO (if applicable)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {salesOrders.map((so) => (
+                      <SelectItem key={so.id} value={so.id}>
+                        {so.soNo}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
             <Separator />
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="deliveryDate">Expected Delivery Date</Label>
                 <Input
@@ -331,19 +345,22 @@ function CreatePOPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="currency">Currency</Label>
-                <select
-                  id="currency"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2"
+                <Select
                   value={formData.currency}
-                  onChange={(e) =>
-                    setFormData({ ...formData, currency: e.target.value })
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, currency: value })
                   }
                 >
-                  <option value="INR">INR</option>
-                  <option value="USD">USD</option>
-                  <option value="EUR">EUR</option>
-                  <option value="GBP">GBP</option>
-                </select>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="INR">INR</SelectItem>
+                    <SelectItem value="USD">USD</SelectItem>
+                    <SelectItem value="EUR">EUR</SelectItem>
+                    <SelectItem value="GBP">GBP</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -382,34 +399,33 @@ function CreatePOPage() {
                 {items.map((item, index) => (
                   <div
                     key={index}
-                    className="grid grid-cols-12 gap-2 p-4 border rounded-lg"
+                    className="grid grid-cols-1 md:grid-cols-12 gap-2 p-4 border rounded-lg"
                   >
-                    <div className="col-span-2">
-                      <Label className="text-xs">Product *</Label>
-                      <Input
-                        value={item.product}
-                        onChange={(e) => updateItem(index, "product", e.target.value)}
-                        className="h-9"
-                        required
+                    <div className="md:col-span-4">
+                      <ProductMaterialSelect
+                        product={item.product}
+                        material={item.material}
+                        onProductChange={(val) => updateItem(index, "product", val)}
+                        onMaterialChange={(val) => updateItem(index, "material", val)}
+                        onAutoFill={(fields) => {
+                          if (fields.additionalSpec) updateItem(index, "additionalSpec", fields.additionalSpec);
+                        }}
+                        productLabel="Product *"
+                        materialLabel="Material"
                       />
                     </div>
-                    <div className="col-span-2">
-                      <Label className="text-xs">Material</Label>
-                      <Input
-                        value={item.material}
-                        onChange={(e) => updateItem(index, "material", e.target.value)}
-                        className="h-9"
-                      />
-                    </div>
-                    <div className="col-span-2">
+                    <div className="md:col-span-2">
                       <Label className="text-xs">Size</Label>
-                      <Input
+                      <PipeSizeSelect
                         value={item.sizeLabel}
-                        onChange={(e) => updateItem(index, "sizeLabel", e.target.value)}
-                        className="h-9"
+                        onChange={(text) => updateItem(index, "sizeLabel", text)}
+                        onSelect={(size) => {
+                          updateItem(index, "sizeLabel", size.sizeLabel);
+                        }}
+                        label="Size"
                       />
                     </div>
-                    <div className="col-span-1">
+                    <div className="md:col-span-1">
                       <Label className="text-xs">Qty *</Label>
                       <Input
                         type="number"
@@ -420,7 +436,7 @@ function CreatePOPage() {
                         required
                       />
                     </div>
-                    <div className="col-span-2">
+                    <div className="md:col-span-2">
                       <Label className="text-xs">Rate *</Label>
                       <Input
                         type="number"
@@ -431,7 +447,7 @@ function CreatePOPage() {
                         required
                       />
                     </div>
-                    <div className="col-span-2">
+                    <div className="md:col-span-2">
                       <Label className="text-xs">Delivery Date</Label>
                       <Input
                         type="date"
@@ -442,7 +458,7 @@ function CreatePOPage() {
                         className="h-9"
                       />
                     </div>
-                    <div className="col-span-1 flex items-end">
+                    <div className="md:col-span-1 flex items-end">
                       <Button
                         type="button"
                         variant="destructive"
@@ -453,7 +469,7 @@ function CreatePOPage() {
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
-                    <div className="col-span-12 text-right text-sm text-muted-foreground">
+                    <div className="md:col-span-12 text-right text-sm text-muted-foreground">
                       Amount: {formData.currency} {item.amount.toFixed(2)}
                     </div>
                   </div>

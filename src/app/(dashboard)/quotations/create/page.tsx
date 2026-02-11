@@ -16,6 +16,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ProductMaterialSelect } from "@/components/shared/product-material-select";
+import { PipeSizeSelect } from "@/components/shared/pipe-size-select";
 import { Plus, Trash2, ArrowLeft, Calculator } from "lucide-react";
 import { toast } from "sonner";
 
@@ -109,16 +111,6 @@ function CreateQuotationPage() {
     },
   });
 
-  // Fetch pipe sizes
-  const { data: pipeSizesData } = useQuery({
-    queryKey: ["pipeSizes"],
-    queryFn: async () => {
-      const res = await fetch("/api/masters/pipe-sizes");
-      if (!res.ok) throw new Error("Failed to fetch pipe sizes");
-      return res.json();
-    },
-  });
-
   // Fetch enquiry if linked
   const { data: enquiryData } = useQuery({
     queryKey: ["enquiry", enquiryId],
@@ -206,28 +198,6 @@ function CreateQuotationPage() {
     setItems(newItems);
   };
 
-  // Handle size selection - auto-fill OD, WT, Weight
-  const handleSizeSelect = (index: number, sizeId: string) => {
-    const selectedSize = pipeSizesData?.pipeSizes?.find((s: any) => s.id === sizeId);
-    if (selectedSize) {
-      const newItems = [...items];
-      newItems[index].sizeId = selectedSize.id;
-      newItems[index].sizeLabel = selectedSize.sizeLabel;
-      newItems[index].od = selectedSize.od.toString();
-      newItems[index].wt = selectedSize.wt.toString();
-      newItems[index].unitWeight = selectedSize.weight.toString();
-
-      // Recalculate total weight if quantity exists
-      if (newItems[index].quantity) {
-        const qty = parseFloat(newItems[index].quantity);
-        newItems[index].totalWeightMT = ((qty * selectedSize.weight) / 1000).toFixed(4);
-      }
-
-      setItems(newItems);
-      toast.success("Size data auto-filled", { duration: 1500 });
-    }
-  };
-
   const updateTerm = (index: number, field: "termName" | "termValue", value: string) => {
     const newTerms = [...terms];
     newTerms[index][field] = value;
@@ -271,7 +241,7 @@ function CreateQuotationPage() {
             <CardTitle>Quotation Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="customerId">Customer *</Label>
                 <Select
@@ -379,46 +349,42 @@ function CreateQuotationPage() {
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label>Product</Label>
-                    <Input
-                      value={item.product}
-                      onChange={(e) => updateItem(index, "product", e.target.value)}
-                      placeholder="e.g., C.S. SEAMLESS PIPE"
-                    />
-                  </div>
-
-                  <div className="grid gap-2">
-                    <Label>Material</Label>
-                    <Input
-                      value={item.material}
-                      onChange={(e) => updateItem(index, "material", e.target.value)}
-                      placeholder="e.g., ASTM A106 GR. B"
-                    />
-                  </div>
-                </div>
+                <ProductMaterialSelect
+                  product={item.product}
+                  material={item.material}
+                  onProductChange={(val) => updateItem(index, "product", val)}
+                  onMaterialChange={(val) => updateItem(index, "material", val)}
+                  onAutoFill={(fields) => {
+                    if (fields.additionalSpec) updateItem(index, "additionalSpec", fields.additionalSpec);
+                    if (fields.ends) updateItem(index, "ends", fields.ends);
+                    if (fields.length) updateItem(index, "length", fields.length);
+                  }}
+                />
 
                 <div className="grid gap-2">
                   <Label>Size (Auto-fills OD/WT/Weight) *</Label>
-                  <Select
-                    value={item.sizeId}
-                    onValueChange={(value) => handleSizeSelect(index, value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select size" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {pipeSizesData?.pipeSizes?.map((size: any) => (
-                        <SelectItem key={size.id} value={size.id}>
-                          {size.sizeLabel} (OD: {size.od}mm, WT: {size.wt}mm, Weight: {size.weight}kg/m)
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <PipeSizeSelect
+                    value={item.sizeLabel}
+                    onChange={(text) => updateItem(index, "sizeLabel", text)}
+                    onSelect={(size) => {
+                      const newItems = [...items];
+                      newItems[index].sizeId = size.id;
+                      newItems[index].sizeLabel = size.sizeLabel;
+                      newItems[index].od = size.od.toString();
+                      newItems[index].wt = size.wt.toString();
+                      newItems[index].unitWeight = size.weight.toString();
+                      if (newItems[index].quantity) {
+                        const qty = parseFloat(newItems[index].quantity);
+                        newItems[index].totalWeightMT = ((qty * size.weight) / 1000).toFixed(4);
+                      }
+                      setItems(newItems);
+                    }}
+                    label="Size"
+                    placeholder="Search pipe size..."
+                  />
                 </div>
 
-                <div className="grid grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="grid gap-2">
                     <Label>OD (mm)</Label>
                     <Input value={item.od} readOnly className="bg-muted" />
@@ -450,7 +416,7 @@ function CreateQuotationPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                   <div className="grid gap-2">
                     <Label>Length</Label>
                     <Input
@@ -497,7 +463,7 @@ function CreateQuotationPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label>Delivery</Label>
                     <Input
@@ -550,7 +516,7 @@ function CreateQuotationPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             {terms.map((term, index) => (
-              <div key={index} className="grid grid-cols-4 gap-4">
+              <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="grid gap-2">
                   <Input
                     value={term.termName}
@@ -558,7 +524,7 @@ function CreateQuotationPage() {
                     placeholder="Term name"
                   />
                 </div>
-                <div className="col-span-3 grid gap-2">
+                <div className="md:col-span-3 grid gap-2">
                   <Textarea
                     value={term.termValue}
                     onChange={(e) => updateTerm(index, "termValue", e.target.value)}

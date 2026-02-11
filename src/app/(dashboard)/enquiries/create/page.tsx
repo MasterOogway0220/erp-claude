@@ -16,6 +16,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ProductMaterialSelect } from "@/components/shared/product-material-select";
+import { PipeSizeSelect } from "@/components/shared/pipe-size-select";
 import { Plus, Trash2, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
@@ -157,7 +159,7 @@ export default function CreateEnquiryPage() {
                 </Select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="buyerName">Buyer Name</Label>
                   <Input
@@ -181,7 +183,7 @@ export default function CreateEnquiryPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="buyerEmail">Buyer Email</Label>
                   <Input
@@ -206,7 +208,7 @@ export default function CreateEnquiryPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="clientInquiryNo">Client Inquiry No.</Label>
                   <Input
@@ -289,33 +291,27 @@ export default function CreateEnquiryPage() {
                   </Button>
                 )}
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label>Product</Label>
-                    <Input
-                      value={item.product}
-                      onChange={(e) => updateItem(index, "product", e.target.value)}
-                      placeholder="e.g., C.S. SEAMLESS PIPE"
-                    />
-                  </div>
+                <ProductMaterialSelect
+                  product={item.product}
+                  material={item.material}
+                  onProductChange={(val) => updateItem(index, "product", val)}
+                  onMaterialChange={(val) => updateItem(index, "material", val)}
+                  onAutoFill={(fields) => {
+                    if (fields.additionalSpec) updateItem(index, "additionalSpec", fields.additionalSpec);
+                    if (fields.ends) updateItem(index, "ends", fields.ends);
+                  }}
+                />
 
-                  <div className="grid gap-2">
-                    <Label>Material</Label>
-                    <Input
-                      value={item.material}
-                      onChange={(e) => updateItem(index, "material", e.target.value)}
-                      placeholder="e.g., ASTM A106 GR. B"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="grid gap-2">
                     <Label>Size</Label>
-                    <Input
+                    <PipeSizeSelect
                       value={item.size}
-                      onChange={(e) => updateItem(index, "size", e.target.value)}
-                      placeholder='e.g., 2" NB X SCH 80'
+                      onChange={(text) => updateItem(index, "size", text)}
+                      onSelect={(size) => {
+                        updateItem(index, "size", size.sizeLabel);
+                      }}
+                      label="Size"
                     />
                   </div>
 

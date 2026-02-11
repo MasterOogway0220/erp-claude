@@ -38,7 +38,17 @@
       "Bash(done)",
       "Bash(npx --no-install prisma generate:*)",
       "Bash(./node_modules/.bin/prisma generate:*)",
-      "Bash(sudo chown:*)"
+      "Bash(sudo chown:*)",
+      "Bash(pg_isready:*)",
+      "Bash(brew list:*)",
+      "Bash(brew install:*)",
+      "Bash(brew services:*)",
+      "Bash(/opt/homebrew/opt/postgresql@17/bin/createdb nps_erp)",
+      "Bash(export PATH=\"/opt/homebrew/opt/postgresql@17/bin:$PATH\")",
+      "Bash(grep:*)",
+      "Bash(xargs -I {} sh -c 'echo \"\"File: {}\"\" && grep -E \"\"href=|router\\\\.push\"\" {} | head -3')",
+      "Bash(npx:*)",
+      "Bash(npm_config_cache=/tmp/npm-cache-temp npx:*)"
     ]
   }
 }

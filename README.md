@@ -1,36 +1,88 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ERP System
+
+ERP system for ERP - a piping & tubular trading company. Built with Next.js 16, Prisma, and PostgreSQL.
+
+## Tech Stack
+
+- **Frontend:** Next.js 16.1.6 (Turbopack), React, Tailwind CSS, shadcn/ui
+- **Backend:** Next.js API Routes, Prisma ORM 7.3
+- **Database:** PostgreSQL
+- **Auth:** NextAuth.js (JWT strategy)
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+
+- PostgreSQL database
+
+### Setup
+
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. Configure environment variables - create a `.env` file:
+
+```env
+DATABASE_URL="postgresql://user:password@localhost:5432/nps_erp"
+NEXTAUTH_SECRET="your-secret-key"
+NEXTAUTH_URL="http://localhost:3000"
+```
+
+3. Run database migrations:
+
+```bash
+npx prisma migrate deploy
+```
+
+4. Seed the database:
+
+```bash
+npx prisma db seed
+```
+
+5. Start the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Default Admin Credentials
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Field    | Value          |
+|----------|----------------|
+| Email    | `admin@erp.com`  |
+| Password | `Admin@123`    |
 
-## Learn More
+## Modules
 
-To learn more about Next.js, take a look at the following resources:
+| Module             | Description                                      |
+|--------------------|--------------------------------------------------|
+| **Dashboard**      | KPI cards with live metrics                      |
+| **Masters**        | Products, Pipe Sizes, Customers, Vendors, Testing |
+| **Enquiries**      | Customer enquiry management                      |
+| **Quotations**     | Quotation creation, PDF generation, email        |
+| **Sales**          | Sales orders, customer PO review, stock reservation |
+| **Purchase**       | Purchase requisitions, purchase orders, vendor tracking |
+| **Inventory**      | GRN, stock management, heat number tracking      |
+| **Quality**        | Inspections, NCR register, MTC repository, lab letters |
+| **Dispatch & Finance** | Packing lists, dispatch notes, invoices, payments |
+| **Reports**        | Sales, inventory, vendor performance, NCR analysis, OTD, customer ageing |
+| **Admin**          | User management, audit logs, traceability        |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## User Roles
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Role       | Access                                    |
+|------------|-------------------------------------------|
+| ADMIN      | Full access to all modules                |
+| MANAGEMENT | Dashboard, reports, all operational modules |
+| SALES      | Enquiries, quotations, sales orders       |
+| PURCHASE   | Purchase requisitions, purchase orders    |
+| QC         | Quality inspections, NCR, lab letters     |
+| STORES     | Inventory, dispatch                       |
+| ACCOUNTS   | Invoices, payments                        |

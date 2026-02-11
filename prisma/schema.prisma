@@ -956,6 +956,7 @@ model Invoice {
   totalAmount    Decimal       @db.Decimal(14, 2)
   currency       String        @default("INR")
   dueDate        DateTime?
+  eWayBillNo     String?
   status         InvoiceStatus @default(DRAFT)
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt

@@ -8,7 +8,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { ProductMaterialSelect } from "@/components/shared/product-material-select";
+import { PipeSizeSelect } from "@/components/shared/pipe-size-select";
 import { Plus, Trash2, Save, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -183,43 +192,47 @@ function CreatePRPage() {
             <CardTitle>PR Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="salesOrderId">Sales Order Reference (Optional)</Label>
-                <select
-                  id="salesOrderId"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2"
+                <Select
                   value={formData.salesOrderId}
-                  onChange={(e) =>
-                    setFormData({ ...formData, salesOrderId: e.target.value })
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, salesOrderId: value })
                   }
                 >
-                  <option value="">Select SO (if applicable)</option>
-                  {salesOrders.map((so) => (
-                    <option key={so.id} value={so.id}>
-                      {so.soNo}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select SO (if applicable)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {salesOrders.map((so) => (
+                      <SelectItem key={so.id} value={so.id}>
+                        {so.soNo}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="suggestedVendorId">Suggested Vendor (Optional)</Label>
-                <select
-                  id="suggestedVendorId"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2"
+                <Select
                   value={formData.suggestedVendorId}
-                  onChange={(e) =>
-                    setFormData({ ...formData, suggestedVendorId: e.target.value })
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, suggestedVendorId: value })
                   }
                 >
-                  <option value="">Select Vendor</option>
-                  {vendors.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {v.code} - {v.name}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Vendor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {vendors.map((v) => (
+                      <SelectItem key={v.id} value={v.id}>
+                        {v.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
@@ -257,26 +270,22 @@ function CreatePRPage() {
                 {items.map((item, index) => (
                   <div
                     key={index}
-                    className="grid grid-cols-12 gap-2 p-4 border rounded-lg"
+                    className="grid grid-cols-1 md:grid-cols-12 gap-2 p-4 border rounded-lg"
                   >
-                    <div className="col-span-2">
-                      <Label className="text-xs">Product *</Label>
-                      <Input
-                        value={item.product}
-                        onChange={(e) => updateItem(index, "product", e.target.value)}
-                        className="h-9"
-                        required
+                    <div className="md:col-span-4">
+                      <ProductMaterialSelect
+                        product={item.product}
+                        material={item.material}
+                        onProductChange={(val) => updateItem(index, "product", val)}
+                        onMaterialChange={(val) => updateItem(index, "material", val)}
+                        onAutoFill={(fields) => {
+                          if (fields.additionalSpec) updateItem(index, "additionalSpec", fields.additionalSpec);
+                        }}
+                        productLabel="Product *"
+                        materialLabel="Material"
                       />
                     </div>
-                    <div className="col-span-2">
-                      <Label className="text-xs">Material</Label>
-                      <Input
-                        value={item.material}
-                        onChange={(e) => updateItem(index, "material", e.target.value)}
-                        className="h-9"
-                      />
-                    </div>
-                    <div className="col-span-2">
+                    <div className="md:col-span-2">
                       <Label className="text-xs">Additional Spec</Label>
                       <Input
                         value={item.additionalSpec}
@@ -286,15 +295,18 @@ function CreatePRPage() {
                         className="h-9"
                       />
                     </div>
-                    <div className="col-span-2">
+                    <div className="md:col-span-2">
                       <Label className="text-xs">Size</Label>
-                      <Input
+                      <PipeSizeSelect
                         value={item.sizeLabel}
-                        onChange={(e) => updateItem(index, "sizeLabel", e.target.value)}
-                        className="h-9"
+                        onChange={(text) => updateItem(index, "sizeLabel", text)}
+                        onSelect={(size) => {
+                          updateItem(index, "sizeLabel", size.sizeLabel);
+                        }}
+                        label="Size"
                       />
                     </div>
-                    <div className="col-span-1">
+                    <div className="md:col-span-1">
                       <Label className="text-xs">Quantity *</Label>
                       <Input
                         type="number"
@@ -305,20 +317,24 @@ function CreatePRPage() {
                         required
                       />
                     </div>
-                    <div className="col-span-1">
+                    <div className="md:col-span-1">
                       <Label className="text-xs">UOM</Label>
-                      <select
+                      <Select
                         value={item.uom}
-                        onChange={(e) => updateItem(index, "uom", e.target.value)}
-                        className="flex h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                        onValueChange={(value) => updateItem(index, "uom", value)}
                       >
-                        <option value="MTR">MTR</option>
-                        <option value="KG">KG</option>
-                        <option value="PCS">PCS</option>
-                        <option value="SET">SET</option>
-                      </select>
+                        <SelectTrigger className="h-9">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="MTR">MTR</SelectItem>
+                          <SelectItem value="KG">KG</SelectItem>
+                          <SelectItem value="PCS">PCS</SelectItem>
+                          <SelectItem value="SET">SET</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <div className="col-span-1 flex items-end">
+                    <div className="md:col-span-1 flex items-end">
                       <Button
                         type="button"
                         variant="destructive"
@@ -329,7 +345,7 @@ function CreatePRPage() {
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
-                    <div className="col-span-12">
+                    <div className="md:col-span-12">
                       <Label className="text-xs">Remarks</Label>
                       <Textarea
                         value={item.remarks}

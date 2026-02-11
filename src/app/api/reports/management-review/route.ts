@@ -94,6 +94,28 @@ export async function GET(request: NextRequest) {
         ? Number(((onTimeDispatches / totalDispatches) * 100).toFixed(1))
         : 0;
 
+    // ---- Low Stock Alerts ----
+    // Group accepted stock by product+sizeLabel, find ones with low quantity
+    const stockByProduct = await prisma.inventoryStock.groupBy({
+      by: ["product", "sizeLabel"],
+      where: { status: "ACCEPTED" },
+      _sum: { quantityMtr: true },
+      _count: { id: true },
+    });
+
+    // Products with accepted stock below 50 Mtr are considered low stock
+    const LOW_STOCK_THRESHOLD = 50;
+    const lowStockAlerts = stockByProduct
+      .filter((g) => Number(g._sum.quantityMtr) < LOW_STOCK_THRESHOLD && g.product)
+      .map((g) => ({
+        product: g.product,
+        sizeLabel: g.sizeLabel,
+        availableQty: Number(g._sum.quantityMtr),
+        pieces: g._count.id,
+      }))
+      .sort((a, b) => a.availableQty - b.availableQty)
+      .slice(0, 10);
+
     // ---- Finance Metrics ----
     const [invoiceTotals, paymentTotals] = await Promise.all([
       prisma.invoice.aggregate({
@@ -150,6 +172,7 @@ export async function GET(request: NextRequest) {
         totalOutstanding: Number(totalOutstanding.toFixed(2)),
         totalReceived,
       },
+      lowStockAlerts,
     });
   } catch (error) {
     console.error("Error fetching management review:", error);

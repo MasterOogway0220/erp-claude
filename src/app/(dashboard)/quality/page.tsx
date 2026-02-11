@@ -8,12 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
 import {
   ClipboardCheck,
   FileWarning,
   FileText,
   FlaskConical,
   Plus,
+  Search,
 } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
@@ -35,6 +37,7 @@ export default function QualityPage() {
   const [inspections, setInspections] = useState<any[]>([]);
   const [ncrs, setNcrs] = useState<any[]>([]);
   const [mtcs, setMtcs] = useState<any[]>([]);
+  const [mtcSearch, setMtcSearch] = useState("");
   const [labLetters, setLabLetters] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -71,9 +74,10 @@ export default function QualityPage() {
     }
   };
 
-  const fetchMTCs = async () => {
+  const fetchMTCs = async (search?: string) => {
     try {
-      const response = await fetch("/api/quality/mtc");
+      const url = search ? `/api/quality/mtc?search=${encodeURIComponent(search)}` : "/api/quality/mtc";
+      const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
         setMtcs(data.mtcDocuments || []);
@@ -81,6 +85,10 @@ export default function QualityPage() {
     } catch (error) {
       console.error("Failed to fetch MTCs:", error);
     }
+  };
+
+  const handleMtcSearch = () => {
+    fetchMTCs(mtcSearch);
   };
 
   const fetchLabLetters = async () => {
@@ -201,14 +209,33 @@ export default function QualityPage() {
       ),
     },
     {
+      key: "product",
+      header: "Product / Size",
+      cell: (row) => {
+        const stock = row.inventoryStock as any;
+        return stock ? `${stock.product || ""} ${stock.sizeLabel || ""}`.trim() || "—" : "—";
+      },
+    },
+    {
+      key: "vendor",
+      header: "Vendor",
+      cell: (row) => (row.purchaseOrder as any)?.vendor?.name || "—",
+    },
+    {
       key: "purchaseOrder",
       header: "PO",
-      cell: (row) => (row.purchaseOrder as any)?.poNo || "—",
+      cell: (row) => {
+        const po = row.purchaseOrder as any;
+        return po ? <Link href={`/purchase/orders/${po.id}`} className="text-blue-600 hover:underline text-sm">{po.poNo}</Link> : "—";
+      },
     },
     {
       key: "grn",
       header: "GRN",
-      cell: (row) => (row.grn as any)?.grnNo || "—",
+      cell: (row) => {
+        const grn = row.grn as any;
+        return grn ? <Link href={`/inventory/grn/${grn.id}`} className="text-blue-600 hover:underline text-sm">{grn.grnNo}</Link> : "—";
+      },
     },
     {
       key: "uploadDate",
@@ -221,7 +248,14 @@ export default function QualityPage() {
     {
       key: "letterNo",
       header: "Letter No.",
-      cell: (row) => <span className="font-mono text-sm">{row.letterNo as string}</span>,
+      cell: (row) => (
+        <Link
+          href={`/quality/lab-letters/${row.id}`}
+          className="font-mono text-sm text-blue-600 hover:underline"
+        >
+          {row.letterNo as string}
+        </Link>
+      ),
     },
     {
       key: "heatNo",
@@ -332,12 +366,30 @@ export default function QualityPage() {
                 <CardTitle>MTC Document Repository</CardTitle>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Search by MTC number or heat number..."
+                  value={mtcSearch}
+                  onChange={(e) => setMtcSearch(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleMtcSearch()}
+                  className="max-w-md"
+                />
+                <Button variant="outline" size="sm" onClick={handleMtcSearch}>
+                  <Search className="w-4 h-4 mr-2" />
+                  Search
+                </Button>
+                {mtcSearch && (
+                  <Button variant="ghost" size="sm" onClick={() => { setMtcSearch(""); fetchMTCs(); }}>
+                    Clear
+                  </Button>
+                )}
+              </div>
               <DataTable
                 columns={mtcColumns}
                 data={mtcs}
                 searchKey="mtcNo"
-                searchPlaceholder="Search by MTC number..."
+                searchPlaceholder="Filter results..."
               />
             </CardContent>
           </Card>

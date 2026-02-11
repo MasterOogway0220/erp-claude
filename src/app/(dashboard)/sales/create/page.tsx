@@ -7,8 +7,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { ProductMaterialSelect } from "@/components/shared/product-material-select";
+import { PipeSizeSelect } from "@/components/shared/pipe-size-select";
 import { Plus, Trash2, Save, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -212,49 +220,52 @@ export default function CreateSalesOrderPage() {
             <CardTitle>Sales Order Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="quotationId">Reference Quotation (Optional)</Label>
-                <select
-                  id="quotationId"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2"
+                <Select
                   value={formData.quotationId}
-                  onChange={(e) => handleQuotationChange(e.target.value)}
+                  onValueChange={(value) => handleQuotationChange(value)}
                 >
-                  <option value="">Select Quotation</option>
-                  {quotations.map((q) => (
-                    <option key={q.id} value={q.id}>
-                      {q.quotationNo}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Quotation" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {quotations.map((q) => (
+                      <SelectItem key={q.id} value={q.id}>
+                        {q.quotationNo}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="customerId">Customer *</Label>
-                <select
-                  id="customerId"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2"
+                <Select
                   value={formData.customerId}
-                  onChange={(e) =>
-                    setFormData({ ...formData, customerId: e.target.value })
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, customerId: value })
                   }
-                  required
                   disabled={!!formData.quotationId}
                 >
-                  <option value="">Select Customer</option>
-                  {customers.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.code} - {c.name}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Customer" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {customers.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.code} - {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
             <Separator />
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="customerPoNo">Customer PO Number</Label>
                 <Input
@@ -314,33 +325,33 @@ export default function CreateSalesOrderPage() {
                 {items.map((item, index) => (
                   <div
                     key={index}
-                    className="grid grid-cols-12 gap-2 p-4 border rounded-lg"
+                    className="grid grid-cols-1 md:grid-cols-12 gap-2 p-4 border rounded-lg"
                   >
-                    <div className="col-span-2">
-                      <Label className="text-xs">Product</Label>
-                      <Input
-                        value={item.product}
-                        onChange={(e) => updateItem(index, "product", e.target.value)}
-                        className="h-9"
+                    <div className="md:col-span-4">
+                      <ProductMaterialSelect
+                        product={item.product}
+                        material={item.material}
+                        onProductChange={(val) => updateItem(index, "product", val)}
+                        onMaterialChange={(val) => updateItem(index, "material", val)}
+                        onAutoFill={(fields) => {
+                          if (fields.additionalSpec) updateItem(index, "additionalSpec", fields.additionalSpec);
+                        }}
                       />
                     </div>
-                    <div className="col-span-2">
-                      <Label className="text-xs">Material</Label>
-                      <Input
-                        value={item.material}
-                        onChange={(e) => updateItem(index, "material", e.target.value)}
-                        className="h-9"
-                      />
-                    </div>
-                    <div className="col-span-2">
+                    <div className="md:col-span-2">
                       <Label className="text-xs">Size</Label>
-                      <Input
+                      <PipeSizeSelect
                         value={item.sizeLabel}
-                        onChange={(e) => updateItem(index, "sizeLabel", e.target.value)}
-                        className="h-9"
+                        onChange={(text) => updateItem(index, "sizeLabel", text)}
+                        onSelect={(size) => {
+                          updateItem(index, "sizeLabel", size.sizeLabel);
+                          updateItem(index, "od", size.od);
+                          updateItem(index, "wt", size.wt);
+                        }}
+                        label="Size"
                       />
                     </div>
-                    <div className="col-span-1">
+                    <div className="md:col-span-1">
                       <Label className="text-xs">Qty (Mtr)</Label>
                       <Input
                         type="number"
@@ -350,7 +361,7 @@ export default function CreateSalesOrderPage() {
                         className="h-9"
                       />
                     </div>
-                    <div className="col-span-2">
+                    <div className="md:col-span-2">
                       <Label className="text-xs">Unit Rate</Label>
                       <Input
                         type="number"
@@ -360,7 +371,7 @@ export default function CreateSalesOrderPage() {
                         className="h-9"
                       />
                     </div>
-                    <div className="col-span-2">
+                    <div className="md:col-span-2">
                       <Label className="text-xs">Delivery Date</Label>
                       <Input
                         type="date"
@@ -369,7 +380,7 @@ export default function CreateSalesOrderPage() {
                         className="h-9"
                       />
                     </div>
-                    <div className="col-span-1 flex items-end">
+                    <div className="md:col-span-1 flex items-end">
                       <Button
                         type="button"
                         variant="destructive"
@@ -380,7 +391,7 @@ export default function CreateSalesOrderPage() {
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
-                    <div className="col-span-12 text-right text-sm text-muted-foreground">
+                    <div className="md:col-span-12 text-right text-sm text-muted-foreground">
                       Amount: ₹ {item.amount.toFixed(2)}
                     </div>
                   </div>

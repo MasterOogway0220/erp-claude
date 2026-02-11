@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserRole } from "@prisma/client";
@@ -26,25 +27,9 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Ruler,
-  Users,
-  Building2,
-  FlaskConical,
-  MoreHorizontal,
-  FilePlus,
-  List,
-  ClipboardList,
-  FileCheck,
-  MapPin,
-  Receipt,
-  BookOpen,
-  TestTube,
-  FileWarning,
+  ChevronDown,
   Mail,
-  CreditCard,
-  Shield,
-  ScrollText,
-  Cog,
+  X,
 } from "lucide-react";
 
 interface NavItem {
@@ -127,6 +112,7 @@ const navigation: NavItem[] = [
     children: [
       { title: "Inspections", href: "/quality" },
       { title: "New Inspection", href: "/quality/inspections/create" },
+      { title: "MTC Repository", href: "/quality" },
       { title: "NCR Register", href: "/quality" },
       { title: "Lab Letters", href: "/quality/lab-letters/create" },
     ],
@@ -168,7 +154,7 @@ const navigation: NavItem[] = [
 export function Sidebar() {
   const pathname = usePathname();
   const { user } = useCurrentUser();
-  const { isCollapsed, toggle } = useSidebarStore();
+  const { isCollapsed, isMobileOpen, toggle, setMobileOpen } = useSidebarStore();
 
   const userRole = user?.role;
 
@@ -177,22 +163,23 @@ export function Sidebar() {
     return userRole && item.roles.includes(userRole);
   });
 
-  return (
-    <div
-      className={cn(
-        "relative flex flex-col border-r bg-background transition-all duration-300",
-        isCollapsed ? "w-16" : "w-64"
-      )}
-    >
+  // Close mobile sidebar on route change
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname, setMobileOpen]);
+
+  const sidebarContent = (
+    <>
       {/* Logo / Brand */}
       <div className="flex h-16 items-center justify-between border-b px-4">
         {!isCollapsed && (
-          <span className="text-lg font-bold text-primary">NPS ERP</span>
+          <span className="text-lg font-bold text-primary">ERP</span>
         )}
+        {/* Desktop: collapse toggle, Mobile: close button */}
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8"
+          className="h-8 w-8 hidden md:flex"
           onClick={toggle}
         >
           {isCollapsed ? (
@@ -200,6 +187,14 @@ export function Sidebar() {
           ) : (
             <ChevronLeft className="h-4 w-4" />
           )}
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 md:hidden"
+          onClick={() => setMobileOpen(false)}
+        >
+          <X className="h-4 w-4" />
         </Button>
       </div>
 
@@ -216,7 +211,37 @@ export function Sidebar() {
           ))}
         </nav>
       </ScrollArea>
-    </div>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop sidebar */}
+      <div
+        className={cn(
+          "relative hidden md:flex flex-col border-r bg-background transition-all duration-300",
+          isCollapsed ? "w-16" : "w-64"
+        )}
+      >
+        {sidebarContent}
+      </div>
+
+      {/* Mobile overlay */}
+      {isMobileOpen && (
+        <div
+          className="fixed inset-0 z-50 md:hidden"
+          onClick={() => setMobileOpen(false)}
+        >
+          <div className="fixed inset-0 bg-black/50" />
+          <div
+            className="fixed inset-y-0 left-0 w-64 flex flex-col bg-background shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {sidebarContent}
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -232,6 +257,8 @@ function NavGroup({
   const isActive = item.href
     ? pathname === item.href
     : item.children?.some((child) => pathname.startsWith(child.href));
+
+  const [isOpen, setIsOpen] = useState(!!isActive);
 
   if (item.href) {
     // Simple link (Dashboard)
@@ -263,14 +290,14 @@ function NavGroup({
     return content;
   }
 
-  // Group with children
+  // Group with children — collapsed sidebar: show tooltip flyout
   if (isCollapsed) {
     return (
       <Tooltip delayDuration={0}>
         <TooltipTrigger asChild>
           <div
             className={cn(
-              "flex items-center justify-center rounded-md px-2 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
+              "flex items-center justify-center rounded-md px-2 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground cursor-pointer",
               isActive
                 ? "bg-accent text-accent-foreground"
                 : "text-muted-foreground"
@@ -295,32 +322,47 @@ function NavGroup({
     );
   }
 
+  // Group with children — expanded sidebar: collapsible dropdown
   return (
-    <div className="space-y-1">
-      <div
+    <div>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-semibold",
+          "flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
           isActive ? "text-foreground" : "text-muted-foreground"
         )}
       >
         {item.icon}
-        <span>{item.title}</span>
-      </div>
-      <div className="ml-6 space-y-1">
-        {item.children?.map((child) => (
-          <Link
-            key={child.title}
-            href={child.href}
-            className={cn(
-              "block rounded-md px-3 py-1.5 text-sm transition-colors hover:bg-accent hover:text-accent-foreground",
-              pathname.startsWith(child.href)
-                ? "bg-accent text-accent-foreground"
-                : "text-muted-foreground"
-            )}
-          >
-            {child.title}
-          </Link>
-        ))}
+        <span className="flex-1 text-left">{item.title}</span>
+        <ChevronDown
+          className={cn(
+            "h-4 w-4 transition-transform duration-200",
+            isOpen ? "rotate-0" : "-rotate-90"
+          )}
+        />
+      </button>
+      <div
+        className={cn(
+          "overflow-hidden transition-all duration-200",
+          isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+        )}
+      >
+        <div className="ml-4 space-y-0.5 border-l pl-4 py-1">
+          {item.children?.map((child) => (
+            <Link
+              key={child.title}
+              href={child.href}
+              className={cn(
+                "block rounded-md px-3 py-1.5 text-sm transition-colors hover:bg-accent hover:text-accent-foreground",
+                pathname.startsWith(child.href)
+                  ? "bg-accent text-accent-foreground font-medium"
+                  : "text-muted-foreground"
+              )}
+            >
+              {child.title}
+            </Link>
+          ))}
+        </div>
       </div>
     </div>
   );

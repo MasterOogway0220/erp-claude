@@ -67,6 +67,7 @@ function CreateInvoicePage() {
       new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       "yyyy-MM-dd"
     ),
+    eWayBillNo: "",
   });
 
   const [items, setItems] = useState<InvoiceItem[]>([]);
@@ -243,6 +244,7 @@ function CreateInvoicePage() {
           customerId: customer.id,
           invoiceType: formData.invoiceType,
           dueDate: formData.dueDate || null,
+          eWayBillNo: formData.eWayBillNo || null,
           currency: "INR",
           items: validItems,
         }),
@@ -281,7 +283,7 @@ function CreateInvoicePage() {
             <CardTitle>Invoice Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>Dispatch Note *</Label>
                 <Select
@@ -334,11 +336,23 @@ function CreateInvoicePage() {
                 />
               </div>
             </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>E-Way Bill No.</Label>
+                <Input
+                  value={formData.eWayBillNo}
+                  onChange={(e) =>
+                    setFormData({ ...formData, eWayBillNo: e.target.value })
+                  }
+                  placeholder="Enter E-Way Bill number"
+                />
+              </div>
+            </div>
 
             {customer && (
               <>
                 <Separator />
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <div className="text-sm text-muted-foreground">
                       Customer
@@ -416,8 +430,8 @@ function CreateInvoicePage() {
                         </Button>
                       )}
                     </div>
-                    <div className="grid grid-cols-6 gap-3">
-                      <div className="col-span-2 space-y-1">
+                    <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+                      <div className="md:col-span-2 space-y-1">
                         <Label className="text-xs">Description</Label>
                         <Input
                           value={item.description}
@@ -467,7 +481,7 @@ function CreateInvoicePage() {
                         />
                       </div>
                     </div>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       <div className="space-y-1">
                         <Label className="text-xs">Quantity (Mtr) *</Label>
                         <Input

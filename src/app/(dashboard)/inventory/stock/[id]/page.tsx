@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Edit } from "lucide-react";
+import { ArrowLeft, Edit, SplitSquareHorizontal } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -30,7 +30,9 @@ export default function StockDetailPage() {
   const [stock, setStock] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [partialDialogOpen, setPartialDialogOpen] = useState(false);
   const [updateData, setUpdateData] = useState({ status: "", location: "", rackNo: "", notes: "" });
+  const [partialData, setPartialData] = useState({ acceptedQty: "", acceptedPcs: "", rejectedQty: "", rejectedPcs: "", rejectionNotes: "" });
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => { if (params.id) fetchStock(params.id as string); }, [params.id]);
@@ -59,6 +61,35 @@ export default function StockDetailPage() {
     } catch (error: any) { toast.error(error.message); } finally { setSubmitting(false); }
   };
 
+  const handlePartialAccept = async () => {
+    setSubmitting(true);
+    try {
+      const response = await fetch(`/api/inventory/stock/${params.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "PARTIAL_ACCEPT",
+          acceptedQty: parseFloat(partialData.acceptedQty),
+          acceptedPcs: parseInt(partialData.acceptedPcs) || 0,
+          rejectedQty: parseFloat(partialData.rejectedQty),
+          rejectedPcs: parseInt(partialData.rejectedPcs) || 0,
+          rejectionNotes: partialData.rejectionNotes,
+        }),
+      });
+      if (!response.ok) { const error = await response.json(); throw new Error(error.error || "Failed to process"); }
+      toast.success("Partial acceptance completed. Rejected portion split into separate stock with NCR.");
+      setPartialDialogOpen(false);
+      fetchStock(params.id as string);
+    } catch (error: any) { toast.error(error.message); } finally { setSubmitting(false); }
+  };
+
+  const handleAcceptedQtyChange = (val: string) => {
+    const accepted = parseFloat(val) || 0;
+    const total = stock ? Number(stock.quantityMtr) : 0;
+    const rejected = Math.max(0, total - accepted);
+    setPartialData({ ...partialData, acceptedQty: val, rejectedQty: rejected.toFixed(3) });
+  };
+
   if (loading) return <div className="flex items-center justify-center h-96"><div className="text-muted-foreground">Loading...</div></div>;
   if (!stock) return null;
 
@@ -70,6 +101,45 @@ export default function StockDetailPage() {
       <PageHeader title={`Heat No: ${stock.heatNo || "N/A"}`} description={`${stock.product || ""} | ${stock.sizeLabel || ""} | ${stock.specification || ""}`}>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => router.back()}><ArrowLeft className="w-4 h-4 mr-2" />Back</Button>
+          {stock.status === "UNDER_INSPECTION" && (
+            <Dialog open={partialDialogOpen} onOpenChange={setPartialDialogOpen}>
+              <DialogTrigger asChild><Button variant="secondary"><SplitSquareHorizontal className="w-4 h-4 mr-2" />Partial Accept</Button></DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Partial Acceptance</DialogTitle></DialogHeader>
+                <p className="text-sm text-muted-foreground">Split this stock into accepted and rejected portions. Total: <strong>{Number(stock.quantityMtr).toFixed(3)} Mtr, {stock.pieces} Pcs</strong></p>
+                <div className="space-y-4 pt-2">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-green-700">Accepted Qty (Mtr) *</Label>
+                      <Input type="number" step="0.001" value={partialData.acceptedQty} onChange={(e) => handleAcceptedQtyChange(e.target.value)} placeholder="0.000" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-green-700">Accepted Pieces</Label>
+                      <Input type="number" value={partialData.acceptedPcs} onChange={(e) => setPartialData({ ...partialData, acceptedPcs: e.target.value })} placeholder="0" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-red-700">Rejected Qty (Mtr) *</Label>
+                      <Input type="number" step="0.001" value={partialData.rejectedQty} onChange={(e) => setPartialData({ ...partialData, rejectedQty: e.target.value })} disabled className="bg-muted" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-red-700">Rejected Pieces</Label>
+                      <Input type="number" value={partialData.rejectedPcs} onChange={(e) => setPartialData({ ...partialData, rejectedPcs: e.target.value })} placeholder="0" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Rejection Notes</Label>
+                    <Textarea value={partialData.rejectionNotes} onChange={(e) => setPartialData({ ...partialData, rejectionNotes: e.target.value })} rows={2} placeholder="Reason for partial rejection..." />
+                  </div>
+                  <div className="flex justify-end gap-3 pt-2">
+                    <Button variant="outline" onClick={() => setPartialDialogOpen(false)}>Cancel</Button>
+                    <Button onClick={handlePartialAccept} disabled={submitting || !partialData.acceptedQty || !partialData.rejectedQty}>{submitting ? "Processing..." : "Confirm Split"}</Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
           <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
             <DialogTrigger asChild><Button><Edit className="w-4 h-4 mr-2" />Update Stock</Button></DialogTrigger>
             <DialogContent>
@@ -114,11 +184,11 @@ export default function StockDetailPage() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-3 gap-6">
-        <Card className="col-span-2">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="md:col-span-2">
           <CardHeader><CardTitle>Stock Details</CardTitle></CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               <div><div className="text-sm text-muted-foreground">Product</div><div className="font-medium">{stock.product || "—"}</div></div>
               <div><div className="text-sm text-muted-foreground">Specification</div><div>{stock.specification || "—"}</div></div>
               <div><div className="text-sm text-muted-foreground">Size</div><div className="font-mono">{stock.sizeLabel || "—"}</div></div>
@@ -130,7 +200,7 @@ export default function StockDetailPage() {
               <div><div className="text-sm text-muted-foreground">Dimension Std</div><div>{stock.dimensionStd || "—"}</div></div>
             </div>
             <Separator />
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               <div><div className="text-sm text-muted-foreground">MTC No.</div><div>{stock.mtcNo || "—"}</div></div>
               <div><div className="text-sm text-muted-foreground">MTC Type</div><div>{stock.mtcType?.replace(/_/g, " ") || "—"}</div></div>
               <div><div className="text-sm text-muted-foreground">TPI Agency</div><div>{stock.tpiAgency || "—"}</div></div>

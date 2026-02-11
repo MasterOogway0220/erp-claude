@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NPS ERP - Piping & Tubular Trading",
-  description: "Enterprise Resource Planning for NPS Piping Solutions",
+  title: "ERP - Piping & Tubular Trading",
+  description: "Enterprise Resource Planning for ERP",
 };
 
 export default function RootLayout({

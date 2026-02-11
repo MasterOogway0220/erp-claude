@@ -2,6 +2,7 @@
 
 import { signOut } from "next-auth/react";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { useSidebarStore } from "@/stores/sidebar-store";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -13,32 +14,41 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Bell, LogOut, User } from "lucide-react";
+import { Bell, LogOut, Menu, User } from "lucide-react";
 import { GlobalSearch } from "@/components/shared/global-search";
 
 export function TopBar() {
   const { user } = useCurrentUser();
+  const { setMobileOpen } = useSidebarStore();
 
   const initials = user?.name
     ? user.name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2)
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2)
     : "U";
 
   return (
-    <header className="flex h-16 items-center justify-between border-b bg-background px-6">
-      {/* Left: Company name */}
-      <div className="flex items-center gap-4">
+    <header className="flex h-16 items-center justify-between border-b bg-background px-3 md:px-6">
+      {/* Left: Hamburger (mobile) + Company name */}
+      <div className="flex items-center gap-2">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden"
+          onClick={() => setMobileOpen(true)}
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
         <h1 className="text-lg font-semibold text-foreground">
-          NPS Piping Solutions
+          ERP
         </h1>
       </div>
 
       {/* Center: Global Search */}
-      <div className="flex max-w-md flex-1 items-center px-8">
+      <div className="flex max-w-md flex-1 items-center px-2 md:px-8">
         <GlobalSearch />
       </div>
 

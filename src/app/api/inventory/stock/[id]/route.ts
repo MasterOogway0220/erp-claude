@@ -89,11 +89,11 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { status, location, rackNo, notes } = body;
+    const { status, location, rackNo, notes, action } = body;
 
     // Role check for status changes
-    if (status) {
-      const allowedRoles = ["QC", "ADMIN", "MANAGEMENT"];
+    const allowedRoles = ["QC", "ADMIN", "MANAGEMENT"];
+    if (status || action === "PARTIAL_ACCEPT") {
       if (!allowedRoles.includes(session.user.role)) {
         return NextResponse.json(
           { error: "Only QC, Admin, or Management can change stock status" },
@@ -102,6 +102,113 @@ export async function PATCH(
       }
     }
 
+    // Handle partial acceptance: split stock into accepted + rejected
+    if (action === "PARTIAL_ACCEPT") {
+      const { acceptedQty, acceptedPcs, rejectedQty, rejectedPcs, rejectionNotes } = body;
+
+      const existingStock = await prisma.inventoryStock.findUnique({
+        where: { id },
+        include: {
+          grnItem: {
+            include: {
+              grn: { select: { poId: true, vendorId: true } },
+            },
+          },
+        },
+      });
+
+      if (!existingStock) {
+        return NextResponse.json({ error: "Stock not found" }, { status: 404 });
+      }
+
+      if (existingStock.status !== "UNDER_INSPECTION") {
+        return NextResponse.json(
+          { error: "Partial acceptance is only available for stock under inspection" },
+          { status: 400 }
+        );
+      }
+
+      if (!acceptedQty || !rejectedQty || acceptedQty <= 0 || rejectedQty <= 0) {
+        return NextResponse.json(
+          { error: "Both accepted and rejected quantities must be greater than 0" },
+          { status: 400 }
+        );
+      }
+
+      const totalOriginal = Number(existingStock.quantityMtr);
+      const totalSplit = Number(acceptedQty) + Number(rejectedQty);
+      if (Math.abs(totalSplit - totalOriginal) > 0.01) {
+        return NextResponse.json(
+          { error: `Accepted (${acceptedQty}) + Rejected (${rejectedQty}) must equal original quantity (${totalOriginal})` },
+          { status: 400 }
+        );
+      }
+
+      // Use transaction: update original as accepted, create new record for rejected
+      const result = await prisma.$transaction(async (tx) => {
+        // Update original stock to accepted with reduced quantity
+        const acceptedStock = await tx.inventoryStock.update({
+          where: { id },
+          data: {
+            quantityMtr: acceptedQty,
+            pieces: acceptedPcs || existingStock.pieces,
+            status: "ACCEPTED",
+            notes: notes || existingStock.notes,
+          },
+        });
+
+        // Create new stock record for rejected portion
+        const rejectedStock = await tx.inventoryStock.create({
+          data: {
+            form: existingStock.form,
+            product: existingStock.product,
+            specification: existingStock.specification,
+            additionalSpec: existingStock.additionalSpec,
+            dimensionStd: existingStock.dimensionStd,
+            sizeLabel: existingStock.sizeLabel,
+            od: existingStock.od,
+            wt: existingStock.wt,
+            ends: existingStock.ends,
+            length: existingStock.length,
+            heatNo: existingStock.heatNo,
+            make: existingStock.make,
+            quantityMtr: rejectedQty,
+            pieces: rejectedPcs || 0,
+            mtcNo: existingStock.mtcNo,
+            mtcDate: existingStock.mtcDate,
+            mtcType: existingStock.mtcType,
+            tpiAgency: existingStock.tpiAgency,
+            location: existingStock.location,
+            rackNo: existingStock.rackNo,
+            notes: rejectionNotes || `Rejected from partial acceptance. Original stock: ${existingStock.id}`,
+            status: "REJECTED",
+            grnItemId: existingStock.grnItemId,
+          },
+        });
+
+        // Auto-create NCR for rejected portion
+        const ncrNo = await generateDocumentNumber("NCR");
+        await tx.nCR.create({
+          data: {
+            ncrNo,
+            grnItemId: existingStock.grnItemId || null,
+            inventoryStockId: rejectedStock.id,
+            heatNo: existingStock.heatNo,
+            poId: existingStock.grnItem?.grn?.poId || null,
+            vendorId: existingStock.grnItem?.grn?.vendorId || null,
+            nonConformanceType: "REJECTION",
+            description: `Partial rejection during quality inspection. Heat No: ${existingStock.heatNo}. Rejected: ${rejectedQty} Mtr out of ${totalOriginal} Mtr.`,
+            status: "OPEN",
+          },
+        });
+
+        return { acceptedStock, rejectedStock };
+      });
+
+      return NextResponse.json(result);
+    }
+
+    // Standard status update
     const updateData: any = {};
     if (status) updateData.status = status;
     if (location !== undefined) updateData.location = location;

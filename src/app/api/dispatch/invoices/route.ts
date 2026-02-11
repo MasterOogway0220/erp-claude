@@ -74,6 +74,7 @@ export async function POST(request: NextRequest) {
       customerId,
       invoiceType,
       dueDate,
+      eWayBillNo,
       currency,
       items,
     } = body;
@@ -164,6 +165,7 @@ export async function POST(request: NextRequest) {
         totalAmount,
         currency: currency || "INR",
         dueDate: dueDate ? new Date(dueDate) : null,
+        eWayBillNo: eWayBillNo || null,
         status: "DRAFT",
         items: {
           create: items.map((item: any, index: number) => ({

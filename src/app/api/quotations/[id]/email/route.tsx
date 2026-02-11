@@ -81,7 +81,7 @@ export async function POST(
 
         <p>Best regards,<br>
         <strong>${quotation.preparedBy?.name || "Sales Team"}</strong><br>
-        NPS Piping Solutions<br>
+        ERP<br>
         ${quotation.preparedBy?.email || "info@npspipe.com"}</p>
 
         <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">

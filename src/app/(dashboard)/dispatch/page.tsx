@@ -243,7 +243,12 @@ export default function DispatchPage() {
       header: "Receipt No.",
       sortable: true,
       cell: (row) => (
-        <span className="font-mono font-medium">{row.receiptNo as string}</span>
+        <Link
+          href={`/dispatch/payments/${row.id}`}
+          className="font-mono font-medium text-blue-600 hover:underline"
+        >
+          {row.receiptNo as string}
+        </Link>
       ),
     },
     {
@@ -337,8 +342,11 @@ export default function DispatchPage() {
             </Button>
           </div>
           {loading ? (
-            <div className="rounded-lg border p-8 text-center text-muted-foreground">
-              Loading packing lists...
+            <div className="space-y-3">
+              <div className="h-10 w-48 bg-muted animate-pulse rounded" />
+              <div className="space-y-2">
+                {[...Array(5)].map((_, i) => <div key={i} className="h-12 bg-muted animate-pulse rounded" />)}
+              </div>
             </div>
           ) : (
             <DataTable
@@ -360,8 +368,11 @@ export default function DispatchPage() {
             </Button>
           </div>
           {loading ? (
-            <div className="rounded-lg border p-8 text-center text-muted-foreground">
-              Loading dispatch notes...
+            <div className="space-y-3">
+              <div className="h-10 w-48 bg-muted animate-pulse rounded" />
+              <div className="space-y-2">
+                {[...Array(5)].map((_, i) => <div key={i} className="h-12 bg-muted animate-pulse rounded" />)}
+              </div>
             </div>
           ) : (
             <DataTable
@@ -381,8 +392,11 @@ export default function DispatchPage() {
             </Button>
           </div>
           {loading ? (
-            <div className="rounded-lg border p-8 text-center text-muted-foreground">
-              Loading invoices...
+            <div className="space-y-3">
+              <div className="h-10 w-48 bg-muted animate-pulse rounded" />
+              <div className="space-y-2">
+                {[...Array(5)].map((_, i) => <div key={i} className="h-12 bg-muted animate-pulse rounded" />)}
+              </div>
             </div>
           ) : (
             <DataTable
@@ -402,8 +416,11 @@ export default function DispatchPage() {
             </Button>
           </div>
           {loading ? (
-            <div className="rounded-lg border p-8 text-center text-muted-foreground">
-              Loading payments...
+            <div className="space-y-3">
+              <div className="h-10 w-48 bg-muted animate-pulse rounded" />
+              <div className="space-y-2">
+                {[...Array(5)].map((_, i) => <div key={i} className="h-12 bg-muted animate-pulse rounded" />)}
+              </div>
             </div>
           ) : (
             <DataTable
