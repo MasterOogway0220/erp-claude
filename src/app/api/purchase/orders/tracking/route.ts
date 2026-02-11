@@ -24,7 +24,6 @@ export async function GET(request: NextRequest) {
         vendor: {
           select: {
             id: true,
-            code: true,
             name: true,
           },
         },

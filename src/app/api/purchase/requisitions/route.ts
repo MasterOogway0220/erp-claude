@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
           select: { id: true, soNo: true },
         },
         suggestedVendor: {
-          select: { id: true, code: true, name: true },
+          select: { id: true, name: true },
         },
         items: true,
       },

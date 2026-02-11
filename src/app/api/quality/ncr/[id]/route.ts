@@ -1,0 +1,181 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const ncr = await prisma.nCR.findUnique({
+      where: { id },
+      include: {
+        grnItem: {
+          select: {
+            id: true,
+            heatNo: true,
+            product: true,
+            material: true,
+            specification: true,
+            sizeLabel: true,
+            receivedQtyMtr: true,
+            pieces: true,
+            grn: {
+              select: {
+                id: true,
+                grnNo: true,
+                grnDate: true,
+                vendor: { select: { id: true, name: true } },
+              },
+            },
+          },
+        },
+        inventoryStock: {
+          select: {
+            id: true,
+            heatNo: true,
+            product: true,
+            sizeLabel: true,
+            status: true,
+            quantityMtr: true,
+            pieces: true,
+          },
+        },
+        vendor: {
+          select: { id: true, name: true, contactPerson: true, email: true },
+        },
+        purchaseOrder: {
+          select: {
+            id: true,
+            poNo: true,
+            poDate: true,
+            status: true,
+            vendor: { select: { id: true, name: true } },
+          },
+        },
+        closedBy: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+    });
+
+    if (!ncr) {
+      return NextResponse.json(
+        { error: "NCR not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ ncr });
+  } catch (error) {
+    console.error("Error fetching NCR:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch NCR" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const {
+      status,
+      nonConformanceType,
+      description,
+      rootCause,
+      correctiveAction,
+      preventiveAction,
+      disposition,
+      evidencePaths,
+    } = body;
+
+    const existing = await prisma.nCR.findUnique({
+      where: { id },
+    });
+
+    if (!existing) {
+      return NextResponse.json(
+        { error: "NCR not found" },
+        { status: 404 }
+      );
+    }
+
+    const updateData: any = {};
+
+    if (nonConformanceType !== undefined) updateData.nonConformanceType = nonConformanceType;
+    if (description !== undefined) updateData.description = description;
+    if (rootCause !== undefined) updateData.rootCause = rootCause;
+    if (correctiveAction !== undefined) updateData.correctiveAction = correctiveAction;
+    if (preventiveAction !== undefined) updateData.preventiveAction = preventiveAction;
+    if (disposition !== undefined) updateData.disposition = disposition;
+    if (evidencePaths !== undefined) updateData.evidencePaths = evidencePaths;
+
+    // Handle status transitions
+    if (status) {
+      if (status === "CLOSED") {
+        // Validate required fields for closing
+        const finalRootCause = rootCause || existing.rootCause;
+        const finalCorrectiveAction = correctiveAction || existing.correctiveAction;
+        const finalPreventiveAction = preventiveAction || existing.preventiveAction;
+        const finalDisposition = disposition || existing.disposition;
+
+        if (!finalRootCause || !finalCorrectiveAction || !finalPreventiveAction || !finalDisposition) {
+          return NextResponse.json(
+            {
+              error:
+                "Root cause, corrective action, preventive action, and disposition are required to close an NCR",
+            },
+            { status: 400 }
+          );
+        }
+
+        updateData.status = "CLOSED";
+        updateData.closedDate = new Date();
+        updateData.closedById = session.user.id;
+      } else {
+        updateData.status = status;
+      }
+    }
+
+    const updated = await prisma.nCR.update({
+      where: { id },
+      data: updateData,
+      include: {
+        grnItem: {
+          select: { id: true, heatNo: true, product: true, sizeLabel: true },
+        },
+        inventoryStock: {
+          select: { id: true, heatNo: true, status: true },
+        },
+        vendor: { select: { id: true, name: true } },
+        purchaseOrder: { select: { id: true, poNo: true } },
+        closedBy: { select: { id: true, name: true } },
+      },
+    });
+
+    return NextResponse.json(updated);
+  } catch (error) {
+    console.error("Error updating NCR:", error);
+    return NextResponse.json(
+      { error: "Failed to update NCR" },
+      { status: 500 }
+    );
+  }
+}

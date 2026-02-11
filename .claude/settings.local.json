@@ -33,7 +33,12 @@
       "Bash(taskkill:*)",
       "Bash(npx kill-port:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(wc:*)",
+      "Bash(done)",
+      "Bash(npx --no-install prisma generate:*)",
+      "Bash(./node_modules/.bin/prisma generate:*)",
+      "Bash(sudo chown:*)"
     ]
   }
 }

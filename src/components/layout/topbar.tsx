@@ -3,7 +3,6 @@
 import { signOut } from "next-auth/react";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -14,7 +13,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Bell, Search, LogOut, User } from "lucide-react";
+import { Bell, LogOut, User } from "lucide-react";
+import { GlobalSearch } from "@/components/shared/global-search";
 
 export function TopBar() {
   const { user } = useCurrentUser();
@@ -37,16 +37,9 @@ export function TopBar() {
         </h1>
       </div>
 
-      {/* Center: Search */}
+      {/* Center: Global Search */}
       <div className="flex max-w-md flex-1 items-center px-8">
-        <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search..."
-            className="pl-9"
-            disabled
-          />
-        </div>
+        <GlobalSearch />
       </div>
 
       {/* Right: Notifications + User */}

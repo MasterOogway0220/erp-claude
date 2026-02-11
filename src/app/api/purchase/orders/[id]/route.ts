@@ -5,16 +5,17 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const purchaseOrder = await prisma.purchaseOrder.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         vendor: true,
         salesOrder: {
@@ -87,9 +88,10 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -99,7 +101,7 @@ export async function PATCH(
     const { status, deliveryDate, specialRequirements } = body;
 
     const purchaseOrder = await prisma.purchaseOrder.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         status: status || undefined,
         deliveryDate: deliveryDate ? new Date(deliveryDate) : undefined,

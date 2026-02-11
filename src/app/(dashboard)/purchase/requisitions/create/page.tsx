@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -34,7 +34,15 @@ interface PRItem {
   remarks: string;
 }
 
-export default function CreatePRPage() {
+export default function CreatePRPageWrapper() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-96"><div className="text-muted-foreground">Loading...</div></div>}>
+      <CreatePRPage />
+    </Suspense>
+  );
+}
+
+function CreatePRPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);

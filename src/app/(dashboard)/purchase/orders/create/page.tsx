@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -47,7 +47,15 @@ interface POItem {
   deliveryDate: string;
 }
 
-export default function CreatePOPage() {
+export default function CreatePOPageWrapper() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-96"><div className="text-muted-foreground">Loading...</div></div>}>
+      <CreatePOPage />
+    </Suspense>
+  );
+}
+
+function CreatePOPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);

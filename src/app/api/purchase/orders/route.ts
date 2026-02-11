@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
       where,
       include: {
         vendor: {
-          select: { id: true, code: true, name: true },
+          select: { id: true, name: true },
         },
         salesOrder: {
           select: { id: true, soNo: true },
@@ -167,7 +167,7 @@ export async function POST(request: NextRequest) {
     if (prId) {
       await prisma.purchaseRequisition.update({
         where: { id: prId },
-        data: { status: "CONVERTED" },
+        data: { status: "PO_CREATED" },
       });
     }
 

@@ -8,9 +8,10 @@ import nodemailer from "nodemailer";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -28,7 +29,7 @@ export async function POST(
 
     // Fetch quotation
     const quotation = await prisma.quotation.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         customer: true,
         preparedBy: { select: { name: true, email: true } },
@@ -107,7 +108,7 @@ export async function POST(
 
     // Update quotation status to SENT
     await prisma.quotation.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         status: "SENT",
         sentDate: new Date(),

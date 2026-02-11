@@ -1,0 +1,90 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { StockStatus } from "@prisma/client";
+
+export async function GET(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get("search") || "";
+    const status = searchParams.get("status") as StockStatus | null;
+    const product = searchParams.get("product") || "";
+    const sizeLabel = searchParams.get("sizeLabel") || "";
+    const heatNo = searchParams.get("heatNo") || "";
+    const location = searchParams.get("location") || "";
+    const page = parseInt(searchParams.get("page") || "1");
+    const pageSize = parseInt(searchParams.get("pageSize") || "50");
+
+    const where: any = {};
+
+    if (search) {
+      where.OR = [
+        { heatNo: { contains: search, mode: "insensitive" as const } },
+        { product: { contains: search, mode: "insensitive" as const } },
+        { sizeLabel: { contains: search, mode: "insensitive" as const } },
+        { specification: { contains: search, mode: "insensitive" as const } },
+        { location: { contains: search, mode: "insensitive" as const } },
+      ];
+    }
+
+    if (status) where.status = status;
+    if (product) where.product = { contains: product, mode: "insensitive" as const };
+    if (sizeLabel) where.sizeLabel = { contains: sizeLabel, mode: "insensitive" as const };
+    if (heatNo) where.heatNo = { contains: heatNo, mode: "insensitive" as const };
+    if (location) where.location = { contains: location, mode: "insensitive" as const };
+
+    const [stocks, total] = await Promise.all([
+      prisma.inventoryStock.findMany({
+        where,
+        include: {
+          grnItem: {
+            select: {
+              id: true,
+              grn: {
+                select: { id: true, grnNo: true, grnDate: true },
+              },
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      prisma.inventoryStock.count({ where }),
+    ]);
+
+    // Get summary counts
+    const statusCounts = await prisma.inventoryStock.groupBy({
+      by: ["status"],
+      _count: { id: true },
+    });
+
+    const summary = {
+      total,
+      byStatus: Object.fromEntries(
+        statusCounts.map((s) => [s.status, s._count.id])
+      ),
+    };
+
+    return NextResponse.json({
+      stocks,
+      total,
+      page,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize),
+      summary,
+    });
+  } catch (error) {
+    console.error("Error fetching stock:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch stock" },
+      { status: 500 }
+    );
+  }
+}

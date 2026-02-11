@@ -5,9 +5,10 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -15,7 +16,7 @@ export async function POST(
 
     // Get the original PO
     const originalPo = await prisma.purchaseOrder.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         items: true,
       },

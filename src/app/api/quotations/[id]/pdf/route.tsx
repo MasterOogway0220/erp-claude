@@ -7,9 +7,10 @@ import { QuotationPDF } from "@/lib/pdf/quotation-pdf";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -17,7 +18,7 @@ export async function GET(
 
     // Fetch quotation
     const quotation = await prisma.quotation.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         customer: true,
         preparedBy: { select: { name: true, email: true } },
@@ -34,9 +35,9 @@ export async function GET(
     const stream = await renderToStream(<QuotationPDF quotation={quotation} />);
 
     // Convert stream to buffer
-    const chunks: Uint8Array[] = [];
+    const chunks: Buffer[] = [];
     for await (const chunk of stream) {
-      chunks.push(chunk);
+      chunks.push(Buffer.from(chunk as any));
     }
     const buffer = Buffer.concat(chunks);
 

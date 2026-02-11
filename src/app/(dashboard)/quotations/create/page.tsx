@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
@@ -76,7 +76,15 @@ const defaultTerms = [
   { termName: "Part Orders", termValue: "Subject reconfirm with N-PIPE" },
 ];
 
-export default function CreateQuotationPage() {
+export default function CreateQuotationPageWrapper() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-96"><div className="text-muted-foreground">Loading...</div></div>}>
+      <CreateQuotationPage />
+    </Suspense>
+  );
+}
+
+function CreateQuotationPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const enquiryId = searchParams.get("enquiryId");

@@ -117,8 +117,7 @@ const navigation: NavItem[] = [
     roles: ["STORES", "MANAGEMENT", "ADMIN"],
     children: [
       { title: "Stock View", href: "/inventory" },
-      { title: "GRN Entry", href: "/inventory" },
-      { title: "Stock Locations", href: "/inventory" },
+      { title: "New GRN", href: "/inventory/grn/create" },
     ],
   },
   {
@@ -127,9 +126,9 @@ const navigation: NavItem[] = [
     roles: ["QC", "MANAGEMENT", "ADMIN"],
     children: [
       { title: "Inspections", href: "/quality" },
-      { title: "MTC Repository", href: "/quality" },
+      { title: "New Inspection", href: "/quality/inspections/create" },
       { title: "NCR Register", href: "/quality" },
-      { title: "Lab Letters", href: "/quality" },
+      { title: "Lab Letters", href: "/quality/lab-letters/create" },
     ],
   },
   {
@@ -138,16 +137,22 @@ const navigation: NavItem[] = [
     roles: ["STORES", "ACCOUNTS", "MANAGEMENT", "ADMIN"],
     children: [
       { title: "Packing Lists", href: "/dispatch" },
-      { title: "Dispatch Notes", href: "/dispatch" },
-      { title: "Invoices", href: "/dispatch" },
-      { title: "Payments", href: "/dispatch" },
+      { title: "Dispatch Notes", href: "/dispatch/dispatch-notes/create" },
+      { title: "Invoices", href: "/dispatch/invoices/create" },
+      { title: "Payments", href: "/dispatch/payments/create" },
     ],
   },
   {
     title: "Reports",
     icon: <BarChart3 className="h-5 w-5" />,
     roles: ["MANAGEMENT", "ADMIN"],
-    children: [{ title: "MIS Dashboards", href: "/reports" }],
+    children: [
+      { title: "All Reports", href: "/reports" },
+      { title: "Sales Dashboard", href: "/reports/sales" },
+      { title: "Inventory", href: "/reports/inventory" },
+      { title: "Vendor Performance", href: "/reports/vendor-performance" },
+      { title: "Management Review", href: "/reports/management-review" },
+    ],
   },
   {
     title: "Admin",
@@ -155,8 +160,7 @@ const navigation: NavItem[] = [
     roles: ["ADMIN"],
     children: [
       { title: "User Management", href: "/admin" },
-      { title: "Audit Log", href: "/admin" },
-      { title: "System Settings", href: "/admin" },
+      { title: "Traceability", href: "/admin/traceability" },
     ],
   },
 ];
