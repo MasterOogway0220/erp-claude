@@ -48,7 +48,9 @@
       "Bash(grep:*)",
       "Bash(xargs -I {} sh -c 'echo \"\"File: {}\"\" && grep -E \"\"href=|router\\\\.push\"\" {} | head -3')",
       "Bash(npx:*)",
-      "Bash(npm_config_cache=/tmp/npm-cache-temp npx:*)"
+      "Bash(npm_config_cache=/tmp/npm-cache-temp npx:*)",
+      "Bash(git -C /Users/adi0220/projects/erp-claude remote:*)",
+      "Bash(render:*)"
     ]
   }
 }
