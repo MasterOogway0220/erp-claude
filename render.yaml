@@ -20,7 +20,7 @@ services:
     env: node
     region: singapore
     plan: starter
-    buildCommand: npm ci && npx prisma generate && npx prisma migrate deploy && npm run build
+    buildCommand: npm ci && npx prisma generate && npx prisma migrate deploy && npx ts-node --compiler-options '{"module":"commonjs"}' prisma/seed-production.ts && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
@@ -45,6 +45,9 @@ services:
 
       - key: JWT_SECRET
         generateValue: true
+
+      - key: ADMIN_PASSWORD
+        value: Admin@123
 
       - key: NODE_OPTIONS
         value: "--max-old-space-size=4096"

@@ -283,39 +283,35 @@ Password: Admin@123
 
 ### 1. Database Seeding
 
-**Option A: Via Render Shell**
-```bash
-# Open Shell in web service dashboard
-npx tsx prisma/seed.ts
+**✨ AUTOMATIC SEEDING (NEW!)** - No shell access required!
+
+The system now **automatically seeds essential data** during deployment:
+
+✅ **Admin User** - Created automatically
+```
+Email: admin@erp.com
+Password: Admin@123 (or custom via ADMIN_PASSWORD env var)
 ```
 
-**Option B: Manual Seed Script**
-```bash
-# In Render shell, run:
-node -e "
-const { PrismaClient } = require('@prisma/client');
-const bcrypt = require('bcryptjs');
-const prisma = new PrismaClient();
-
-async function seed() {
-  const hash = await bcrypt.hash('Admin@123', 10);
-  await prisma.user.upsert({
-    where: { email: 'admin@erp.com' },
-    update: {},
-    create: {
-      name: 'Admin User',
-      email: 'admin@erp.com',
-      passwordHash: hash,
-      role: 'ADMIN',
-    },
-  });
-  console.log('Admin created');
-  process.exit(0);
-}
-
-seed();
-"
+✅ **Document Sequences** - All 13 types created automatically
 ```
+Enquiry, Quotation, SO, PO, GRN, Invoice, etc.
+Ready for document numbering: SO/25/00001
+```
+
+✅ **Idempotent** - Safe to redeploy without errors
+
+**How to Customize Admin Password:**
+```yaml
+# In render.yaml or Render Dashboard
+envVars:
+  - key: ADMIN_PASSWORD
+    value: "YourSecurePassword123!"
+```
+
+**📖 Full Documentation:** See `project_documents/AUTO_SEED_DOCUMENTATION.md`
+
+**No manual seeding required!** Everything is set up automatically during deployment.
 
 ### 2. Import Master Data
 

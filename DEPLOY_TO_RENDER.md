@@ -34,8 +34,52 @@ Login Credentials:
 Email: admin@erp.com
 Password: Admin@123
 
+✨ ADMIN USER CREATED AUTOMATICALLY!
 ⚠️ CHANGE PASSWORD IMMEDIATELY!
 ```
+
+**🎉 No Shell Access Needed!**
+- Admin user created automatically during deployment
+- Document sequences configured automatically
+- Ready to use immediately after deployment
+- No manual setup required
+
+---
+
+## ✨ Auto-Seed Feature (New!)
+
+**🎉 No Shell Access Required!**
+
+The system now automatically seeds essential data during deployment:
+
+### What Gets Created Automatically
+
+✅ **Admin User**
+```
+Email: admin@erp.com
+Password: Admin@123 (customizable via ADMIN_PASSWORD env var)
+```
+
+✅ **Document Sequences** (13 types)
+- Enquiry, Quotation, Sales Order, Purchase Order, etc.
+- Ready for document numbering: `SO/25/00001`
+
+✅ **Idempotent Seeding**
+- Safe to redeploy multiple times
+- Won't create duplicates
+- No errors on re-runs
+
+### How It Works
+
+```
+Deploy → Migrations → AUTO-SEED → Build → Done!
+                          ↑
+           Creates admin & sequences automatically
+```
+
+**No manual commands needed. No shell access required. Everything just works!**
+
+📖 **Full Documentation:** `project_documents/AUTO_SEED_DOCUMENTATION.md`
 
 ---
 
