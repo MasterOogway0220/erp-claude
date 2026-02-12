@@ -57,7 +57,18 @@
       "Bash(node create-admin.js:*)",
       "Bash(DATABASE_URL='postgresql://erp_user:WkuRJfCBZmQw6V9midS2Acqh5bxxOIBA@dpg-d66dqgmsb7us73e7kn20-a.oregon-postgres.render.com/erp_claude?sslmode=require' npx tsx:*)",
       "Bash(find:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(yes:*)",
+      "Bash(script -q /dev/null npx prisma migrate dev:*)",
+      "Bash(npx tsx:*)",
+      "Bash(source:*)",
+      "Bash(DATABASE_URL=\"postgresql://adi0220@localhost:5432/nps_erp\" npx tsx:*)",
+      "Bash(npx next build:*)",
+      "Bash(DATABASE_URL=\"postgresql://adi0220@localhost:5432/nps_erp\" npx tsx -e:*)",
+      "Bash(curl:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: Implement enhanced masters, quotation PDF, and fix critical audit bugs\n\n- Add new master pages: Buyer, Employee, Unit, Material Code, Financial Year, Company\n- Enhance Customer & Vendor masters with Sheet-based forms, GST, bank details\n- Implement Standard/Non-Standard quotation create flows with NPS/Schedule auto-fill\n- Add quotation PDF generation \\(standard landscape, non-standard portrait\\)\n- Add quotation email with PDF attachments\n- Add offer term templates API and buyer performance report\n- Create 6 missing [id] CRUD routes for master APIs\n- Fix customer.code/vendor.code references \\(field doesn''t exist\\) across 13+ files\n- Fix report page interfaces to match actual API response shapes\n- Fix quotation API to persist sizeNPS, schedule, materialCodeId, uom fields\n- Add authentication to Testing Master GET endpoint\n- Update Prisma schema with enhanced fields and new models\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }
