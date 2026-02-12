@@ -9,13 +9,16 @@ const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 
 // Your production database URL
-const DATABASE_URL = 'postgresql://erp_user:WkuRJfCBZmQw6V9midS2Acqh5bxxOIBA@dpg-d66dqgmsb7us73e7kn20-a/erp_claude';
+const DATABASE_URL = 'postgresql://erp_user:WkuRJfCBZmQw6V9midS2Acqh5bxxOIBA@dpg-d66dqgmsb7us73e7kn20-a.oregon-postgres.render.com/erp_claude';
 
 async function createAdmin() {
   console.log('🔧 Connecting to production database...');
 
   const pool = new Pool({
     connectionString: DATABASE_URL,
+    ssl: {
+      rejectUnauthorized: false
+    }
   });
 
   try {
