@@ -17,35 +17,28 @@ import { format } from "date-fns";
 import Link from "next/link";
 
 interface NCRByVendor {
-  vendorId: string;
+  vendorId: string | null;
   vendorName: string;
-  vendorCode: string;
-  totalNCRs: number;
-  openNCRs: number;
-  closedNCRs: number;
+  count: number;
 }
 
 interface NCRByType {
   type: string;
   count: number;
-  percentage: number;
 }
 
 interface NCRMonthly {
   month: string;
   count: number;
-  openCount: number;
-  closedCount: number;
 }
 
 interface NCRAnalysisData {
   totalNCRs: number;
   openNCRs: number;
   closedNCRs: number;
-  underReview: number;
   byVendor: NCRByVendor[];
   byType: NCRByType[];
-  monthlyCounts: NCRMonthly[];
+  monthlyTrend: NCRMonthly[];
 }
 
 export default function NCRAnalysisPage() {
@@ -143,7 +136,7 @@ export default function NCRAnalysisPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-yellow-600">
-              {data.underReview || 0}
+              {Math.max(0, (data.totalNCRs || 0) - (data.openNCRs || 0) - (data.closedNCRs || 0))}
             </div>
           </CardContent>
         </Card>
@@ -160,36 +153,21 @@ export default function NCRAnalysisPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Vendor</TableHead>
-                    <TableHead className="text-right">Total</TableHead>
-                    <TableHead className="text-right">Open</TableHead>
-                    <TableHead className="text-right">Closed</TableHead>
+                    <TableHead className="text-right">NCR Count</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {data.byVendor.map((vendor) => (
-                    <TableRow key={vendor.vendorId}>
+                    <TableRow key={vendor.vendorId ?? "unknown"}>
                       <TableCell>
-                        <div>
-                          <div className="font-medium">{vendor.vendorName}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {vendor.vendorCode}
-                          </div>
-                        </div>
+                        <div className="font-medium">{vendor.vendorName}</div>
                       </TableCell>
                       <TableCell className="text-right font-mono font-medium">
-                        {vendor.totalNCRs}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {vendor.openNCRs > 0 ? (
-                          <Badge variant="destructive">{vendor.openNCRs}</Badge>
+                        {vendor.count > 0 ? (
+                          <Badge variant="destructive">{vendor.count}</Badge>
                         ) : (
                           <span className="text-sm text-muted-foreground">0</span>
                         )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <span className="text-sm text-green-600">
-                          {vendor.closedNCRs}
-                        </span>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -218,19 +196,23 @@ export default function NCRAnalysisPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {data.byType.map((type, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="font-medium">
-                        {type.type.replace(/_/g, " ")}
-                      </TableCell>
-                      <TableCell className="text-right font-mono">
-                        {type.count}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {type.percentage.toFixed(1)}%
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {data.byType.map((type, index) => {
+                    const totalByType = data.byType.reduce((s, t) => s + t.count, 0);
+                    const pct = totalByType > 0 ? (type.count / totalByType) * 100 : 0;
+                    return (
+                      <TableRow key={index}>
+                        <TableCell className="font-medium">
+                          {type.type.replace(/_/g, " ")}
+                        </TableCell>
+                        <TableCell className="text-right font-mono">
+                          {type.count}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {pct.toFixed(1)}%
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             ) : (
@@ -247,32 +229,24 @@ export default function NCRAnalysisPage() {
           <CardTitle>Monthly NCR Trend</CardTitle>
         </CardHeader>
         <CardContent>
-          {data.monthlyCounts && data.monthlyCounts.length > 0 ? (
+          {data.monthlyTrend && data.monthlyTrend.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Month</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                  <TableHead className="text-right">Open</TableHead>
-                  <TableHead className="text-right">Closed</TableHead>
+                  <TableHead className="text-right">NCR Count</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.monthlyCounts.map((row, index) => (
+                {data.monthlyTrend.map((row, index) => (
                   <TableRow key={index}>
                     <TableCell className="font-medium">{row.month}</TableCell>
                     <TableCell className="text-right font-mono">
-                      {row.count}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {row.openCount > 0 ? (
-                        <span className="text-red-600">{row.openCount}</span>
+                      {row.count > 0 ? (
+                        <Badge variant="destructive">{row.count}</Badge>
                       ) : (
                         <span className="text-muted-foreground">0</span>
                       )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <span className="text-green-600">{row.closedCount}</span>
                     </TableCell>
                   </TableRow>
                 ))}

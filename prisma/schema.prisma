@@ -172,6 +172,24 @@ enum ReservationStatus {
   DISPATCHED
 }
 
+enum CompanyType {
+  BUYER
+  SUPPLIER
+  BOTH
+}
+
+enum GSTType {
+  REGULAR
+  COMPOSITION
+  UNREGISTERED
+  SEZ
+}
+
+enum QuotationCategory {
+  STANDARD
+  NON_STANDARD
+}
+
 // ==================== USER & AUTH ====================
 
 model User {
@@ -196,6 +214,7 @@ model User {
   closedNCRs          NCR[]               @relation("NCRClosedBy")
   generatedLabLetters LabLetter[]         @relation("LabLetterGeneratedBy")
   auditLogs           AuditLog[]
+  employee            EmployeeMaster?
 
   @@index([email])
 }
@@ -203,39 +222,56 @@ model User {
 // ==================== MASTER DATA ====================
 
 model CustomerMaster {
-  id            String   @id @default(cuid())
-  name          String
-  addressLine1  String?
-  addressLine2  String?
-  city          String?
-  state         String?
-  country       String   @default("India")
-  pincode       String?
-  gstNo         String?
-  contactPerson String?
-  email         String?
-  phone         String?
-  paymentTerms  String?
-  currency      String   @default("INR")
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                   String       @id @default(cuid())
+  name                 String
+  addressLine1         String?
+  addressLine2         String?
+  city                 String?
+  state                String?
+  country              String       @default("India")
+  pincode              String?
+  gstNo                String?
+  contactPerson        String?
+  email                String?
+  phone                String?
+  paymentTerms         String?
+  currency             String       @default("INR")
+  isActive             Boolean      @default(true)
+  companyType          CompanyType  @default(BUYER)
+  gstType              GSTType?
+  contactPersonEmail   String?
+  contactPersonPhone   String?
+  openingBalance       Decimal      @default(0) @db.Decimal(14, 2)
+  defaultPaymentTermsId String?
+  defaultCurrency      String       @default("INR")
+  companyReferenceCode String?
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
 
   // Relations
-  enquiries       Enquiry[]
-  quotations      Quotation[]
-  salesOrders     SalesOrder[]
-  invoices        Invoice[]
-  paymentReceipts PaymentReceipt[]
+  enquiries            Enquiry[]
+  quotations           Quotation[]
+  salesOrders          SalesOrder[]
+  invoices             Invoice[]
+  paymentReceipts      PaymentReceipt[]
+  defaultPaymentTerms  PaymentTermsMaster? @relation(fields: [defaultPaymentTermsId], references: [id])
+  dispatchAddresses    CustomerDispatchAddress[]
+  buyers               BuyerMaster[]
+  tags                 CustomerTag[]
+  linkedVendor         VendorMaster?       @relation("LinkedCustomerVendor")
+
+  @@index([companyType])
 }
 
 model VendorMaster {
   id               String   @id @default(cuid())
   name             String
   addressLine1     String?
+  addressLine2     String?
   city             String?
   state            String?
   country          String   @default("India")
+  pincode          String?
   approvedStatus   Boolean  @default(true)
   productsSupplied String?
   avgLeadTimeDays  Int?
@@ -244,6 +280,14 @@ model VendorMaster {
   email            String?
   phone            String?
   isActive         Boolean  @default(true)
+  linkedCustomerId String?  @unique
+  gstNo            String?
+  gstType          GSTType?
+  bankAccountNo    String?
+  bankIfsc         String?
+  bankName         String?
+  vendorRating     Decimal? @db.Decimal(3, 1)
+  approvalDate     DateTime?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -252,6 +296,7 @@ model VendorMaster {
   purchaseOrders       PurchaseOrder[]
   goodsReceiptNotes    GoodsReceiptNote[]
   ncrs                 NCR[]
+  linkedCustomer       CustomerMaster?       @relation("LinkedCustomerVendor", fields: [linkedCustomerId], references: [id])
 }
 
 model ProductSpecMaster {
@@ -272,6 +317,8 @@ model PipeSizeMaster {
   wt        Decimal  @db.Decimal(10, 3)
   weight    Decimal  @db.Decimal(10, 4)
   pipeType  PipeType
+  nps       Decimal? @db.Decimal(6, 3)
+  schedule  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -280,6 +327,8 @@ model PipeSizeMaster {
 
   @@index([pipeType])
   @@index([sizeLabel])
+  @@index([nps])
+  @@index([nps, schedule])
 }
 
 model TestingMaster {
@@ -316,6 +365,7 @@ model UomMaster {
   id        String   @id @default(cuid())
   code      String   @unique
   name      String
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -327,6 +377,9 @@ model PaymentTermsMaster {
   days        Int      @default(30)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  // Relations
+  customers CustomerMaster[]
 }
 
 model DeliveryTermsMaster {
@@ -390,11 +443,13 @@ model Enquiry {
   enquiryMode       EnquiryMode   @default(EMAIL)
   projectName       String?
   status            EnquiryStatus @default(OPEN)
+  buyerId           String?
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
 
   // Relations
   customer   CustomerMaster @relation(fields: [customerId], references: [id])
+  buyer      BuyerMaster?   @relation(fields: [buyerId], references: [id])
   items      EnquiryItem[]
   quotations Quotation[]
 
@@ -422,40 +477,47 @@ model EnquiryItem {
 }
 
 model Quotation {
-  id                String          @id @default(cuid())
-  quotationNo       String          @unique
-  quotationDate     DateTime        @default(now())
-  enquiryId         String?
-  customerId        String
-  quotationType     QuotationType   @default(DOMESTIC)
-  status            QuotationStatus @default(DRAFT)
-  version           Int             @default(1)
-  parentQuotationId String?
-  validUpto         DateTime?
-  currency          String          @default("INR")
-  preparedById      String?
-  approvedById      String?
-  approvalDate      DateTime?
-  approvalRemarks   String?
-  sentDate          DateTime?
-  sentTo            String?
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
+  id                    String            @id @default(cuid())
+  quotationNo           String            @unique
+  quotationDate         DateTime          @default(now())
+  enquiryId             String?
+  customerId            String
+  quotationType         QuotationType     @default(DOMESTIC)
+  quotationCategory     QuotationCategory @default(STANDARD)
+  status                QuotationStatus   @default(DRAFT)
+  version               Int               @default(1)
+  parentQuotationId     String?
+  validUpto             DateTime?
+  currency              String            @default("INR")
+  preparedById          String?
+  approvedById          String?
+  approvalDate          DateTime?
+  approvalRemarks       String?
+  sentDate              DateTime?
+  sentTo                String?
+  buyerId               String?
+  preparedByEmployeeId  String?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
 
   // Relations
-  enquiry         Enquiry?        @relation(fields: [enquiryId], references: [id])
-  customer        CustomerMaster  @relation(fields: [customerId], references: [id])
-  parentQuotation Quotation?      @relation("QuotationRevisions", fields: [parentQuotationId], references: [id])
-  childQuotations Quotation[]     @relation("QuotationRevisions")
-  preparedBy      User?           @relation("PreparedBy", fields: [preparedById], references: [id])
-  approvedBy      User?           @relation("ApprovedBy", fields: [approvedById], references: [id])
-  items           QuotationItem[]
-  terms           QuotationTerm[]
-  salesOrders     SalesOrder[]
+  enquiry            Enquiry?        @relation(fields: [enquiryId], references: [id])
+  customer           CustomerMaster  @relation(fields: [customerId], references: [id])
+  parentQuotation    Quotation?      @relation("QuotationRevisions", fields: [parentQuotationId], references: [id])
+  childQuotations    Quotation[]     @relation("QuotationRevisions")
+  preparedBy         User?           @relation("PreparedBy", fields: [preparedById], references: [id])
+  approvedBy         User?           @relation("ApprovedBy", fields: [approvedById], references: [id])
+  buyer              BuyerMaster?    @relation(fields: [buyerId], references: [id])
+  preparedByEmployee EmployeeMaster? @relation(fields: [preparedByEmployeeId], references: [id])
+  items              QuotationItem[]
+  terms              QuotationTerm[]
+  salesOrders        SalesOrder[]
 
   @@index([quotationNo])
   @@index([customerId])
   @@index([enquiryId])
+  @@index([buyerId])
+  @@index([quotationCategory])
 }
 
 model QuotationItem {
@@ -487,26 +549,199 @@ model QuotationItem {
   tubeLength        String?
   tubeCount         Int?
   componentPosition String?
+  sizeNPS           Decimal? @db.Decimal(6, 3)
+  schedule          String?
+  materialCodeId    String?
+  uom               String?
 
   // Relations
-  quotation Quotation       @relation(fields: [quotationId], references: [id], onDelete: Cascade)
-  pipeSize  PipeSizeMaster? @relation(fields: [sizeId], references: [id])
+  quotation    Quotation          @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  pipeSize     PipeSizeMaster?    @relation(fields: [sizeId], references: [id])
+  materialCode MaterialCodeMaster? @relation(fields: [materialCodeId], references: [id])
 
   @@index([quotationId])
+  @@index([materialCodeId])
 }
 
 model QuotationTerm {
-  id          String  @id @default(cuid())
-  quotationId String
-  termNo      Int
-  termName    String
-  termValue   String
-  isDefault   Boolean @default(true)
+  id                String  @id @default(cuid())
+  quotationId       String
+  termNo            Int
+  termName          String
+  termValue         String
+  isDefault         Boolean @default(true)
+  isIncluded        Boolean @default(true)
+  isCustom          Boolean @default(false)
+  isHeadingEditable Boolean @default(false)
 
   // Relations
   quotation Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
 
   @@index([quotationId])
+}
+
+// ==================== COMPANY & EMPLOYEE ====================
+
+model CompanyMaster {
+  id               String   @id @default(cuid())
+  companyName      String
+  companyType      String?
+  regAddressLine1  String?
+  regAddressLine2  String?
+  regCity          String?
+  regPincode       String?
+  regState         String?
+  regCountry       String   @default("India")
+  whAddressLine1   String?
+  whAddressLine2   String?
+  whCity           String?
+  whPincode        String?
+  whState          String?
+  whCountry        String   @default("India")
+  panNo            String?
+  tanNo            String?
+  gstNo            String?
+  cinNo            String?
+  telephoneNo      String?
+  email            String?
+  website          String?
+  companyLogoUrl   String?
+  fyStartMonth     Int      @default(4)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model FinancialYear {
+  id        String   @id @default(cuid())
+  label     String   @unique
+  startDate DateTime
+  endDate   DateTime
+  isActive  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+}
+
+model EmployeeMaster {
+  id           String   @id @default(cuid())
+  employeeCode String   @unique
+  name         String
+  department   String?
+  designation  String?
+  email        String?
+  mobile       String?
+  telephone    String?
+  linkedUserId String?  @unique
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  linkedUser         User?       @relation(fields: [linkedUserId], references: [id])
+  quotationsPrepared Quotation[]
+}
+
+// ==================== BUYER & DISPATCH ====================
+
+model BuyerMaster {
+  id          String   @id @default(cuid())
+  customerId  String
+  buyerName   String
+  designation String?
+  email       String?
+  mobile      String?
+  telephone   String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  customer   CustomerMaster @relation(fields: [customerId], references: [id])
+  enquiries  Enquiry[]
+  quotations Quotation[]
+
+  @@index([customerId])
+}
+
+model CustomerDispatchAddress {
+  id             String   @id @default(cuid())
+  customerId     String
+  label          String?
+  addressLine1   String?
+  addressLine2   String?
+  city           String?
+  pincode        String?
+  state          String?
+  country        String   @default("India")
+  consigneeName  String?
+  placeOfSupply  String?
+  isDefault      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  customer CustomerMaster @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+}
+
+// ==================== TAGS ====================
+
+model Tag {
+  id        String        @id @default(cuid())
+  name      String        @unique
+  createdAt DateTime      @default(now())
+
+  // Relations
+  customers CustomerTag[]
+}
+
+model CustomerTag {
+  id         String   @id @default(cuid())
+  customerId String
+  tagId      String
+  createdAt  DateTime @default(now())
+
+  // Relations
+  customer CustomerMaster @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  tag      Tag            @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, tagId])
+}
+
+// ==================== MATERIAL CODE ====================
+
+model MaterialCodeMaster {
+  id              String   @id @default(cuid())
+  code            String   @unique
+  description     String?
+  productType     String?
+  materialGrade   String?
+  size            String?
+  schedule        String?
+  firstQuotedDate DateTime?
+  lastQuotedPrice Decimal? @db.Decimal(12, 2)
+  timesQuoted     Int      @default(0)
+  timesOrdered    Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  quotationItems QuotationItem[]
+}
+
+// ==================== OFFER TERM TEMPLATE ====================
+
+model OfferTermTemplate {
+  id               String   @id @default(cuid())
+  termName         String
+  termDefaultValue String?
+  sortOrder        Int      @default(0)
+  isExportOnly     Boolean  @default(false)
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }
 
 // ==================== SALES ORDER ====================

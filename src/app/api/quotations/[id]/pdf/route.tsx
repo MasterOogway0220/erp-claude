@@ -2,8 +2,23 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { renderToStream } from "@react-pdf/renderer";
-import { QuotationPDF } from "@/lib/pdf/quotation-pdf";
+import { renderHtmlToPdf } from "@/lib/pdf/render-pdf";
+import { generateStandardQuotationHtml } from "@/lib/pdf/quotation-standard-template";
+import { generateNonStandardQuotationHtml } from "@/lib/pdf/quotation-nonstandard-template";
+
+const DEFAULT_COMPANY = {
+  companyName: "NPS Piping Solutions",
+  regAddressLine1:
+    "1210/1211, Prasad Chambers, Tata Road no. 2, Opera House, Charni Road (E)",
+  regCity: "Mumbai",
+  regPincode: "400004",
+  regState: "Maharashtra",
+  regCountry: "India",
+  telephoneNo: "+91 22 23634200/300",
+  email: "info@n-pipe.com",
+  website: "www.n-pipe.com",
+  companyLogoUrl: null,
+};
 
 export async function GET(
   request: NextRequest,
@@ -16,36 +31,69 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Fetch quotation
+    const { searchParams } = new URL(request.url);
+    const variant = searchParams.get("variant") || "auto";
+
     const quotation = await prisma.quotation.findUnique({
       where: { id },
       include: {
         customer: true,
+        enquiry: true,
         preparedBy: { select: { name: true, email: true } },
-        items: { orderBy: { sNo: "asc" } },
+        buyer: true,
+        items: {
+          orderBy: { sNo: "asc" },
+          include: { materialCode: true },
+        },
         terms: { orderBy: { termNo: "asc" } },
       },
     });
 
     if (!quotation) {
-      return NextResponse.json({ error: "Quotation not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Quotation not found" },
+        { status: 404 }
+      );
     }
 
-    // Generate PDF
-    const stream = await renderToStream(<QuotationPDF quotation={quotation} />);
+    const company = await prisma.companyMaster.findFirst();
+    const companyInfo = company || DEFAULT_COMPANY;
 
-    // Convert stream to buffer
-    const chunks: Buffer[] = [];
-    for await (const chunk of stream) {
-      chunks.push(Buffer.from(chunk as any));
+    const isNonStandard = quotation.quotationCategory === "NON_STANDARD";
+
+    let resolvedVariant: "standard" | "commercial" | "technical";
+    if (variant === "auto") {
+      resolvedVariant = isNonStandard ? "commercial" : "standard";
+    } else {
+      resolvedVariant = variant as "standard" | "commercial" | "technical";
     }
-    const buffer = Buffer.concat(chunks);
 
-    // Return PDF
-    return new NextResponse(buffer, {
+    let html: string;
+    let landscape: boolean;
+    let filenameSuffix = "";
+
+    if (resolvedVariant === "standard") {
+      html = generateStandardQuotationHtml(quotation as any, companyInfo as any);
+      landscape = true;
+    } else {
+      const pdfVariant =
+        resolvedVariant === "technical" ? "TECHNICAL" : "COMMERCIAL";
+      html = generateNonStandardQuotationHtml(
+        quotation as any,
+        companyInfo as any,
+        pdfVariant
+      );
+      landscape = false;
+      filenameSuffix = `-${pdfVariant}`;
+    }
+
+    const pdfBuffer = await renderHtmlToPdf(html, landscape);
+    const filename = `${quotation.quotationNo.replace(/\//g, "-")}${filenameSuffix}.pdf`;
+
+    return new NextResponse(new Uint8Array(pdfBuffer), {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${quotation.quotationNo.replace(/\//g, "-")}.pdf"`,
+        "Content-Disposition": `attachment; filename="${filename}"`,
       },
     });
   } catch (error) {

@@ -33,7 +33,7 @@ interface SalesOrder {
   soDate: string;
   customer: {
     name: string;
-    code: string;
+    city?: string;
   };
   quotation?: {
     id: string;
@@ -213,7 +213,7 @@ export default function CustomerPOReviewPage() {
               <div>
                 <div className="text-sm text-muted-foreground">Customer</div>
                 <div className="font-medium">{salesOrder.customer.name}</div>
-                <div className="text-sm text-muted-foreground">{salesOrder.customer.code}</div>
+                <div className="text-sm text-muted-foreground">{salesOrder.customer.city || ""}</div>
               </div>
               <div>
                 <div className="text-sm text-muted-foreground">Sales Order</div>

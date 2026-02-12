@@ -25,9 +25,9 @@ interface SalesOrder {
   soDate: string;
   customer: {
     id: string;
-    code: string;
     name: string;
     address: string;
+    city?: string;
   };
   quotation?: {
     id: string;
@@ -205,8 +205,8 @@ export default function SalesOrderDetailPage() {
           </CardHeader>
           <CardContent className="space-y-2">
             <div>
-              <div className="text-sm text-muted-foreground">Customer Code</div>
-              <div className="font-mono">{salesOrder.customer.code}</div>
+              <div className="text-sm text-muted-foreground">Customer City</div>
+              <div>{salesOrder.customer.city || "—"}</div>
             </div>
             <div>
               <div className="text-sm text-muted-foreground">Customer Name</div>

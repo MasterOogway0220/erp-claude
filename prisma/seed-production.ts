@@ -96,12 +96,54 @@ async function seedProduction() {
 
     console.log(`✅ Document sequences: ${sequencesCreated} created, ${sequencesExisting} existing`);
 
-    // 3. Create Sample Departments (optional, helpful for testing)
-    const departments = ['Sales', 'Purchase', 'Quality Control', 'Stores', 'Accounts'];
+    // 3. Create Company Master (idempotent)
+    const existingCompany = await prisma.companyMaster.findFirst();
+    if (!existingCompany) {
+      await prisma.companyMaster.create({
+        data: {
+          companyName: 'NPS Piping Solutions',
+          companyType: 'Trading',
+          regAddressLine1: 'Office No. 123, Trade Center',
+          regCity: 'Navi Mumbai',
+          regPincode: '400701',
+          regState: 'Maharashtra',
+          regCountry: 'India',
+          whAddressLine1: 'Warehouse, Plot No. 45',
+          whCity: 'Navi Mumbai',
+          whPincode: '400701',
+          whState: 'Maharashtra',
+          whCountry: 'India',
+          email: 'info@npspiping.com',
+          fyStartMonth: 4,
+        },
+      });
+      console.log('Company master created');
+    } else {
+      console.log('Company master already exists');
+    }
 
-    // Note: No Department table in schema, skip this
+    // 4. Create Financial Year for current FY (idempotent)
+    const now = new Date();
+    const fyStartYear = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+    const fyLabel = `${fyStartYear}-${(fyStartYear + 1) % 100}`;
+    const existingFY = await prisma.financialYear.findUnique({
+      where: { label: fyLabel },
+    });
+    if (!existingFY) {
+      await prisma.financialYear.create({
+        data: {
+          label: fyLabel,
+          startDate: new Date(`${fyStartYear}-04-01`),
+          endDate: new Date(`${fyStartYear + 1}-03-31`),
+          isActive: true,
+        },
+      });
+      console.log(`Financial year ${fyLabel} created`);
+    } else {
+      console.log(`Financial year ${fyLabel} already exists`);
+    }
 
-    // 4. Summary
+    // 5. Summary
     console.log('\n✅ Production seed completed successfully!');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('📧 Admin Email:', adminEmail);

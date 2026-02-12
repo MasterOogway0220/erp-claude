@@ -44,9 +44,9 @@ interface PO {
   poDate: string;
   vendor: {
     id: string;
-    code: string;
     name: string;
     address: string;
+    city?: string;
   };
   salesOrder?: {
     id: string;
@@ -415,8 +415,8 @@ export default function PurchaseOrderDetailPage() {
           </CardHeader>
           <CardContent className="space-y-2">
             <div>
-              <div className="text-sm text-muted-foreground">Vendor Code</div>
-              <div className="font-mono">{po.vendor.code}</div>
+              <div className="text-sm text-muted-foreground">Vendor City</div>
+              <div>{po.vendor.city || "—"}</div>
             </div>
             <div>
               <div className="text-sm text-muted-foreground">Vendor Name</div>

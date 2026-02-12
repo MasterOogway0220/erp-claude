@@ -27,6 +27,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   ArrowLeft,
   FileText,
   Mail,
@@ -34,6 +40,8 @@ import {
   X,
   Clock,
   Download,
+  ChevronDown,
+  ShoppingCart,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -116,7 +124,10 @@ export default function QuotationDetailPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(emailData),
       });
-      if (!res.ok) throw new Error("Failed to send email");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to send email");
+      }
       return res.json();
     },
     onSuccess: () => {
@@ -125,13 +136,16 @@ export default function QuotationDetailPage() {
       setIsEmailDialogOpen(false);
       setEmailData({ to: "", cc: "", subject: "", message: "" });
     },
-    onError: () => {
-      toast.error("Failed to send email");
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to send email");
     },
   });
 
-  const handleDownloadPDF = () => {
-    window.open(`/api/quotations/${params.id}/pdf`, "_blank");
+  const handleDownloadPDF = (variant?: string) => {
+    const url = variant
+      ? `/api/quotations/${params.id}/pdf?variant=${variant}`
+      : `/api/quotations/${params.id}/pdf`;
+    window.open(url, "_blank");
     toast.success("PDF download started");
   };
 
@@ -226,9 +240,40 @@ export default function QuotationDetailPage() {
               <Mail className="h-4 w-4 mr-2" />
               Send to Customer
             </Button>
-            <Button variant="outline" onClick={handleDownloadPDF}>
-              <Download className="h-4 w-4 mr-2" />
-              Download PDF
+            {quotation.quotationCategory === "NON_STANDARD" ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">
+                    <Download className="h-4 w-4 mr-2" />
+                    Download PDF
+                    <ChevronDown className="h-4 w-4 ml-2" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => handleDownloadPDF("commercial")}>
+                    <FileText className="h-4 w-4 mr-2" />
+                    Commercial PDF
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleDownloadPDF("technical")}>
+                    <FileText className="h-4 w-4 mr-2" />
+                    Technical PDF
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button variant="outline" onClick={() => handleDownloadPDF()}>
+                <Download className="h-4 w-4 mr-2" />
+                Download PDF
+              </Button>
+            )}
+            <Button
+              variant="default"
+              onClick={() =>
+                router.push(`/sales/create?quotationId=${params.id}`)
+              }
+            >
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              Create Sales Order
             </Button>
           </>
         )}

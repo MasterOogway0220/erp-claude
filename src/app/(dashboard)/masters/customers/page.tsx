@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect, useCallback } from "react";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -15,13 +15,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
 import {
   Select,
   SelectContent,
@@ -30,182 +29,312 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Search,
+  MapPin,
+  X,
+  History,
+} from "lucide-react";
 import { toast } from "sonner";
 
-interface Customer {
-  id: string;
-  name: string;
-  addressLine1: string | null;
-  addressLine2: string | null;
-  city: string | null;
-  state: string | null;
+const INDIAN_STATES = [
+  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
+  "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
+  "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram",
+  "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu",
+  "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal",
+  "Andaman and Nicobar Islands", "Chandigarh", "Dadra and Nagar Haveli and Daman and Diu",
+  "Delhi", "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry",
+];
+
+interface DispatchAddress {
+  id?: string;
+  label: string;
+  addressLine1: string;
+  addressLine2: string;
+  city: string;
+  pincode: string;
+  state: string;
   country: string;
-  pincode: string | null;
-  gstNo: string | null;
-  contactPerson: string | null;
-  email: string | null;
-  phone: string | null;
-  paymentTerms: string | null;
-  currency: string;
-  isActive: boolean;
+  consigneeName: string;
+  placeOfSupply: string;
+  isDefault: boolean;
 }
 
 interface CustomerFormData {
   name: string;
+  contactPerson: string;
+  contactPersonEmail: string;
+  contactPersonPhone: string;
+  companyType: string;
+  email: string;
+  gstNo: string;
+  gstType: string;
   addressLine1: string;
   addressLine2: string;
+  pincode: string;
   city: string;
   state: string;
   country: string;
-  pincode: string;
-  gstNo: string;
-  contactPerson: string;
-  email: string;
   phone: string;
+  companyReferenceCode: string;
+  openingBalance: string;
   paymentTerms: string;
   currency: string;
+  defaultCurrency: string;
+  isActive: boolean;
+  tagIds: string[];
+  dispatchAddresses: DispatchAddress[];
 }
 
 const emptyForm: CustomerFormData = {
   name: "",
+  contactPerson: "",
+  contactPersonEmail: "",
+  contactPersonPhone: "",
+  companyType: "BUYER",
+  email: "",
+  gstNo: "",
+  gstType: "",
   addressLine1: "",
   addressLine2: "",
+  pincode: "",
   city: "",
   state: "",
   country: "India",
-  pincode: "",
-  gstNo: "",
-  contactPerson: "",
-  email: "",
   phone: "",
+  companyReferenceCode: "",
+  openingBalance: "0",
   paymentTerms: "100% within 30 Days",
   currency: "INR",
+  defaultCurrency: "INR",
+  isActive: true,
+  tagIds: [],
+  dispatchAddresses: [],
+};
+
+const emptyAddress: DispatchAddress = {
+  label: "",
+  addressLine1: "",
+  addressLine2: "",
+  city: "",
+  pincode: "",
+  state: "",
+  country: "India",
+  consigneeName: "",
+  placeOfSupply: "",
+  isDefault: false,
 };
 
 export default function CustomersPage() {
-  const queryClient = useQueryClient();
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<CustomerFormData>(emptyForm);
+  const [saving, setSaving] = useState(false);
+  const [tags, setTags] = useState<any[]>([]);
+  const [newTagName, setNewTagName] = useState("");
 
-  // Fetch customers
-  const { data, isLoading } = useQuery({
-    queryKey: ["customers", search],
-    queryFn: async () => {
-      const params = new URLSearchParams({ search });
+  const fetchCustomers = useCallback(async () => {
+    try {
+      const params = new URLSearchParams();
+      if (search) params.set("search", search);
       const res = await fetch(`/api/masters/customers?${params}`);
-      if (!res.ok) throw new Error("Failed to fetch customers");
-      return res.json();
-    },
-  });
+      if (res.ok) {
+        const d = await res.json();
+        setCustomers(d.customers || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch customers:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [search]);
 
-  // Create mutation
-  const createMutation = useMutation({
-    mutationFn: async (data: CustomerFormData) => {
-      const res = await fetch("/api/masters/customers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) throw new Error("Failed to create customer");
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["customers"] });
-      toast.success("Customer created successfully");
-      handleCloseDialog();
-    },
-    onError: () => {
-      toast.error("Failed to create customer");
-    },
-  });
+  const fetchTags = useCallback(async () => {
+    try {
+      const res = await fetch("/api/masters/tags");
+      if (res.ok) {
+        const d = await res.json();
+        setTags(d.tags || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch tags:", error);
+    }
+  }, []);
 
-  // Update mutation
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: CustomerFormData }) => {
-      const res = await fetch(`/api/masters/customers/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) throw new Error("Failed to update customer");
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["customers"] });
-      toast.success("Customer updated successfully");
-      handleCloseDialog();
-    },
-    onError: () => {
-      toast.error("Failed to update customer");
-    },
-  });
+  useEffect(() => {
+    fetchCustomers();
+    fetchTags();
+  }, [fetchCustomers, fetchTags]);
 
-  // Delete mutation
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const res = await fetch(`/api/masters/customers/${id}`, {
-        method: "DELETE",
-      });
-      if (!res.ok) throw new Error("Failed to delete customer");
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["customers"] });
-      toast.success("Customer deleted successfully");
-    },
-    onError: () => {
-      toast.error("Failed to delete customer");
-    },
-  });
-
-  const handleOpenDialog = (customer?: Customer) => {
+  const handleOpen = (customer?: any) => {
     if (customer) {
-      setEditingCustomer(customer);
+      setEditingId(customer.id);
       setFormData({
-        name: customer.name,
+        name: customer.name || "",
+        contactPerson: customer.contactPerson || "",
+        contactPersonEmail: customer.contactPersonEmail || "",
+        contactPersonPhone: customer.contactPersonPhone || "",
+        companyType: customer.companyType || "BUYER",
+        email: customer.email || "",
+        gstNo: customer.gstNo || "",
+        gstType: customer.gstType || "",
         addressLine1: customer.addressLine1 || "",
         addressLine2: customer.addressLine2 || "",
+        pincode: customer.pincode || "",
         city: customer.city || "",
         state: customer.state || "",
-        country: customer.country,
-        pincode: customer.pincode || "",
-        gstNo: customer.gstNo || "",
-        contactPerson: customer.contactPerson || "",
-        email: customer.email || "",
+        country: customer.country || "India",
         phone: customer.phone || "",
+        companyReferenceCode: customer.companyReferenceCode || "",
+        openingBalance: customer.openingBalance?.toString() || "0",
         paymentTerms: customer.paymentTerms || "100% within 30 Days",
-        currency: customer.currency,
+        currency: customer.currency || "INR",
+        defaultCurrency: customer.defaultCurrency || "INR",
+        isActive: customer.isActive ?? true,
+        tagIds: customer.tags?.map((t: any) => t.tagId) || [],
+        dispatchAddresses:
+          customer.dispatchAddresses?.map((a: any) => ({
+            id: a.id,
+            label: a.label || "",
+            addressLine1: a.addressLine1 || "",
+            addressLine2: a.addressLine2 || "",
+            city: a.city || "",
+            pincode: a.pincode || "",
+            state: a.state || "",
+            country: a.country || "India",
+            consigneeName: a.consigneeName || "",
+            placeOfSupply: a.placeOfSupply || "",
+            isDefault: a.isDefault || false,
+          })) || [],
       });
     } else {
-      setEditingCustomer(null);
+      setEditingId(null);
       setFormData(emptyForm);
     }
-    setIsDialogOpen(true);
+    setIsSheetOpen(true);
   };
 
-  const handleCloseDialog = () => {
-    setIsDialogOpen(false);
-    setEditingCustomer(null);
+  const handleClose = () => {
+    setIsSheetOpen(false);
+    setEditingId(null);
     setFormData(emptyForm);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingCustomer) {
-      updateMutation.mutate({ id: editingCustomer.id, data: formData });
-    } else {
-      createMutation.mutate(formData);
+    if (!formData.name) {
+      toast.error("Company name is required");
+      return;
+    }
+    setSaving(true);
+    try {
+      const url = editingId
+        ? `/api/masters/customers/${editingId}`
+        : "/api/masters/customers";
+      const method = editingId ? "PATCH" : "POST";
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to save");
+      }
+      toast.success(editingId ? "Customer updated" : "Customer created");
+      handleClose();
+      fetchCustomers();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to save customer");
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this customer?")) {
-      deleteMutation.mutate(id);
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this customer?")) return;
+    try {
+      const res = await fetch(`/api/masters/customers/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete");
+      toast.success("Customer deleted");
+      fetchCustomers();
+    } catch {
+      toast.error("Failed to delete customer");
     }
   };
+
+  const handleGstFetch = () => {
+    toast.info("GST lookup coming soon. Enter details manually for now.");
+  };
+
+  const addDispatchAddress = () => {
+    setFormData({
+      ...formData,
+      dispatchAddresses: [...formData.dispatchAddresses, { ...emptyAddress }],
+    });
+  };
+
+  const removeDispatchAddress = (index: number) => {
+    setFormData({
+      ...formData,
+      dispatchAddresses: formData.dispatchAddresses.filter((_, i) => i !== index),
+    });
+  };
+
+  const updateDispatchAddress = (
+    index: number,
+    field: keyof DispatchAddress,
+    value: any
+  ) => {
+    const updated = [...formData.dispatchAddresses];
+    (updated[index] as any)[field] = value;
+    setFormData({ ...formData, dispatchAddresses: updated });
+  };
+
+  const toggleTag = (tagId: string) => {
+    const current = formData.tagIds;
+    if (current.includes(tagId)) {
+      setFormData({ ...formData, tagIds: current.filter((t) => t !== tagId) });
+    } else {
+      setFormData({ ...formData, tagIds: [...current, tagId] });
+    }
+  };
+
+  const createTag = async () => {
+    if (!newTagName.trim()) return;
+    try {
+      const res = await fetch("/api/masters/tags", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newTagName.trim() }),
+      });
+      if (res.ok) {
+        const tag = await res.json();
+        setTags([...tags, tag]);
+        setFormData({ ...formData, tagIds: [...formData.tagIds, tag.id] });
+        setNewTagName("");
+        toast.success("Tag created");
+      }
+    } catch {
+      toast.error("Failed to create tag");
+    }
+  };
+
+  const SectionHeader = ({ children }: { children: React.ReactNode }) => (
+    <div className="bg-muted px-4 py-2 rounded-md -mx-2">
+      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+        {children}
+      </h3>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -214,7 +343,6 @@ export default function CustomersPage() {
         description="Manage customer information for quotations and sales orders"
       />
 
-      {/* Search and Actions */}
       <div className="flex items-center justify-between gap-4">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -225,70 +353,73 @@ export default function CustomersPage() {
             className="pl-10"
           />
         </div>
-        <Button onClick={() => handleOpenDialog()}>
+        <Button onClick={() => handleOpen()}>
           <Plus className="h-4 w-4 mr-2" />
           Add Customer
         </Button>
       </div>
 
-      {/* Data Table */}
       <div className="rounded-lg border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Customer Name</TableHead>
+              <TableHead>Company Name</TableHead>
+              <TableHead>Type</TableHead>
               <TableHead>Contact Person</TableHead>
               <TableHead>Email</TableHead>
-              <TableHead>Phone</TableHead>
               <TableHead>City</TableHead>
               <TableHead>GST No.</TableHead>
-              <TableHead>Currency</TableHead>
+              <TableHead>Tags</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? (
+            {loading ? (
               <TableRow>
                 <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-                  Loading customers...
+                  Loading...
                 </TableCell>
               </TableRow>
-            ) : data?.customers?.length === 0 ? (
+            ) : customers.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                   No customers found
                 </TableCell>
               </TableRow>
             ) : (
-              data?.customers?.map((customer: Customer) => (
-                <TableRow key={customer.id}>
-                  <TableCell className="font-medium">{customer.name}</TableCell>
-                  <TableCell>{customer.contactPerson || "—"}</TableCell>
-                  <TableCell>{customer.email || "—"}</TableCell>
-                  <TableCell>{customer.phone || "—"}</TableCell>
-                  <TableCell>{customer.city || "—"}</TableCell>
-                  <TableCell>{customer.gstNo || "—"}</TableCell>
-                  <TableCell>{customer.currency}</TableCell>
+              customers.map((c: any) => (
+                <TableRow key={c.id}>
+                  <TableCell className="font-medium">{c.name}</TableCell>
                   <TableCell>
-                    <Badge variant={customer.isActive ? "default" : "secondary"}>
-                      {customer.isActive ? "Active" : "Inactive"}
+                    <Badge variant="outline" className="text-xs">
+                      {c.companyType || "BUYER"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{c.contactPerson || "\u2014"}</TableCell>
+                  <TableCell>{c.email || "\u2014"}</TableCell>
+                  <TableCell>{c.city || "\u2014"}</TableCell>
+                  <TableCell className="font-mono text-xs">{c.gstNo || "\u2014"}</TableCell>
+                  <TableCell>
+                    <div className="flex gap-1 flex-wrap">
+                      {c.tags?.map((t: any) => (
+                        <Badge key={t.id} variant="secondary" className="text-xs">
+                          {t.tag.name}
+                        </Badge>
+                      ))}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={c.isActive ? "default" : "secondary"}>
+                      {c.isActive ? "Active" : "Inactive"}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleOpenDialog(customer)}
-                      >
+                    <div className="flex justify-end gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => handleOpen(c)}>
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(customer.id)}
-                      >
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(c.id)}>
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>
@@ -300,157 +431,286 @@ export default function CustomersPage() {
         </Table>
       </div>
 
-      {/* Create/Edit Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <form onSubmit={handleSubmit}>
-            <DialogHeader>
-              <DialogTitle>
-                {editingCustomer ? "Edit" : "Add"} Customer
-              </DialogTitle>
-              <DialogDescription>
-                {editingCustomer ? "Update" : "Create"} customer information
-              </DialogDescription>
-            </DialogHeader>
+      {/* Customer Form Sheet */}
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+        <SheetContent
+          side="right"
+          className="!max-w-2xl w-full overflow-y-auto"
+        >
+          <SheetHeader>
+            <SheetTitle>{editingId ? "Edit" : "Add"} Customer</SheetTitle>
+            <SheetDescription>
+              {editingId ? "Update customer details" : "Create a new customer record"}
+            </SheetDescription>
+          </SheetHeader>
 
-            <div className="grid gap-4 py-4">
-              {/* Basic Info */}
-              <div className="grid gap-2">
-                <Label htmlFor="name">Customer Name *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="contactPerson">Contact Person</Label>
+          <form onSubmit={handleSubmit} className="space-y-6 px-4 pb-6">
+            {/* Section 1: Contact Person Details */}
+            <SectionHeader>Contact Person Details</SectionHeader>
+            <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Name *</Label>
                   <Input
-                    id="contactPerson"
                     value={formData.contactPerson}
                     onChange={(e) =>
                       setFormData({ ...formData, contactPerson: e.target.value })
                     }
+                    placeholder="Contact person name"
                   />
                 </div>
-
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
+                <div className="space-y-1">
+                  <Label className="text-xs">Email</Label>
                   <Input
-                    id="email"
+                    type="email"
+                    value={formData.contactPersonEmail}
+                    onChange={(e) =>
+                      setFormData({ ...formData, contactPersonEmail: e.target.value })
+                    }
+                    placeholder="contact@email.com"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Phone No.</Label>
+                  <Input
+                    value={formData.contactPersonPhone}
+                    onChange={(e) =>
+                      setFormData({ ...formData, contactPersonPhone: e.target.value })
+                    }
+                    placeholder="+91 ..."
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Section 2: Company Details */}
+            <SectionHeader>Company Details</SectionHeader>
+            <div className="space-y-4">
+              {/* Company Type Toggle */}
+              <div className="space-y-2">
+                <Label className="text-xs">Company Type</Label>
+                <div className="flex gap-4">
+                  {[
+                    { value: "BUYER", label: "Buyer" },
+                    { value: "SUPPLIER", label: "Supplier" },
+                    { value: "BOTH", label: "Both" },
+                  ].map((opt) => (
+                    <label
+                      key={opt.value}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <input
+                        type="radio"
+                        name="companyType"
+                        value={opt.value}
+                        checked={formData.companyType === opt.value}
+                        onChange={(e) =>
+                          setFormData({ ...formData, companyType: e.target.value })
+                        }
+                        className="h-4 w-4 text-primary"
+                      />
+                      <span className="text-sm">{opt.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Company Name *</Label>
+                  <Input
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                    required
+                    placeholder="Company name"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Company Email</Label>
+                  <Input
                     type="email"
                     value={formData.email}
                     onChange={(e) =>
                       setFormData({ ...formData, email: e.target.value })
                     }
+                    placeholder="company@email.com"
                   />
                 </div>
               </div>
 
-              <div className="grid gap-2">
-                <Label htmlFor="addressLine1">Address Line 1</Label>
+              {/* GST Section */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">GST Number</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={formData.gstNo}
+                      onChange={(e) =>
+                        setFormData({ ...formData, gstNo: e.target.value.toUpperCase() })
+                      }
+                      placeholder="22AAAAA0000A1Z5"
+                      className="flex-1"
+                    />
+                    <Button type="button" variant="outline" size="sm" onClick={handleGstFetch}>
+                      Fetch
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">GST Type</Label>
+                  <Select
+                    value={formData.gstType || "NONE"}
+                    onValueChange={(v) =>
+                      setFormData({ ...formData, gstType: v === "NONE" ? "" : v })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select GST type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="NONE">Not specified</SelectItem>
+                      <SelectItem value="REGULAR">Regular</SelectItem>
+                      <SelectItem value="COMPOSITION">Composition</SelectItem>
+                      <SelectItem value="UNREGISTERED">Unregistered</SelectItem>
+                      <SelectItem value="SEZ">SEZ</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Verify the GST number to capture details automatically.
+              </p>
+
+              {/* Address */}
+              <div className="space-y-1">
+                <Label className="text-xs">Address Line 1 *</Label>
                 <Input
-                  id="addressLine1"
                   value={formData.addressLine1}
                   onChange={(e) =>
                     setFormData({ ...formData, addressLine1: e.target.value })
                   }
+                  placeholder="Street address"
                 />
               </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="addressLine2">Address Line 2</Label>
+              <div className="space-y-1">
+                <Label className="text-xs">Address Line 2</Label>
                 <Input
-                  id="addressLine2"
                   value={formData.addressLine2}
                   onChange={(e) =>
                     setFormData({ ...formData, addressLine2: e.target.value })
                   }
+                  placeholder="Area, landmark"
                 />
               </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="city">City</Label>
+              <div className="grid grid-cols-4 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Pincode</Label>
                   <Input
-                    id="city"
-                    value={formData.city}
-                    onChange={(e) =>
-                      setFormData({ ...formData, city: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div className="grid gap-2">
-                  <Label htmlFor="state">State</Label>
-                  <Input
-                    id="state"
-                    value={formData.state}
-                    onChange={(e) =>
-                      setFormData({ ...formData, state: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div className="grid gap-2">
-                  <Label htmlFor="pincode">Pincode</Label>
-                  <Input
-                    id="pincode"
                     value={formData.pincode}
                     onChange={(e) =>
                       setFormData({ ...formData, pincode: e.target.value })
                     }
+                    placeholder="400004"
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="country">Country</Label>
+                <div className="space-y-1">
+                  <Label className="text-xs">City</Label>
                   <Input
-                    id="country"
+                    value={formData.city}
+                    onChange={(e) =>
+                      setFormData({ ...formData, city: e.target.value })
+                    }
+                    placeholder="Mumbai"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">State</Label>
+                  <Select
+                    value={formData.state || "NONE"}
+                    onValueChange={(v) =>
+                      setFormData({ ...formData, state: v === "NONE" ? "" : v })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select state" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="NONE">Select state</SelectItem>
+                      {INDIAN_STATES.map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {s}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Country</Label>
+                  <Input
                     value={formData.country}
                     onChange={(e) =>
                       setFormData({ ...formData, country: e.target.value })
                     }
                   />
                 </div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Telephone</Label>
+                <Input
+                  value={formData.phone}
+                  onChange={(e) =>
+                    setFormData({ ...formData, phone: e.target.value })
+                  }
+                  placeholder="+91 22 23634200"
+                />
+              </div>
+            </div>
 
-                <div className="grid gap-2">
-                  <Label htmlFor="phone">Phone</Label>
+            {/* Section 3: Additional Details */}
+            <SectionHeader>Additional Details</SectionHeader>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Company Reference Code</Label>
                   <Input
-                    id="phone"
-                    value={formData.phone}
+                    value={formData.companyReferenceCode}
                     onChange={(e) =>
-                      setFormData({ ...formData, phone: e.target.value })
+                      setFormData({ ...formData, companyReferenceCode: e.target.value })
+                    }
+                    placeholder="Internal reference"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Opening Balance</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={formData.openingBalance}
+                    onChange={(e) =>
+                      setFormData({ ...formData, openingBalance: e.target.value })
                     }
                   />
                 </div>
               </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="gstNo">GST Number</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Payment Terms</Label>
                   <Input
-                    id="gstNo"
-                    value={formData.gstNo}
+                    value={formData.paymentTerms}
                     onChange={(e) =>
-                      setFormData({ ...formData, gstNo: e.target.value })
+                      setFormData({ ...formData, paymentTerms: e.target.value })
                     }
+                    placeholder="e.g., 100% within 30 Days"
                   />
                 </div>
-
-                <div className="grid gap-2">
-                  <Label htmlFor="currency">Currency</Label>
+                <div className="space-y-1">
+                  <Label className="text-xs">Default Currency</Label>
                   <Select
-                    value={formData.currency}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, currency: value })
+                    value={formData.defaultCurrency}
+                    onValueChange={(v) =>
+                      setFormData({ ...formData, defaultCurrency: v, currency: v })
                     }
                   >
                     <SelectTrigger>
@@ -466,37 +726,207 @@ export default function CustomersPage() {
                 </div>
               </div>
 
-              <div className="grid gap-2">
-                <Label htmlFor="paymentTerms">Payment Terms</Label>
-                <Input
-                  id="paymentTerms"
-                  value={formData.paymentTerms}
-                  onChange={(e) =>
-                    setFormData({ ...formData, paymentTerms: e.target.value })
-                  }
-                  placeholder="e.g., 100% within 30 Days"
-                />
+              {/* Tags */}
+              <div className="space-y-2">
+                <Label className="text-xs">Tags</Label>
+                <div className="flex flex-wrap gap-2">
+                  {tags.map((tag: any) => (
+                    <Badge
+                      key={tag.id}
+                      variant={formData.tagIds.includes(tag.id) ? "default" : "outline"}
+                      className="cursor-pointer"
+                      onClick={() => toggleTag(tag.id)}
+                    >
+                      {tag.name}
+                    </Badge>
+                  ))}
+                </div>
+                <div className="flex gap-2 mt-1">
+                  <Input
+                    placeholder="New tag name..."
+                    value={newTagName}
+                    onChange={(e) => setNewTagName(e.target.value)}
+                    className="max-w-xs"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        createTag();
+                      }
+                    }}
+                  />
+                  <Button type="button" variant="outline" size="sm" onClick={createTag}>
+                    + Assign Tag
+                  </Button>
+                </div>
               </div>
+
+              {/* Status */}
+              {editingId && (
+                <div className="flex items-center gap-3">
+                  <Label className="text-xs">Status</Label>
+                  <div className="flex gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="isActive"
+                        checked={formData.isActive}
+                        onChange={() => setFormData({ ...formData, isActive: true })}
+                        className="h-4 w-4"
+                      />
+                      <span className="text-sm">Active</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="isActive"
+                        checked={!formData.isActive}
+                        onChange={() => setFormData({ ...formData, isActive: false })}
+                        className="h-4 w-4"
+                      />
+                      <span className="text-sm">Inactive</span>
+                    </label>
+                  </div>
+                </div>
+              )}
             </div>
 
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={handleCloseDialog}>
-                Cancel
+            {/* Section 4: Dispatch Addresses */}
+            <SectionHeader>Dispatch Addresses</SectionHeader>
+            <div className="space-y-4">
+              {formData.dispatchAddresses.map((addr, i) => (
+                <Card key={i} className="relative">
+                  <CardHeader className="py-3 px-4">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <MapPin className="h-4 w-4" />
+                        Dispatch Address {i + 1}
+                      </CardTitle>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeDispatchAddress(i)}
+                        className="h-6 w-6"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="py-3 px-4 space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Label</Label>
+                        <Input
+                          value={addr.label}
+                          onChange={(e) => updateDispatchAddress(i, "label", e.target.value)}
+                          placeholder="e.g., Site Office, Warehouse"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Consignee Name</Label>
+                        <Input
+                          value={addr.consigneeName}
+                          onChange={(e) => updateDispatchAddress(i, "consigneeName", e.target.value)}
+                          placeholder="Consignee name"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Address Line 1</Label>
+                      <Input
+                        value={addr.addressLine1}
+                        onChange={(e) => updateDispatchAddress(i, "addressLine1", e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Address Line 2</Label>
+                      <Input
+                        value={addr.addressLine2}
+                        onChange={(e) => updateDispatchAddress(i, "addressLine2", e.target.value)}
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">City</Label>
+                        <Input
+                          value={addr.city}
+                          onChange={(e) => updateDispatchAddress(i, "city", e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Pincode</Label>
+                        <Input
+                          value={addr.pincode}
+                          onChange={(e) => updateDispatchAddress(i, "pincode", e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">State</Label>
+                        <Select
+                          value={addr.state || "NONE"}
+                          onValueChange={(v) =>
+                            updateDispatchAddress(i, "state", v === "NONE" ? "" : v)
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="State" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="NONE">Select</SelectItem>
+                            {INDIAN_STATES.map((s) => (
+                              <SelectItem key={s} value={s}>{s}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Place of Supply</Label>
+                        <Select
+                          value={addr.placeOfSupply || "NONE"}
+                          onValueChange={(v) =>
+                            updateDispatchAddress(i, "placeOfSupply", v === "NONE" ? "" : v)
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="PoS" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="NONE">Select</SelectItem>
+                            {INDIAN_STATES.map((s) => (
+                              <SelectItem key={s} value={s}>{s}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+              <Button type="button" variant="outline" onClick={addDispatchAddress}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Dispatch Address
               </Button>
-              <Button
-                type="submit"
-                disabled={createMutation.isPending || updateMutation.isPending}
-              >
-                {createMutation.isPending || updateMutation.isPending
-                  ? "Saving..."
-                  : editingCustomer
-                  ? "Update"
-                  : "Create"}
-              </Button>
-            </DialogFooter>
+            </div>
+
+            <Separator />
+
+            {/* Footer */}
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-green-600">
+                100% Safe and Compliant with Indian Govt Laws and Regulations
+              </p>
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" onClick={handleClose}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={saving}>
+                  {saving ? "Saving..." : "Save"}
+                </Button>
+              </div>
+            </div>
           </form>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

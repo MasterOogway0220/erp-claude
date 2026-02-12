@@ -20,20 +20,16 @@ import Link from "next/link";
 interface VendorScore {
   vendorId: string;
   vendorName: string;
-  vendorCode: string;
   totalPOs: number;
-  onTimePercent: number;
-  rejectionPercent: number;
+  totalGRNs: number;
+  onTimeDeliveryPct: number | null;
+  rejectionPct: number;
   ncrCount: number;
   avgDelayDays: number;
-  overallScore: number;
 }
 
 interface VendorPerformanceData {
   vendors: VendorScore[];
-  totalVendors: number;
-  avgOnTimePercent: number;
-  avgRejectionPercent: number;
 }
 
 const getScoreColor = (score: number) => {
@@ -124,7 +120,7 @@ export default function VendorPerformancePage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.totalVendors || 0}</div>
+            <div className="text-2xl font-bold">{(data.vendors || []).length}</div>
           </CardContent>
         </Card>
         <Card>
@@ -134,7 +130,12 @@ export default function VendorPerformancePage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {(data.avgOnTimePercent || 0).toFixed(1)}%
+              {(() => {
+                const withData = (data.vendors || []).filter((v) => v.onTimeDeliveryPct !== null);
+                return withData.length > 0
+                  ? (withData.reduce((s, v) => s + (v.onTimeDeliveryPct ?? 0), 0) / withData.length).toFixed(1)
+                  : "0.0";
+              })()}%
             </div>
           </CardContent>
         </Card>
@@ -145,18 +146,23 @@ export default function VendorPerformancePage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">
-              {(data.avgRejectionPercent || 0).toFixed(1)}%
+              {(() => {
+                const vs = data.vendors || [];
+                return vs.length > 0
+                  ? (vs.reduce((s, v) => s + v.rejectionPct, 0) / vs.length).toFixed(1)
+                  : "0.0";
+              })()}%
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Evaluated Vendors</CardTitle>
+            <CardTitle className="text-sm font-medium">Total POs Tracked</CardTitle>
             <UserCheck className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">
-              {(data.vendors || []).length}
+              {(data.vendors || []).reduce((s, v) => s + v.totalPOs, 0)}
             </div>
           </CardContent>
         </Card>
@@ -181,84 +187,92 @@ export default function VendorPerformancePage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.vendors.map((vendor) => (
-                  <TableRow key={vendor.vendorId}>
-                    <TableCell>
-                      <div>
+                {data.vendors.map((vendor) => {
+                  const onTime = vendor.onTimeDeliveryPct ?? 0;
+                  // Compute overall score: 50% on-time, 30% low rejection, 20% low NCR
+                  const overallScore = Math.min(100, Math.max(0,
+                    onTime * 0.5 +
+                    Math.max(0, 100 - vendor.rejectionPct * 5) * 0.3 +
+                    Math.max(0, 100 - vendor.ncrCount * 10) * 0.2
+                  ));
+                  return (
+                    <TableRow key={vendor.vendorId}>
+                      <TableCell>
                         <div className="font-medium">{vendor.vendorName}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {vendor.vendorCode}
+                      </TableCell>
+                      <TableCell className="text-right font-mono">
+                        {vendor.totalPOs}
+                      </TableCell>
+                      <TableCell>
+                        {vendor.onTimeDeliveryPct !== null ? (
+                          <div className="flex items-center gap-2">
+                            <Progress
+                              value={onTime}
+                              className="w-16 h-2"
+                            />
+                            <span
+                              className={`text-sm font-medium ${
+                                onTime >= 80
+                                  ? "text-green-600"
+                                  : onTime >= 60
+                                  ? "text-yellow-600"
+                                  : "text-red-600"
+                              }`}
+                            >
+                              {onTime.toFixed(1)}%
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">N/A</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Progress
+                            value={vendor.rejectionPct}
+                            className="w-16 h-2"
+                          />
+                          <span
+                            className={`text-sm font-medium ${
+                              vendor.rejectionPct <= 5
+                                ? "text-green-600"
+                                : vendor.rejectionPct <= 15
+                                ? "text-yellow-600"
+                                : "text-red-600"
+                            }`}
+                          >
+                            {vendor.rejectionPct.toFixed(1)}%
+                          </span>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right font-mono">
-                      {vendor.totalPOs}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Progress
-                          value={vendor.onTimePercent}
-                          className="w-16 h-2"
-                        />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {vendor.ncrCount > 0 ? (
+                          <Badge variant="destructive">{vendor.ncrCount}</Badge>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">0</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
                         <span
-                          className={`text-sm font-medium ${
-                            vendor.onTimePercent >= 80
+                          className={`font-mono text-sm ${
+                            vendor.avgDelayDays <= 1
                               ? "text-green-600"
-                              : vendor.onTimePercent >= 60
+                              : vendor.avgDelayDays <= 5
                               ? "text-yellow-600"
                               : "text-red-600"
                           }`}
                         >
-                          {vendor.onTimePercent.toFixed(1)}%
+                          {vendor.avgDelayDays.toFixed(1)} days
                         </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Progress
-                          value={vendor.rejectionPercent}
-                          className="w-16 h-2"
-                        />
-                        <span
-                          className={`text-sm font-medium ${
-                            vendor.rejectionPercent <= 5
-                              ? "text-green-600"
-                              : vendor.rejectionPercent <= 15
-                              ? "text-yellow-600"
-                              : "text-red-600"
-                          }`}
-                        >
-                          {vendor.rejectionPercent.toFixed(1)}%
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {vendor.ncrCount > 0 ? (
-                        <Badge variant="destructive">{vendor.ncrCount}</Badge>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">0</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <span
-                        className={`font-mono text-sm ${
-                          vendor.avgDelayDays <= 1
-                            ? "text-green-600"
-                            : vendor.avgDelayDays <= 5
-                            ? "text-yellow-600"
-                            : "text-red-600"
-                        }`}
-                      >
-                        {vendor.avgDelayDays.toFixed(1)} days
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getScoreBadge(vendor.overallScore)}>
-                        {vendor.overallScore.toFixed(0)}/100
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={getScoreBadge(overallScore)}>
+                          {overallScore.toFixed(0)}/100
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           ) : (

@@ -24,8 +24,8 @@ import { format } from "date-fns";
 
 interface Vendor {
   id: string;
-  code: string;
   name: string;
+  city?: string;
 }
 
 interface PR {
@@ -405,11 +405,11 @@ function CreatePOPage() {
                       <ProductMaterialSelect
                         product={item.product}
                         material={item.material}
+                        additionalSpec={item.additionalSpec}
                         onProductChange={(val) => updateItem(index, "product", val)}
                         onMaterialChange={(val) => updateItem(index, "material", val)}
-                        onAutoFill={(fields) => {
-                          if (fields.additionalSpec) updateItem(index, "additionalSpec", fields.additionalSpec);
-                        }}
+                        onAdditionalSpecChange={(val) => updateItem(index, "additionalSpec", val)}
+                        showAdditionalSpec
                         productLabel="Product *"
                         materialLabel="Material"
                       />

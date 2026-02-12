@@ -33,7 +33,6 @@ interface POTracking {
   vendor: {
     id: string;
     name: string;
-    code: string;
   };
   deliveryDate: string;
   totalAmount: number;
@@ -111,7 +110,7 @@ export default function POFollowUpPage() {
       if (!vendorMap.has(po.vendor.id)) {
         vendorMap.set(po.vendor.id, {
           vendorId: po.vendor.id,
-          vendorCode: po.vendor.code,
+          vendorCode: "",
           vendorName: po.vendor.name,
           totalPOs: 0,
           onTimeDeliveries: 0,

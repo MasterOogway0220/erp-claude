@@ -16,8 +16,10 @@ interface ProductSpec {
 interface ProductMaterialSelectProps {
   product: string;
   material: string;
+  additionalSpec?: string;
   onProductChange: (value: string) => void;
   onMaterialChange: (value: string) => void;
+  onAdditionalSpecChange?: (value: string) => void;
   onAutoFill?: (fields: {
     additionalSpec?: string;
     ends?: string;
@@ -25,6 +27,8 @@ interface ProductMaterialSelectProps {
   }) => void;
   productLabel?: string;
   materialLabel?: string;
+  additionalSpecLabel?: string;
+  showAdditionalSpec?: boolean;
   className?: string;
   disabled?: boolean;
 }
@@ -57,11 +61,15 @@ function fetchProducts(): Promise<ProductSpec[]> {
 export function ProductMaterialSelect({
   product,
   material,
+  additionalSpec = "",
   onProductChange,
   onMaterialChange,
+  onAdditionalSpecChange,
   onAutoFill,
   productLabel = "Product",
   materialLabel = "Material",
+  additionalSpecLabel = "Additional Spec",
+  showAdditionalSpec = false,
   className,
   disabled,
 }: ProductMaterialSelectProps) {
@@ -96,6 +104,26 @@ export function ProductMaterialSelect({
         )
       ).sort();
 
+  // Additional specs filtered by selected product + material
+  const matchingAdditionalSpecs = (() => {
+    let filtered = allProducts;
+    if (product) {
+      filtered = filtered.filter(
+        (p) => p.product.toLowerCase() === product.toLowerCase()
+      );
+    }
+    if (material) {
+      filtered = filtered.filter(
+        (p) => p.material?.toLowerCase() === material.toLowerCase()
+      );
+    }
+    return Array.from(
+      new Set(
+        filtered.map((p) => p.additionalSpec).filter(Boolean) as string[]
+      )
+    ).sort();
+  })();
+
   // When both product+material match a record, auto-fill specs
   const tryAutoFill = (prod: string, mat: string) => {
     if (!onAutoFill || !prod || !mat) return;
@@ -113,9 +141,11 @@ export function ProductMaterialSelect({
     }
   };
 
+  const gridCols = showAdditionalSpec ? "grid-cols-3" : "grid-cols-2";
+
   return (
     <div className={className}>
-      <div className="grid grid-cols-2 gap-4">
+      <div className={`grid ${gridCols} gap-4`}>
         <div className="grid gap-2">
           <Label>{productLabel}</Label>
           <SmartCombobox
@@ -157,6 +187,43 @@ export function ProductMaterialSelect({
             disabled={disabled}
           />
         </div>
+
+        {showAdditionalSpec && onAdditionalSpecChange && (
+          <div className="grid gap-2">
+            <Label>{additionalSpecLabel}</Label>
+            <SmartCombobox
+              options={matchingAdditionalSpecs}
+              value={additionalSpec}
+              onSelect={(name) => {
+                onAdditionalSpecChange(name);
+                // When additional spec is selected, try to auto-fill ends/length
+                if (onAutoFill && product && material) {
+                  const match = allProducts.find(
+                    (p) =>
+                      p.product.toLowerCase() === product.toLowerCase() &&
+                      p.material?.toLowerCase() === material.toLowerCase() &&
+                      p.additionalSpec?.toLowerCase() === name.toLowerCase()
+                  );
+                  if (match) {
+                    onAutoFill({
+                      ends: match.ends || undefined,
+                      length: match.length || undefined,
+                    });
+                  }
+                }
+              }}
+              onChange={(text) => {
+                onAdditionalSpecChange(text);
+              }}
+              displayFn={(name) => name}
+              filterFn={(name, query) =>
+                name.toLowerCase().includes(query.toLowerCase())
+              }
+              placeholder="e.g., NACE MR0175"
+              disabled={disabled}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

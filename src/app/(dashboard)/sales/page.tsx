@@ -17,7 +17,7 @@ interface SalesOrder {
   soDate: string;
   customer: {
     name: string;
-    code: string;
+    city?: string;
   };
   quotation?: {
     quotationNo: string;
@@ -88,7 +88,7 @@ export default function SalesOrdersPage() {
       cell: (row) => (
         <div>
           <div className="font-medium">{row.customer.name}</div>
-          <div className="text-sm text-muted-foreground">{row.customer.code}</div>
+          <div className="text-sm text-muted-foreground">{row.customer.city || ""}</div>
         </div>
       ),
     },
@@ -165,7 +165,7 @@ export default function SalesOrdersPage() {
       cell: (row) => (
         <div>
           <div className="font-medium">{row.customer.name}</div>
-          <div className="text-sm text-muted-foreground">{row.customer.code}</div>
+          <div className="text-sm text-muted-foreground">{row.customer.city || ""}</div>
         </div>
       ),
     },

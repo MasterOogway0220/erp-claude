@@ -3,6 +3,35 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const vendor = await prisma.vendorMaster.findUnique({
+      where: { id },
+    });
+
+    if (!vendor) {
+      return NextResponse.json({ error: "Vendor not found" }, { status: 404 });
+    }
+
+    return NextResponse.json(vendor);
+  } catch (error) {
+    console.error("Error fetching vendor:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch vendor" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -18,9 +47,11 @@ export async function PATCH(
     const {
       name,
       addressLine1,
+      addressLine2,
       city,
       state,
       country,
+      pincode,
       approvedStatus,
       productsSupplied,
       avgLeadTimeDays,
@@ -28,6 +59,13 @@ export async function PATCH(
       contactPerson,
       email,
       phone,
+      gstNo,
+      gstType,
+      bankAccountNo,
+      bankIfsc,
+      bankName,
+      vendorRating,
+      approvalDate,
       isActive,
     } = body;
 
@@ -35,18 +73,27 @@ export async function PATCH(
       where: { id },
       data: {
         name,
-        addressLine1: addressLine1 || null,
-        city: city || null,
-        state: state || null,
-        country: country || "India",
-        approvedStatus: approvedStatus ?? true,
-        productsSupplied: productsSupplied || null,
-        avgLeadTimeDays: avgLeadTimeDays ? parseInt(avgLeadTimeDays) : null,
-        performanceScore: performanceScore ? parseFloat(performanceScore) : null,
-        contactPerson: contactPerson || null,
-        email: email || null,
-        phone: phone || null,
-        isActive: isActive ?? true,
+        addressLine1: addressLine1 ?? undefined,
+        addressLine2: addressLine2 ?? undefined,
+        city: city ?? undefined,
+        state: state ?? undefined,
+        country: country ?? undefined,
+        pincode: pincode ?? undefined,
+        approvedStatus: approvedStatus ?? undefined,
+        productsSupplied: productsSupplied ?? undefined,
+        avgLeadTimeDays: avgLeadTimeDays !== undefined ? (avgLeadTimeDays ? parseInt(avgLeadTimeDays) : null) : undefined,
+        performanceScore: performanceScore !== undefined ? (performanceScore ? parseFloat(performanceScore) : null) : undefined,
+        contactPerson: contactPerson ?? undefined,
+        email: email ?? undefined,
+        phone: phone ?? undefined,
+        gstNo: gstNo ?? undefined,
+        gstType: gstType ?? undefined,
+        bankAccountNo: bankAccountNo ?? undefined,
+        bankIfsc: bankIfsc ?? undefined,
+        bankName: bankName ?? undefined,
+        vendorRating: vendorRating !== undefined ? (vendorRating ? parseFloat(vendorRating) : null) : undefined,
+        approvalDate: approvalDate !== undefined ? (approvalDate ? new Date(approvalDate) : null) : undefined,
+        isActive: isActive ?? undefined,
       },
     });
 

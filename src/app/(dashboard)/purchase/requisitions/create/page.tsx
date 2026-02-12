@@ -24,8 +24,8 @@ import { format } from "date-fns";
 
 interface Vendor {
   id: string;
-  code: string;
   name: string;
+  city?: string;
 }
 
 interface SalesOrder {
@@ -272,27 +272,17 @@ function CreatePRPage() {
                     key={index}
                     className="grid grid-cols-1 md:grid-cols-12 gap-2 p-4 border rounded-lg"
                   >
-                    <div className="md:col-span-4">
+                    <div className="md:col-span-6">
                       <ProductMaterialSelect
                         product={item.product}
                         material={item.material}
+                        additionalSpec={item.additionalSpec}
                         onProductChange={(val) => updateItem(index, "product", val)}
                         onMaterialChange={(val) => updateItem(index, "material", val)}
-                        onAutoFill={(fields) => {
-                          if (fields.additionalSpec) updateItem(index, "additionalSpec", fields.additionalSpec);
-                        }}
+                        onAdditionalSpecChange={(val) => updateItem(index, "additionalSpec", val)}
+                        showAdditionalSpec
                         productLabel="Product *"
                         materialLabel="Material"
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <Label className="text-xs">Additional Spec</Label>
-                      <Input
-                        value={item.additionalSpec}
-                        onChange={(e) =>
-                          updateItem(index, "additionalSpec", e.target.value)
-                        }
-                        className="h-9"
                       />
                     </div>
                     <div className="md:col-span-2">

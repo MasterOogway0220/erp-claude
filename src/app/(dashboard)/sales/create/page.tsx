@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense, useCallback } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,8 +23,8 @@ import { format } from "date-fns";
 
 interface Customer {
   id: string;
-  code: string;
   name: string;
+  city?: string;
 }
 
 interface Quotation {
@@ -50,8 +50,18 @@ interface SOItem {
   totalWeightMT?: number;
 }
 
-export default function CreateSalesOrderPage() {
+export default function CreateSalesOrderPageWrapper() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-96"><div className="text-muted-foreground">Loading...</div></div>}>
+      <CreateSalesOrderPage />
+    </Suspense>
+  );
+}
+
+function CreateSalesOrderPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const preselectedQuotationId = searchParams.get("quotationId");
   const [loading, setLoading] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [quotations, setQuotations] = useState<Quotation[]>([]);
@@ -85,7 +95,7 @@ export default function CreateSalesOrderPage() {
 
   const fetchQuotations = async () => {
     try {
-      const response = await fetch("/api/quotations?status=APPROVED");
+      const response = await fetch("/api/quotations?status=APPROVED,SENT");
       if (response.ok) {
         const data = await response.json();
         setQuotations(data.quotations || []);
@@ -95,35 +105,46 @@ export default function CreateSalesOrderPage() {
     }
   };
 
-  const handleQuotationChange = (quotationId: string) => {
-    setFormData({ ...formData, quotationId });
+  const handleQuotationChange = useCallback(
+    (quotationId: string) => {
+      const selectedQuotation = quotations.find((q) => q.id === quotationId);
+      if (selectedQuotation) {
+        setFormData((prev) => ({
+          ...prev,
+          quotationId,
+          customerId: selectedQuotation.customerId,
+        }));
 
-    const selectedQuotation = quotations.find((q) => q.id === quotationId);
-    if (selectedQuotation) {
-      setFormData((prev) => ({
-        ...prev,
-        customerId: selectedQuotation.customerId,
-      }));
+        // Auto-populate items from quotation
+        const quotationItems: SOItem[] = selectedQuotation.items.map((item) => ({
+          product: item.product || "",
+          material: item.material || "",
+          additionalSpec: item.additionalSpec || "",
+          sizeLabel: item.sizeLabel || "",
+          od: parseFloat(item.od) || 0,
+          wt: parseFloat(item.wt) || 0,
+          ends: item.ends || "",
+          quantity: parseFloat(item.quantity) || 0,
+          unitRate: parseFloat(item.unitRate) || 0,
+          amount: parseFloat(item.amount) || 0,
+          deliveryDate: format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), "yyyy-MM-dd"),
+          unitWeight: parseFloat(item.unitWeight) || undefined,
+          totalWeightMT: parseFloat(item.totalWeightMT) || undefined,
+        }));
+        setItems(quotationItems);
+      } else {
+        setFormData((prev) => ({ ...prev, quotationId }));
+      }
+    },
+    [quotations]
+  );
 
-      // Auto-populate items from quotation
-      const quotationItems: SOItem[] = selectedQuotation.items.map((item) => ({
-        product: item.product || "",
-        material: item.material || "",
-        additionalSpec: item.additionalSpec || "",
-        sizeLabel: item.sizeLabel || "",
-        od: parseFloat(item.od) || 0,
-        wt: parseFloat(item.wt) || 0,
-        ends: item.ends || "",
-        quantity: parseFloat(item.quantity) || 0,
-        unitRate: parseFloat(item.unitRate) || 0,
-        amount: parseFloat(item.amount) || 0,
-        deliveryDate: format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), "yyyy-MM-dd"),
-        unitWeight: parseFloat(item.unitWeight) || undefined,
-        totalWeightMT: parseFloat(item.totalWeightMT) || undefined,
-      }));
-      setItems(quotationItems);
+  // Auto-select quotation from URL param once quotations are loaded
+  useEffect(() => {
+    if (preselectedQuotationId && quotations.length > 0 && !formData.quotationId) {
+      handleQuotationChange(preselectedQuotationId);
     }
-  };
+  }, [preselectedQuotationId, quotations, formData.quotationId, handleQuotationChange]);
 
   const addItem = () => {
     setItems([
@@ -255,7 +276,7 @@ export default function CreateSalesOrderPage() {
                   <SelectContent>
                     {customers.map((c) => (
                       <SelectItem key={c.id} value={c.id}>
-                        {c.code} - {c.name}
+                        {c.name}{c.city ? ` (${c.city})` : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -331,10 +352,13 @@ export default function CreateSalesOrderPage() {
                       <ProductMaterialSelect
                         product={item.product}
                         material={item.material}
+                        additionalSpec={item.additionalSpec}
                         onProductChange={(val) => updateItem(index, "product", val)}
                         onMaterialChange={(val) => updateItem(index, "material", val)}
+                        onAdditionalSpecChange={(val) => updateItem(index, "additionalSpec", val)}
+                        showAdditionalSpec
                         onAutoFill={(fields) => {
-                          if (fields.additionalSpec) updateItem(index, "additionalSpec", fields.additionalSpec);
+                          if (fields.ends) updateItem(index, "ends", fields.ends);
                         }}
                       />
                     </div>

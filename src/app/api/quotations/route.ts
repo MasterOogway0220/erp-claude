@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { QuotationStatus, QuotationType } from "@prisma/client";
+import { QuotationStatus, QuotationType, QuotationCategory } from "@prisma/client";
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
-    const status = searchParams.get("status") as QuotationStatus | null;
+    const status = searchParams.get("status") || "";
 
     const where: any = {};
 
@@ -25,7 +25,12 @@ export async function GET(request: NextRequest) {
     }
 
     if (status) {
-      where.status = status;
+      const statuses = status.split(",").map((s) => s.trim()) as QuotationStatus[];
+      if (statuses.length === 1) {
+        where.status = statuses[0];
+      } else {
+        where.status = { in: statuses };
+      }
     }
 
     const quotations = await prisma.quotation.findMany({
@@ -61,8 +66,10 @@ export async function POST(request: NextRequest) {
       customerId,
       enquiryId,
       quotationType,
+      quotationCategory,
       currency,
       validUpto,
+      buyerId,
       items,
       terms,
     } = body;
@@ -109,8 +116,10 @@ export async function POST(request: NextRequest) {
         customerId,
         enquiryId: enquiryId || null,
         quotationType: quotationType || QuotationType.DOMESTIC,
+        quotationCategory: quotationCategory || QuotationCategory.STANDARD,
         currency: currency || "INR",
         validUpto: validUpto ? new Date(validUpto) : null,
+        buyerId: buyerId || null,
         preparedById: session.user.id,
         items: {
           create: items.map((item: any, index: number) => ({
@@ -120,6 +129,8 @@ export async function POST(request: NextRequest) {
             additionalSpec: item.additionalSpec || null,
             sizeId: item.sizeId || null,
             sizeLabel: item.sizeLabel || null,
+            sizeNPS: item.sizeNPS ? parseFloat(item.sizeNPS) : null,
+            schedule: item.schedule || null,
             od: item.od ? parseFloat(item.od) : null,
             wt: item.wt ? parseFloat(item.wt) : null,
             length: item.length || null,
@@ -129,6 +140,8 @@ export async function POST(request: NextRequest) {
             amount: parseFloat(item.amount),
             delivery: item.delivery || null,
             remark: item.remark || null,
+            materialCodeId: item.materialCodeId || null,
+            uom: item.uom || null,
             unitWeight: item.unitWeight ? parseFloat(item.unitWeight) : null,
             totalWeightMT: item.totalWeightMT ? parseFloat(item.totalWeightMT) : null,
             // Export quotation fields
@@ -149,7 +162,10 @@ export async function POST(request: NextRequest) {
             termNo: index + 1,
             termName: term.termName,
             termValue: term.termValue,
-            isDefault: term.isDefault ?? true,
+            isDefault: term.isDefault ?? !term.isCustom,
+            isIncluded: term.isIncluded ?? true,
+            isCustom: term.isCustom ?? false,
+            isHeadingEditable: term.isHeadingEditable ?? false,
           })) || [],
         },
       },

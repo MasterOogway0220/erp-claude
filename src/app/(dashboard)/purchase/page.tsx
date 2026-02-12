@@ -20,7 +20,7 @@ interface PR {
   };
   suggestedVendor?: {
     name: string;
-    code: string;
+    city?: string;
   };
   status: string;
   items: any[];
@@ -33,7 +33,7 @@ interface PO {
   poDate: string;
   vendor: {
     name: string;
-    code: string;
+    city?: string;
   };
   salesOrder?: {
     soNo: string;
@@ -124,7 +124,7 @@ export default function PurchasePage() {
           <div>
             <div className="font-medium">{row.suggestedVendor.name}</div>
             <div className="text-sm text-muted-foreground">
-              {row.suggestedVendor.code}
+              {row.suggestedVendor.city || ""}
             </div>
           </div>
         ) : (
@@ -190,7 +190,7 @@ export default function PurchasePage() {
       cell: (row) => (
         <div>
           <div className="font-medium">{row.vendor.name}</div>
-          <div className="text-sm text-muted-foreground">{row.vendor.code}</div>
+          <div className="text-sm text-muted-foreground">{row.vendor.city || ""}</div>
         </div>
       ),
     },

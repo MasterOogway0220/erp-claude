@@ -47,6 +47,7 @@ export default function CreateEnquiryPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
     customerId: "",
+    buyerId: "",
     buyerName: "",
     buyerDesignation: "",
     buyerEmail: "",
@@ -66,6 +67,19 @@ export default function CreateEnquiryPage() {
       if (!res.ok) throw new Error("Failed to fetch customers");
       return res.json();
     },
+  });
+
+  // Fetch buyers filtered by selected customer
+  const { data: buyersData } = useQuery({
+    queryKey: ["buyers", formData.customerId],
+    queryFn: async () => {
+      const res = await fetch(
+        `/api/masters/buyers?customerId=${formData.customerId}`
+      );
+      if (!res.ok) throw new Error("Failed to fetch buyers");
+      return res.json();
+    },
+    enabled: !!formData.customerId,
   });
 
   // Create enquiry mutation
@@ -104,6 +118,51 @@ export default function CreateEnquiryPage() {
     setItems(newItems);
   };
 
+  const handleCustomerChange = (value: string) => {
+    // When customer changes, reset buyer selection and buyer fields
+    setFormData({
+      ...formData,
+      customerId: value,
+      buyerId: "",
+      buyerName: "",
+      buyerDesignation: "",
+      buyerEmail: "",
+      buyerContact: "",
+    });
+  };
+
+  const handleBuyerChange = (value: string) => {
+    if (value === "__manual__") {
+      // Manual entry: clear buyerId and buyer fields so user can type
+      setFormData({
+        ...formData,
+        buyerId: "",
+        buyerName: "",
+        buyerDesignation: "",
+        buyerEmail: "",
+        buyerContact: "",
+      });
+      return;
+    }
+
+    // Find the selected buyer from the fetched list
+    const selectedBuyer = buyersData?.buyers?.find(
+      (b: any) => b.id === value
+    );
+    if (selectedBuyer) {
+      setFormData({
+        ...formData,
+        buyerId: selectedBuyer.id,
+        buyerName: selectedBuyer.buyerName || "",
+        buyerDesignation: selectedBuyer.designation || "",
+        buyerEmail: selectedBuyer.email || "",
+        buyerContact: selectedBuyer.mobile || selectedBuyer.telephone || "",
+      });
+    }
+  };
+
+  const isBuyerSelected = !!formData.buyerId;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.customerId) {
@@ -141,9 +200,7 @@ export default function CreateEnquiryPage() {
                 <Label htmlFor="customerId">Customer *</Label>
                 <Select
                   value={formData.customerId}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, customerId: value })
-                  }
+                  onValueChange={handleCustomerChange}
                   required
                 >
                   <SelectTrigger>
@@ -159,6 +216,28 @@ export default function CreateEnquiryPage() {
                 </Select>
               </div>
 
+              <div className="grid gap-2">
+                <Label htmlFor="buyerId">Buyer</Label>
+                <Select
+                  value={formData.buyerId || "__manual__"}
+                  onValueChange={handleBuyerChange}
+                  disabled={!formData.customerId}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select buyer or enter manually" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__manual__">Manual Entry</SelectItem>
+                    {buyersData?.buyers?.map((buyer: any) => (
+                      <SelectItem key={buyer.id} value={buyer.id}>
+                        {buyer.buyerName}
+                        {buyer.designation ? ` - ${buyer.designation}` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="buyerName">Buyer Name</Label>
@@ -168,6 +247,8 @@ export default function CreateEnquiryPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, buyerName: e.target.value })
                     }
+                    readOnly={isBuyerSelected}
+                    className={isBuyerSelected ? "bg-muted" : ""}
                   />
                 </div>
 
@@ -179,6 +260,8 @@ export default function CreateEnquiryPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, buyerDesignation: e.target.value })
                     }
+                    readOnly={isBuyerSelected}
+                    className={isBuyerSelected ? "bg-muted" : ""}
                   />
                 </div>
               </div>
@@ -193,6 +276,8 @@ export default function CreateEnquiryPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, buyerEmail: e.target.value })
                     }
+                    readOnly={isBuyerSelected}
+                    className={isBuyerSelected ? "bg-muted" : ""}
                   />
                 </div>
 
@@ -204,6 +289,8 @@ export default function CreateEnquiryPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, buyerContact: e.target.value })
                     }
+                    readOnly={isBuyerSelected}
+                    className={isBuyerSelected ? "bg-muted" : ""}
                   />
                 </div>
               </div>
@@ -294,10 +381,12 @@ export default function CreateEnquiryPage() {
                 <ProductMaterialSelect
                   product={item.product}
                   material={item.material}
+                  additionalSpec={item.additionalSpec}
                   onProductChange={(val) => updateItem(index, "product", val)}
                   onMaterialChange={(val) => updateItem(index, "material", val)}
+                  onAdditionalSpecChange={(val) => updateItem(index, "additionalSpec", val)}
+                  showAdditionalSpec
                   onAutoFill={(fields) => {
-                    if (fields.additionalSpec) updateItem(index, "additionalSpec", fields.additionalSpec);
                     if (fields.ends) updateItem(index, "ends", fields.ends);
                   }}
                 />
@@ -342,17 +431,6 @@ export default function CreateEnquiryPage() {
                       onChange={(e) => updateItem(index, "quantity", e.target.value)}
                     />
                   </div>
-                </div>
-
-                <div className="grid gap-2">
-                  <Label>Additional Spec</Label>
-                  <Input
-                    value={item.additionalSpec}
-                    onChange={(e) =>
-                      updateItem(index, "additionalSpec", e.target.value)
-                    }
-                    placeholder="e.g., NACE MR0175, HIC"
-                  />
                 </div>
 
                 <div className="grid gap-2">

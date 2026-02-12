@@ -19,6 +19,8 @@ export async function GET(request: NextRequest) {
             { name: { contains: search, mode: "insensitive" as const } },
             { email: { contains: search, mode: "insensitive" as const } },
             { productsSupplied: { contains: search, mode: "insensitive" as const } },
+            { gstNo: { contains: search, mode: "insensitive" as const } },
+            { contactPerson: { contains: search, mode: "insensitive" as const } },
           ],
         }
       : {};
@@ -49,9 +51,11 @@ export async function POST(request: NextRequest) {
     const {
       name,
       addressLine1,
+      addressLine2,
       city,
       state,
       country,
+      pincode,
       approvedStatus,
       productsSupplied,
       avgLeadTimeDays,
@@ -59,6 +63,13 @@ export async function POST(request: NextRequest) {
       contactPerson,
       email,
       phone,
+      gstNo,
+      gstType,
+      bankAccountNo,
+      bankIfsc,
+      bankName,
+      vendorRating,
+      approvalDate,
     } = body;
 
     if (!name) {
@@ -72,9 +83,11 @@ export async function POST(request: NextRequest) {
       data: {
         name,
         addressLine1: addressLine1 || null,
+        addressLine2: addressLine2 || null,
         city: city || null,
         state: state || null,
         country: country || "India",
+        pincode: pincode || null,
         approvedStatus: approvedStatus ?? true,
         productsSupplied: productsSupplied || null,
         avgLeadTimeDays: avgLeadTimeDays ? parseInt(avgLeadTimeDays) : null,
@@ -82,6 +95,13 @@ export async function POST(request: NextRequest) {
         contactPerson: contactPerson || null,
         email: email || null,
         phone: phone || null,
+        gstNo: gstNo || null,
+        gstType: gstType || null,
+        bankAccountNo: bankAccountNo || null,
+        bankIfsc: bankIfsc || null,
+        bankName: bankName || null,
+        vendorRating: vendorRating ? parseFloat(vendorRating) : null,
+        approvalDate: approvalDate ? new Date(approvalDate) : null,
       },
     });
 

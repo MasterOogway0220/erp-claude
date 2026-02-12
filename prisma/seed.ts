@@ -164,6 +164,12 @@ async function seedUomMaster() {
     { code: "MT", name: "Metric Tons" },
     { code: "Nos", name: "Numbers" },
     { code: "Pcs", name: "Pieces" },
+    { code: "Ft", name: "Feet" },
+    { code: "MM", name: "Millimeters" },
+    { code: "In", name: "Inches" },
+    { code: "Set", name: "Sets" },
+    { code: "Lot", name: "Lots" },
+    { code: "Bundle", name: "Bundles" },
   ];
   for (const u of uoms) {
     await prisma.uomMaster.create({ data: u });
@@ -382,6 +388,75 @@ async function seedInventory() {
   console.log(`  Inserted ${count} inventory stock records`);
 }
 
+async function seedCompanyMaster() {
+  console.log("Seeding Company Master...");
+  await prisma.companyMaster.create({
+    data: {
+      companyName: "NPS Piping Solutions",
+      companyType: "Trading",
+      regAddressLine1: "Office No. 123, Trade Center",
+      regCity: "Navi Mumbai",
+      regPincode: "400701",
+      regState: "Maharashtra",
+      regCountry: "India",
+      whAddressLine1: "Warehouse, Plot No. 45",
+      whCity: "Navi Mumbai",
+      whPincode: "400701",
+      whState: "Maharashtra",
+      whCountry: "India",
+      email: "info@npspiping.com",
+      fyStartMonth: 4,
+    },
+  });
+  console.log("  Company master created");
+}
+
+async function seedFinancialYears() {
+  console.log("Seeding Financial Years...");
+  await prisma.financialYear.create({
+    data: {
+      label: "2024-25",
+      startDate: new Date("2024-04-01"),
+      endDate: new Date("2025-03-31"),
+      isActive: false,
+    },
+  });
+  await prisma.financialYear.create({
+    data: {
+      label: "2025-26",
+      startDate: new Date("2025-04-01"),
+      endDate: new Date("2026-03-31"),
+      isActive: true,
+    },
+  });
+  console.log("  Inserted 2 financial years");
+}
+
+async function seedOfferTermTemplates() {
+  console.log("Seeding Offer Term Templates...");
+  const terms = [
+    { termName: "Price", termDefaultValue: "As mentioned above", sortOrder: 1, isExportOnly: false },
+    { termName: "Delivery", termDefaultValue: "4-6 weeks from the date of confirmed order", sortOrder: 2, isExportOnly: false },
+    { termName: "Payment", termDefaultValue: "100% against Proforma Invoice before dispatch", sortOrder: 3, isExportOnly: false },
+    { termName: "GST", termDefaultValue: "As applicable extra", sortOrder: 4, isExportOnly: false },
+    { termName: "Packing", termDefaultValue: "Standard seaworthy export packing", sortOrder: 5, isExportOnly: false },
+    { termName: "Freight", termDefaultValue: "Extra at actuals", sortOrder: 6, isExportOnly: false },
+    { termName: "Insurance", termDefaultValue: "Extra at actuals", sortOrder: 7, isExportOnly: false },
+    { termName: "Validity", termDefaultValue: "7 days from the date of offer", sortOrder: 8, isExportOnly: false },
+    { termName: "MTC", termDefaultValue: "EN 10204 3.1 Mill Test Certificate", sortOrder: 9, isExportOnly: false },
+    { termName: "Inspection", termDefaultValue: "Manufacturer's standard inspection", sortOrder: 10, isExportOnly: false },
+    { termName: "Testing", termDefaultValue: "As per applicable standard", sortOrder: 11, isExportOnly: false },
+    { termName: "Origin", termDefaultValue: "Indian", sortOrder: 12, isExportOnly: true },
+    { termName: "Quantity Tolerance", termDefaultValue: "+/- 10% at our option", sortOrder: 13, isExportOnly: false },
+    { termName: "Dimension Tolerance", termDefaultValue: "As per applicable standard", sortOrder: 14, isExportOnly: false },
+    { termName: "Part Orders", termDefaultValue: "Allowed", sortOrder: 15, isExportOnly: false },
+  ];
+  for (const t of terms) {
+    await prisma.offerTermTemplate.create({ data: t });
+  }
+  console.log(`  Inserted ${terms.length} offer term templates`);
+}
+
 async function main() {
   console.log("Starting seed...\n");
 
@@ -415,6 +490,17 @@ async function main() {
   await prisma.quotation.deleteMany();
   await prisma.enquiryItem.deleteMany();
   await prisma.enquiry.deleteMany();
+  // New tables
+  await prisma.customerTag.deleteMany();
+  await prisma.tag.deleteMany();
+  await prisma.customerDispatchAddress.deleteMany();
+  await prisma.buyerMaster.deleteMany();
+  await prisma.materialCodeMaster.deleteMany();
+  await prisma.offerTermTemplate.deleteMany();
+  await prisma.financialYear.deleteMany();
+  await prisma.companyMaster.deleteMany();
+  await prisma.employeeMaster.deleteMany();
+  // Existing tables
   await prisma.testingMaster.deleteMany();
   await prisma.pipeSizeMaster.deleteMany();
   await prisma.productSpecMaster.deleteMany();
@@ -433,6 +519,9 @@ async function main() {
   console.log("  Done clearing\n");
 
   await seedAdminUser();
+  await seedCompanyMaster();
+  await seedFinancialYears();
+  await seedOfferTermTemplates();
   await seedProductSpecs();
   await seedPipeSizes();
   await seedTestingMaster();
