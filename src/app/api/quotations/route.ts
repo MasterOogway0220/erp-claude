@@ -131,6 +131,17 @@ export async function POST(request: NextRequest) {
             remark: item.remark || null,
             unitWeight: item.unitWeight ? parseFloat(item.unitWeight) : null,
             totalWeightMT: item.totalWeightMT ? parseFloat(item.totalWeightMT) : null,
+            // Export quotation fields
+            tagNo: item.tagNo || null,
+            drawingRef: item.drawingRef || null,
+            itemDescription: item.itemDescription || null,
+            certificateReq: item.certificateReq || null,
+            // BOM quotation fields
+            itemType: item.itemType || null,
+            wtType: item.wtType || null,
+            tubeLength: item.tubeLength || null,
+            tubeCount: item.tubeCount ? parseInt(item.tubeCount) : null,
+            componentPosition: item.componentPosition || null,
           })),
         },
         terms: {

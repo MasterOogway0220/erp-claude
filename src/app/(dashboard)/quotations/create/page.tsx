@@ -38,6 +38,17 @@ interface QuotationItem {
   remark: string;
   unitWeight: string;
   totalWeightMT: string;
+  // Export quotation fields
+  tagNo?: string;
+  drawingRef?: string;
+  itemDescription?: string;
+  certificateReq?: string;
+  // BOM quotation fields
+  componentPosition?: string;
+  itemType?: string; // Tube, Pipe, Plate
+  wtType?: string; // MIN, AV
+  tubeLength?: string;
+  tubeCount?: string;
 }
 
 const emptyItem: QuotationItem = {
@@ -57,6 +68,17 @@ const emptyItem: QuotationItem = {
   remark: "",
   unitWeight: "",
   totalWeightMT: "0.0000",
+  // Export fields
+  tagNo: "",
+  drawingRef: "",
+  itemDescription: "",
+  certificateReq: "",
+  // BOM fields
+  componentPosition: "",
+  itemType: "Pipe",
+  wtType: "MIN",
+  tubeLength: "",
+  tubeCount: "",
 };
 
 // Default quotation terms from PRD
@@ -76,6 +98,19 @@ const defaultTerms = [
   { termName: "Qty. Tolerance", termValue: "-0 / +1 Random Length" },
   { termName: "Dimension Tolerance", termValue: "As per manufacture" },
   { termName: "Part Orders", termValue: "Subject reconfirm with N-PIPE" },
+];
+
+// Export quotation notes from PRD Appendix C
+const exportNotes = [
+  "Prices are subject to review if items are deleted or if quantities are changed.",
+  "This quotation is subject to confirmation at the time of order placement.",
+  "Invoicing shall be based on the actual quantity supplied at the agreed unit rate.",
+  "Shipping date will be calculated based on the number of business days after receipt of the techno-commercial Purchase Order (PO).",
+  "Supply shall be made as close as possible to the requested quantity in the fixed lengths indicated.",
+  "Once an order is placed, it cannot be cancelled under any circumstances.",
+  "The quoted specification complies with the standard practice of the specification, without supplementary requirements (unless otherwise specifically stated in the offer).",
+  "Reduction in quantity after placement of order will not be accepted. Any increase in quantity will be subject to our acceptance.",
+  "In case of any changes in Government duties, taxes, or policies, the rates are liable to revision.",
 ];
 
 export default function CreateQuotationPageWrapper() {
@@ -147,6 +182,13 @@ function CreateQuotationPage() {
       }
     }
   }, [enquiryData]);
+
+  // Auto-set currency for export quotations
+  useEffect(() => {
+    if (formData.quotationType === "EXPORT" && formData.currency === "INR") {
+      setFormData((prev) => ({ ...prev, currency: "USD" }));
+    }
+  }, [formData.quotationType]);
 
   // Create quotation mutation
   const createMutation = useMutation({
@@ -488,6 +530,131 @@ function CreateQuotationPage() {
                     onChange={(e) => updateItem(index, "remark", e.target.value)}
                   />
                 </div>
+
+                {/* Export Quotation Specific Fields */}
+                {formData.quotationType === "EXPORT" && (
+                  <>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-2 border-t">
+                      <div className="grid gap-2">
+                        <Label>Tag Number</Label>
+                        <Input
+                          value={item.tagNo || ""}
+                          onChange={(e) => updateItem(index, "tagNo", e.target.value)}
+                          placeholder="Tag No."
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Drawing Reference</Label>
+                        <Input
+                          value={item.drawingRef || ""}
+                          onChange={(e) => updateItem(index, "drawingRef", e.target.value)}
+                          placeholder="Dwg. Ref."
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Certificate Requirements</Label>
+                        <Input
+                          value={item.certificateReq || ""}
+                          onChange={(e) => updateItem(index, "certificateReq", e.target.value)}
+                          placeholder="EN 10204 3.1, etc."
+                        />
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Item Description (Multi-line for export format)</Label>
+                      <Textarea
+                        value={item.itemDescription || ""}
+                        onChange={(e) => updateItem(index, "itemDescription", e.target.value)}
+                        placeholder="Full item description with Material Code, Size, End Type, Material, Tag No., Drawing Ref..."
+                        rows={3}
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* BOM Quotation Specific Fields */}
+                {formData.quotationType === "BOM" && (
+                  <>
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 pt-2 border-t">
+                      <div className="grid gap-2">
+                        <Label>Component Position</Label>
+                        <Input
+                          value={item.componentPosition || ""}
+                          onChange={(e) => updateItem(index, "componentPosition", e.target.value)}
+                          placeholder="Position No."
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Drawing Reference</Label>
+                        <Input
+                          value={item.drawingRef || ""}
+                          onChange={(e) => updateItem(index, "drawingRef", e.target.value)}
+                          placeholder="Dwg. Ref."
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Item Type</Label>
+                        <Select
+                          value={item.itemType || "Pipe"}
+                          onValueChange={(value) => updateItem(index, "itemType", value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Pipe">Pipe</SelectItem>
+                            <SelectItem value="Tube">Tube</SelectItem>
+                            <SelectItem value="Plate">Plate</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>WT Type</Label>
+                        <Select
+                          value={item.wtType || "MIN"}
+                          onValueChange={(value) => updateItem(index, "wtType", value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="MIN">MIN (Minimum)</SelectItem>
+                            <SelectItem value="AV">AV (Average)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Tag Number</Label>
+                        <Input
+                          value={item.tagNo || ""}
+                          onChange={(e) => updateItem(index, "tagNo", e.target.value)}
+                          placeholder="Tag No."
+                        />
+                      </div>
+                    </div>
+                    {(item.itemType === "Tube" || item.itemType === "tube") && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                          <Label>Tube Length (individual)</Label>
+                          <Input
+                            value={item.tubeLength || ""}
+                            onChange={(e) => updateItem(index, "tubeLength", e.target.value)}
+                            placeholder="e.g., 6.0 Mtr"
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label>Tube Count</Label>
+                          <Input
+                            type="number"
+                            value={item.tubeCount || ""}
+                            onChange={(e) => updateItem(index, "tubeCount", e.target.value)}
+                            placeholder="Number of tubes"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             ))}
 
@@ -536,6 +703,27 @@ function CreateQuotationPage() {
             ))}
           </CardContent>
         </Card>
+
+        {/* Export Quotation Notes (PRD Appendix C) */}
+        {formData.quotationType === "EXPORT" && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Export Quotation Notes (Standard)</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                These 9 standard notes will appear on the export quotation PDF
+              </p>
+            </CardHeader>
+            <CardContent>
+              <ol className="space-y-2 text-sm">
+                {exportNotes.map((note, index) => (
+                  <li key={index}>
+                    <span className="font-semibold">{index + 1}.</span> {note}
+                  </li>
+                ))}
+              </ol>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Actions */}
         <div className="flex justify-end gap-4">

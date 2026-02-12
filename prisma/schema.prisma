@@ -138,6 +138,15 @@ enum AuditAction {
   CREATE
   UPDATE
   DELETE
+  APPROVE
+  REJECT
+  SUBMIT_FOR_APPROVAL
+  VOID
+  LOGIN
+  LOGOUT
+  STATUS_CHANGE
+  EXPORT
+  EMAIL_SENT
 }
 
 enum PipeType {
@@ -471,6 +480,8 @@ model QuotationItem {
   totalWeightMT     Decimal? @db.Decimal(12, 4)
   tagNo             String?
   drawingRef        String?
+  itemDescription   String?  @db.Text
+  certificateReq    String?
   itemType          String?
   wtType            String?
   tubeLength        String?
