@@ -1,24 +1,52 @@
-databases:
-  - name: erp-db
-    plan: free
-    databaseName: erp_claude
-    user: erp_user
+# Render Blueprint for NPS ERP System
+# This file defines all services needed for deployment
 
 services:
+  # PostgreSQL Database
+  - type: pserv
+    name: nps-erp-db
+    env: docker
+    plan: starter
+    region: singapore
+    ipAllowList: []
+    databases:
+      - name: nps_erp_production
+        user: nps_erp_user
+        plan: starter
+
+  # Next.js Web Service
   - type: web
-    name: erp-claude
-    runtime: node
-    plan: free
-    buildCommand: npm install && npx prisma generate && npm run build
-    startCommand: npx prisma migrate deploy && npm start
+    name: nps-erp-web
+    env: node
+    region: singapore
+    plan: starter
+    buildCommand: npm ci && npx prisma generate && npx prisma migrate deploy && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
     envVars:
+      - key: NODE_ENV
+        value: production
+
       - key: DATABASE_URL
         fromDatabase:
-          name: erp-db
+          name: nps-erp-db
           property: connectionString
+
+      - key: SHADOW_DATABASE_URL
+        fromDatabase:
+          name: nps-erp-db
+          property: connectionString
+
+      - key: NEXTAUTH_URL
+        value: https://nps-erp-web.onrender.com
+
       - key: NEXTAUTH_SECRET
         generateValue: true
-      - key: NEXTAUTH_URL
-        sync: false
-      - key: NODE_VERSION
-        value: 22
+
+      - key: JWT_SECRET
+        generateValue: true
+
+      - key: NODE_OPTIONS
+        value: "--max-old-space-size=4096"
+
+    autoDeploy: true
