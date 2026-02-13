@@ -19,6 +19,7 @@ export async function GET(
       include: {
         customer: true,
         enquiry: true,
+        buyer: true,
         preparedBy: { select: { name: true, email: true } },
         approvedBy: { select: { name: true } },
         items: { orderBy: { sNo: "asc" } },

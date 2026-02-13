@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -15,10 +15,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProductMaterialSelect } from "@/components/shared/product-material-select";
 import { PipeSizeSelect } from "@/components/shared/pipe-size-select";
-import { Plus, Trash2, ArrowLeft } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 interface EnquiryItem {
@@ -45,6 +52,7 @@ const emptyItem: EnquiryItem = {
 
 export default function CreateEnquiryPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     customerId: "",
     buyerId: "",
@@ -58,6 +66,13 @@ export default function CreateEnquiryPage() {
     projectName: "",
   });
   const [items, setItems] = useState<EnquiryItem[]>([emptyItem]);
+  const [isNewBuyerDialogOpen, setIsNewBuyerDialogOpen] = useState(false);
+  const [newBuyerData, setNewBuyerData] = useState({
+    buyerName: "",
+    designation: "",
+    email: "",
+    mobile: "",
+  });
 
   // Fetch customers
   const { data: customersData } = useQuery({
@@ -80,6 +95,34 @@ export default function CreateEnquiryPage() {
       return res.json();
     },
     enabled: !!formData.customerId,
+  });
+
+  // Create new buyer mutation
+  const createBuyerMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await fetch("/api/masters/buyers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...data, customerId: formData.customerId }),
+      });
+      if (!res.ok) throw new Error("Failed to create buyer");
+      return res.json();
+    },
+    onSuccess: (buyer) => {
+      queryClient.invalidateQueries({ queryKey: ["buyers", formData.customerId] });
+      setFormData({
+        ...formData,
+        buyerId: buyer.id,
+        buyerName: buyer.buyerName || "",
+        buyerDesignation: buyer.designation || "",
+        buyerEmail: buyer.email || "",
+        buyerContact: buyer.mobile || buyer.telephone || "",
+      });
+      setIsNewBuyerDialogOpen(false);
+      setNewBuyerData({ buyerName: "", designation: "", email: "", mobile: "" });
+      toast.success("Buyer created successfully");
+    },
+    onError: () => toast.error("Failed to create buyer"),
   });
 
   // Create enquiry mutation
@@ -132,8 +175,12 @@ export default function CreateEnquiryPage() {
   };
 
   const handleBuyerChange = (value: string) => {
-    if (value === "__manual__") {
-      // Manual entry: clear buyerId and buyer fields so user can type
+    if (value === "__add_new__") {
+      setIsNewBuyerDialogOpen(true);
+      return;
+    }
+
+    if (value === "NONE") {
       setFormData({
         ...formData,
         buyerId: "",
@@ -218,24 +265,39 @@ export default function CreateEnquiryPage() {
 
               <div className="grid gap-2">
                 <Label htmlFor="buyerId">Buyer</Label>
-                <Select
-                  value={formData.buyerId || "__manual__"}
-                  onValueChange={handleBuyerChange}
-                  disabled={!formData.customerId}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select buyer or enter manually" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__manual__">Manual Entry</SelectItem>
-                    {buyersData?.buyers?.map((buyer: any) => (
-                      <SelectItem key={buyer.id} value={buyer.id}>
-                        {buyer.buyerName}
-                        {buyer.designation ? ` - ${buyer.designation}` : ""}
+                <div className="flex gap-2">
+                  <Select
+                    value={formData.buyerId || "NONE"}
+                    onValueChange={handleBuyerChange}
+                    disabled={!formData.customerId}
+                  >
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select buyer" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="NONE">No buyer selected</SelectItem>
+                      {buyersData?.buyers?.map((buyer: any) => (
+                        <SelectItem key={buyer.id} value={buyer.id}>
+                          {buyer.buyerName}
+                          {buyer.designation ? ` - ${buyer.designation}` : ""}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="__add_new__">
+                        + Add New Buyer
                       </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    disabled={!formData.customerId}
+                    onClick={() => setIsNewBuyerDialogOpen(true)}
+                    title="Add New Buyer"
+                  >
+                    <UserPlus className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -460,6 +522,80 @@ export default function CreateEnquiryPage() {
           </Button>
         </div>
       </form>
+
+      {/* Add New Buyer Dialog */}
+      <Dialog open={isNewBuyerDialogOpen} onOpenChange={setIsNewBuyerDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Buyer</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label>Buyer Name *</Label>
+              <Input
+                value={newBuyerData.buyerName}
+                onChange={(e) =>
+                  setNewBuyerData({ ...newBuyerData, buyerName: e.target.value })
+                }
+                placeholder="Enter buyer name"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label>Designation</Label>
+              <Input
+                value={newBuyerData.designation}
+                onChange={(e) =>
+                  setNewBuyerData({ ...newBuyerData, designation: e.target.value })
+                }
+                placeholder="e.g., Purchase Manager"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label>Email</Label>
+              <Input
+                type="email"
+                value={newBuyerData.email}
+                onChange={(e) =>
+                  setNewBuyerData({ ...newBuyerData, email: e.target.value })
+                }
+                placeholder="buyer@company.com"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label>Mobile</Label>
+              <Input
+                value={newBuyerData.mobile}
+                onChange={(e) =>
+                  setNewBuyerData({ ...newBuyerData, mobile: e.target.value })
+                }
+                placeholder="+91 9876543210"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsNewBuyerDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                if (!newBuyerData.buyerName.trim()) {
+                  toast.error("Buyer name is required");
+                  return;
+                }
+                createBuyerMutation.mutate(newBuyerData);
+              }}
+              disabled={createBuyerMutation.isPending}
+            >
+              {createBuyerMutation.isPending ? "Creating..." : "Add Buyer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

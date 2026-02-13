@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
             additionalSpec: item.additionalSpec || null,
             sizeId: item.sizeId || null,
             sizeLabel: item.sizeLabel || null,
-            sizeNPS: item.sizeNPS ? parseFloat(item.sizeNPS) : null,
+            sizeNPS: item.nps ? parseFloat(item.nps) : (item.sizeNPS ? parseFloat(item.sizeNPS) : null),
             schedule: item.schedule || null,
             od: item.od ? parseFloat(item.od) : null,
             wt: item.wt ? parseFloat(item.wt) : null,
