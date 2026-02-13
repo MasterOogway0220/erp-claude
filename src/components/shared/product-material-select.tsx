@@ -86,37 +86,26 @@ export function ProductMaterialSelect({
     new Set(allProducts.map((p) => p.product))
   ).sort();
 
-  // Materials that match the selected product
-  const matchingMaterials = product
-    ? Array.from(
-        new Set(
-          allProducts
-            .filter(
-              (p) => p.product.toLowerCase() === product.toLowerCase()
-            )
-            .map((p) => p.material)
-            .filter(Boolean) as string[]
-        )
-      ).sort()
-    : Array.from(
-        new Set(
-          allProducts.map((p) => p.material).filter(Boolean) as string[]
-        )
-      ).sort();
-
-  // Additional specs filtered by selected product + material
-  const matchingAdditionalSpecs = (() => {
-    let filtered = allProducts;
-    if (product) {
-      filtered = filtered.filter(
+  // Records matching the selected product (exact, case-insensitive)
+  const productMatches = product
+    ? allProducts.filter(
         (p) => p.product.toLowerCase() === product.toLowerCase()
-      );
-    }
-    if (material) {
-      filtered = filtered.filter(
-        (p) => p.material?.toLowerCase() === material.toLowerCase()
-      );
-    }
+      )
+    : [];
+
+  // Materials: only show when a valid product is selected
+  const matchingMaterials = Array.from(
+    new Set(
+      productMatches.map((p) => p.material).filter(Boolean) as string[]
+    )
+  ).sort();
+
+  // Additional specs: only show when both product AND material are selected
+  const matchingAdditionalSpecs = (() => {
+    if (!product || !material) return [];
+    const filtered = productMatches.filter(
+      (p) => p.material?.toLowerCase() === material.toLowerCase()
+    );
     return Array.from(
       new Set(
         filtered.map((p) => p.additionalSpec).filter(Boolean) as string[]
@@ -153,10 +142,17 @@ export function ProductMaterialSelect({
             value={product}
             onSelect={(name) => {
               onProductChange(name);
-              tryAutoFill(name, material);
+              // Reset dependent fields when product changes
+              onMaterialChange("");
+              if (onAdditionalSpecChange) onAdditionalSpecChange("");
             }}
             onChange={(text) => {
               onProductChange(text);
+              // Reset dependent fields when product is being retyped
+              if (text !== product) {
+                onMaterialChange("");
+                if (onAdditionalSpecChange) onAdditionalSpecChange("");
+              }
             }}
             displayFn={(name) => name}
             filterFn={(name, query) =>
@@ -174,10 +170,16 @@ export function ProductMaterialSelect({
             value={material}
             onSelect={(name) => {
               onMaterialChange(name);
+              // Reset additionalSpec when material changes
+              if (onAdditionalSpecChange) onAdditionalSpecChange("");
               tryAutoFill(product, name);
             }}
             onChange={(text) => {
               onMaterialChange(text);
+              // Reset additionalSpec when material is being retyped
+              if (text !== material && onAdditionalSpecChange) {
+                onAdditionalSpecChange("");
+              }
             }}
             displayFn={(name) => name}
             filterFn={(name, query) =>

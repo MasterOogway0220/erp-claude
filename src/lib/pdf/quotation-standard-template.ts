@@ -38,10 +38,11 @@ interface QuotationData {
   } | null;
   preparedBy?: { name?: string; email?: string } | null;
   buyer?: {
-    name?: string | null;
+    buyerName?: string | null;
     designation?: string | null;
     email?: string | null;
-    phone?: string | null;
+    mobile?: string | null;
+    telephone?: string | null;
   } | null;
   items: any[];
   terms: any[];
@@ -388,7 +389,7 @@ export function generateStandardQuotationHtml(
   <!-- Row 9 -->
   <tr class="header-grid">
     <td class="hdr-label" colspan="2">Attn. :</td>
-    <td class="hdr-value" colspan="5">${escapeHtml(quotation.buyer?.name || quotation.customer.contactPerson)}</td>
+    <td class="hdr-value" colspan="5">${escapeHtml(quotation.buyer?.buyerName || quotation.customer.contactPerson)}</td>
     <td class="hdr-label" colspan="2">Designation :</td>
     <td class="hdr-value" colspan="3">${escapeHtml(quotation.buyer?.designation)}</td>
     <td class="hdr-label-right" colspan="2">Contact :</td>
@@ -399,7 +400,7 @@ export function generateStandardQuotationHtml(
     <td class="hdr-label bb-med" colspan="2">Email :</td>
     <td class="hdr-value bb-med" colspan="5">${escapeHtml(quotation.buyer?.email || quotation.customer.email)}</td>
     <td class="hdr-label bb-med" colspan="2">Contact :</td>
-    <td class="hdr-value bb-med" colspan="3">${escapeHtml(quotation.buyer?.phone || quotation.customer.phone)}</td>
+    <td class="hdr-value bb-med" colspan="3">${escapeHtml(quotation.buyer?.mobile || quotation.buyer?.telephone || quotation.customer.phone)}</td>
     <td class="hdr-label-right bb-med" colspan="2">Email :</td>
     <td class="hdr-value-right bb-med" colspan="2">${escapeHtml(quotation.preparedBy?.email)}</td>
   </tr>

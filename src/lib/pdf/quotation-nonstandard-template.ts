@@ -40,10 +40,11 @@ interface QuotationData {
   } | null;
   preparedBy?: { name?: string; email?: string; phone?: string } | null;
   buyer?: {
-    name?: string | null;
+    buyerName?: string | null;
     designation?: string | null;
     email?: string | null;
-    phone?: string | null;
+    mobile?: string | null;
+    telephone?: string | null;
   } | null;
   items: any[];
   terms: any[];
@@ -424,7 +425,7 @@ export function generateNonStandardQuotationHtml(
   </tr>
   <tr class="info-grid">
     <td class="info-customer-name" colspan="2">M/s. ${escapeHtml(quotation.customer.name)}</td>
-    <td class="info-value" colspan="2">${escapeHtml(quotation.buyer?.name || quotation.customer.contactPerson)}</td>
+    <td class="info-value" colspan="2">${escapeHtml(quotation.buyer?.buyerName || quotation.customer.contactPerson)}</td>
     <td class="info-value" colspan="5">Direct Line: ${escapeHtml(quotation.preparedBy?.phone) || ""}</td>
   </tr>
   <tr class="info-grid">
@@ -439,7 +440,7 @@ export function generateNonStandardQuotationHtml(
   </tr>
   <tr class="info-grid">
     <td class="info-value" colspan="2">${escapeHtml(quotation.customer.country)}</td>
-    <td class="info-value" colspan="2">${escapeHtml(quotation.buyer?.phone || quotation.customer.phone)}</td>
+    <td class="info-value" colspan="2">${escapeHtml(quotation.buyer?.mobile || quotation.buyer?.telephone || quotation.customer.phone)}</td>
     <td class="info-small" colspan="5">Dated: ${formatDate(quotation.quotationDate)}</td>
   </tr>
 

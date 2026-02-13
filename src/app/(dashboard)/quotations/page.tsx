@@ -22,8 +22,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, Eye, FileText } from "lucide-react";
+import { Plus, Search, Eye, Download } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 interface Quotation {
   id: string;
@@ -62,6 +63,33 @@ export default function QuotationsPage() {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  const handleDownloadPDF = async (id: string) => {
+    try {
+      setDownloadingId(id);
+      const res = await fetch(`/api/quotations/${id}/pdf`);
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Failed to generate PDF");
+      }
+      const blob = await res.blob();
+      const disposition = res.headers.get("Content-Disposition");
+      const filenameMatch = disposition?.match(/filename="?([^"]+)"?/);
+      const filename = filenameMatch?.[1] || "quotation.pdf";
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+    } catch {
+      toast.error("Failed to download PDF");
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   // Fetch quotations
   const { data, isLoading } = useQuery({
@@ -194,9 +222,11 @@ export default function QuotationsPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        title="Generate PDF (Coming soon)"
+                        title="Download PDF"
+                        disabled={downloadingId === quotation.id}
+                        onClick={() => handleDownloadPDF(quotation.id)}
                       >
-                        <FileText className="h-4 w-4" />
+                        <Download className={`h-4 w-4 ${downloadingId === quotation.id ? "animate-pulse" : ""}`} />
                       </Button>
                     </div>
                   </TableCell>

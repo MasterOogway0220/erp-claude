@@ -141,12 +141,37 @@ export default function QuotationDetailPage() {
     },
   });
 
-  const handleDownloadPDF = (variant?: string) => {
-    const url = variant
-      ? `/api/quotations/${params.id}/pdf?variant=${variant}`
-      : `/api/quotations/${params.id}/pdf`;
-    window.open(url, "_blank");
-    toast.success("PDF download started");
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownloadPDF = async (variant?: string) => {
+    try {
+      setIsDownloading(true);
+      const url = variant
+        ? `/api/quotations/${params.id}/pdf?variant=${variant}`
+        : `/api/quotations/${params.id}/pdf`;
+      const res = await fetch(url);
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Failed to generate PDF");
+      }
+      const blob = await res.blob();
+      const disposition = res.headers.get("Content-Disposition");
+      const filenameMatch = disposition?.match(/filename="?([^"]+)"?/);
+      const filename = filenameMatch?.[1] || "quotation.pdf";
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+      toast.success("PDF downloaded successfully");
+    } catch (error: any) {
+      console.error("PDF download error:", error);
+      toast.error(error.message || "Failed to download PDF");
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const handleOpenEmailDialog = () => {
@@ -243,9 +268,9 @@ export default function QuotationDetailPage() {
             {quotation.quotationCategory === "NON_STANDARD" ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline">
+                  <Button variant="outline" disabled={isDownloading}>
                     <Download className="h-4 w-4 mr-2" />
-                    Download PDF
+                    {isDownloading ? "Generating..." : "Download PDF"}
                     <ChevronDown className="h-4 w-4 ml-2" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -261,9 +286,9 @@ export default function QuotationDetailPage() {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Button variant="outline" onClick={() => handleDownloadPDF()}>
+              <Button variant="outline" onClick={() => handleDownloadPDF()} disabled={isDownloading}>
                 <Download className="h-4 w-4 mr-2" />
-                Download PDF
+                {isDownloading ? "Generating PDF..." : "Download PDF"}
               </Button>
             )}
             <Button
