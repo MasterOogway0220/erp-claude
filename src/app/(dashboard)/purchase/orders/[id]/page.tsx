@@ -34,9 +34,13 @@ import {
   AlertCircle,
   Clock,
   CheckCircle,
+  Send,
+  ThumbsUp,
+  ThumbsDown,
 } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { toast } from "sonner";
+import { useCurrentUser } from "@/hooks/use-current-user";
 
 interface PO {
   id: string;
@@ -96,8 +100,10 @@ interface PO {
 
 const poStatusColors: Record<string, string> = {
   DRAFT: "bg-gray-500",
+  PENDING_APPROVAL: "bg-orange-500",
   APPROVED: "bg-blue-500",
   OPEN: "bg-green-500",
+  SENT_TO_VENDOR: "bg-indigo-500",
   PARTIALLY_RECEIVED: "bg-yellow-500",
   FULLY_RECEIVED: "bg-purple-500",
   CLOSED: "bg-gray-500",
@@ -107,9 +113,11 @@ const poStatusColors: Record<string, string> = {
 export default function PurchaseOrderDetailPage() {
   const router = useRouter();
   const params = useParams();
+  const { user } = useCurrentUser();
   const [po, setPO] = useState<PO | null>(null);
   const [loading, setLoading] = useState(true);
   const [amendDialogOpen, setAmendDialogOpen] = useState(false);
+  const [approvalRemarks, setApprovalRemarks] = useState("");
   const [amendmentData, setAmendmentData] = useState({
     deliveryDate: "",
     specialRequirements: "",
@@ -189,6 +197,37 @@ export default function PurchaseOrderDetailPage() {
       setSubmitting(false);
     }
   };
+
+  const handleApprovalAction = async (action: string) => {
+    if (!po) return;
+    setSubmitting(true);
+    try {
+      const response = await fetch(`/api/purchase/orders/${po.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, approvalRemarks }),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || `Failed to ${action}`);
+      }
+      const labels: Record<string, string> = {
+        submit_for_approval: "Submitted for approval",
+        approve: "Purchase Order approved",
+        reject: "Purchase Order rejected",
+        send_to_vendor: "Sent to vendor",
+      };
+      toast.success(labels[action] || "Updated");
+      setApprovalRemarks("");
+      fetchPO(po.id);
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const canApprove = user?.role === "MANAGEMENT" || user?.role === "ADMIN";
 
   if (loading) {
     return (
@@ -320,6 +359,85 @@ export default function PurchaseOrderDetailPage() {
                   Currently {daysOverdue} day(s) overdue.
                 </p>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Approval Workflow Section */}
+      {po.status === "DRAFT" && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-medium text-blue-900">PO is in Draft</h3>
+                <p className="text-sm text-blue-700 mt-1">Submit this PO for management approval before sending to vendor.</p>
+              </div>
+              <Button onClick={() => handleApprovalAction("submit_for_approval")} disabled={submitting}>
+                <Send className="w-4 h-4 mr-2" />
+                Submit for Approval
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {po.status === "PENDING_APPROVAL" && canApprove && (
+        <Card className="border-orange-200 bg-orange-50">
+          <CardContent className="pt-6 space-y-4">
+            <div>
+              <h3 className="font-medium text-orange-900">Pending Approval</h3>
+              <p className="text-sm text-orange-700 mt-1">This PO requires management approval.</p>
+            </div>
+            <div className="space-y-2">
+              <Label>Approval Remarks</Label>
+              <Textarea
+                value={approvalRemarks}
+                onChange={(e) => setApprovalRemarks(e.target.value)}
+                placeholder="Optional remarks..."
+                rows={2}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={() => handleApprovalAction("approve")} disabled={submitting} className="bg-green-600 hover:bg-green-700">
+                <ThumbsUp className="w-4 h-4 mr-2" />
+                Approve
+              </Button>
+              <Button variant="destructive" onClick={() => handleApprovalAction("reject")} disabled={submitting}>
+                <ThumbsDown className="w-4 h-4 mr-2" />
+                Reject
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {po.status === "PENDING_APPROVAL" && !canApprove && (
+        <Card className="border-orange-200 bg-orange-50">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <Clock className="w-5 h-5 text-orange-600" />
+              <div>
+                <h3 className="font-medium text-orange-900">Awaiting Approval</h3>
+                <p className="text-sm text-orange-700 mt-1">This PO is pending management approval.</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {po.status === "OPEN" && (
+        <Card className="border-green-200 bg-green-50">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-medium text-green-900">PO Approved</h3>
+                <p className="text-sm text-green-700 mt-1">This PO has been approved. You can now send it to the vendor.</p>
+              </div>
+              <Button onClick={() => handleApprovalAction("send_to_vendor")} disabled={submitting}>
+                <Send className="w-4 h-4 mr-2" />
+                Mark as Sent to Vendor
+              </Button>
             </div>
           </CardContent>
         </Card>

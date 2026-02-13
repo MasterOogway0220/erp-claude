@@ -74,6 +74,8 @@ interface CustomerFormData {
   email: string;
   gstNo: string;
   gstType: string;
+  panNo: string;
+  industrySegment: string;
   addressLine1: string;
   addressLine2: string;
   pincode: string;
@@ -83,6 +85,8 @@ interface CustomerFormData {
   phone: string;
   companyReferenceCode: string;
   openingBalance: string;
+  creditLimit: string;
+  creditDays: string;
   paymentTerms: string;
   currency: string;
   defaultCurrency: string;
@@ -100,6 +104,8 @@ const emptyForm: CustomerFormData = {
   email: "",
   gstNo: "",
   gstType: "",
+  panNo: "",
+  industrySegment: "",
   addressLine1: "",
   addressLine2: "",
   pincode: "",
@@ -109,6 +115,8 @@ const emptyForm: CustomerFormData = {
   phone: "",
   companyReferenceCode: "",
   openingBalance: "0",
+  creditLimit: "",
+  creditDays: "",
   paymentTerms: "100% within 30 Days",
   currency: "INR",
   defaultCurrency: "INR",
@@ -186,6 +194,8 @@ export default function CustomersPage() {
         email: customer.email || "",
         gstNo: customer.gstNo || "",
         gstType: customer.gstType || "",
+        panNo: customer.panNo || "",
+        industrySegment: customer.industrySegment || "",
         addressLine1: customer.addressLine1 || "",
         addressLine2: customer.addressLine2 || "",
         pincode: customer.pincode || "",
@@ -195,6 +205,8 @@ export default function CustomersPage() {
         phone: customer.phone || "",
         companyReferenceCode: customer.companyReferenceCode || "",
         openingBalance: customer.openingBalance?.toString() || "0",
+        creditLimit: customer.creditLimit?.toString() || "",
+        creditDays: customer.creditDays?.toString() || "",
         paymentTerms: customer.paymentTerms || "100% within 30 Days",
         currency: customer.currency || "INR",
         defaultCurrency: customer.defaultCurrency || "INR",
@@ -583,6 +595,32 @@ export default function CustomersPage() {
                 Verify the GST number to capture details automatically.
               </p>
 
+              {/* PAN & Industry Segment */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">PAN Number</Label>
+                  <Input
+                    value={formData.panNo}
+                    onChange={(e) =>
+                      setFormData({ ...formData, panNo: e.target.value.toUpperCase() })
+                    }
+                    placeholder="AAAAA0000A"
+                    maxLength={10}
+                    className="font-mono"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Industry Segment</Label>
+                  <Input
+                    value={formData.industrySegment}
+                    onChange={(e) =>
+                      setFormData({ ...formData, industrySegment: e.target.value })
+                    }
+                    placeholder="e.g., Oil & Gas, Power, Petrochemical"
+                  />
+                </div>
+              </div>
+
               {/* Address */}
               <div className="space-y-1">
                 <Label className="text-xs">Address Line 1 *</Label>
@@ -691,6 +729,34 @@ export default function CustomersPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, openingBalance: e.target.value })
                     }
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Credit Limit (&#8377;)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.creditLimit}
+                    onChange={(e) =>
+                      setFormData({ ...formData, creditLimit: e.target.value })
+                    }
+                    placeholder="No limit"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Credit Days</Label>
+                  <Input
+                    type="number"
+                    step="1"
+                    min="0"
+                    value={formData.creditDays}
+                    onChange={(e) =>
+                      setFormData({ ...formData, creditDays: e.target.value })
+                    }
+                    placeholder="e.g., 30"
                   />
                 </div>
               </div>

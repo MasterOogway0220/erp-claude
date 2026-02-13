@@ -19,6 +19,7 @@ import { ArrowLeft, CreditCard, Send } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import Link from "next/link";
+import { numberToWords } from "@/lib/amount-in-words";
 
 const invoiceTypeColors: Record<string, string> = {
   DOMESTIC: "bg-blue-500",
@@ -323,6 +324,9 @@ export default function InvoiceDetailPage() {
                 <span>
                   {"\u20B9"}{Number(invoice.totalAmount).toFixed(2)}
                 </span>
+              </div>
+              <div className="text-xs text-muted-foreground italic">
+                {numberToWords(Number(invoice.totalAmount), invoice.currency || "INR")}
               </div>
               <div className="flex justify-between text-sm text-green-600">
                 <span>Total Paid</span>

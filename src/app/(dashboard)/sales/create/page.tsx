@@ -72,6 +72,9 @@ function CreateSalesOrderPage() {
     customerPoNo: "",
     customerPoDate: "",
     customerPoDocument: "",
+    projectName: "",
+    deliverySchedule: "",
+    paymentTerms: "",
   });
 
   const [items, setItems] = useState<SOItem[]>([]);
@@ -196,6 +199,10 @@ function CreateSalesOrderPage() {
       return;
     }
 
+    await submitOrder(false);
+  };
+
+  const submitOrder = async (forceCreate: boolean) => {
     setLoading(true);
     try {
       const response = await fetch("/api/sales-orders", {
@@ -205,12 +212,26 @@ function CreateSalesOrderPage() {
           ...formData,
           customerPoDate: formData.customerPoDate || null,
           items,
+          forceCreate,
         }),
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to create sales order");
+        const errorData = await response.json();
+
+        // Handle credit limit exceeded as a warning that can be overridden
+        if (errorData.creditLimitExceeded) {
+          const proceed = confirm(
+            `${errorData.error}\n\nDo you want to proceed anyway?`
+          );
+          if (proceed) {
+            await submitOrder(true);
+            return;
+          }
+          return;
+        }
+
+        throw new Error(errorData.error || "Failed to create sales order");
       }
 
       const data = await response.json();
@@ -320,6 +341,46 @@ function CreateSalesOrderPage() {
                     setFormData({ ...formData, customerPoDocument: e.target.value })
                   }
                   placeholder="Document URL or path"
+                />
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="projectName">Project Name</Label>
+                <Input
+                  id="projectName"
+                  value={formData.projectName}
+                  onChange={(e) =>
+                    setFormData({ ...formData, projectName: e.target.value })
+                  }
+                  placeholder="Enter project name"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="deliverySchedule">Delivery Schedule</Label>
+                <Input
+                  id="deliverySchedule"
+                  value={formData.deliverySchedule}
+                  onChange={(e) =>
+                    setFormData({ ...formData, deliverySchedule: e.target.value })
+                  }
+                  placeholder="e.g. 4-6 weeks from PO date"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="paymentTerms">Payment Terms</Label>
+                <Input
+                  id="paymentTerms"
+                  value={formData.paymentTerms}
+                  onChange={(e) =>
+                    setFormData({ ...formData, paymentTerms: e.target.value })
+                  }
+                  placeholder="e.g. 30 days from invoice"
                 />
               </div>
             </div>

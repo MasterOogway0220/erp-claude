@@ -56,11 +56,16 @@ const navigation: NavItem[] = [
       { title: "Buyers", href: "/masters/buyers" },
       { title: "Customers", href: "/masters/customers" },
       { title: "Vendors", href: "/masters/vendors" },
+      { title: "Warehouses", href: "/masters/warehouses" },
       { title: "Product Specifications", href: "/masters/products" },
       { title: "Pipe Sizes", href: "/masters/pipe-sizes" },
       { title: "Units (UOM)", href: "/masters/units" },
       { title: "Material Codes", href: "/masters/material-codes" },
       { title: "Testing Types", href: "/masters/testing" },
+      { title: "Payment Terms", href: "/masters/payment-terms" },
+      { title: "Delivery Terms", href: "/masters/delivery-terms" },
+      { title: "Tax Rates", href: "/masters/tax" },
+      { title: "Inspection Agencies", href: "/masters/inspection-agencies" },
       { title: "Financial Years", href: "/masters/financial-years", roles: ["ADMIN"] },
       { title: "Other Masters", href: "/masters/other" },
     ],
@@ -109,6 +114,7 @@ const navigation: NavItem[] = [
     children: [
       { title: "Stock View", href: "/inventory" },
       { title: "New GRN", href: "/inventory/grn/create" },
+      { title: "Stock Issue", href: "/inventory/stock-issue/create" },
     ],
   },
   {
@@ -118,6 +124,7 @@ const navigation: NavItem[] = [
     children: [
       { title: "Inspections", href: "/quality" },
       { title: "New Inspection", href: "/quality/inspections/create" },
+      { title: "QC Release", href: "/quality/qc-release/create" },
       { title: "MTC Repository", href: "/quality" },
       { title: "NCR Register", href: "/quality" },
       { title: "Lab Letters", href: "/quality/lab-letters/create" },
@@ -131,7 +138,10 @@ const navigation: NavItem[] = [
       { title: "Packing Lists", href: "/dispatch" },
       { title: "Dispatch Notes", href: "/dispatch/dispatch-notes/create" },
       { title: "Invoices", href: "/dispatch/invoices/create" },
+      { title: "Credit Notes", href: "/dispatch/credit-notes/create" },
+      { title: "Debit Notes", href: "/dispatch/debit-notes/create" },
       { title: "Payments", href: "/dispatch/payments/create" },
+      { title: "Bank Reconciliation", href: "/dispatch/bank-reconciliation" },
     ],
   },
   {

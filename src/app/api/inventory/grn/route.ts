@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { createAuditLog } from "@/lib/audit";
 import { generateDocumentNumber } from "@/lib/document-numbering";
 
 export async function GET(request: NextRequest) {
@@ -65,6 +66,12 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions);
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // RBAC: Only STORES and ADMIN can create GRNs
+    const allowedRoles = ["STORES", "ADMIN"];
+    if (!allowedRoles.includes(session.user.role)) {
+      return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
     }
 
     const body = await request.json();
@@ -134,7 +141,17 @@ export async function POST(request: NextRequest) {
       });
 
       // Create inventory stock entries for each GRN item
-      for (const grnItem of createdGrn.items) {
+      // Build a map of grnItem index -> warehouseLocationId from the request items
+      const warehouseLocationMap = new Map<number, string>();
+      items.forEach((item: any, index: number) => {
+        if (item.warehouseLocationId) {
+          warehouseLocationMap.set(index, item.warehouseLocationId);
+        }
+      });
+
+      for (let i = 0; i < createdGrn.items.length; i++) {
+        const grnItem = createdGrn.items[i];
+        const warehouseLocationId = warehouseLocationMap.get(i) || null;
         await tx.inventoryStock.create({
           data: {
             form: grnItem.product,
@@ -155,6 +172,7 @@ export async function POST(request: NextRequest) {
             tpiAgency: grnItem.tpiAgency,
             status: "UNDER_INSPECTION",
             grnItemId: grnItem.id,
+            warehouseLocationId,
           },
         });
       }
@@ -200,6 +218,14 @@ export async function POST(request: NextRequest) {
         items: true,
       },
     });
+
+    createAuditLog({
+      userId: session.user.id,
+      action: "CREATE",
+      tableName: "GoodsReceiptNote",
+      recordId: grn.id,
+      newValue: JSON.stringify({ grnNo }),
+    }).catch(console.error);
 
     return NextResponse.json(fullGrn, { status: 201 });
   } catch (error) {

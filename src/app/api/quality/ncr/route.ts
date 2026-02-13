@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { createAuditLog } from "@/lib/audit";
 import { generateDocumentNumber } from "@/lib/document-numbering";
 
 export async function GET(request: NextRequest) {
@@ -82,6 +83,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // RBAC: Only QC and ADMIN can create NCRs
+    const allowedRoles = ["QC", "ADMIN"];
+    if (!allowedRoles.includes(session.user.role)) {
+      return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
+    }
+
     const body = await request.json();
     const {
       grnItemId,
@@ -130,6 +137,14 @@ export async function POST(request: NextRequest) {
         purchaseOrder: { select: { id: true, poNo: true } },
       },
     });
+
+    createAuditLog({
+      userId: session.user.id,
+      action: "CREATE",
+      tableName: "NCR",
+      recordId: ncr.id,
+      newValue: JSON.stringify({ ncrNo: ncr.ncrNo }),
+    }).catch(console.error);
 
     return NextResponse.json(ncr, { status: 201 });
   } catch (error) {

@@ -71,12 +71,27 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    // Lost reasons from enquiries
+    const lostReasons = await prisma.enquiry.findMany({
+      where: { status: "LOST", lostReason: { not: null } },
+      select: { lostReason: true },
+    });
+    const reasonCounts: Record<string, number> = {};
+    for (const e of lostReasons) {
+      const reason = e.lostReason || "Unknown";
+      reasonCounts[reason] = (reasonCounts[reason] || 0) + 1;
+    }
+    const lostReasonsSummary = Object.entries(reasonCounts)
+      .map(([reason, count]) => ({ reason, count }))
+      .sort((a, b) => b.count - a.count);
+
     return NextResponse.json({
       totalQuotations,
       byStatus,
       avgResponseTimeDays,
       conversionRate,
       recentQuotations,
+      lostReasonsSummary,
     });
   } catch (error) {
     console.error("Error fetching quotation analysis:", error);

@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, FileText, Package, AlertCircle } from "lucide-react";
+import { ArrowLeft, FileText, FileSearch, Package, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -145,6 +145,29 @@ export default function SalesOrderDetailPage() {
           </Button>
         </div>
       </PageHeader>
+
+      {salesOrder.poAcceptanceStatus === "PENDING" && (
+        <Card className="border-yellow-300 bg-yellow-50">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
+                <div>
+                  <h3 className="font-medium text-yellow-900">Customer PO Review Required</h3>
+                  <p className="text-sm text-yellow-700 mt-1">
+                    This Sales Order requires Customer PO verification per ISO 9001:2018 Clause 8.2.3.
+                    Please review the customer PO against the reference quotation before proceeding.
+                  </p>
+                </div>
+              </div>
+              <Button onClick={() => router.push(`/sales/${salesOrder.id}/review`)}>
+                <FileSearch className="w-4 h-4 mr-2" />
+                Review PO
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-3 gap-6">
         <Card className="col-span-2">

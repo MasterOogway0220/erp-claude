@@ -39,6 +39,7 @@ export default function InventoryPage() {
   const router = useRouter();
   const [stocks, setStocks] = useState<any[]>([]);
   const [grns, setGrns] = useState<any[]>([]);
+  const [stockIssues, setStockIssues] = useState<any[]>([]);
   const [summary, setSummary] = useState<any>({});
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -46,6 +47,7 @@ export default function InventoryPage() {
   useEffect(() => {
     fetchStock();
     fetchGRNs();
+    fetchStockIssues();
   }, [statusFilter]);
 
   const fetchStock = async () => {
@@ -74,6 +76,18 @@ export default function InventoryPage() {
       }
     } catch (error) {
       console.error("Failed to fetch GRNs:", error);
+    }
+  };
+
+  const fetchStockIssues = async () => {
+    try {
+      const response = await fetch("/api/inventory/stock-issue");
+      if (response.ok) {
+        const data = await response.json();
+        setStockIssues(data.stockIssues || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch stock issues:", error);
     }
   };
 
@@ -168,6 +182,46 @@ export default function InventoryPage() {
     },
   ];
 
+  const stockIssueColumns: Column<any>[] = [
+    {
+      key: "issueNo",
+      header: "Issue No.",
+      cell: (row) => (
+        <Link
+          href={`/inventory/stock-issue/${row.id}`}
+          className="font-mono text-sm text-blue-600 hover:underline"
+        >
+          {row.issueNo as string}
+        </Link>
+      ),
+    },
+    {
+      key: "issueDate",
+      header: "Date",
+      cell: (row) => format(new Date(row.issueDate as string), "dd MMM yyyy"),
+    },
+    {
+      key: "salesOrder",
+      header: "SO No.",
+      cell: (row) => (row.salesOrder as any)?.soNo || "—",
+    },
+    {
+      key: "customer",
+      header: "Customer",
+      cell: (row) => (row.salesOrder as any)?.customer?.name || "—",
+    },
+    {
+      key: "items",
+      header: "Items",
+      cell: (row) => (row.items as any[])?.length || 0,
+    },
+    {
+      key: "issuedBy",
+      header: "Issued By",
+      cell: (row) => (row.issuedBy as any)?.name || "—",
+    },
+  ];
+
   const totalStock = summary.total || 0;
   const accepted = summary.byStatus?.ACCEPTED || 0;
   const underInspection = summary.byStatus?.UNDER_INSPECTION || 0;
@@ -238,6 +292,7 @@ export default function InventoryPage() {
         <TabsList>
           <TabsTrigger value="stock">Stock View</TabsTrigger>
           <TabsTrigger value="grn">GRN Register</TabsTrigger>
+          <TabsTrigger value="stock-issues">Stock Issues</TabsTrigger>
         </TabsList>
 
         <TabsContent value="stock">
@@ -289,6 +344,27 @@ export default function InventoryPage() {
                 data={grns}
                 searchKey="grnNo"
                 searchPlaceholder="Search by GRN number..."
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="stock-issues">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Stock Issues</CardTitle>
+                <Button onClick={() => router.push("/inventory/stock-issue/create")}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Stock Issue
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <DataTable
+                columns={stockIssueColumns}
+                data={stockIssues}
+                searchKey="issueNo"
+                searchPlaceholder="Search by issue number..."
               />
             </CardContent>
           </Card>

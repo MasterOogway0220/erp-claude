@@ -58,6 +58,7 @@ export default function CreateInspectionPage() {
   const [stocks, setStocks] = useState<any[]>([]);
   const [selectedStockId, setSelectedStockId] = useState("");
   const [selectedStock, setSelectedStock] = useState<any>(null);
+  const [inspectionType, setInspectionType] = useState("");
   const [remarks, setRemarks] = useState("");
   const [parameters, setParameters] = useState<InspectionParam[]>(
     DEFAULT_PARAMETERS.map((p) => ({ ...p }))
@@ -150,6 +151,7 @@ export default function CreateInspectionPage() {
         body: JSON.stringify({
           inventoryStockId: selectedStockId,
           grnItemId: selectedStock?.grnItemId || null,
+          inspectionType: inspectionType || null,
           overallResult,
           remarks,
           parameters: filledParams,
@@ -220,6 +222,27 @@ export default function CreateInspectionPage() {
                   </div>
                 </div>
               )}
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Inspection Type</Label>
+                <Select value={inspectionType} onValueChange={setInspectionType}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select inspection type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="VISUAL">Visual</SelectItem>
+                    <SelectItem value="DIMENSIONAL">Dimensional</SelectItem>
+                    <SelectItem value="CHEMICAL_ANALYSIS">Chemical Analysis</SelectItem>
+                    <SelectItem value="MECHANICAL_TESTING">Mechanical Testing</SelectItem>
+                    <SelectItem value="HYDROSTATIC">Hydrostatic</SelectItem>
+                    <SelectItem value="PMI">PMI</SelectItem>
+                    <SelectItem value="RADIOGRAPHY">Radiography</SelectItem>
+                    <SelectItem value="ULTRASONIC">Ultrasonic</SelectItem>
+                    <SelectItem value="MAGNETIC_PARTICLE">Magnetic Particle</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div className="space-y-2">
               <Label>Remarks</Label>

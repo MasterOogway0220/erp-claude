@@ -69,6 +69,8 @@ function CreatePaymentPage() {
     referenceNo: "",
     bankName: "",
     tdsAmount: "0",
+    chequeNo: "",
+    chequeDate: "",
     remarks: "",
   });
 
@@ -154,6 +156,8 @@ function CreatePaymentPage() {
           referenceNo: formData.referenceNo || null,
           bankName: formData.bankName || null,
           tdsAmount: formData.tdsAmount || "0",
+          chequeNo: formData.chequeNo || null,
+          chequeDate: formData.chequeDate || null,
           remarks: formData.remarks || null,
         }),
       });
@@ -330,6 +334,7 @@ function CreatePaymentPage() {
                     <SelectItem value="RTGS">RTGS</SelectItem>
                     <SelectItem value="NEFT">NEFT</SelectItem>
                     <SelectItem value="CHEQUE">Cheque</SelectItem>
+                    <SelectItem value="DD">Demand Draft (DD)</SelectItem>
                     <SelectItem value="LC">Letter of Credit (LC)</SelectItem>
                     <SelectItem value="TT">Telegraphic Transfer (TT)</SelectItem>
                     <SelectItem value="CASH">Cash</SelectItem>
@@ -337,6 +342,31 @@ function CreatePaymentPage() {
                 </Select>
               </div>
             </div>
+
+            {(formData.paymentMode === "CHEQUE" || formData.paymentMode === "DD") && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Cheque/DD Number</Label>
+                  <Input
+                    value={formData.chequeNo}
+                    onChange={(e) =>
+                      setFormData({ ...formData, chequeNo: e.target.value })
+                    }
+                    placeholder="Enter cheque/DD number"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Cheque/DD Date</Label>
+                  <Input
+                    type="date"
+                    value={formData.chequeDate}
+                    onChange={(e) =>
+                      setFormData({ ...formData, chequeDate: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">

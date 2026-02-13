@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { createAuditLog } from "@/lib/audit";
 import { generateDocumentNumber } from "@/lib/document-numbering";
 
 export async function GET(request: NextRequest) {
@@ -56,6 +57,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // RBAC: Only ACCOUNTS and ADMIN can create payment receipts
+    const allowedRoles = ["ACCOUNTS", "ADMIN"];
+    if (!allowedRoles.includes(session.user.role)) {
+      return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
+    }
+
     const body = await request.json();
     const {
       invoiceId,
@@ -65,6 +72,8 @@ export async function POST(request: NextRequest) {
       referenceNo,
       bankName,
       tdsAmount,
+      chequeNo,
+      chequeDate,
       remarks,
     } = body;
 
@@ -115,6 +124,8 @@ export async function POST(request: NextRequest) {
           referenceNo: referenceNo || null,
           bankName: bankName || null,
           tdsAmount: tdsAmount ? parseFloat(tdsAmount) : 0,
+          chequeNo: chequeNo || null,
+          chequeDate: chequeDate ? new Date(chequeDate) : null,
           remarks: remarks || null,
         },
         include: {
@@ -158,6 +169,14 @@ export async function POST(request: NextRequest) {
 
       return receipt;
     });
+
+    createAuditLog({
+      userId: session.user.id,
+      action: "CREATE",
+      tableName: "PaymentReceipt",
+      recordId: paymentReceipt.id,
+      newValue: JSON.stringify({ receiptNo: paymentReceipt.receiptNo }),
+    }).catch(console.error);
 
     return NextResponse.json(paymentReceipt, { status: 201 });
   } catch (error) {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { createAuditLog } from "@/lib/audit";
 
 export async function GET(
   request: NextRequest,
@@ -24,6 +25,15 @@ export async function GET(
         approvedBy: { select: { name: true } },
         items: { orderBy: { sNo: "asc" } },
         terms: { orderBy: { termNo: "asc" } },
+        parentQuotation: {
+          select: {
+            id: true,
+            quotationNo: true,
+            version: true,
+            quotationDate: true,
+            status: true,
+          },
+        },
         childQuotations: {
           select: {
             id: true,
@@ -32,6 +42,7 @@ export async function GET(
             quotationDate: true,
             status: true,
           },
+          orderBy: { version: "asc" },
         },
       },
     });
@@ -64,6 +75,11 @@ export async function PATCH(
     const body = await request.json();
     const { status, approvalRemarks } = body;
 
+    const existing = await prisma.quotation.findUnique({
+      where: { id },
+      select: { status: true },
+    });
+
     const updated = await prisma.quotation.update({
       where: { id },
       data: {
@@ -80,6 +96,16 @@ export async function PATCH(
         terms: true,
       },
     });
+
+    createAuditLog({
+      userId: session.user.id,
+      action: "UPDATE",
+      tableName: "Quotation",
+      recordId: id,
+      fieldName: "status",
+      oldValue: existing?.status || null,
+      newValue: updated.status,
+    }).catch(console.error);
 
     return NextResponse.json(updated);
   } catch (error) {

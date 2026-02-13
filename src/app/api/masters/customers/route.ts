@@ -74,6 +74,8 @@ export async function POST(request: NextRequest) {
       pincode,
       gstNo,
       gstType,
+      panNo,
+      industrySegment,
       contactPerson,
       contactPersonEmail,
       contactPersonPhone,
@@ -83,6 +85,8 @@ export async function POST(request: NextRequest) {
       currency,
       companyType,
       openingBalance,
+      creditLimit,
+      creditDays,
       defaultPaymentTermsId,
       defaultCurrency,
       companyReferenceCode,
@@ -97,6 +101,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (gstNo) {
+      const gstinRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+      if (!gstinRegex.test(gstNo)) {
+        return NextResponse.json({ error: "Invalid GSTIN format" }, { status: 400 });
+      }
+
+      const existing = await prisma.customerMaster.findFirst({ where: { gstNo } });
+      if (existing) {
+        return NextResponse.json({ error: "A customer with this GSTIN already exists" }, { status: 400 });
+      }
+    }
+
     const newCustomer = await prisma.customerMaster.create({
       data: {
         name,
@@ -108,6 +124,8 @@ export async function POST(request: NextRequest) {
         pincode: pincode || null,
         gstNo: gstNo || null,
         gstType: gstType || null,
+        panNo: panNo || null,
+        industrySegment: industrySegment || null,
         contactPerson: contactPerson || null,
         contactPersonEmail: contactPersonEmail || null,
         contactPersonPhone: contactPersonPhone || null,
@@ -117,6 +135,8 @@ export async function POST(request: NextRequest) {
         currency: currency || "INR",
         companyType: companyType || "BUYER",
         openingBalance: openingBalance ? parseFloat(openingBalance) : 0,
+        creditLimit: creditLimit ? parseFloat(creditLimit) : null,
+        creditDays: creditDays ? parseInt(creditDays) : null,
         defaultPaymentTermsId: defaultPaymentTermsId || null,
         defaultCurrency: defaultCurrency || "INR",
         companyReferenceCode: companyReferenceCode || null,

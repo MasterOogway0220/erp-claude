@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { createAuditLog } from "@/lib/audit";
 import { EnquiryStatus } from "@prisma/client";
 
 export async function GET(request: NextRequest) {
@@ -69,6 +70,11 @@ export async function POST(request: NextRequest) {
       clientInquiryDate,
       enquiryMode,
       projectName,
+      projectLocation,
+      endUser,
+      priority,
+      expectedClosureDate,
+      remarks,
       items,
     } = body;
 
@@ -120,6 +126,11 @@ export async function POST(request: NextRequest) {
         clientInquiryDate: clientInquiryDate ? new Date(clientInquiryDate) : null,
         enquiryMode: enquiryMode || "EMAIL",
         projectName: projectName || null,
+        projectLocation: projectLocation || null,
+        endUser: endUser || null,
+        priority: priority || "NORMAL",
+        expectedClosureDate: expectedClosureDate ? new Date(expectedClosureDate) : null,
+        remarks: remarks || null,
         items: {
           create: items.map((item: any, index: number) => ({
             sNo: index + 1,
@@ -139,6 +150,14 @@ export async function POST(request: NextRequest) {
         items: true,
       },
     });
+
+    createAuditLog({
+      userId: session.user.id,
+      action: "CREATE",
+      tableName: "Enquiry",
+      recordId: enquiry.id,
+      newValue: JSON.stringify({ enquiryNo: enquiry.enquiryNo }),
+    }).catch(console.error);
 
     return NextResponse.json(enquiry, { status: 201 });
   } catch (error) {

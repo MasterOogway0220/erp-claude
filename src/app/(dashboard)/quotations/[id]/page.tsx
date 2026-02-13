@@ -42,15 +42,20 @@ import {
   Download,
   ChevronDown,
   ShoppingCart,
+  GitBranch,
+  History,
+  Calculator,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { useCurrentUser } from "@/hooks/use-current-user";
 
 const statusColors: Record<string, string> = {
   DRAFT: "secondary",
   PENDING_APPROVAL: "default",
   APPROVED: "default",
   REJECTED: "destructive",
+  REVISED: "secondary",
   SENT: "outline",
   WON: "default",
   LOST: "destructive",
@@ -60,6 +65,7 @@ export default function QuotationDetailPage() {
   const router = useRouter();
   const params = useParams();
   const queryClient = useQueryClient();
+  const { user } = useCurrentUser();
   const [isApprovalDialogOpen, setIsApprovalDialogOpen] = useState(false);
   const [approvalAction, setApprovalAction] = useState<"APPROVED" | "REJECTED">("APPROVED");
   const [approvalRemarks, setApprovalRemarks] = useState("");
@@ -138,6 +144,27 @@ export default function QuotationDetailPage() {
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to send email");
+    },
+  });
+
+  // Revise quotation mutation
+  const reviseMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/quotations/${params.id}/revise`, {
+        method: "POST",
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to create revision");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast.success("Revision created successfully");
+      router.push(`/quotations/${data.quotation.id}`);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to create revision");
     },
   });
 
@@ -301,6 +328,16 @@ export default function QuotationDetailPage() {
               Create Sales Order
             </Button>
           </>
+        )}
+        {(quotation.status === "APPROVED" || quotation.status === "SENT" || quotation.status === "REJECTED") && (
+          <Button
+            variant="outline"
+            onClick={() => reviseMutation.mutate()}
+            disabled={reviseMutation.isPending}
+          >
+            <GitBranch className="h-4 w-4 mr-2" />
+            {reviseMutation.isPending ? "Creating Revision..." : "Revise"}
+          </Button>
         )}
       </div>
 
@@ -481,6 +518,225 @@ export default function QuotationDetailPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Revision History */}
+      {(quotation.parentQuotation || (quotation.childQuotations && quotation.childQuotations.length > 0)) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <History className="h-5 w-5" />
+              Revision History
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-lg border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Version</TableHead>
+                    <TableHead>Quotation No.</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {quotation.parentQuotation && (
+                    <TableRow>
+                      <TableCell>Rev.{quotation.parentQuotation.version}</TableCell>
+                      <TableCell className="font-mono">{quotation.parentQuotation.quotationNo}</TableCell>
+                      <TableCell>
+                        <Badge variant={statusColors[quotation.parentQuotation.status] as any}>
+                          {quotation.parentQuotation.status.replace("_", " ")}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {format(new Date(quotation.parentQuotation.quotationDate), "dd MMM yyyy")}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="link"
+                          className="p-0 h-auto"
+                          onClick={() => router.push(`/quotations/${quotation.parentQuotation.id}`)}
+                        >
+                          View
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {/* Current version */}
+                  <TableRow className="bg-muted/50">
+                    <TableCell className="font-semibold">Rev.{quotation.version} (Current)</TableCell>
+                    <TableCell className="font-mono font-semibold">{quotation.quotationNo}</TableCell>
+                    <TableCell>
+                      <Badge variant={statusColors[quotation.status] as any}>
+                        {quotation.status.replace("_", " ")}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {format(new Date(quotation.quotationDate), "dd MMM yyyy")}
+                    </TableCell>
+                    <TableCell>-</TableCell>
+                  </TableRow>
+                  {quotation.childQuotations?.map((child: any) => (
+                    <TableRow key={child.id}>
+                      <TableCell>Rev.{child.version}</TableCell>
+                      <TableCell className="font-mono">{child.quotationNo}</TableCell>
+                      <TableCell>
+                        <Badge variant={statusColors[child.status] as any}>
+                          {child.status.replace("_", " ")}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {format(new Date(child.quotationDate), "dd MMM yyyy")}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="link"
+                          className="p-0 h-auto"
+                          onClick={() => router.push(`/quotations/${child.id}`)}
+                        >
+                          View
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Internal Costing Analysis - MANAGEMENT and ADMIN only */}
+      {(user?.role === "MANAGEMENT" || user?.role === "ADMIN") &&
+        quotation.items.some(
+          (item: any) =>
+            item.materialCost || item.logisticsCost || item.inspectionCost || item.otherCosts
+        ) && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calculator className="h-5 w-5" />
+                Costing Analysis
+                <Badge variant="outline" className="ml-2 text-xs font-normal">
+                  Internal Only
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-lg border overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>S/N</TableHead>
+                      <TableHead>Product</TableHead>
+                      <TableHead>Size</TableHead>
+                      <TableHead className="text-right">Material Cost</TableHead>
+                      <TableHead className="text-right">Logistics Cost</TableHead>
+                      <TableHead className="text-right">Inspection Cost</TableHead>
+                      <TableHead className="text-right">Other Costs</TableHead>
+                      <TableHead className="text-right">Total Cost/Unit</TableHead>
+                      <TableHead className="text-right">Margin %</TableHead>
+                      <TableHead className="text-right">Selling Price</TableHead>
+                      <TableHead className="text-right">Qty</TableHead>
+                      <TableHead className="text-right">Margin Amt</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {quotation.items.map((item: any) => {
+                      const totalCost = parseFloat(item.totalCostPerUnit || 0);
+                      const unitRate = parseFloat(item.unitRate || 0);
+                      const qty = parseFloat(item.quantity || 0);
+                      const marginAmt = (unitRate - totalCost) * qty;
+                      return (
+                        <TableRow key={item.id}>
+                          <TableCell>{item.sNo}</TableCell>
+                          <TableCell className="font-medium">{item.product || "---"}</TableCell>
+                          <TableCell>{item.sizeLabel || "---"}</TableCell>
+                          <TableCell className="text-right">
+                            {item.materialCost ? parseFloat(item.materialCost).toFixed(2) : "---"}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {item.logisticsCost ? parseFloat(item.logisticsCost).toFixed(2) : "---"}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {item.inspectionCost ? parseFloat(item.inspectionCost).toFixed(2) : "---"}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {item.otherCosts ? parseFloat(item.otherCosts).toFixed(2) : "---"}
+                          </TableCell>
+                          <TableCell className="text-right font-semibold">
+                            {totalCost > 0 ? totalCost.toFixed(2) : "---"}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {item.marginPercentage
+                              ? parseFloat(item.marginPercentage).toFixed(2) + "%"
+                              : "---"}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {unitRate.toFixed(2)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {qty.toFixed(3)}
+                          </TableCell>
+                          <TableCell className="text-right font-semibold">
+                            {totalCost > 0 ? marginAmt.toFixed(2) : "---"}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Costing Summary */}
+              {(() => {
+                const itemsWithCosting = quotation.items.filter(
+                  (item: any) => parseFloat(item.totalCostPerUnit || 0) > 0
+                );
+                if (itemsWithCosting.length === 0) return null;
+
+                const grandTotalCost = itemsWithCosting.reduce(
+                  (sum: number, item: any) =>
+                    sum + parseFloat(item.totalCostPerUnit || 0) * parseFloat(item.quantity || 0),
+                  0
+                );
+                const grandTotalSelling = itemsWithCosting.reduce(
+                  (sum: number, item: any) =>
+                    sum + parseFloat(item.unitRate || 0) * parseFloat(item.quantity || 0),
+                  0
+                );
+                const grandMarginAmt = grandTotalSelling - grandTotalCost;
+                const overallMarginPct =
+                  grandTotalCost > 0 ? ((grandMarginAmt / grandTotalCost) * 100) : 0;
+
+                return (
+                  <div className="mt-4 flex justify-end gap-8 pt-4 border-t">
+                    <div className="text-right">
+                      <div className="text-sm text-muted-foreground">Total Cost</div>
+                      <div className="text-lg font-bold">
+                        {quotation.currency} {grandTotalCost.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm text-muted-foreground">Total Margin</div>
+                      <div className="text-lg font-bold text-green-600">
+                        {quotation.currency} {grandMarginAmt.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm text-muted-foreground">Overall Margin %</div>
+                      <div className="text-lg font-bold text-green-600">
+                        {overallMarginPct.toFixed(2)}%
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+            </CardContent>
+          </Card>
+        )}
 
       {/* Email Dialog */}
       <Dialog open={isEmailDialogOpen} onOpenChange={setIsEmailDialogOpen}>

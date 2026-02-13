@@ -10,6 +10,13 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   ClipboardCheck,
   FileWarning,
   FileText,
@@ -17,6 +24,7 @@ import {
   Plus,
   Search,
 } from "lucide-react";
+import { toast } from "sonner";
 import { format } from "date-fns";
 import Link from "next/link";
 
@@ -32,6 +40,12 @@ const ncrStatusColors: Record<string, string> = {
   CLOSED: "bg-green-500",
 };
 
+const verificationStatusColors: Record<string, string> = {
+  PENDING: "bg-yellow-500",
+  VERIFIED: "bg-green-500",
+  DISCREPANT: "bg-red-500",
+};
+
 export default function QualityPage() {
   const router = useRouter();
   const [inspections, setInspections] = useState<any[]>([]);
@@ -39,6 +53,7 @@ export default function QualityPage() {
   const [mtcs, setMtcs] = useState<any[]>([]);
   const [mtcSearch, setMtcSearch] = useState("");
   const [labLetters, setLabLetters] = useState<any[]>([]);
+  const [qcReleases, setQcReleases] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -46,6 +61,7 @@ export default function QualityPage() {
     fetchNCRs();
     fetchMTCs();
     fetchLabLetters();
+    fetchQCReleases();
   }, []);
 
   const fetchInspections = async () => {
@@ -91,6 +107,25 @@ export default function QualityPage() {
     fetchMTCs(mtcSearch);
   };
 
+  const handleMtcVerificationUpdate = async (mtcId: string, verificationStatus: string) => {
+    try {
+      const response = await fetch(`/api/quality/mtc/${mtcId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ verificationStatus }),
+      });
+      if (response.ok) {
+        toast.success(`MTC verification status updated to ${verificationStatus}`);
+        fetchMTCs(mtcSearch || undefined);
+      } else {
+        const error = await response.json();
+        toast.error(error.error || "Failed to update verification status");
+      }
+    } catch (error) {
+      toast.error("Failed to update verification status");
+    }
+  };
+
   const fetchLabLetters = async () => {
     try {
       const response = await fetch("/api/quality/lab-letters");
@@ -100,6 +135,18 @@ export default function QualityPage() {
       }
     } catch (error) {
       console.error("Failed to fetch lab letters:", error);
+    }
+  };
+
+  const fetchQCReleases = async () => {
+    try {
+      const response = await fetch("/api/quality/qc-release");
+      if (response.ok) {
+        const data = await response.json();
+        setQcReleases(data.qcReleases || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch QC releases:", error);
     }
   };
 
@@ -238,9 +285,81 @@ export default function QualityPage() {
       },
     },
     {
+      key: "verificationStatus",
+      header: "Verification Status",
+      cell: (row) => {
+        const status = (row.verificationStatus as string) || "PENDING";
+        return (
+          <Select
+            value={status}
+            onValueChange={(value) => handleMtcVerificationUpdate(row.id as string, value)}
+          >
+            <SelectTrigger className="h-8 w-[140px]">
+              <Badge className={`${verificationStatusColors[status] || "bg-gray-500"} text-xs`}>
+                {status}
+              </Badge>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="PENDING">Pending</SelectItem>
+              <SelectItem value="VERIFIED">Verified</SelectItem>
+              <SelectItem value="DISCREPANT">Discrepant</SelectItem>
+            </SelectContent>
+          </Select>
+        );
+      },
+    },
+    {
       key: "uploadDate",
       header: "Upload Date",
       cell: (row) => format(new Date(row.uploadDate as string), "dd MMM yyyy"),
+    },
+  ];
+
+  const qcReleaseColumns: Column<any>[] = [
+    {
+      key: "releaseNo",
+      header: "Release No.",
+      cell: (row) => (
+        <Link
+          href={`/quality/qc-release/${row.id}`}
+          className="font-mono text-sm text-blue-600 hover:underline"
+        >
+          {row.releaseNo as string}
+        </Link>
+      ),
+    },
+    {
+      key: "releaseDate",
+      header: "Date",
+      cell: (row) => format(new Date(row.releaseDate as string), "dd MMM yyyy"),
+    },
+    {
+      key: "inspection",
+      header: "Inspection No.",
+      cell: (row) => (row.inspection as any)?.inspectionNo || "—",
+    },
+    {
+      key: "heatNo",
+      header: "Heat No.",
+      cell: (row) => (
+        <span className="font-mono text-sm">
+          {(row.inventoryStock as any)?.heatNo || "—"}
+        </span>
+      ),
+    },
+    {
+      key: "decision",
+      header: "Decision",
+      cell: (row) => (
+        <Badge className={(row.decision as string) === "ACCEPT" ? "bg-green-500" : "bg-red-500"}>
+          {row.decision as string}
+        </Badge>
+      ),
+    },
+    {
+      key: "releasedBy",
+      header: "Released By",
+      cell: (row) => (row.releasedBy as any)?.name || "—",
     },
   ];
 
@@ -332,6 +451,7 @@ export default function QualityPage() {
       <Tabs defaultValue="inspections" className="space-y-4">
         <TabsList>
           <TabsTrigger value="inspections">Inspections</TabsTrigger>
+          <TabsTrigger value="qc-release">QC Release</TabsTrigger>
           <TabsTrigger value="mtc">MTC Repository</TabsTrigger>
           <TabsTrigger value="ncr">NCR Register</TabsTrigger>
           <TabsTrigger value="lab-letters">Lab Letters</TabsTrigger>
@@ -354,6 +474,28 @@ export default function QualityPage() {
                 data={inspections}
                 searchKey="inspectionNo"
                 searchPlaceholder="Search by inspection number..."
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="qc-release">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>QC Releases</CardTitle>
+                <Button onClick={() => router.push("/quality/qc-release/create")}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  New QC Release
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <DataTable
+                columns={qcReleaseColumns}
+                data={qcReleases}
+                searchKey="releaseNo"
+                searchPlaceholder="Search by release number..."
               />
             </CardContent>
           </Card>

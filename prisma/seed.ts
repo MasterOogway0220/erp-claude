@@ -315,6 +315,7 @@ async function seedDocumentSequences() {
     { documentType: "INVOICE_DOMESTIC", prefix: "INV" },
     { documentType: "INVOICE_EXPORT", prefix: "EXP" },
     { documentType: "RECEIPT", prefix: "REC" },
+    { documentType: "STOCK_ISSUE", prefix: "ISS" },
   ];
 
   for (const s of sequences) {
@@ -464,6 +465,9 @@ async function main() {
   console.log("Clearing existing data...");
   await prisma.auditLog.deleteMany();
   await prisma.documentSequence.deleteMany();
+  await prisma.qCRelease.deleteMany();
+  await prisma.stockIssueItem.deleteMany();
+  await prisma.stockIssue.deleteMany();
   await prisma.paymentReceipt.deleteMany();
   await prisma.invoiceItem.deleteMany();
   await prisma.invoice.deleteMany();
@@ -504,6 +508,8 @@ async function main() {
   await prisma.testingMaster.deleteMany();
   await prisma.pipeSizeMaster.deleteMany();
   await prisma.productSpecMaster.deleteMany();
+  await prisma.warehouseLocation.deleteMany();
+  await prisma.warehouseMaster.deleteMany();
   await prisma.transporterMaster.deleteMany();
   await prisma.dimensionalStandardMaster.deleteMany();
   await prisma.certificationTypeMaster.deleteMany();

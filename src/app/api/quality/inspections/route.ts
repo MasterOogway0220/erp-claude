@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { createAuditLog } from "@/lib/audit";
 import { generateDocumentNumber } from "@/lib/document-numbering";
 
 export async function GET(request: NextRequest) {
@@ -77,8 +78,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // RBAC: Only QC and ADMIN can create inspections
+    const allowedRoles = ["QC", "ADMIN"];
+    if (!allowedRoles.includes(session.user.role)) {
+      return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
+    }
+
     const body = await request.json();
-    const { grnItemId, inventoryStockId, remarks, parameters } = body;
+    const { grnItemId, inventoryStockId, inspectionType, remarks, parameters } = body;
 
     if (!parameters || parameters.length === 0) {
       return NextResponse.json(
@@ -105,6 +112,7 @@ export async function POST(request: NextRequest) {
           grnItemId: grnItemId || null,
           inventoryStockId: inventoryStockId || null,
           inspectorId: session.user.id,
+          inspectionType: inspectionType || null,
           overallResult,
           remarks: remarks || null,
           parameters: {
@@ -144,6 +152,43 @@ export async function POST(request: NextRequest) {
       return created;
     });
 
+    // Auto-create NCR for rejected material
+    if (overallResult === "FAIL") {
+      const ncrNo = await generateDocumentNumber("NCR");
+      // Fetch heat number from inventory stock if available
+      let heatNo: string | null = null;
+      if (inventoryStockId) {
+        const stock = await prisma.inventoryStock.findUnique({
+          where: { id: inventoryStockId },
+          select: { heatNo: true, grnItem: { select: { grn: { select: { poId: true, vendorId: true } } } } },
+        });
+        heatNo = stock?.heatNo || null;
+        await prisma.nCR.create({
+          data: {
+            ncrNo,
+            nonConformanceType: "INCOMING_MATERIAL",
+            description: `Auto-generated NCR for inspection ${inspection.inspectionNo} - Material failed quality check`,
+            status: "OPEN",
+            inventoryStockId: inventoryStockId || null,
+            grnItemId: grnItemId || null,
+            heatNo,
+            poId: stock?.grnItem?.grn?.poId || null,
+            vendorId: stock?.grnItem?.grn?.vendorId || null,
+          },
+        });
+      } else {
+        await prisma.nCR.create({
+          data: {
+            ncrNo,
+            nonConformanceType: "INCOMING_MATERIAL",
+            description: `Auto-generated NCR for inspection ${inspection.inspectionNo} - Material failed quality check`,
+            status: "OPEN",
+            grnItemId: grnItemId || null,
+          },
+        });
+      }
+    }
+
     const fullInspection = await prisma.inspection.findUnique({
       where: { id: inspection.id },
       include: {
@@ -166,6 +211,14 @@ export async function POST(request: NextRequest) {
         parameters: true,
       },
     });
+
+    createAuditLog({
+      userId: session.user.id,
+      action: "CREATE",
+      tableName: "Inspection",
+      recordId: inspection.id,
+      newValue: JSON.stringify({ inspectionNo, overallResult }),
+    }).catch(console.error);
 
     return NextResponse.json(fullInspection, { status: 201 });
   } catch (error) {

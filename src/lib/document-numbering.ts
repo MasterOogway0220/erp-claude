@@ -13,7 +13,8 @@ export type DocumentType =
   | "DISPATCH_NOTE"
   | "INVOICE_DOMESTIC"
   | "INVOICE_EXPORT"
-  | "RECEIPT";
+  | "RECEIPT"
+  | "STOCK_ISSUE";
 
 const PREFIXES: Record<DocumentType, string> = {
   ENQUIRY: "ENQ",
@@ -22,13 +23,14 @@ const PREFIXES: Record<DocumentType, string> = {
   PURCHASE_REQUISITION: "PR",
   PURCHASE_ORDER: "PO",
   GRN: "GRN",
-  INSPECTION: "IR",
+  INSPECTION: "INS",
   NCR: "NCR",
   PACKING_LIST: "PL",
   DISPATCH_NOTE: "DN",
   INVOICE_DOMESTIC: "INV",
   INVOICE_EXPORT: "EXP",
   RECEIPT: "REC",
+  STOCK_ISSUE: "ISS",
 };
 
 function getCurrentFinancialYear(): string {

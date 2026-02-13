@@ -19,7 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProductMaterialSelect } from "@/components/shared/product-material-select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, ArrowLeft, Building2, History, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Building2, History, ChevronDown, ChevronUp, Calculator } from "lucide-react";
 import { toast } from "sonner";
 
 interface QuotationItem {
@@ -41,6 +41,14 @@ interface QuotationItem {
   remark: string;
   unitWeight: string;
   totalWeightMT: string;
+  // Internal costing fields
+  materialCost: string;
+  logisticsCost: string;
+  inspectionCost: string;
+  otherCosts: string;
+  totalCostPerUnit: string;
+  marginPercentage: string;
+  costingExpanded: boolean;
 }
 
 const emptyItem: QuotationItem = {
@@ -62,6 +70,14 @@ const emptyItem: QuotationItem = {
   remark: "",
   unitWeight: "",
   totalWeightMT: "0.0000",
+  // Internal costing fields
+  materialCost: "",
+  logisticsCost: "",
+  inspectionCost: "",
+  otherCosts: "",
+  totalCostPerUnit: "",
+  marginPercentage: "",
+  costingExpanded: false,
 };
 
 const hardCodedNotes = [
@@ -97,6 +113,9 @@ function StandardQuotationPage() {
     quotationCategory: "STANDARD",
     currency: "INR",
     validUpto: "",
+    paymentTermsId: "",
+    deliveryTermsId: "",
+    deliveryPeriod: "",
   });
   const [items, setItems] = useState<QuotationItem[]>([emptyItem]);
   const [terms, setTerms] = useState<{
@@ -156,6 +175,26 @@ function StandardQuotationPage() {
     queryFn: async () => {
       const res = await fetch("/api/offer-term-templates");
       if (!res.ok) throw new Error("Failed to fetch templates");
+      return res.json();
+    },
+  });
+
+  // Fetch payment terms master
+  const { data: paymentTermsData } = useQuery({
+    queryKey: ["payment-terms"],
+    queryFn: async () => {
+      const res = await fetch("/api/masters/payment-terms");
+      if (!res.ok) throw new Error("Failed to fetch payment terms");
+      return res.json();
+    },
+  });
+
+  // Fetch delivery terms master
+  const { data: deliveryTermsData } = useQuery({
+    queryKey: ["delivery-terms"],
+    queryFn: async () => {
+      const res = await fetch("/api/masters/delivery-terms");
+      if (!res.ok) throw new Error("Failed to fetch delivery terms");
       return res.json();
     },
   });
@@ -331,16 +370,58 @@ function StandardQuotationPage() {
     if (items.length > 1) setItems(items.filter((_, i) => i !== index));
   };
 
+  // Helper to recalculate costing-derived fields for an item
+  const recalcCosting = (item: QuotationItem) => {
+    const matCost = parseFloat(item.materialCost) || 0;
+    const logCost = parseFloat(item.logisticsCost) || 0;
+    const inspCost = parseFloat(item.inspectionCost) || 0;
+    const othCost = parseFloat(item.otherCosts) || 0;
+    const totalCost = matCost + logCost + inspCost + othCost;
+    const margin = parseFloat(item.marginPercentage) || 0;
+
+    item.totalCostPerUnit = totalCost > 0 ? totalCost.toFixed(2) : "";
+
+    // Only auto-fill unitRate if any costing field is filled
+    if (totalCost > 0) {
+      const sellingPrice = totalCost * (1 + margin / 100);
+      item.unitRate = sellingPrice.toFixed(2);
+    }
+
+    // Recalculate amount
+    const qty = parseFloat(item.quantity) || 0;
+    const rate = parseFloat(item.unitRate) || 0;
+    item.amount = (qty * rate).toFixed(2);
+  };
+
   const updateItem = (index: number, field: keyof QuotationItem, value: string) => {
     const newItems = [...items];
-    newItems[index][field] = value;
+    (newItems[index] as any)[field] = value;
 
-    if (field === "quantity" || field === "unitRate") {
+    const costingFields: (keyof QuotationItem)[] = [
+      "materialCost",
+      "logisticsCost",
+      "inspectionCost",
+      "otherCosts",
+      "marginPercentage",
+    ];
+
+    if (costingFields.includes(field)) {
+      // Costing field changed - recalculate totalCostPerUnit, unitRate, amount
+      recalcCosting(newItems[index]);
+    } else if (field === "quantity" || field === "unitRate") {
       const qty = parseFloat(newItems[index].quantity) || 0;
       const rate = parseFloat(newItems[index].unitRate) || 0;
       newItems[index].amount = (qty * rate).toFixed(2);
       if (newItems[index].unitWeight) {
         newItems[index].totalWeightMT = ((qty * parseFloat(newItems[index].unitWeight)) / 1000).toFixed(4);
+      }
+      // If unitRate is manually changed and costing fields exist, back-calculate margin
+      if (field === "unitRate") {
+        const totalCost = parseFloat(newItems[index].totalCostPerUnit) || 0;
+        if (totalCost > 0) {
+          const newMargin = ((rate / totalCost - 1) * 100);
+          newItems[index].marginPercentage = newMargin >= 0 ? newMargin.toFixed(2) : newMargin.toFixed(2);
+        }
       }
     }
 
@@ -374,6 +455,12 @@ function StandardQuotationPage() {
     setItems(newItems);
   };
 
+  const toggleCosting = (index: number) => {
+    const newItems = [...items];
+    newItems[index].costingExpanded = !newItems[index].costingExpanded;
+    setItems(newItems);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.customerId) {
@@ -384,9 +471,11 @@ function StandardQuotationPage() {
       toast.error("Please fill quantity and unit rate for all items");
       return;
     }
+    // Strip UI-only fields before sending to API
+    const apiItems = items.map(({ costingExpanded, ...item }) => item);
     createMutation.mutate({
       ...formData,
-      items,
+      items: apiItems,
       terms,
     });
   };
@@ -503,6 +592,63 @@ function StandardQuotationPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, validUpto: e.target.value })
                   }
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid gap-2">
+                <Label>Payment Terms</Label>
+                <Select
+                  value={formData.paymentTermsId || "NONE"}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, paymentTermsId: value === "NONE" ? "" : value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select payment terms" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NONE">Select payment terms</SelectItem>
+                    {(paymentTermsData?.paymentTerms || paymentTermsData?.data || []).map((pt: any) => (
+                      <SelectItem key={pt.id} value={pt.id}>
+                        {pt.name || pt.termName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Delivery Terms</Label>
+                <Select
+                  value={formData.deliveryTermsId || "NONE"}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, deliveryTermsId: value === "NONE" ? "" : value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select delivery terms" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NONE">Select delivery terms</SelectItem>
+                    {(deliveryTermsData?.deliveryTerms || deliveryTermsData?.data || []).map((dt: any) => (
+                      <SelectItem key={dt.id} value={dt.id}>
+                        {dt.name || dt.termName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Delivery Period</Label>
+                <Input
+                  value={formData.deliveryPeriod}
+                  onChange={(e) =>
+                    setFormData({ ...formData, deliveryPeriod: e.target.value })
+                  }
+                  placeholder="e.g., 4-6 weeks from PO receipt"
                 />
               </div>
             </div>
@@ -787,6 +933,113 @@ function StandardQuotationPage() {
                     value={item.remark}
                     onChange={(e) => updateItem(index, "remark", e.target.value)}
                   />
+                </div>
+
+                {/* Internal Costing Section (Collapsible) */}
+                <div className="border-t pt-2 mt-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs gap-1 text-muted-foreground"
+                    onClick={() => toggleCosting(index)}
+                  >
+                    <Calculator className="h-3 w-3" />
+                    Internal Costing
+                    {item.costingExpanded ? (
+                      <ChevronUp className="h-3 w-3" />
+                    ) : (
+                      <ChevronDown className="h-3 w-3" />
+                    )}
+                    {item.totalCostPerUnit && (
+                      <Badge variant="secondary" className="ml-2 text-xs">
+                        Cost: {item.totalCostPerUnit} | Margin: {item.marginPercentage || "0"}%
+                      </Badge>
+                    )}
+                  </Button>
+
+                  {item.costingExpanded && (
+                    <div className="mt-3 p-3 rounded-md bg-muted/30 border border-dashed">
+                      <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+                        <div className="grid gap-2">
+                          <Label className="text-xs">Material Cost/Unit</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            value={item.materialCost}
+                            onChange={(e) =>
+                              updateItem(index, "materialCost", e.target.value)
+                            }
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label className="text-xs">Logistics Cost/Unit</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            value={item.logisticsCost}
+                            onChange={(e) =>
+                              updateItem(index, "logisticsCost", e.target.value)
+                            }
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label className="text-xs">Inspection Cost/Unit</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            value={item.inspectionCost}
+                            onChange={(e) =>
+                              updateItem(index, "inspectionCost", e.target.value)
+                            }
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label className="text-xs">Other Costs/Unit</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            value={item.otherCosts}
+                            onChange={(e) =>
+                              updateItem(index, "otherCosts", e.target.value)
+                            }
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label className="text-xs">Total Cost/Unit</Label>
+                          <Input
+                            value={item.totalCostPerUnit}
+                            readOnly
+                            className="bg-muted font-semibold"
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label className="text-xs">Margin %</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            value={item.marginPercentage}
+                            onChange={(e) =>
+                              updateItem(index, "marginPercentage", e.target.value)
+                            }
+                          />
+                        </div>
+                      </div>
+                      {item.totalCostPerUnit && (
+                        <div className="mt-2 flex gap-4 text-xs text-muted-foreground">
+                          <span>
+                            Selling Price = {item.totalCostPerUnit} x (1 + {item.marginPercentage || "0"}%) ={" "}
+                            <span className="font-semibold text-foreground">{item.unitRate || "0.00"}</span>
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

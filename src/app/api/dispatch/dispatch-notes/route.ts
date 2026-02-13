@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { createAuditLog } from "@/lib/audit";
 import { generateDocumentNumber } from "@/lib/document-numbering";
 
 export async function GET(request: NextRequest) {
@@ -242,6 +243,14 @@ export async function POST(request: NextRequest) {
         invoices: true,
       },
     });
+
+    createAuditLog({
+      userId: session.user.id,
+      action: "CREATE",
+      tableName: "DispatchNote",
+      recordId: dispatchNote.id,
+      newValue: JSON.stringify({ dnNo }),
+    }).catch(console.error);
 
     return NextResponse.json(fullDispatchNote, { status: 201 });
   } catch (error) {

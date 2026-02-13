@@ -83,6 +83,7 @@ interface VendorFormData {
   pincode: string;
   gstNo: string;
   gstType: string;
+  panNo: string;
   approvedStatus: boolean;
   approvalDate: string;
   productsSupplied: string;
@@ -107,6 +108,7 @@ const emptyForm: VendorFormData = {
   pincode: "",
   gstNo: "",
   gstType: "",
+  panNo: "",
   approvedStatus: true,
   approvalDate: "",
   productsSupplied: "",
@@ -208,6 +210,7 @@ export default function VendorsPage() {
         pincode: vendor.pincode || "",
         gstNo: vendor.gstNo || "",
         gstType: vendor.gstType || "",
+        panNo: (vendor as any).panNo || "",
         approvedStatus: vendor.approvedStatus,
         approvalDate: vendor.approvalDate ? vendor.approvalDate.split("T")[0] : "",
         productsSupplied: vendor.productsSupplied || "",
@@ -507,6 +510,17 @@ export default function VendorsPage() {
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="panNo">PAN Number</Label>
+                  <Input
+                    id="panNo"
+                    value={formData.panNo}
+                    onChange={(e) => setFormData({ ...formData, panNo: e.target.value.toUpperCase() })}
+                    placeholder="AAAAA0000A"
+                    maxLength={10}
+                    className="font-mono"
+                  />
                 </div>
               </div>
             </div>

@@ -40,6 +40,15 @@ interface InvoiceItem {
   taxRate: string;
 }
 
+interface TaxRateOption {
+  id: string;
+  code: string | null;
+  name: string;
+  percentage: number | string;
+  taxType: string | null;
+  isActive: boolean;
+}
+
 const COMPANY_STATE = "Maharashtra";
 
 export default function CreateInvoicePageWrapper() {
@@ -59,6 +68,8 @@ function CreateInvoicePage() {
   const [dispatchNotes, setDispatchNotes] = useState<any[]>([]);
   const [selectedDN, setSelectedDN] = useState<any>(null);
   const [customer, setCustomer] = useState<any>(null);
+  const [taxRates, setTaxRates] = useState<TaxRateOption[]>([]);
+  const [defaultTaxRate, setDefaultTaxRate] = useState<string>("18");
 
   const [formData, setFormData] = useState({
     dispatchNoteId: preselectedDnId,
@@ -74,7 +85,34 @@ function CreateInvoicePage() {
 
   useEffect(() => {
     fetchDispatchNotes();
+    fetchTaxRates();
   }, []);
+
+  const fetchTaxRates = async () => {
+    try {
+      const response = await fetch("/api/masters/tax");
+      if (response.ok) {
+        const data = await response.json();
+        const rates: TaxRateOption[] = (data.taxRates || []).filter(
+          (t: TaxRateOption) => t.isActive
+        );
+        setTaxRates(rates);
+        // Set default tax rate from the first active GST rate
+        const firstGst = rates.find(
+          (r) =>
+            r.taxType === "IGST" ||
+            r.taxType === "CGST" ||
+            r.taxType === "SGST" ||
+            Number(r.percentage) > 0
+        );
+        if (firstGst) {
+          setDefaultTaxRate(String(Number(firstGst.percentage)));
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch tax rates:", error);
+    }
+  };
 
   useEffect(() => {
     if (formData.dispatchNoteId) {
@@ -132,7 +170,7 @@ function CreateInvoicePage() {
               unitRate: "0",
               amount: "0",
               hsnCode: "73044900",
-              taxRate: "18",
+              taxRate: defaultTaxRate,
             })
           );
 
@@ -172,7 +210,7 @@ function CreateInvoicePage() {
         unitRate: "0",
         amount: "0",
         hsnCode: "73044900",
-        taxRate: "18",
+        taxRate: defaultTaxRate,
       },
     ]);
   };
@@ -471,14 +509,37 @@ function CreateInvoicePage() {
                       </div>
                       <div className="space-y-1">
                         <Label className="text-xs">Tax Rate (%)</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={item.taxRate}
-                          onChange={(e) =>
-                            updateItem(index, "taxRate", e.target.value)
-                          }
-                        />
+                        {taxRates.length > 0 ? (
+                          <Select
+                            value={item.taxRate}
+                            onValueChange={(value) =>
+                              updateItem(index, "taxRate", value)
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Tax rate" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {taxRates.map((rate) => (
+                                <SelectItem
+                                  key={rate.id}
+                                  value={String(Number(rate.percentage))}
+                                >
+                                  {rate.name} ({Number(rate.percentage)}%)
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={item.taxRate}
+                            onChange={(e) =>
+                              updateItem(index, "taxRate", e.target.value)
+                            }
+                          />
+                        )}
                       </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">

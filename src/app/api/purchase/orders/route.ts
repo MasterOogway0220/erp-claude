@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { createAuditLog } from "@/lib/audit";
 import { POStatus } from "@prisma/client";
 
 export async function GET(request: NextRequest) {
@@ -77,6 +78,21 @@ export async function POST(request: NextRequest) {
     if (!vendorId) {
       return NextResponse.json(
         { error: "Vendor is required" },
+        { status: 400 }
+      );
+    }
+
+    // Validate vendor is approved
+    const vendor = await prisma.vendorMaster.findUnique({
+      where: { id: vendorId },
+      select: { approvedStatus: true, name: true },
+    });
+    if (!vendor) {
+      return NextResponse.json({ error: "Vendor not found" }, { status: 404 });
+    }
+    if (!vendor.approvedStatus) {
+      return NextResponse.json(
+        { error: `Vendor "${vendor.name}" is not approved. Only approved vendors can be used for Purchase Orders.` },
         { status: 400 }
       );
     }
@@ -170,6 +186,14 @@ export async function POST(request: NextRequest) {
         data: { status: "PO_CREATED" },
       });
     }
+
+    createAuditLog({
+      userId: session.user.id,
+      action: "CREATE",
+      tableName: "PurchaseOrder",
+      recordId: purchaseOrder.id,
+      newValue: JSON.stringify({ poNo: purchaseOrder.poNo }),
+    }).catch(console.error);
 
     return NextResponse.json(purchaseOrder, { status: 201 });
   } catch (error) {

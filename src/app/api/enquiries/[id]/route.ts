@@ -57,11 +57,16 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { status } = body;
+    const { status, lostReason } = body;
+
+    const updateData: any = { status };
+    if (status === "LOST" && lostReason) {
+      updateData.lostReason = lostReason;
+    }
 
     const updated = await prisma.enquiry.update({
       where: { id },
-      data: { status },
+      data: updateData,
       include: {
         customer: true,
         items: true,

@@ -13,6 +13,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import {
   AlertCircle,
@@ -21,6 +30,7 @@ import {
   TrendingDown,
   CheckCircle,
   Eye,
+  StickyNote,
 } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { useRouter } from "next/navigation";
@@ -37,6 +47,7 @@ interface POTracking {
   deliveryDate: string;
   totalAmount: number;
   status: string;
+  followUpNotes?: string | null;
   goodsReceiptNotes: Array<{
     grnDate: string;
   }>;
@@ -61,6 +72,10 @@ export default function POFollowUpPage() {
   const [overduePOs, setOverduePOs] = useState<POTracking[]>([]);
   const [upcomingPOs, setUpcomingPOs] = useState<POTracking[]>([]);
   const [vendorPerformance, setVendorPerformance] = useState<VendorPerformance[]>([]);
+  const [isNotesDialogOpen, setIsNotesDialogOpen] = useState(false);
+  const [selectedPO, setSelectedPO] = useState<POTracking | null>(null);
+  const [notesText, setNotesText] = useState("");
+  const [savingNotes, setSavingNotes] = useState(false);
 
   useEffect(() => {
     fetchPOTracking();
@@ -179,6 +194,40 @@ export default function POFollowUpPage() {
     return <Badge className="bg-red-500">Poor</Badge>;
   };
 
+  const handleOpenNotes = (po: POTracking) => {
+    setSelectedPO(po);
+    setNotesText(po.followUpNotes || "");
+    setIsNotesDialogOpen(true);
+  };
+
+  const handleSaveNotes = async () => {
+    if (!selectedPO) return;
+    setSavingNotes(true);
+    try {
+      const res = await fetch(`/api/purchase/orders/${selectedPO.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ followUpNotes: notesText }),
+      });
+      if (!res.ok) throw new Error("Failed to save notes");
+
+      // Update local state
+      const updatePOList = (list: POTracking[]) =>
+        list.map((po) =>
+          po.id === selectedPO.id ? { ...po, followUpNotes: notesText } : po
+        );
+      setOverduePOs(updatePOList);
+      setUpcomingPOs(updatePOList);
+
+      toast.success("Follow-up notes saved");
+      setIsNotesDialogOpen(false);
+    } catch (error) {
+      toast.error("Failed to save follow-up notes");
+    } finally {
+      setSavingNotes(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -280,6 +329,7 @@ export default function POFollowUpPage() {
                   <TableHead>Days Overdue</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Notes</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -301,11 +351,22 @@ export default function POFollowUpPage() {
                       <TableCell>
                         <Badge variant="destructive">{daysOverdue} days</Badge>
                       </TableCell>
-                      <TableCell>₹{Number(po.totalAmount).toFixed(2)}</TableCell>
+                      <TableCell>{Number(po.totalAmount).toFixed(2)}</TableCell>
                       <TableCell>
                         <Badge className="bg-yellow-500">
                           {po.status.replace(/_/g, " ")}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          size="sm"
+                          variant={po.followUpNotes ? "secondary" : "ghost"}
+                          onClick={() => handleOpenNotes(po)}
+                          title={po.followUpNotes || "Add notes"}
+                        >
+                          <StickyNote className="w-4 h-4 mr-1" />
+                          {po.followUpNotes ? "View" : "Add"}
+                        </Button>
                       </TableCell>
                       <TableCell>
                         <Button
@@ -349,6 +410,7 @@ export default function POFollowUpPage() {
                   <TableHead>Days Until</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Notes</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -374,11 +436,22 @@ export default function POFollowUpPage() {
                           {daysUntil} days
                         </Badge>
                       </TableCell>
-                      <TableCell>₹{Number(po.totalAmount).toFixed(2)}</TableCell>
+                      <TableCell>{Number(po.totalAmount).toFixed(2)}</TableCell>
                       <TableCell>
                         <Badge className="bg-green-500">
                           {po.status.replace(/_/g, " ")}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          size="sm"
+                          variant={po.followUpNotes ? "secondary" : "ghost"}
+                          onClick={() => handleOpenNotes(po)}
+                          title={po.followUpNotes || "Add notes"}
+                        >
+                          <StickyNote className="w-4 h-4 mr-1" />
+                          {po.followUpNotes ? "View" : "Add"}
+                        </Button>
                       </TableCell>
                       <TableCell>
                         <Button
@@ -482,6 +555,42 @@ export default function POFollowUpPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Follow-up Notes Dialog */}
+      <Dialog open={isNotesDialogOpen} onOpenChange={setIsNotesDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Follow-up Notes</DialogTitle>
+            <DialogDescription>
+              {selectedPO ? `Notes for ${selectedPO.poNo} - ${selectedPO.vendor.name}` : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <Textarea
+              value={notesText}
+              onChange={(e) => setNotesText(e.target.value)}
+              rows={6}
+              placeholder="Enter follow-up notes, remarks, or action items..."
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsNotesDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSaveNotes}
+              disabled={savingNotes}
+            >
+              {savingNotes ? "Saving..." : "Save Notes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { createAuditLog } from "@/lib/audit";
 import { SOStatus } from "@prisma/client";
 
 export async function GET(request: NextRequest) {
@@ -63,7 +64,11 @@ export async function POST(request: NextRequest) {
       customerPoNo,
       customerPoDate,
       customerPoDocument,
+      projectName,
+      deliverySchedule,
+      paymentTerms,
       items,
+      forceCreate,
     } = body;
 
     if (!customerId) {
@@ -71,6 +76,64 @@ export async function POST(request: NextRequest) {
         { error: "Customer is required" },
         { status: 400 }
       );
+    }
+
+    // Credit limit enforcement
+    const customer = await prisma.customerMaster.findUnique({
+      where: { id: customerId },
+      select: { creditLimit: true, name: true },
+    });
+
+    if (customer?.creditLimit && Number(customer.creditLimit) > 0 && !forceCreate) {
+      const creditLimit = Number(customer.creditLimit);
+
+      // Calculate total outstanding: sum of unpaid invoice amounts minus payment receipts
+      const unpaidInvoices = await prisma.invoice.findMany({
+        where: {
+          customerId,
+          status: { in: ["SENT", "PARTIALLY_PAID"] },
+        },
+        select: { id: true, totalAmount: true },
+      });
+
+      const totalInvoiceAmount = unpaidInvoices.reduce(
+        (sum, inv) => sum + Number(inv.totalAmount),
+        0
+      );
+
+      const invoiceIds = unpaidInvoices.map((inv) => inv.id);
+      const payments = invoiceIds.length > 0
+        ? await prisma.paymentReceipt.findMany({
+            where: { invoiceId: { in: invoiceIds } },
+            select: { amountReceived: true },
+          })
+        : [];
+
+      const totalPayments = payments.reduce(
+        (sum, p) => sum + Number(p.amountReceived),
+        0
+      );
+
+      const outstanding = totalInvoiceAmount - totalPayments;
+
+      // Calculate new SO value from items
+      const newSOValue = (items || []).reduce(
+        (sum: number, item: any) => sum + (parseFloat(item.amount) || 0),
+        0
+      );
+
+      if (outstanding + newSOValue > creditLimit) {
+        return NextResponse.json(
+          {
+            error: `Credit limit exceeded. Outstanding: \u20B9${outstanding.toLocaleString("en-IN", { minimumFractionDigits: 2 })}, New SO: \u20B9${newSOValue.toLocaleString("en-IN", { minimumFractionDigits: 2 })}, Credit Limit: \u20B9${creditLimit.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`,
+            creditLimitExceeded: true,
+            outstanding,
+            newSOValue,
+            creditLimit,
+          },
+          { status: 400 }
+        );
+      }
     }
 
     // Generate SO number (SO/YY/NNNNN)
@@ -110,7 +173,10 @@ export async function POST(request: NextRequest) {
         customerPoNo: customerPoNo || null,
         customerPoDate: customerPoDate ? new Date(customerPoDate) : null,
         customerPoDocument: customerPoDocument || null,
-        poAcceptanceStatus: "ACCEPTED",
+        projectName: projectName || null,
+        deliverySchedule: deliverySchedule || null,
+        paymentTerms: paymentTerms || null,
+        poAcceptanceStatus: "PENDING",
         items: {
           create: items.map((item: any, index: number) => ({
             sNo: index + 1,
@@ -143,6 +209,14 @@ export async function POST(request: NextRequest) {
         data: { status: "WON" },
       });
     }
+
+    createAuditLog({
+      userId: session.user.id,
+      action: "CREATE",
+      tableName: "SalesOrder",
+      recordId: salesOrder.id,
+      newValue: JSON.stringify({ soNo: salesOrder.soNo }),
+    }).catch(console.error);
 
     return NextResponse.json(salesOrder, { status: 201 });
   } catch (error) {

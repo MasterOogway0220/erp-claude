@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { createAuditLog } from "@/lib/audit";
 
 export async function GET(
   request: NextRequest,
@@ -67,6 +68,11 @@ export async function PATCH(
     const body = await request.json();
     const { status, poAcceptanceStatus } = body;
 
+    const existing = await prisma.salesOrder.findUnique({
+      where: { id },
+      select: { status: true, poAcceptanceStatus: true },
+    });
+
     const updated = await prisma.salesOrder.update({
       where: { id },
       data: {
@@ -78,6 +84,16 @@ export async function PATCH(
         items: true,
       },
     });
+
+    createAuditLog({
+      userId: session.user.id,
+      action: "UPDATE",
+      tableName: "SalesOrder",
+      recordId: id,
+      fieldName: "status",
+      oldValue: existing?.status || null,
+      newValue: updated.status,
+    }).catch(console.error);
 
     return NextResponse.json(updated);
   } catch (error) {

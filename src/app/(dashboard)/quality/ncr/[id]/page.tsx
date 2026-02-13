@@ -24,15 +24,19 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, CheckCircle, AlertCircle, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ArrowLeft, CheckCircle, AlertCircle, Search, Wrench, ShieldCheck } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import Link from "next/link";
+import { useCurrentUser } from "@/hooks/use-current-user";
 
 const ncrStatusColors: Record<string, string> = {
   OPEN: "bg-red-500",
   UNDER_INVESTIGATION: "bg-yellow-500",
+  CORRECTIVE_ACTION_IN_PROGRESS: "bg-orange-500",
   CLOSED: "bg-green-500",
+  VERIFIED: "bg-blue-500",
 };
 
 const dispositionLabels: Record<string, string> = {
@@ -45,11 +49,13 @@ const dispositionLabels: Record<string, string> = {
 export default function NCRDetailPage() {
   const router = useRouter();
   const params = useParams();
+  const { user } = useCurrentUser();
   const [ncr, setNcr] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [investigateDialogOpen, setInvestigateDialogOpen] = useState(false);
   const [closeDialogOpen, setCloseDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [targetClosureDate, setTargetClosureDate] = useState("");
   const [capaData, setCAPAData] = useState({
     rootCause: "",
     correctiveAction: "",
@@ -104,6 +110,53 @@ export default function NCRDetailPage() {
       setSubmitting(false);
     }
   };
+
+  const handleMoveToCorrective = async () => {
+    setSubmitting(true);
+    try {
+      const response = await fetch(`/api/quality/ncr/${params.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status: "CORRECTIVE_ACTION_IN_PROGRESS",
+          targetClosureDate: targetClosureDate || undefined,
+        }),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to update NCR");
+      }
+      toast.success("NCR moved to corrective action phase");
+      fetchNCR(params.id as string);
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleVerifyNCR = async () => {
+    setSubmitting(true);
+    try {
+      const response = await fetch(`/api/quality/ncr/${params.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "VERIFIED" }),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to verify NCR");
+      }
+      toast.success("NCR verified by management");
+      fetchNCR(params.id as string);
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const canVerify = user?.role === "MANAGEMENT" || user?.role === "ADMIN";
 
   const handleCloseNCR = async () => {
     if (!capaData.rootCause.trim()) {
@@ -196,7 +249,13 @@ export default function NCRDetailPage() {
               </DialogContent>
             </Dialog>
           )}
-          {(ncr.status === "OPEN" || ncr.status === "UNDER_INVESTIGATION") && (
+          {ncr.status === "UNDER_INVESTIGATION" && (
+            <Button variant="outline" onClick={handleMoveToCorrective} disabled={submitting}>
+              <Wrench className="w-4 h-4 mr-2" />
+              Start Corrective Action
+            </Button>
+          )}
+          {ncr.status === "CORRECTIVE_ACTION_IN_PROGRESS" && (
             <Dialog open={closeDialogOpen} onOpenChange={setCloseDialogOpen}>
               <DialogTrigger asChild>
                 <Button>
@@ -268,27 +327,34 @@ export default function NCRDetailPage() {
               </DialogContent>
             </Dialog>
           )}
+          {ncr.status === "CLOSED" && canVerify && (
+            <Button onClick={handleVerifyNCR} disabled={submitting} className="bg-blue-600 hover:bg-blue-700">
+              <ShieldCheck className="w-4 h-4 mr-2" />
+              Verify NCR
+            </Button>
+          )}
         </div>
       </PageHeader>
 
       {/* Workflow Status Bar */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex items-center justify-center gap-4">
-            <div className={`flex items-center gap-2 px-4 py-2 rounded-lg ${ncr.status === "OPEN" ? "bg-red-100 text-red-800 font-medium" : "text-muted-foreground"}`}>
-              <AlertCircle className="w-4 h-4" />
-              Open
-            </div>
-            <div className="w-8 h-0.5 bg-muted-foreground/30" />
-            <div className={`flex items-center gap-2 px-4 py-2 rounded-lg ${ncr.status === "UNDER_INVESTIGATION" ? "bg-yellow-100 text-yellow-800 font-medium" : "text-muted-foreground"}`}>
-              <Search className="w-4 h-4" />
-              Under Investigation
-            </div>
-            <div className="w-8 h-0.5 bg-muted-foreground/30" />
-            <div className={`flex items-center gap-2 px-4 py-2 rounded-lg ${ncr.status === "CLOSED" ? "bg-green-100 text-green-800 font-medium" : "text-muted-foreground"}`}>
-              <CheckCircle className="w-4 h-4" />
-              Closed
-            </div>
+          <div className="flex items-center justify-center gap-2 flex-wrap">
+            {[
+              { key: "OPEN", label: "Open", icon: <AlertCircle className="w-4 h-4" />, bg: "bg-red-100 text-red-800" },
+              { key: "UNDER_INVESTIGATION", label: "Investigation", icon: <Search className="w-4 h-4" />, bg: "bg-yellow-100 text-yellow-800" },
+              { key: "CORRECTIVE_ACTION_IN_PROGRESS", label: "Corrective Action", icon: <Wrench className="w-4 h-4" />, bg: "bg-orange-100 text-orange-800" },
+              { key: "CLOSED", label: "Closed", icon: <CheckCircle className="w-4 h-4" />, bg: "bg-green-100 text-green-800" },
+              { key: "VERIFIED", label: "Verified", icon: <ShieldCheck className="w-4 h-4" />, bg: "bg-blue-100 text-blue-800" },
+            ].map((step, idx, arr) => (
+              <div key={step.key} className="flex items-center gap-2">
+                <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${ncr.status === step.key ? step.bg + " font-medium" : "text-muted-foreground"}`}>
+                  {step.icon}
+                  {step.label}
+                </div>
+                {idx < arr.length - 1 && <div className="w-6 h-0.5 bg-muted-foreground/30" />}
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>

@@ -14,30 +14,48 @@ export async function GET(request: NextRequest) {
     const [
       revenueAgg,
       orderCount,
+      enquiryCount,
+      quotationCount,
       totalQuotations,
       wonQuotations,
+      poCount,
+      openSOValueAgg,
     ] = await Promise.all([
       prisma.invoice.aggregate({
         where: { status: "PAID" },
         _sum: { totalAmount: true },
       }),
       prisma.salesOrder.count(),
+      prisma.enquiry.count({ where: { status: "OPEN" } }),
+      prisma.quotation.count({ where: { status: { in: ["DRAFT", "SENT", "REVISED"] } } }),
       prisma.quotation.count(),
       prisma.quotation.count({ where: { status: "WON" } }),
+      prisma.purchaseOrder.count({ where: { status: { in: ["OPEN", "SENT_TO_VENDOR", "PARTIALLY_RECEIVED"] } } }),
+      prisma.salesOrderItem.aggregate({
+        where: { salesOrder: { status: { in: ["OPEN", "PARTIALLY_DISPATCHED"] } } },
+        _sum: { amount: true },
+      }),
     ]);
 
     const revenue = revenueAgg._sum.totalAmount ?? 0;
+    const openSOValue = Number(openSOValueAgg._sum.amount ?? 0);
     const conversionRate =
       totalQuotations > 0
         ? Number(((wonQuotations / totalQuotations) * 100).toFixed(2))
         : 0;
 
     // ---- Inventory Metrics ----
-    const [totalStock, underInspection, accepted] = await Promise.all([
+    const [totalStock, underInspection, accepted, inventoryQtyAgg] = await Promise.all([
       prisma.inventoryStock.count(),
       prisma.inventoryStock.count({ where: { status: "UNDER_INSPECTION" } }),
       prisma.inventoryStock.count({ where: { status: "ACCEPTED" } }),
+      prisma.inventoryStock.aggregate({
+        where: { status: "ACCEPTED" },
+        _sum: { quantityMtr: true },
+      }),
     ]);
+
+    const acceptedTotalMtr = Number(inventoryQtyAgg._sum.quantityMtr ?? 0);
 
     // ---- Quality Metrics ----
     const [totalNCRs, openNCRs, totalInspections, passedInspections] =
@@ -54,6 +72,14 @@ export async function GET(request: NextRequest) {
         : 0;
 
     // ---- Dispatch Metrics ----
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+    const todayDispatches = await prisma.dispatchNote.count({
+      where: { dispatchDate: { gte: todayStart, lte: todayEnd } },
+    });
+
     const dispatchNotes = await prisma.dispatchNote.findMany({
       select: {
         dispatchDate: true,
@@ -152,12 +178,18 @@ export async function GET(request: NextRequest) {
       salesMetrics: {
         revenue,
         orderCount,
+        enquiryCount,
+        quotationCount,
+        openSOValue,
+        poCount,
         conversionRate,
       },
       inventoryMetrics: {
         totalStock,
         underInspection,
         accepted,
+        acceptedTotalMtr,
+        inventoryValue: null,
       },
       qualityMetrics: {
         totalNCRs,
@@ -167,9 +199,10 @@ export async function GET(request: NextRequest) {
       dispatchMetrics: {
         totalDispatches,
         onTimeDeliveryPct,
+        todayDispatches,
       },
-      financeMetrics: {
-        totalOutstanding: Number(totalOutstanding.toFixed(2)),
+      financialMetrics: {
+        outstandingReceivables: Number(totalOutstanding.toFixed(2)),
         totalReceived,
       },
       lowStockAlerts,

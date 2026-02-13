@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/shared/page-header";
+import { ExportButton } from "@/components/shared/export-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -95,7 +96,9 @@ export default function NCRAnalysisPage() {
       <PageHeader
         title="NCR Analysis"
         description="Non-conformance trends by vendor, type, and monthly frequency"
-      />
+      >
+        <ExportButton reportType="ncr" label="Export NCR CSV" />
+      </PageHeader>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>

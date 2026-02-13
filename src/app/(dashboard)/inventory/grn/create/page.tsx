@@ -18,6 +18,23 @@ import {
 import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+interface WarehouseLocation {
+  id: string;
+  zone: string | null;
+  rack: string | null;
+  bay: string | null;
+  shelf: string | null;
+  locationType: string;
+  isActive: boolean;
+}
+
+interface Warehouse {
+  id: string;
+  code: string;
+  name: string;
+  locations: WarehouseLocation[];
+}
+
 interface GRNItem {
   product: string;
   material: string;
@@ -35,6 +52,7 @@ interface GRNItem {
   mtcDate: string;
   mtcType: string;
   tpiAgency: string;
+  warehouseLocationId: string;
 }
 
 const emptyItem: GRNItem = {
@@ -54,6 +72,7 @@ const emptyItem: GRNItem = {
   mtcDate: "",
   mtcType: "",
   tpiAgency: "",
+  warehouseLocationId: "",
 };
 
 export default function CreateGRNPageWrapper() {
@@ -75,9 +94,11 @@ function CreateGRNPage() {
     remarks: "",
   });
   const [items, setItems] = useState<GRNItem[]>([{ ...emptyItem }]);
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
 
   useEffect(() => {
     fetchPurchaseOrders();
+    fetchWarehouses();
   }, []);
 
   useEffect(() => {
@@ -100,6 +121,32 @@ function CreateGRNPage() {
       console.error("Failed to fetch POs:", error);
     }
   };
+
+  const fetchWarehouses = async () => {
+    try {
+      const response = await fetch("/api/masters/warehouses");
+      if (response.ok) {
+        const data = await response.json();
+        setWarehouses(data.warehouses || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch warehouses:", error);
+    }
+  };
+
+  // Build a flat list of warehouse location options for the dropdown
+  const warehouseLocationOptions = warehouses.flatMap((wh) =>
+    wh.locations
+      .filter((loc) => loc.isActive)
+      .map((loc) => {
+        const parts = [loc.zone, loc.rack, loc.bay, loc.shelf].filter(Boolean);
+        const locationLabel = parts.length > 0 ? parts.join("/") : "Default";
+        return {
+          id: loc.id,
+          label: `${wh.name} - ${locationLabel}`,
+        };
+      })
+  );
 
   const loadPOItems = async (poId: string) => {
     try {
@@ -295,6 +342,18 @@ function CreateGRNPage() {
                     <div className="space-y-1">
                       <Label className="text-xs">Ends</Label>
                       <Input value={item.ends} onChange={(e) => updateItem(index, "ends", e.target.value)} placeholder="e.g., BE, PE" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Warehouse Location</Label>
+                      <Select value={item.warehouseLocationId || "NONE"} onValueChange={(value) => updateItem(index, "warehouseLocationId", value === "NONE" ? "" : value)}>
+                        <SelectTrigger><SelectValue placeholder="Select location" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="NONE">No location</SelectItem>
+                          {warehouseLocationOptions.map((loc) => (
+                            <SelectItem key={loc.id} value={loc.id}>{loc.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 </div>

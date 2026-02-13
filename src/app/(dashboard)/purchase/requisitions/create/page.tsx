@@ -61,6 +61,7 @@ function CreatePRPage() {
   const [formData, setFormData] = useState({
     salesOrderId: searchParams.get("salesOrderId") || "",
     suggestedVendorId: "",
+    requisitionType: "AGAINST_SO",
     requiredByDate: format(
       new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       "yyyy-MM-dd"
@@ -192,7 +193,26 @@ function CreatePRPage() {
             <CardTitle>PR Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="requisitionType">Requisition Type</Label>
+                <Select
+                  value={formData.requisitionType}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, requisitionType: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="AGAINST_SO">Against SO</SelectItem>
+                    <SelectItem value="STOCK_REPLENISHMENT">Stock Replenishment</SelectItem>
+                    <SelectItem value="EMERGENCY">Emergency</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="salesOrderId">Sales Order Reference (Optional)</Label>
                 <Select

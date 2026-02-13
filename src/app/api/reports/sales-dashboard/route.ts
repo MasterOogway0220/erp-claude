@@ -10,9 +10,41 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Parse date range from query params
+    const { searchParams } = new URL(request.url);
+    const fromParam = searchParams.get("from");
+    const toParam = searchParams.get("to");
+
+    const fromDate = fromParam ? new Date(fromParam) : undefined;
+    const toDate = toParam ? new Date(toParam + "T23:59:59.999Z") : undefined;
+
+    // Build date filter for invoices
+    const invoiceDateFilter: any = { status: "PAID" };
+    if (fromDate || toDate) {
+      invoiceDateFilter.invoiceDate = {};
+      if (fromDate) invoiceDateFilter.invoiceDate.gte = fromDate;
+      if (toDate) invoiceDateFilter.invoiceDate.lte = toDate;
+    }
+
+    // Build date filter for sales orders
+    const soDateFilter: any = {};
+    if (fromDate || toDate) {
+      soDateFilter.soDate = {};
+      if (fromDate) soDateFilter.soDate.gte = fromDate;
+      if (toDate) soDateFilter.soDate.lte = toDate;
+    }
+
+    // Build date filter for quotations
+    const quotationDateFilter: any = {};
+    if (fromDate || toDate) {
+      quotationDateFilter.createdAt = {};
+      if (fromDate) quotationDateFilter.createdAt.gte = fromDate;
+      if (toDate) quotationDateFilter.createdAt.lte = toDate;
+    }
+
     // Total revenue from paid invoices
     const paidInvoices = await prisma.invoice.aggregate({
-      where: { status: "PAID" },
+      where: invoiceDateFilter,
       _sum: { totalAmount: true },
     });
     const totalRevenue = paidInvoices._sum.totalAmount ?? 0;
@@ -20,10 +52,10 @@ export async function GET(request: NextRequest) {
     // Count totals
     const [totalEnquiries, totalQuotations, totalSalesOrders, wonQuotations] =
       await Promise.all([
-        prisma.enquiry.count(),
-        prisma.quotation.count(),
-        prisma.salesOrder.count(),
-        prisma.quotation.count({ where: { status: "WON" } }),
+        prisma.enquiry.count({ where: fromDate || toDate ? { createdAt: { ...(fromDate ? { gte: fromDate } : {}), ...(toDate ? { lte: toDate } : {}) } } : undefined }),
+        prisma.quotation.count({ where: quotationDateFilter.createdAt ? { createdAt: quotationDateFilter.createdAt } : undefined }),
+        prisma.salesOrder.count({ where: soDateFilter.soDate ? { soDate: soDateFilter.soDate } : undefined }),
+        prisma.quotation.count({ where: { status: "WON", ...(quotationDateFilter.createdAt ? { createdAt: quotationDateFilter.createdAt } : {}) } }),
       ]);
 
     const conversionRate =
@@ -31,16 +63,19 @@ export async function GET(request: NextRequest) {
         ? Number(((wonQuotations / totalQuotations) * 100).toFixed(2))
         : 0;
 
-    // Monthly trend - last 12 months of invoice amounts grouped by month
-    const twelveMonthsAgo = new Date();
-    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
-    twelveMonthsAgo.setDate(1);
-    twelveMonthsAgo.setHours(0, 0, 0, 0);
+    // Monthly trend - use date range if provided, else last 12 months
+    const trendStart = fromDate || (() => {
+      const d = new Date();
+      d.setMonth(d.getMonth() - 12);
+      d.setDate(1);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    })();
 
     const invoicesForTrend = await prisma.invoice.findMany({
       where: {
         status: "PAID",
-        invoiceDate: { gte: twelveMonthsAgo },
+        invoiceDate: { gte: trendStart, ...(toDate ? { lte: toDate } : {}) },
       },
       select: {
         invoiceDate: true,
@@ -49,11 +84,13 @@ export async function GET(request: NextRequest) {
     });
 
     const monthlyMap = new Map<string, number>();
-    for (let i = 0; i < 12; i++) {
-      const d = new Date();
-      d.setMonth(d.getMonth() - i);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const endDate = toDate || new Date();
+    const startDate = new Date(trendStart);
+    const cursor = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+    while (cursor <= endDate) {
+      const key = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}`;
       monthlyMap.set(key, 0);
+      cursor.setMonth(cursor.getMonth() + 1);
     }
 
     for (const inv of invoicesForTrend) {
@@ -67,8 +104,9 @@ export async function GET(request: NextRequest) {
       .map(([month, amount]) => ({ month, amount }))
       .sort((a, b) => a.month.localeCompare(b.month));
 
-    // Recent 10 sales orders with customer
+    // Recent 10 sales orders with customer (filtered by date range)
     const recentOrders = await prisma.salesOrder.findMany({
+      where: soDateFilter.soDate ? { soDate: soDateFilter.soDate } : undefined,
       take: 10,
       orderBy: { soDate: "desc" },
       include: {

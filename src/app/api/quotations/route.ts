@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { createAuditLog } from "@/lib/audit";
 import { QuotationStatus, QuotationType, QuotationCategory } from "@prisma/client";
 
 export async function GET(request: NextRequest) {
@@ -70,6 +71,9 @@ export async function POST(request: NextRequest) {
       currency,
       validUpto,
       buyerId,
+      paymentTermsId,
+      deliveryTermsId,
+      deliveryPeriod,
       items,
       terms,
     } = body;
@@ -120,6 +124,9 @@ export async function POST(request: NextRequest) {
         currency: currency || "INR",
         validUpto: validUpto ? new Date(validUpto) : null,
         buyerId: buyerId || null,
+        paymentTermsId: paymentTermsId || null,
+        deliveryTermsId: deliveryTermsId || null,
+        deliveryPeriod: deliveryPeriod || null,
         preparedById: session.user.id,
         items: {
           create: items.map((item: any, index: number) => ({
@@ -144,6 +151,13 @@ export async function POST(request: NextRequest) {
             uom: item.uom || null,
             unitWeight: item.unitWeight ? parseFloat(item.unitWeight) : null,
             totalWeightMT: item.totalWeightMT ? parseFloat(item.totalWeightMT) : null,
+            // Internal costing fields
+            materialCost: item.materialCost ? parseFloat(item.materialCost) : null,
+            logisticsCost: item.logisticsCost ? parseFloat(item.logisticsCost) : null,
+            inspectionCost: item.inspectionCost ? parseFloat(item.inspectionCost) : null,
+            otherCosts: item.otherCosts ? parseFloat(item.otherCosts) : null,
+            totalCostPerUnit: item.totalCostPerUnit ? parseFloat(item.totalCostPerUnit) : null,
+            marginPercentage: item.marginPercentage ? parseFloat(item.marginPercentage) : null,
             // Export quotation fields
             tagNo: item.tagNo || null,
             drawingRef: item.drawingRef || null,
@@ -175,6 +189,14 @@ export async function POST(request: NextRequest) {
         terms: true,
       },
     });
+
+    createAuditLog({
+      userId: session.user.id,
+      action: "CREATE",
+      tableName: "Quotation",
+      recordId: quotation.id,
+      newValue: JSON.stringify({ quotationNo: quotation.quotationNo }),
+    }).catch(console.error);
 
     // Update enquiry status if linked
     if (enquiryId) {

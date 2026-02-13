@@ -68,7 +68,16 @@
       "Bash(curl:*)",
       "Bash(npm install:*)",
       "Bash(npm run build:*)",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: Implement enhanced masters, quotation PDF, and fix critical audit bugs\n\n- Add new master pages: Buyer, Employee, Unit, Material Code, Financial Year, Company\n- Enhance Customer & Vendor masters with Sheet-based forms, GST, bank details\n- Implement Standard/Non-Standard quotation create flows with NPS/Schedule auto-fill\n- Add quotation PDF generation \\(standard landscape, non-standard portrait\\)\n- Add quotation email with PDF attachments\n- Add offer term templates API and buyer performance report\n- Create 6 missing [id] CRUD routes for master APIs\n- Fix customer.code/vendor.code references \\(field doesn''t exist\\) across 13+ files\n- Fix report page interfaces to match actual API response shapes\n- Fix quotation API to persist sizeNPS, schedule, materialCodeId, uom fields\n- Add authentication to Testing Master GET endpoint\n- Update Prisma schema with enhanced fields and new models\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: Implement enhanced masters, quotation PDF, and fix critical audit bugs\n\n- Add new master pages: Buyer, Employee, Unit, Material Code, Financial Year, Company\n- Enhance Customer & Vendor masters with Sheet-based forms, GST, bank details\n- Implement Standard/Non-Standard quotation create flows with NPS/Schedule auto-fill\n- Add quotation PDF generation \\(standard landscape, non-standard portrait\\)\n- Add quotation email with PDF attachments\n- Add offer term templates API and buyer performance report\n- Create 6 missing [id] CRUD routes for master APIs\n- Fix customer.code/vendor.code references \\(field doesn''t exist\\) across 13+ files\n- Fix report page interfaces to match actual API response shapes\n- Fix quotation API to persist sizeNPS, schedule, materialCodeId, uom fields\n- Add authentication to Testing Master GET endpoint\n- Update Prisma schema with enhanced fields and new models\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(npm run dev:*)",
+      "Bash(npx puppeteer:*)",
+      "Bash(npx prisma db execute:*)",
+      "Bash(psql:*)",
+      "Bash(/opt/homebrew/opt/postgresql@17/bin/psql:*)",
+      "Bash(/opt/homebrew/bin/psql:*)",
+      "Bash(/usr/local/bin/psql:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx mammoth:*)"
     ]
   }
 }

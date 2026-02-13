@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { createAuditLog } from "@/lib/audit";
 import { PRStatus } from "@prisma/client";
 
 export async function GET(request: NextRequest) {
@@ -63,6 +64,7 @@ export async function POST(request: NextRequest) {
     const {
       salesOrderId,
       suggestedVendorId,
+      requisitionType,
       requiredByDate,
       items,
     } = body;
@@ -111,6 +113,7 @@ export async function POST(request: NextRequest) {
         prNo,
         salesOrderId: salesOrderId || null,
         suggestedVendorId: suggestedVendorId || null,
+        requisitionType: requisitionType || null,
         requiredByDate: requiredByDate ? new Date(requiredByDate) : null,
         status: "DRAFT",
         items: {
@@ -134,6 +137,14 @@ export async function POST(request: NextRequest) {
         items: true,
       },
     });
+
+    createAuditLog({
+      userId: session.user.id,
+      action: "CREATE",
+      tableName: "PurchaseRequisition",
+      recordId: purchaseRequisition.id,
+      newValue: JSON.stringify({ prNo: purchaseRequisition.prNo }),
+    }).catch(console.error);
 
     return NextResponse.json(purchaseRequisition, { status: 201 });
   } catch (error) {

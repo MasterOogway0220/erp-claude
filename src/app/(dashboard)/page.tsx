@@ -49,6 +49,13 @@ export default function DashboardPage() {
     }
   };
 
+  const formatCurrency = (val: number | null | undefined) => {
+    if (val == null) return "—";
+    if (val >= 10000000) return `₹${(val / 10000000).toFixed(2)} Cr`;
+    if (val >= 100000) return `₹${(val / 100000).toFixed(2)} L`;
+    return `₹${val.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+  };
+
   const summaryCards = [
     {
       title: "Open Enquiries",
@@ -69,6 +76,12 @@ export default function DashboardPage() {
       icon: <ShoppingCart className="h-5 w-5 text-purple-500" />,
     },
     {
+      title: "Open SO Value",
+      value: formatCurrency(metrics?.salesMetrics?.openSOValue),
+      description: "Total open SO value",
+      icon: <IndianRupee className="h-5 w-5 text-emerald-500" />,
+    },
+    {
       title: "Purchase Orders",
       value: metrics?.salesMetrics?.poCount ?? "0",
       description: "Pending delivery",
@@ -87,6 +100,12 @@ export default function DashboardPage() {
       icon: <ClipboardCheck className="h-5 w-5 text-yellow-500" />,
     },
     {
+      title: "Outstanding Receivables",
+      value: formatCurrency(metrics?.financialMetrics?.outstandingReceivables),
+      description: "Unpaid invoices",
+      icon: <IndianRupee className="h-5 w-5 text-amber-500" />,
+    },
+    {
       title: "On-Time Delivery",
       value: metrics?.dispatchMetrics?.onTimeDeliveryPct != null
         ? `${metrics.dispatchMetrics.onTimeDeliveryPct}%`
@@ -95,10 +114,24 @@ export default function DashboardPage() {
       icon: <Truck className="h-5 w-5 text-indigo-500" />,
     },
     {
+      title: "Today's Dispatches",
+      value: metrics?.dispatchMetrics?.todayDispatches ?? "0",
+      description: "Dispatched today",
+      icon: <Truck className="h-5 w-5 text-cyan-500" />,
+    },
+    {
       title: "Open NCRs",
       value: metrics?.qualityMetrics?.openNCRs ?? "0",
       description: "Non-conformances",
       icon: <AlertTriangle className="h-5 w-5 text-red-500" />,
+    },
+    {
+      title: "Accepted Stock",
+      value: metrics?.inventoryMetrics?.acceptedTotalMtr != null
+        ? `${Number(metrics.inventoryMetrics.acceptedTotalMtr).toFixed(1)} Mtr`
+        : "—",
+      description: `${metrics?.inventoryMetrics?.accepted ?? 0} entries accepted`,
+      icon: <Warehouse className="h-5 w-5 text-violet-500" />,
     },
   ];
 

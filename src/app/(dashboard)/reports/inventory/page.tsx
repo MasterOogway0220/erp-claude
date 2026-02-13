@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
+import { ExportButton } from "@/components/shared/export-button";
 
 interface InventoryDashboard {
   totalStock: number;
@@ -113,7 +114,9 @@ export default function InventoryDashboardPage() {
       <PageHeader
         title="Inventory Dashboard"
         description="Stock summary by status, product, and material breakdown"
-      />
+      >
+        <ExportButton reportType="inventory" label="Export Inventory CSV" />
+      </PageHeader>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Card>

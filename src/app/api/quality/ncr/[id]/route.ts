@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { createAuditLog } from "@/lib/audit";
 
 export async function GET(
   request: NextRequest,
@@ -104,6 +105,8 @@ export async function PATCH(
       preventiveAction,
       disposition,
       evidencePaths,
+      targetClosureDate,
+      responsiblePersonId,
     } = body;
 
     const existing = await prisma.nCR.findUnique({
@@ -126,10 +129,26 @@ export async function PATCH(
     if (preventiveAction !== undefined) updateData.preventiveAction = preventiveAction;
     if (disposition !== undefined) updateData.disposition = disposition;
     if (evidencePaths !== undefined) updateData.evidencePaths = evidencePaths;
+    if (targetClosureDate !== undefined) updateData.targetClosureDate = targetClosureDate ? new Date(targetClosureDate) : null;
+    if (responsiblePersonId !== undefined) updateData.responsiblePersonId = responsiblePersonId || null;
 
-    // Handle status transitions
+    // Handle status transitions:
+    // OPEN → UNDER_INVESTIGATION → CORRECTIVE_ACTION_IN_PROGRESS → CLOSED → VERIFIED
+    const validTransitions: Record<string, string[]> = {
+      OPEN: ["UNDER_INVESTIGATION"],
+      UNDER_INVESTIGATION: ["CORRECTIVE_ACTION_IN_PROGRESS"],
+      CORRECTIVE_ACTION_IN_PROGRESS: ["CLOSED"],
+      CLOSED: ["VERIFIED"],
+    };
+
     if (status) {
       if (status === "CLOSED") {
+        if (existing.status !== "CORRECTIVE_ACTION_IN_PROGRESS") {
+          return NextResponse.json(
+            { error: "NCR must be in CORRECTIVE_ACTION_IN_PROGRESS status to close" },
+            { status: 400 }
+          );
+        }
         // Validate required fields for closing
         const finalRootCause = rootCause || existing.rootCause;
         const finalCorrectiveAction = correctiveAction || existing.correctiveAction;
@@ -149,7 +168,33 @@ export async function PATCH(
         updateData.status = "CLOSED";
         updateData.closedDate = new Date();
         updateData.closedById = session.user.id;
+      } else if (status === "VERIFIED") {
+        if (existing.status !== "CLOSED") {
+          return NextResponse.json(
+            { error: "NCR must be CLOSED before verification" },
+            { status: 400 }
+          );
+        }
+        // Role check: only MANAGEMENT or ADMIN can verify
+        const userRole = session.user.role;
+        if (userRole !== "MANAGEMENT" && userRole !== "ADMIN") {
+          return NextResponse.json(
+            { error: "Only MANAGEMENT or ADMIN can verify NCRs" },
+            { status: 403 }
+          );
+        }
+        updateData.status = "VERIFIED";
+        updateData.verifiedById = session.user.id;
+        updateData.verifiedDate = new Date();
       } else {
+        // Validate transition
+        const allowed = validTransitions[existing.status] || [];
+        if (!allowed.includes(status)) {
+          return NextResponse.json(
+            { error: `Invalid status transition from ${existing.status} to ${status}` },
+            { status: 400 }
+          );
+        }
         updateData.status = status;
       }
     }
@@ -169,6 +214,16 @@ export async function PATCH(
         closedBy: { select: { id: true, name: true } },
       },
     });
+
+    createAuditLog({
+      userId: session.user.id,
+      action: "UPDATE",
+      tableName: "NCR",
+      recordId: id,
+      fieldName: "status",
+      oldValue: existing.status,
+      newValue: updated.status,
+    }).catch(console.error);
 
     return NextResponse.json(updated);
   } catch (error) {

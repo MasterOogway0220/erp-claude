@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { createAuditLog } from "@/lib/audit";
 import { generateDocumentNumber } from "@/lib/document-numbering";
 import { InvoiceStatus, InvoiceType } from "@prisma/client";
 
@@ -67,12 +68,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // RBAC: Only ACCOUNTS and ADMIN can create invoices
+    const allowedRoles = ["ACCOUNTS", "ADMIN"];
+    if (!allowedRoles.includes(session.user.role)) {
+      return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
+    }
+
     const body = await request.json();
     const {
       dispatchNoteId,
       salesOrderId,
       customerId,
       invoiceType,
+      originalInvoiceId,
       dueDate,
       eWayBillNo,
       currency,
@@ -158,6 +166,7 @@ export async function POST(request: NextRequest) {
         dispatchNoteId: dispatchNoteId || null,
         salesOrderId,
         customerId,
+        originalInvoiceId: originalInvoiceId || null,
         subtotal,
         cgst,
         sgst,
@@ -192,6 +201,14 @@ export async function POST(request: NextRequest) {
         items: true,
       },
     });
+
+    createAuditLog({
+      userId: session.user.id,
+      action: "CREATE",
+      tableName: "Invoice",
+      recordId: invoice.id,
+      newValue: JSON.stringify({ invoiceNo: invoice.invoiceNo }),
+    }).catch(console.error);
 
     return NextResponse.json(invoice, { status: 201 });
   } catch (error) {

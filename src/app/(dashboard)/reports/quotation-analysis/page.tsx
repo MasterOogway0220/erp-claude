@@ -186,6 +186,33 @@ export default function QuotationAnalysisPage() {
         </CardContent>
       </Card>
 
+      {/* Lost Reasons */}
+      {(data as any).lostReasonsSummary && (data as any).lostReasonsSummary.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Lost Enquiry Reasons</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Reason</TableHead>
+                  <TableHead className="text-right">Count</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(data as any).lostReasonsSummary.map((item: { reason: string; count: number }) => (
+                  <TableRow key={item.reason}>
+                    <TableCell>{item.reason}</TableCell>
+                    <TableCell className="text-right font-semibold">{item.count}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>Recent Quotations</CardTitle>

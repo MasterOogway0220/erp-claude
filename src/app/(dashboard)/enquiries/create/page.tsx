@@ -64,6 +64,11 @@ export default function CreateEnquiryPage() {
     clientInquiryDate: "",
     enquiryMode: "EMAIL",
     projectName: "",
+    projectLocation: "",
+    endUser: "",
+    priority: "NORMAL",
+    expectedClosureDate: "",
+    remarks: "",
   });
   const [items, setItems] = useState<EnquiryItem[]>([emptyItem]);
   const [isNewBuyerDialogOpen, setIsNewBuyerDialogOpen] = useState(false);
@@ -396,6 +401,8 @@ export default function CreateEnquiryPage() {
                       <SelectItem value="EMAIL">Email</SelectItem>
                       <SelectItem value="PHONE">Phone</SelectItem>
                       <SelectItem value="WALK_IN">Walk-In</SelectItem>
+                      <SelectItem value="TENDER_PORTAL">Tender Portal</SelectItem>
+                      <SelectItem value="REFERRAL">Referral</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -410,6 +417,76 @@ export default function CreateEnquiryPage() {
                     setFormData({ ...formData, projectName: e.target.value })
                   }
                   placeholder="e.g., 2x660MW NTPC Solapur"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="priority">Priority</Label>
+                  <Select
+                    value={formData.priority}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, priority: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="NORMAL">Normal</SelectItem>
+                      <SelectItem value="URGENT">Urgent</SelectItem>
+                      <SelectItem value="CRITICAL">Critical</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="expectedClosureDate">Expected Closure Date</Label>
+                  <Input
+                    id="expectedClosureDate"
+                    type="date"
+                    value={formData.expectedClosureDate}
+                    onChange={(e) =>
+                      setFormData({ ...formData, expectedClosureDate: e.target.value })
+                    }
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="projectLocation">Project Location</Label>
+                  <Input
+                    id="projectLocation"
+                    value={formData.projectLocation}
+                    onChange={(e) =>
+                      setFormData({ ...formData, projectLocation: e.target.value })
+                    }
+                    placeholder="e.g., Solapur, Maharashtra"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="endUser">End User</Label>
+                <Input
+                  id="endUser"
+                  value={formData.endUser}
+                  onChange={(e) =>
+                    setFormData({ ...formData, endUser: e.target.value })
+                  }
+                  placeholder="e.g., NTPC Ltd."
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="remarks">Remarks</Label>
+                <Textarea
+                  id="remarks"
+                  value={formData.remarks}
+                  onChange={(e) =>
+                    setFormData({ ...formData, remarks: e.target.value })
+                  }
+                  rows={3}
+                  placeholder="Any additional notes or remarks..."
                 />
               </div>
             </div>

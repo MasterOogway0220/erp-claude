@@ -12,9 +12,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { IndianRupee, ShoppingCart, TrendingUp, Package } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { IndianRupee, ShoppingCart, TrendingUp, Package, Search } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
+import { ExportButton } from "@/components/shared/export-button";
 
 interface SalesDashboard {
   totalRevenue: number;
@@ -47,13 +51,29 @@ export default function SalesDashboardPage() {
   const [data, setData] = useState<SalesDashboard | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Default date range: current financial year (Apr 1 - Mar 31)
+  const currentYear = new Date().getFullYear();
+  const fyStart = new Date().getMonth() >= 3
+    ? `${currentYear}-04-01`
+    : `${currentYear - 1}-04-01`;
+  const fyEnd = new Date().getMonth() >= 3
+    ? `${currentYear + 1}-03-31`
+    : `${currentYear}-03-31`;
+
+  const [fromDate, setFromDate] = useState(fyStart);
+  const [toDate, setToDate] = useState(fyEnd);
+
   useEffect(() => {
     fetchData();
   }, []);
 
   const fetchData = async () => {
+    setLoading(true);
     try {
-      const response = await fetch("/api/reports/sales-dashboard");
+      const params = new URLSearchParams();
+      if (fromDate) params.set("from", fromDate);
+      if (toDate) params.set("to", toDate);
+      const response = await fetch(`/api/reports/sales-dashboard?${params.toString()}`);
       if (!response.ok) throw new Error("Failed to fetch");
       const result = await response.json();
       setData(result);
@@ -62,6 +82,10 @@ export default function SalesDashboardPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleFilter = () => {
+    fetchData();
   };
 
   if (loading) {
@@ -97,7 +121,41 @@ export default function SalesDashboardPage() {
       <PageHeader
         title="Sales Dashboard"
         description="Revenue trends, order pipeline, and monthly sales analysis"
-      />
+      >
+        <ExportButton reportType="sales" label="Export Sales CSV" />
+      </PageHeader>
+
+      {/* Date Range Filter */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-wrap items-end gap-4">
+            <div className="space-y-1">
+              <Label htmlFor="fromDate" className="text-sm">From Date</Label>
+              <Input
+                id="fromDate"
+                type="date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                className="w-44"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="toDate" className="text-sm">To Date</Label>
+              <Input
+                id="toDate"
+                type="date"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                className="w-44"
+              />
+            </div>
+            <Button onClick={handleFilter} disabled={loading}>
+              <Search className="w-4 h-4 mr-2" />
+              {loading ? "Loading..." : "Apply Filter"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>

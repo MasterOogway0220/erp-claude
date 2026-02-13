@@ -2,6 +2,8 @@
 // Matches EXPORT_QUOTATION_FORMAT > COMMERCIAL / TECHNICAL sheets exactly
 // Generates COMMERCIAL (with prices) or TECHNICAL (with "QUOTED") variant
 
+import { numberToWords } from "../amount-in-words";
+
 interface CompanyInfo {
   companyName: string;
   companyLogoUrl?: string | null;
@@ -478,6 +480,13 @@ export function generateNonStandardQuotationHtml(
     <td>${isTechnical ? "" : formatNumber(totalAmount, 0)}</td>
     <td></td>
   </tr>
+
+  ${!isTechnical ? `<!-- Amount in Words -->
+  <tr>
+    <td colspan="9" style="font-size:10pt;padding:4px 6px;text-align:left;border:0.5px solid #999;">
+      <strong>Amount in Words:</strong> ${escapeHtml(numberToWords(totalAmount, quotation.currency))}
+    </td>
+  </tr>` : ""}
 
   <!-- ZONE 6: Offer Terms -->
   <tr class="terms-header">

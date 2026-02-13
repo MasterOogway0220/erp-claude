@@ -1,6 +1,8 @@
 // Standard Quotation PDF Template — Landscape A4, 16-column table
 // Matches PIPES_QUOTATION_FORMAT > RFQ sheet exactly
 
+import { numberToWords } from "../amount-in-words";
+
 interface CompanyInfo {
   companyName: string;
   companyLogoUrl?: string | null;
@@ -440,6 +442,13 @@ export function generateStandardQuotationHtml(
     <td>${formatNumber(totalAmount, 0)}</td>
     <td></td>
     <td class="br-med"></td>
+  </tr>
+
+  <!-- Amount in Words -->
+  <tr>
+    <td colspan="16" class="bl-med br-med" style="font-size:10pt;padding:4px 6px;text-align:left;">
+      <strong>Amount in Words:</strong> ${escapeHtml(numberToWords(totalAmount, quotation.currency))}
+    </td>
   </tr>
 
   <!-- Spacer -->

@@ -21,6 +21,7 @@ import {
   CreditCard,
   Users,
   Building,
+  History,
 } from "lucide-react";
 
 // ==================== Types ====================
@@ -52,6 +53,7 @@ const entityIcons: Record<string, React.ReactNode> = {
   Payment: <CreditCard className="h-4 w-4 text-cyan-500" />,
   Customer: <Building className="h-4 w-4 text-slate-500" />,
   Vendor: <Users className="h-4 w-4 text-amber-500" />,
+  Stock: <Warehouse className="h-4 w-4 text-teal-500" />,
 };
 
 // ==================== Component ====================
@@ -259,32 +261,47 @@ export function GlobalSearch() {
                     {items.map((result) => {
                       const globalIndex = flatResults.indexOf(result);
                       return (
-                        <button
-                          key={result.id}
-                          className={`flex items-center gap-3 w-full px-3 py-2 text-left text-sm transition-colors ${
-                            globalIndex === selectedIndex
-                              ? "bg-accent text-accent-foreground"
-                              : "hover:bg-accent/50"
-                          }`}
-                          onClick={() => navigateToResult(result)}
-                          onMouseEnter={() => setSelectedIndex(globalIndex)}
-                        >
-                          <div className="shrink-0">
-                            {entityIcons[result.type] || (
-                              <FileText className="h-4 w-4 text-muted-foreground" />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">
-                              {result.label}
-                            </p>
-                            {result.description && (
-                              <p className="text-xs text-muted-foreground truncate">
-                                {result.description}
+                        <div key={result.id} className="flex items-center">
+                          <button
+                            className={`flex items-center gap-3 flex-1 px-3 py-2 text-left text-sm transition-colors ${
+                              globalIndex === selectedIndex
+                                ? "bg-accent text-accent-foreground"
+                                : "hover:bg-accent/50"
+                            }`}
+                            onClick={() => navigateToResult(result)}
+                            onMouseEnter={() => setSelectedIndex(globalIndex)}
+                          >
+                            <div className="shrink-0">
+                              {entityIcons[result.type] || (
+                                <FileText className="h-4 w-4 text-muted-foreground" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium truncate">
+                                {result.label}
                               </p>
-                            )}
-                          </div>
-                        </button>
+                              {result.description && (
+                                <p className="text-xs text-muted-foreground truncate">
+                                  {result.description}
+                                </p>
+                              )}
+                            </div>
+                          </button>
+                          {result.type === "Stock" && (
+                            <button
+                              className="shrink-0 flex items-center gap-1 px-2 py-1 mr-2 text-xs text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpen(false);
+                                router.push(`/inventory/heat-lifecycle?heatNo=${encodeURIComponent(result.label)}`);
+                              }}
+                              title="View full lifecycle for this heat number"
+                            >
+                              <History className="h-3 w-3" />
+                              Lifecycle
+                            </button>
+                          )}
+                        </div>
                       );
                     })}
                   </div>

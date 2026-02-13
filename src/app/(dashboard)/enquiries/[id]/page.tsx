@@ -1,11 +1,22 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter, useParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -14,8 +25,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, FileText } from "lucide-react";
+import { ArrowLeft, FileText, XCircle } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 const statusColors: Record<string, string> = {
   OPEN: "default",
@@ -28,6 +40,28 @@ const statusColors: Record<string, string> = {
 export default function EnquiryDetailPage() {
   const router = useRouter();
   const params = useParams();
+  const queryClient = useQueryClient();
+  const [isLostDialogOpen, setIsLostDialogOpen] = useState(false);
+  const [lostReason, setLostReason] = useState("");
+
+  const markAsLostMutation = useMutation({
+    mutationFn: async ({ reason }: { reason: string }) => {
+      const res = await fetch(`/api/enquiries/${params.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "LOST", lostReason: reason }),
+      });
+      if (!res.ok) throw new Error("Failed to update status");
+      return res.json();
+    },
+    onSuccess: () => {
+      toast.success("Enquiry marked as LOST");
+      queryClient.invalidateQueries({ queryKey: ["enquiry", params.id] });
+      setIsLostDialogOpen(false);
+      setLostReason("");
+    },
+    onError: () => toast.error("Failed to update enquiry status"),
+  });
 
   // Fetch enquiry
   const { data, isLoading } = useQuery({
@@ -80,6 +114,15 @@ export default function EnquiryDetailPage() {
           <FileText className="h-4 w-4 mr-2" />
           Create Quotation
         </Button>
+        {enquiry.status !== "LOST" && enquiry.status !== "WON" && (
+          <Button
+            variant="destructive"
+            onClick={() => setIsLostDialogOpen(true)}
+          >
+            <XCircle className="h-4 w-4 mr-2" />
+            Mark as Lost
+          </Button>
+        )}
       </div>
 
       {/* Enquiry Info */}
@@ -113,6 +156,54 @@ export default function EnquiryDetailPage() {
               <div className="grid grid-cols-2 gap-2">
                 <div className="text-sm text-muted-foreground">Client Inquiry No.</div>
                 <div className="font-medium">{enquiry.clientInquiryNo}</div>
+              </div>
+            )}
+            {enquiry.priority && enquiry.priority !== "NORMAL" && (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="text-sm text-muted-foreground">Priority</div>
+                <div>
+                  <Badge variant={enquiry.priority === "CRITICAL" ? "destructive" : "secondary"}>
+                    {enquiry.priority}
+                  </Badge>
+                </div>
+              </div>
+            )}
+            {enquiry.priority === "NORMAL" && (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="text-sm text-muted-foreground">Priority</div>
+                <div className="font-medium">Normal</div>
+              </div>
+            )}
+            {enquiry.expectedClosureDate && (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="text-sm text-muted-foreground">Expected Closure</div>
+                <div className="font-medium">
+                  {format(new Date(enquiry.expectedClosureDate), "dd MMM yyyy")}
+                </div>
+              </div>
+            )}
+            {enquiry.projectLocation && (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="text-sm text-muted-foreground">Project Location</div>
+                <div className="font-medium">{enquiry.projectLocation}</div>
+              </div>
+            )}
+            {enquiry.endUser && (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="text-sm text-muted-foreground">End User</div>
+                <div className="font-medium">{enquiry.endUser}</div>
+              </div>
+            )}
+            {enquiry.remarks && (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="text-sm text-muted-foreground">Remarks</div>
+                <div className="font-medium">{enquiry.remarks}</div>
+              </div>
+            )}
+            {enquiry.lostReason && (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="text-sm text-muted-foreground">Lost Reason</div>
+                <div className="font-medium text-destructive">{enquiry.lostReason}</div>
               </div>
             )}
           </CardContent>
@@ -234,6 +325,52 @@ export default function EnquiryDetailPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Lost Reason Dialog */}
+      <Dialog open={isLostDialogOpen} onOpenChange={setIsLostDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mark Enquiry as Lost</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label>Reason for Loss *</Label>
+              <Textarea
+                value={lostReason}
+                onChange={(e) => setLostReason(e.target.value)}
+                placeholder="e.g., Price too high, Competitor won, Customer cancelled requirement..."
+                rows={4}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setIsLostDialogOpen(false);
+                setLostReason("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => {
+                if (!lostReason.trim()) {
+                  toast.error("Please provide a reason for marking as lost");
+                  return;
+                }
+                markAsLostMutation.mutate({ reason: lostReason });
+              }}
+              disabled={markAsLostMutation.isPending}
+            >
+              {markAsLostMutation.isPending ? "Updating..." : "Confirm Lost"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
