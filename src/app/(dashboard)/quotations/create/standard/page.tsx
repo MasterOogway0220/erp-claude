@@ -356,14 +356,17 @@ function StandardQuotationPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      if (!res.ok) throw new Error("Failed to create quotation");
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        throw new Error(err?.error || "Failed to create quotation");
+      }
       return res.json();
     },
     onSuccess: (data) => {
       toast.success(`Quotation ${data.quotationNo} created successfully`);
       router.push(`/quotations/${data.id}`);
     },
-    onError: () => toast.error("Failed to create quotation"),
+    onError: (error: Error) => toast.error(error.message),
   });
 
   const addItem = () => setItems([...items, { ...emptyItem }]);

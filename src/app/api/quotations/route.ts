@@ -89,6 +89,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return NextResponse.json(
+        { error: "At least one item is required" },
+        { status: 400 }
+      );
+    }
+
+    // Validate numeric fields on items
+    for (let i = 0; i < items.length; i++) {
+      const qty = parseFloat(items[i].quantity);
+      const rate = parseFloat(items[i].unitRate);
+      if (isNaN(qty) || qty <= 0) {
+        return NextResponse.json(
+          { error: `Item ${i + 1}: quantity is required and must be a positive number` },
+          { status: 400 }
+        );
+      }
+      if (isNaN(rate) || rate <= 0) {
+        return NextResponse.json(
+          { error: `Item ${i + 1}: unit rate is required and must be a positive number` },
+          { status: 400 }
+        );
+      }
+    }
+
     // Generate quotation number using shared document numbering utility
     const quotationNo = await generateDocumentNumber("QUOTATION");
 
@@ -204,10 +229,11 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(quotation, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error creating quotation:", error);
+    const message = error?.message || "Failed to create quotation";
     return NextResponse.json(
-      { error: "Failed to create quotation" },
+      { error: message },
       { status: 500 }
     );
   }
