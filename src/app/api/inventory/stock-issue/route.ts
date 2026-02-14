@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // Update each inventory stock - decrement qty and update status
+      // Update each inventory stock status (quantity was already decremented during reservation)
       for (const item of created.items) {
         const stock = await tx.inventoryStock.findUnique({
           where: { id: item.inventoryStockId },
@@ -139,26 +139,24 @@ export async function POST(request: NextRequest) {
         });
         if (!stock) continue;
 
-        const remainingQty = Number(stock.quantityMtr) - Number(item.quantityMtr);
-        const remainingPieces = stock.pieces - item.pieces;
-
-        if (remainingQty <= 0) {
-          // Fully issued - mark as DISPATCHED
+        if (Number(stock.quantityMtr) <= 0) {
+          // Fully reserved/dispatched - mark as DISPATCHED and clear reservation link
           await tx.inventoryStock.update({
             where: { id: item.inventoryStockId },
             data: {
               quantityMtr: 0,
               pieces: 0,
               status: "DISPATCHED",
+              reservedForSO: null,
             },
           });
         } else {
-          // Partially issued - reduce quantity, keep status
+          // Partially reserved - mark dispatched, clear reservation link
           await tx.inventoryStock.update({
             where: { id: item.inventoryStockId },
             data: {
-              quantityMtr: remainingQty,
-              pieces: remainingPieces > 0 ? remainingPieces : 0,
+              status: "DISPATCHED",
+              reservedForSO: null,
             },
           });
         }

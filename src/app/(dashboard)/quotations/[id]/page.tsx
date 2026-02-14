@@ -54,6 +54,8 @@ import {
   Calculator,
   ArrowRightLeft,
   Ban,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -249,6 +251,27 @@ export default function QuotationDetailPage() {
     },
   });
 
+  // Delete quotation mutation
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/quotations/${params.id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Failed to delete quotation");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast.success("Quotation deleted");
+      router.push("/quotations");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to delete quotation");
+    },
+  });
+
   const [isDownloading, setIsDownloading] = useState(false);
 
   const handleDownloadPDF = async (variant?: string) => {
@@ -374,10 +397,34 @@ export default function QuotationDetailPage() {
       {/* Action Buttons */}
       <div className="flex gap-2 flex-wrap">
         {quotation.status === "DRAFT" && (
-          <Button onClick={handleSubmitForApproval}>
-            <Clock className="h-4 w-4 mr-2" />
-            Submit for Approval
-          </Button>
+          <>
+            <Button
+              variant="outline"
+              onClick={() =>
+                router.push(
+                  `/quotations/create/${quotation.quotationCategory === "NON_STANDARD" ? "nonstandard" : "standard"}?editId=${quotation.id}`
+                )
+              }
+            >
+              <Pencil className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
+            <Button onClick={handleSubmitForApproval}>
+              <Clock className="h-4 w-4 mr-2" />
+              Submit for Approval
+            </Button>
+            <Button
+              variant="destructive"
+              size="icon"
+              onClick={() => {
+                if (confirm("Are you sure you want to delete this draft quotation?")) {
+                  deleteMutation.mutate();
+                }
+              }}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </>
         )}
         {quotation.status === "PENDING_APPROVAL" && (user?.role === "MANAGEMENT" || user?.role === "ADMIN") && (
           <>

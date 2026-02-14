@@ -80,6 +80,7 @@ export async function PATCH(
     const validTransitions: Record<string, string[]> = {
       DRAFT: ["PENDING_APPROVAL"],
       PENDING_APPROVAL: ["APPROVED", "REJECTED"],
+      APPROVED: ["PO_CREATED"],
       REJECTED: ["DRAFT"],
     };
 

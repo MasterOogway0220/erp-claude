@@ -15,7 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Pencil } from "lucide-react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface DeliveryTerm {
@@ -105,8 +105,11 @@ export default function DeliveryTermsPage() {
 
     setSaving(true);
     try {
-      const res = await fetch("/api/masters/delivery-terms", {
-        method: "POST",
+      const url = editingItem
+        ? `/api/masters/delivery-terms/${editingItem.id}`
+        : "/api/masters/delivery-terms";
+      const res = await fetch(url, {
+        method: editingItem ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
@@ -125,6 +128,24 @@ export default function DeliveryTermsPage() {
       toast.error(err.message || "Failed to save delivery term");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDelete = async (item: DeliveryTerm) => {
+    if (!confirm(`Are you sure you want to delete "${item.name}"?`)) return;
+
+    try {
+      const res = await fetch(`/api/masters/delivery-terms/${item.id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Failed to delete delivery term");
+      }
+      toast.success("Delivery term deleted");
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete delivery term");
     }
   };
 
@@ -171,13 +192,22 @@ export default function DeliveryTermsPage() {
       key: "actions",
       header: "Actions",
       cell: (row) => (
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => handleOpenEdit(row)}
-        >
-          <Pencil className="h-4 w-4" />
-        </Button>
+        <div className="flex gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => handleOpenEdit(row)}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => handleDelete(row)}
+          >
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </Button>
+        </div>
       ),
     },
   ];

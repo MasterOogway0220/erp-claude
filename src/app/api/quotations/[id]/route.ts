@@ -212,6 +212,57 @@ export async function PATCH(
   }
 }
 
+// DELETE — Delete DRAFT quotation only
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const { authorized, session, response } = await checkAccess("quotation", "delete");
+    if (!authorized) return response!;
+
+    const existing = await prisma.quotation.findUnique({
+      where: { id },
+      select: { status: true, quotationNo: true },
+    });
+
+    if (!existing) {
+      return NextResponse.json({ error: "Quotation not found" }, { status: 404 });
+    }
+
+    if (existing.status !== "DRAFT") {
+      return NextResponse.json(
+        { error: "Only DRAFT quotations can be deleted" },
+        { status: 400 }
+      );
+    }
+
+    // Delete items and terms first, then the quotation
+    await prisma.$transaction(async (tx) => {
+      await tx.quotationItem.deleteMany({ where: { quotationId: id } });
+      await tx.quotationTerm.deleteMany({ where: { quotationId: id } });
+      await tx.quotation.delete({ where: { id } });
+    });
+
+    createAuditLog({
+      userId: session.user.id,
+      action: "DELETE",
+      tableName: "Quotation",
+      recordId: id,
+      oldValue: existing.quotationNo,
+    }).catch(console.error);
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting quotation:", error);
+    return NextResponse.json(
+      { error: "Failed to delete quotation" },
+      { status: 500 }
+    );
+  }
+}
+
 // PUT — Full edit of DRAFT quotation (items, terms, header fields)
 export async function PUT(
   request: NextRequest,

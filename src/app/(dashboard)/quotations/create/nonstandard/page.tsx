@@ -77,6 +77,7 @@ function NonStandardQuotationPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const enquiryId = searchParams.get("enquiryId");
+  const editId = searchParams.get("editId");
 
   const [formData, setFormData] = useState({
     customerId: "",
@@ -232,22 +233,77 @@ function NonStandardQuotationPage() {
     if (terms[index].isCustom) setTerms(terms.filter((_, i) => i !== index));
   };
 
+  // Fetch existing quotation for edit mode
+  const { data: editData } = useQuery({
+    queryKey: ["quotation-edit", editId],
+    enabled: !!editId,
+    queryFn: async () => {
+      const res = await fetch(`/api/quotations/${editId}`);
+      if (!res.ok) throw new Error("Failed to fetch quotation");
+      return res.json();
+    },
+  });
+
+  // Pre-populate form when editing
+  useEffect(() => {
+    if (editData?.quotation) {
+      const q = editData.quotation;
+      setFormData({
+        customerId: q.customerId || "",
+        buyerId: q.buyerId || "",
+        enquiryId: q.enquiryId || "",
+        quotationType: q.quotationType || "DOMESTIC",
+        quotationCategory: q.quotationCategory || "NON_STANDARD",
+        currency: q.currency || "USD",
+        validUpto: q.validUpto ? new Date(q.validUpto).toISOString().split("T")[0] : "",
+      });
+      if (q.items?.length > 0) {
+        setItems(q.items.map((item: any) => ({
+          itemDescription: item.itemDescription || "",
+          materialCode: item.material || "",
+          size: item.sizeLabel || "",
+          endType: item.ends || "",
+          material: item.material || "",
+          tagNo: item.tagNo || "",
+          drawingRef: item.drawingRef || "",
+          itemNo: item.product || "",
+          certificateReq: item.certificateReq || "",
+          quantity: String(item.quantity),
+          unitRate: String(item.unitRate),
+          amount: String(item.amount),
+          delivery: item.delivery || "",
+        })));
+      }
+      if (q.terms?.length > 0) {
+        setTerms(q.terms.map((t: any) => ({
+          termName: t.termName,
+          termValue: t.termValue,
+          isIncluded: t.isIncluded,
+          isCustom: t.isCustom,
+          isHeadingEditable: t.isHeadingEditable,
+        })));
+      }
+    }
+  }, [editData]);
+
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
-      const res = await fetch("/api/quotations", {
-        method: "POST",
+      const url = editId ? `/api/quotations/${editId}` : "/api/quotations";
+      const method = editId ? "PUT" : "POST";
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => null);
-        throw new Error(err?.error || "Failed to create quotation");
+        throw new Error(err?.error || "Failed to save quotation");
       }
       return res.json();
     },
     onSuccess: (data) => {
-      toast.success(`Quotation ${data.quotationNo} created successfully`);
-      router.push(`/quotations/${data.id}`);
+      toast.success(editId ? "Quotation updated successfully" : `Quotation ${data.quotationNo} created successfully`);
+      router.push(`/quotations/${data.id || editId}`);
     },
     onError: (error: Error) => toast.error(error.message),
   });

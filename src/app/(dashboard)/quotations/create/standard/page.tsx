@@ -105,6 +105,7 @@ function StandardQuotationPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const enquiryId = searchParams.get("enquiryId");
+  const editId = searchParams.get("editId");
   const { user } = useCurrentUser();
 
   const [formData, setFormData] = useState({
@@ -349,22 +350,95 @@ function StandardQuotationPage() {
     if (terms[index].isCustom) setTerms(terms.filter((_, i) => i !== index));
   };
 
+  // Fetch existing quotation for edit mode
+  const { data: editData } = useQuery({
+    queryKey: ["quotation-edit", editId],
+    enabled: !!editId,
+    queryFn: async () => {
+      const res = await fetch(`/api/quotations/${editId}`);
+      if (!res.ok) throw new Error("Failed to fetch quotation");
+      return res.json();
+    },
+  });
+
+  // Pre-populate form when editing
+  useEffect(() => {
+    if (editData?.quotation) {
+      const q = editData.quotation;
+      setFormData({
+        customerId: q.customerId || "",
+        buyerId: q.buyerId || "",
+        enquiryId: q.enquiryId || "",
+        quotationType: q.quotationType || "DOMESTIC",
+        quotationCategory: q.quotationCategory || "STANDARD",
+        currency: q.currency || "INR",
+        validUpto: q.validUpto ? new Date(q.validUpto).toISOString().split("T")[0] : "",
+        paymentTermsId: q.paymentTermsId || "",
+        deliveryTermsId: q.deliveryTermsId || "",
+        deliveryPeriod: q.deliveryPeriod || "",
+      });
+      if (q.items?.length > 0) {
+        setItems(q.items.map((item: any) => ({
+          product: item.product || "",
+          material: item.material || "",
+          additionalSpec: item.additionalSpec || "",
+          sizeId: item.sizeId || "",
+          sizeLabel: item.sizeLabel || "",
+          nps: item.sizeNPS ? String(item.sizeNPS) : "",
+          schedule: item.schedule || "",
+          od: item.od ? String(item.od) : "",
+          wt: item.wt ? String(item.wt) : "",
+          length: item.length || "",
+          ends: item.ends || "",
+          quantity: String(item.quantity),
+          unitRate: String(item.unitRate),
+          amount: String(item.amount),
+          delivery: item.delivery || "",
+          remark: item.remark || "",
+          materialCodeId: item.materialCodeId || "",
+          uom: item.uom || "",
+          hsnCode: item.hsnCode || "",
+          taxRate: item.taxRate ? String(item.taxRate) : "",
+          unitWeight: item.unitWeight ? String(item.unitWeight) : "",
+          totalWeightMT: item.totalWeightMT ? String(item.totalWeightMT) : "",
+          materialCost: item.materialCost ? String(item.materialCost) : "",
+          logisticsCost: item.logisticsCost ? String(item.logisticsCost) : "",
+          inspectionCost: item.inspectionCost ? String(item.inspectionCost) : "",
+          otherCosts: item.otherCosts ? String(item.otherCosts) : "",
+          totalCostPerUnit: item.totalCostPerUnit ? String(item.totalCostPerUnit) : "",
+          marginPercentage: item.marginPercentage ? String(item.marginPercentage) : "",
+        })));
+      }
+      if (q.terms?.length > 0) {
+        setTerms(q.terms.map((t: any) => ({
+          termName: t.termName,
+          termValue: t.termValue,
+          isIncluded: t.isIncluded,
+          isCustom: t.isCustom,
+          isHeadingEditable: t.isHeadingEditable,
+        })));
+      }
+    }
+  }, [editData]);
+
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
-      const res = await fetch("/api/quotations", {
-        method: "POST",
+      const url = editId ? `/api/quotations/${editId}` : "/api/quotations";
+      const method = editId ? "PUT" : "POST";
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => null);
-        throw new Error(err?.error || "Failed to create quotation");
+        throw new Error(err?.error || "Failed to save quotation");
       }
       return res.json();
     },
     onSuccess: (data) => {
-      toast.success(`Quotation ${data.quotationNo} created successfully`);
-      router.push(`/quotations/${data.id}`);
+      toast.success(editId ? "Quotation updated successfully" : `Quotation ${data.quotationNo} created successfully`);
+      router.push(`/quotations/${data.id || editId}`);
     },
     onError: (error: Error) => toast.error(error.message),
   });
