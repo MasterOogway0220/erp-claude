@@ -1,4 +1,5 @@
-import puppeteer from "puppeteer";
+import puppeteer from "puppeteer-core";
+import chromium from "@sparticuz/chromium";
 
 /**
  * Shared Puppeteer PDF renderer used by both the download and email routes.
@@ -8,9 +9,18 @@ export async function renderHtmlToPdf(
   html: string,
   landscape: boolean
 ): Promise<Buffer> {
+  const isProduction = process.env.NODE_ENV === "production";
+
   const browser = await puppeteer.launch({
+    args: isProduction
+      ? chromium.args
+      : ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu"],
+    executablePath: isProduction
+      ? await chromium.executablePath()
+      : process.platform === "darwin"
+        ? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+        : "/usr/bin/google-chrome",
     headless: true,
-    args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu"],
   });
   try {
     const page = await browser.newPage();
