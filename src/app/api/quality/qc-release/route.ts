@@ -63,10 +63,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Inventory stock is required" }, { status: 400 });
     }
 
+    // Prevent duplicate QC releases for the same stock item
+    const existingRelease = await prisma.qCRelease.findFirst({
+      where: { inventoryStockId },
+      select: { id: true, releaseNo: true },
+    });
+    if (existingRelease) {
+      return NextResponse.json(
+        { error: `QC release already exists for this stock item (${existingRelease.releaseNo})` },
+        { status: 409 }
+      );
+    }
+
     // Validate inspection exists with PASS result
     const inspection = await prisma.inspection.findUnique({
       where: { id: inspectionId },
-      select: { id: true, overallResult: true, inspectionNo: true },
+      select: { id: true, overallResult: true, inspectionNo: true, inventoryStockId: true },
     });
 
     if (!inspection) {
@@ -80,10 +92,42 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Cross-reference: ensure the inspection is for the same stock item
+    if (inspection.inventoryStockId !== inventoryStockId) {
+      return NextResponse.json(
+        { error: "Inspection does not match the selected stock item" },
+        { status: 400 }
+      );
+    }
+
+    // Validate stock is in UNDER_INSPECTION status
+    const stock = await prisma.inventoryStock.findUnique({
+      where: { id: inventoryStockId },
+      select: { id: true, status: true },
+    });
+    if (!stock) {
+      return NextResponse.json({ error: "Inventory stock not found" }, { status: 404 });
+    }
+    if (stock.status !== StockStatus.UNDER_INSPECTION) {
+      return NextResponse.json(
+        { error: `Stock must be in UNDER_INSPECTION status for QC release (current: ${stock.status})` },
+        { status: 400 }
+      );
+    }
+
     // Generate release number using standardized document numbering
     const releaseNo = await generateDocumentNumber("QC_RELEASE");
 
     const qcRelease = await prisma.$transaction(async (tx) => {
+      // Re-check for duplicates inside transaction to prevent race conditions
+      const duplicate = await tx.qCRelease.findFirst({
+        where: { inventoryStockId },
+        select: { id: true },
+      });
+      if (duplicate) {
+        throw new Error("DUPLICATE_RELEASE");
+      }
+
       const created = await tx.qCRelease.create({
         data: {
           releaseNo,
@@ -132,7 +176,13 @@ export async function POST(request: NextRequest) {
     }).catch(console.error);
 
     return NextResponse.json(full, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.message === "DUPLICATE_RELEASE") {
+      return NextResponse.json(
+        { error: "QC release already exists for this stock item" },
+        { status: 409 }
+      );
+    }
     console.error("Error creating QC release:", error);
     return NextResponse.json({ error: "Failed to create QC release" }, { status: 500 });
   }
