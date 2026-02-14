@@ -18,6 +18,7 @@ import { ArrowLeft, Edit, SplitSquareHorizontal } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import Link from "next/link";
+import { PageLoading } from "@/components/shared/page-loading";
 
 const stockStatusColors: Record<string, string> = {
   UNDER_INSPECTION: "bg-yellow-500", ACCEPTED: "bg-green-500", REJECTED: "bg-red-500",
@@ -90,7 +91,7 @@ export default function StockDetailPage() {
     setPartialData({ ...partialData, acceptedQty: val, rejectedQty: rejected.toFixed(3) });
   };
 
-  if (loading) return <div className="flex items-center justify-center h-96"><div className="text-muted-foreground">Loading...</div></div>;
+  if (loading) return <PageLoading />;
   if (!stock) return null;
 
   const grn = stock.grnItem?.grn;

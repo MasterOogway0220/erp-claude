@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { PageLoading } from "@/components/shared/page-loading";
 
 interface SalesOrder {
   id: string;
@@ -135,11 +136,7 @@ export default function CustomerPOReviewPage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-muted-foreground">Loading...</div>
-      </div>
-    );
+    return <PageLoading />;
   }
 
   if (!salesOrder) {

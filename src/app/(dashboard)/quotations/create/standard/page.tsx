@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, ArrowLeft, Building2, History, ChevronDown, ChevronUp, Calculator } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { PageLoading } from "@/components/shared/page-loading";
 
 interface QuotationItem {
   product: string;
@@ -95,7 +96,7 @@ const hardCodedNotes = [
 
 export default function StandardQuotationPageWrapper() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center h-96"><div className="text-muted-foreground">Loading...</div></div>}>
+    <Suspense fallback={<PageLoading />}>
       <StandardQuotationPage />
     </Suspense>
   );

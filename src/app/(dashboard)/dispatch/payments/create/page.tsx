@@ -20,6 +20,7 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Save } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { PageLoading } from "@/components/shared/page-loading";
 
 interface Invoice {
   id: string;
@@ -47,7 +48,7 @@ const invoiceStatusColors: Record<string, string> = {
 
 export default function CreatePaymentPageWrapper() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center h-96"><div className="text-muted-foreground">Loading...</div></div>}>
+    <Suspense fallback={<PageLoading />}>
       <CreatePaymentPage />
     </Suspense>
   );

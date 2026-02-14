@@ -16,6 +16,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Save, Building2, MapPin, FileText } from "lucide-react";
 import { toast } from "sonner";
+import { PageLoading } from "@/components/shared/page-loading";
 
 interface CompanyData {
   id?: string;
@@ -180,11 +181,7 @@ export default function CompanyMasterPage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-muted-foreground">Loading...</div>
-      </div>
-    );
+    return <PageLoading />;
   }
 
   return (

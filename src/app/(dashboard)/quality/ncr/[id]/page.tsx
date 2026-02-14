@@ -30,6 +30,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import Link from "next/link";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { PageLoading } from "@/components/shared/page-loading";
 
 const ncrStatusColors: Record<string, string> = {
   OPEN: "bg-red-500",
@@ -202,11 +203,7 @@ export default function NCRDetailPage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-muted-foreground">Loading...</div>
-      </div>
-    );
+    return <PageLoading />;
   }
   if (!ncr) return null;
 

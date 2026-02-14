@@ -6,16 +6,11 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, FileText, PenLine } from "lucide-react";
+import { PageLoading } from "@/components/shared/page-loading";
 
 export default function CreateQuotationPageWrapper() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex items-center justify-center h-96">
-          <div className="text-muted-foreground">Loading...</div>
-        </div>
-      }
-    >
+    <Suspense fallback={<PageLoading />}>
       <QuotationTypeSelector />
     </Suspense>
   );

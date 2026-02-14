@@ -20,6 +20,7 @@ import { PipeSizeSelect } from "@/components/shared/pipe-size-select";
 import { Plus, Trash2, Save, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { PageLoading } from "@/components/shared/page-loading";
 
 interface Customer {
   id: string;
@@ -52,7 +53,7 @@ interface SOItem {
 
 export default function CreateSalesOrderPageWrapper() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center h-96"><div className="text-muted-foreground">Loading...</div></div>}>
+    <Suspense fallback={<PageLoading />}>
       <CreateSalesOrderPage />
     </Suspense>
   );

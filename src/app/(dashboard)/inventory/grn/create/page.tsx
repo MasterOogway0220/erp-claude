@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { PageLoading } from "@/components/shared/page-loading";
 
 interface WarehouseLocation {
   id: string;
@@ -77,7 +78,7 @@ const emptyItem: GRNItem = {
 
 export default function CreateGRNPageWrapper() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center h-96"><div className="text-muted-foreground">Loading...</div></div>}>
+    <Suspense fallback={<PageLoading />}>
       <CreateGRNPage />
     </Suspense>
   );

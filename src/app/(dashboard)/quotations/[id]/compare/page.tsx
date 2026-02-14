@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageLoading } from "@/components/shared/page-loading";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -379,7 +380,7 @@ function ComparePageContent() {
 
 export default function CompareRevisionPage() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center h-96"><div className="text-muted-foreground">Loading...</div></div>}>
+    <Suspense fallback={<PageLoading />}>
       <ComparePageContent />
     </Suspense>
   );

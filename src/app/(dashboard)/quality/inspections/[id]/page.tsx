@@ -19,6 +19,7 @@ import { ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import Link from "next/link";
+import { PageLoading } from "@/components/shared/page-loading";
 
 const inspectionResultColors: Record<string, string> = {
   PASS: "bg-green-500",
@@ -51,11 +52,7 @@ export default function InspectionDetailPage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-muted-foreground">Loading...</div>
-      </div>
-    );
+    return <PageLoading />;
   }
   if (!inspection) return null;
 

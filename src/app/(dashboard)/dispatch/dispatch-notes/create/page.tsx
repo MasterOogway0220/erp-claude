@@ -26,6 +26,7 @@ import {
 import { ArrowLeft, Save } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { PageLoading } from "@/components/shared/page-loading";
 
 interface PackingList {
   id: string;
@@ -52,7 +53,7 @@ interface Transporter {
 
 export default function CreateDispatchNotePageWrapper() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center h-96"><div className="text-muted-foreground">Loading...</div></div>}>
+    <Suspense fallback={<PageLoading />}>
       <CreateDispatchNotePage />
     </Suspense>
   );

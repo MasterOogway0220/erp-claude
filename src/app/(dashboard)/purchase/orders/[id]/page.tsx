@@ -41,6 +41,7 @@ import {
 import { format, differenceInDays } from "date-fns";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { PageLoading } from "@/components/shared/page-loading";
 
 interface PO {
   id: string;
@@ -259,11 +260,7 @@ export default function PurchaseOrderDetailPage() {
   const canSubmitForApproval = user?.role === "PURCHASE" || user?.role === "ADMIN" || user?.role === "MANAGEMENT";
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-muted-foreground">Loading...</div>
-      </div>
-    );
+    return <PageLoading />;
   }
 
   if (!po) {
