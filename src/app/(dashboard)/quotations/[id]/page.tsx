@@ -23,6 +23,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -45,6 +52,8 @@ import {
   GitBranch,
   History,
   Calculator,
+  ArrowRightLeft,
+  Ban,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -59,7 +68,45 @@ const statusColors: Record<string, string> = {
   SENT: "outline",
   WON: "default",
   LOST: "destructive",
+  EXPIRED: "secondary",
+  SUPERSEDED: "secondary",
+  CANCELLED: "destructive",
 };
+
+const REVISION_TRIGGERS = [
+  { code: "PRICE_NEGOTIATION", label: "Customer requests price reduction" },
+  { code: "SPEC_CHANGE", label: "Customer changes specifications" },
+  { code: "QTY_CHANGE", label: "Customer changes quantities" },
+  { code: "ITEM_ADD", label: "Customer adds new items" },
+  { code: "ITEM_REMOVE", label: "Customer removes items" },
+  { code: "VALIDITY_EXTENSION", label: "Validity extension only" },
+  { code: "DELIVERY_CHANGE", label: "Delivery schedule change" },
+  { code: "TERMS_CHANGE", label: "Payment/delivery terms change" },
+  { code: "SCOPE_CHANGE", label: "Scope of supply change" },
+  { code: "FOREX_CHANGE", label: "Currency/forex rate change" },
+  { code: "VENDOR_COST_CHANGE", label: "Vendor cost revision" },
+  { code: "MARKET_ADJUSTMENT", label: "Market price adjustment" },
+  { code: "COMPETITIVE_RESPONSE", label: "Competitive response" },
+  { code: "REGULATORY_CHANGE", label: "Regulatory/compliance change" },
+  { code: "CUSTOMER_PO_MISMATCH", label: "Customer PO mismatch correction" },
+  { code: "INTERNAL_CORRECTION", label: "Internal error correction" },
+  { code: "RE_QUOTATION_AFTER_EXPIRY", label: "Re-quotation after expiry" },
+  { code: "OTHER", label: "Other" },
+];
+
+const LOSS_REASONS = [
+  { code: "PRICE_TOO_HIGH", label: "Price too high" },
+  { code: "DELIVERY_TOO_LONG", label: "Delivery timeline too long" },
+  { code: "SPEC_NOT_MET", label: "Specification not met" },
+  { code: "COMPETITOR_WON", label: "Competitor won the order" },
+  { code: "CUSTOMER_CANCELLED", label: "Customer cancelled the project" },
+  { code: "BUDGET_CONSTRAINTS", label: "Customer budget constraints" },
+  { code: "NO_RESPONSE", label: "No response from customer" },
+  { code: "OTHER", label: "Other" },
+];
+
+// Statuses that allow revision
+const REVISABLE_STATUSES = ["APPROVED", "SENT", "REJECTED", "EXPIRED", "LOST"];
 
 export default function QuotationDetailPage() {
   const router = useRouter();
@@ -76,6 +123,19 @@ export default function QuotationDetailPage() {
     subject: "",
     message: "",
   });
+  const [isReviseDialogOpen, setIsReviseDialogOpen] = useState(false);
+  const [revisionData, setRevisionData] = useState({
+    revisionTrigger: "",
+    revisionSubReason: "",
+    revisionNotes: "",
+    customerReference: "",
+  });
+  const [isLossDialogOpen, setIsLossDialogOpen] = useState(false);
+  const [lossData, setLossData] = useState({
+    lossReason: "",
+    lossCompetitor: "",
+    lossNotes: "",
+  });
 
   // Fetch quotation
   const { data, isLoading } = useQuery({
@@ -89,23 +149,27 @@ export default function QuotationDetailPage() {
 
   // Update quotation mutation
   const updateMutation = useMutation({
-    mutationFn: async (status: string) => {
+    mutationFn: async (payload: Record<string, any>) => {
       const res = await fetch(`/api/quotations/${params.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status, approvalRemarks }),
+        body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error("Failed to update quotation");
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Failed to update quotation");
+      }
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["quotation", params.id] });
       toast.success("Quotation updated successfully");
       setIsApprovalDialogOpen(false);
+      setIsLossDialogOpen(false);
       setApprovalRemarks("");
     },
-    onError: () => {
-      toast.error("Failed to update quotation");
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to update quotation");
     },
   });
 
@@ -115,11 +179,24 @@ export default function QuotationDetailPage() {
   };
 
   const handleApprove = () => {
-    updateMutation.mutate(approvalAction);
+    updateMutation.mutate({ status: approvalAction, approvalRemarks });
   };
 
   const handleSubmitForApproval = () => {
-    updateMutation.mutate("PENDING_APPROVAL");
+    updateMutation.mutate({ status: "PENDING_APPROVAL" });
+  };
+
+  const handleMarkAsLost = () => {
+    if (!lossData.lossReason) {
+      toast.error("Please select a loss reason");
+      return;
+    }
+    updateMutation.mutate({
+      status: "LOST",
+      lossReason: lossData.lossReason,
+      lossCompetitor: lossData.lossCompetitor,
+      lossNotes: lossData.lossNotes,
+    });
   };
 
   // Send email mutation
@@ -152,6 +229,8 @@ export default function QuotationDetailPage() {
     mutationFn: async () => {
       const res = await fetch(`/api/quotations/${params.id}/revise`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(revisionData),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -160,7 +239,9 @@ export default function QuotationDetailPage() {
       return res.json();
     },
     onSuccess: (data) => {
-      toast.success("Revision created successfully");
+      toast.success(`Revision Rev.${data.quotation.version} created`);
+      setIsReviseDialogOpen(false);
+      setRevisionData({ revisionTrigger: "", revisionSubReason: "", revisionNotes: "", customerReference: "" });
       router.push(`/quotations/${data.quotation.id}`);
     },
     onError: (error: Error) => {
@@ -202,11 +283,17 @@ export default function QuotationDetailPage() {
   };
 
   const handleOpenEmailDialog = () => {
+    const quotation = data?.quotation;
+    const isRevision = quotation?.version > 0;
     setEmailData({
       to: quotation?.customer?.email || "",
       cc: "",
-      subject: `Quotation ${quotation?.quotationNo} - ${quotation?.customer?.name}`,
-      message: "Please find attached our quotation for your reference. Should you have any queries, please feel free to contact us.",
+      subject: isRevision
+        ? `Revised Quotation ${quotation?.quotationNo} Rev.${quotation?.version} - ${quotation?.customer?.name}`
+        : `Quotation ${quotation?.quotationNo} - ${quotation?.customer?.name}`,
+      message: isRevision
+        ? "Please find attached our revised quotation for your reference. This quotation supersedes all previous revisions. Should you have any queries, please feel free to contact us."
+        : "Please find attached our quotation for your reference. Should you have any queries, please feel free to contact us.",
     });
     setIsEmailDialogOpen(true);
   };
@@ -219,6 +306,23 @@ export default function QuotationDetailPage() {
     sendEmailMutation.mutate();
   };
 
+  const handleReviseDialog = () => {
+    setRevisionData({ revisionTrigger: "", revisionSubReason: "", revisionNotes: "", customerReference: "" });
+    setIsReviseDialogOpen(true);
+  };
+
+  const handleCreateRevision = () => {
+    if (!revisionData.revisionTrigger) {
+      toast.error("Please select a revision trigger");
+      return;
+    }
+    if (revisionData.revisionTrigger === "OTHER" && !revisionData.revisionSubReason) {
+      toast.error("Please provide a sub-reason for 'Other' trigger");
+      return;
+    }
+    reviseMutation.mutate();
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -228,6 +332,7 @@ export default function QuotationDetailPage() {
   }
 
   const quotation = data?.quotation;
+  const revisionChain = data?.revisionChain || [];
   if (!quotation) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -245,6 +350,9 @@ export default function QuotationDetailPage() {
     0
   );
 
+  const canRevise = REVISABLE_STATUSES.includes(quotation.status);
+  const isTerminal = ["WON", "SUPERSEDED", "CANCELLED"].includes(quotation.status);
+
   return (
     <div className="space-y-6 max-w-7xl">
       {/* Header */}
@@ -254,24 +362,24 @@ export default function QuotationDetailPage() {
         </Button>
         <div className="flex-1">
           <PageHeader
-            title={quotation.quotationNo}
+            title={`${quotation.quotationNo}${quotation.version > 0 ? ` Rev.${quotation.version}` : ""}`}
             description={`Quotation for ${quotation.customer.name}`}
           />
         </div>
         <Badge variant={statusColors[quotation.status] as any}>
-          {quotation.status.replace("_", " ")}
+          {quotation.status.replace(/_/g, " ")}
         </Badge>
       </div>
 
       {/* Action Buttons */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap">
         {quotation.status === "DRAFT" && (
           <Button onClick={handleSubmitForApproval}>
             <Clock className="h-4 w-4 mr-2" />
             Submit for Approval
           </Button>
         )}
-        {quotation.status === "PENDING_APPROVAL" && (
+        {quotation.status === "PENDING_APPROVAL" && (user?.role === "MANAGEMENT" || user?.role === "ADMIN") && (
           <>
             <Button onClick={() => handleApprovalDialog("APPROVED")}>
               <Check className="h-4 w-4 mr-2" />
@@ -290,7 +398,7 @@ export default function QuotationDetailPage() {
           <>
             <Button onClick={handleOpenEmailDialog}>
               <Mail className="h-4 w-4 mr-2" />
-              Send to Customer
+              {quotation.status === "SENT" ? "Resend" : "Send to Customer"}
             </Button>
             {quotation.quotationCategory === "NON_STANDARD" ? (
               <DropdownMenu>
@@ -318,25 +426,38 @@ export default function QuotationDetailPage() {
                 {isDownloading ? "Generating PDF..." : "Download PDF"}
               </Button>
             )}
-            <Button
-              variant="default"
-              onClick={() =>
-                router.push(`/sales/create?quotationId=${params.id}`)
-              }
-            >
-              <ShoppingCart className="h-4 w-4 mr-2" />
-              Create Sales Order
-            </Button>
+            {quotation.status === "SENT" && (
+              <Button
+                variant="default"
+                onClick={() =>
+                  router.push(`/sales/create?quotationId=${params.id}`)
+                }
+              >
+                <ShoppingCart className="h-4 w-4 mr-2" />
+                Create Sales Order
+              </Button>
+            )}
           </>
         )}
-        {(quotation.status === "APPROVED" || quotation.status === "SENT" || quotation.status === "REJECTED") && (
+        {quotation.status === "SENT" && (
           <Button
             variant="outline"
-            onClick={() => reviseMutation.mutate()}
-            disabled={reviseMutation.isPending}
+            onClick={() => {
+              setLossData({ lossReason: "", lossCompetitor: "", lossNotes: "" });
+              setIsLossDialogOpen(true);
+            }}
+          >
+            <Ban className="h-4 w-4 mr-2" />
+            Mark as Lost
+          </Button>
+        )}
+        {canRevise && (
+          <Button
+            variant="outline"
+            onClick={handleReviseDialog}
           >
             <GitBranch className="h-4 w-4 mr-2" />
-            {reviseMutation.isPending ? "Creating Revision..." : "Revise"}
+            Revise
           </Button>
         )}
       </div>
@@ -353,6 +474,10 @@ export default function QuotationDetailPage() {
               <div className="font-medium">{quotation.quotationNo}</div>
             </div>
             <div className="grid grid-cols-2 gap-2">
+              <div className="text-sm text-muted-foreground">Revision</div>
+              <div className="font-medium">Rev.{quotation.version}</div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
               <div className="text-sm text-muted-foreground">Date</div>
               <div className="font-medium">
                 {format(new Date(quotation.quotationDate), "dd MMM yyyy")}
@@ -362,6 +487,12 @@ export default function QuotationDetailPage() {
               <div className="text-sm text-muted-foreground">Type</div>
               <div className="font-medium">
                 <Badge variant="outline">{quotation.quotationType}</Badge>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="text-sm text-muted-foreground">Category</div>
+              <div className="font-medium">
+                <Badge variant="outline">{quotation.quotationCategory}</Badge>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -376,10 +507,20 @@ export default function QuotationDetailPage() {
                 </div>
               </div>
             )}
-            <div className="grid grid-cols-2 gap-2">
-              <div className="text-sm text-muted-foreground">Version</div>
-              <div className="font-medium">Rev.{quotation.version}</div>
-            </div>
+            {quotation.revisionTrigger && (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="text-sm text-muted-foreground">Revision Reason</div>
+                <div className="font-medium">
+                  {REVISION_TRIGGERS.find((t) => t.code === quotation.revisionTrigger)?.label || quotation.revisionTrigger}
+                </div>
+              </div>
+            )}
+            {quotation.revisionNotes && (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="text-sm text-muted-foreground">Revision Notes</div>
+                <div className="font-medium text-sm">{quotation.revisionNotes}</div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -392,25 +533,49 @@ export default function QuotationDetailPage() {
               <div className="text-sm text-muted-foreground">Customer</div>
               <div className="font-medium">{quotation.customer.name}</div>
             </div>
+            {quotation.buyer && (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="text-sm text-muted-foreground">Buyer</div>
+                <div className="font-medium">{quotation.buyer.buyerName}</div>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-2">
               <div className="text-sm text-muted-foreground">Prepared By</div>
               <div className="font-medium">
-                {quotation.preparedBy?.name || "—"}
+                {quotation.preparedBy?.name || "---"}
               </div>
             </div>
             {quotation.approvedBy && (
               <>
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="text-sm text-muted-foreground">Approved By</div>
+                  <div className="text-sm text-muted-foreground">
+                    {quotation.status === "REJECTED" ? "Rejected By" : "Approved By"}
+                  </div>
                   <div className="font-medium">{quotation.approvedBy.name}</div>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="text-sm text-muted-foreground">Approval Date</div>
+                  <div className="text-sm text-muted-foreground">
+                    {quotation.status === "REJECTED" ? "Rejection" : "Approval"} Date
+                  </div>
                   <div className="font-medium">
                     {format(new Date(quotation.approvalDate), "dd MMM yyyy")}
                   </div>
                 </div>
+                {quotation.approvalRemarks && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="text-sm text-muted-foreground">Remarks</div>
+                    <div className="font-medium text-sm">{quotation.approvalRemarks}</div>
+                  </div>
+                )}
               </>
+            )}
+            {quotation.sentDate && (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="text-sm text-muted-foreground">Sent Date</div>
+                <div className="font-medium">
+                  {format(new Date(quotation.sentDate), "dd MMM yyyy")}
+                </div>
+              </div>
             )}
             {quotation.enquiry && (
               <div className="grid grid-cols-2 gap-2">
@@ -426,9 +591,63 @@ export default function QuotationDetailPage() {
                 </div>
               </div>
             )}
+            {quotation.lossReason && (
+              <>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="text-sm text-muted-foreground">Loss Reason</div>
+                  <div className="font-medium text-red-600">
+                    {LOSS_REASONS.find((r) => r.code === quotation.lossReason)?.label || quotation.lossReason}
+                  </div>
+                </div>
+                {quotation.lossCompetitor && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="text-sm text-muted-foreground">Competitor</div>
+                    <div className="font-medium">{quotation.lossCompetitor}</div>
+                  </div>
+                )}
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
+
+      {/* Financial Summary */}
+      {(quotation.subtotal || quotation.grandTotal) && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Financial Summary</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex justify-end gap-8">
+              <div className="text-right">
+                <div className="text-sm text-muted-foreground">Subtotal</div>
+                <div className="text-lg font-semibold">
+                  {quotation.currency} {parseFloat(quotation.subtotal || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                </div>
+              </div>
+              {quotation.taxRate && parseFloat(quotation.taxRate) > 0 && (
+                <div className="text-right">
+                  <div className="text-sm text-muted-foreground">Tax ({parseFloat(quotation.taxRate)}%)</div>
+                  <div className="text-lg font-semibold">
+                    {quotation.currency} {parseFloat(quotation.taxAmount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                  </div>
+                </div>
+              )}
+              <div className="text-right">
+                <div className="text-sm text-muted-foreground">Grand Total</div>
+                <div className="text-xl font-bold">
+                  {quotation.currency} {parseFloat(quotation.grandTotal || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                </div>
+              </div>
+            </div>
+            {quotation.amountInWords && (
+              <div className="mt-2 text-right text-sm text-muted-foreground italic">
+                {quotation.amountInWords}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Items */}
       <Card>
@@ -436,7 +655,7 @@ export default function QuotationDetailPage() {
           <CardTitle>Quotation Items</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="rounded-lg border">
+          <div className="rounded-lg border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -457,14 +676,14 @@ export default function QuotationDetailPage() {
                 {quotation.items.map((item: any) => (
                   <TableRow key={item.id}>
                     <TableCell>{item.sNo}</TableCell>
-                    <TableCell className="font-medium">{item.product || "—"}</TableCell>
+                    <TableCell className="font-medium">{item.product || "---"}</TableCell>
                     <TableCell className="max-w-xs truncate">
-                      {item.material || "—"}
+                      {item.material || "---"}
                     </TableCell>
-                    <TableCell>{item.sizeLabel || "—"}</TableCell>
-                    <TableCell>{item.od || "—"}</TableCell>
-                    <TableCell>{item.wt || "—"}</TableCell>
-                    <TableCell>{item.ends || "—"}</TableCell>
+                    <TableCell>{item.sizeLabel || "---"}</TableCell>
+                    <TableCell>{item.od || "---"}</TableCell>
+                    <TableCell>{item.wt || "---"}</TableCell>
+                    <TableCell>{item.ends || "---"}</TableCell>
                     <TableCell className="text-right">
                       {parseFloat(item.quantity).toFixed(3)}
                     </TableCell>
@@ -477,7 +696,7 @@ export default function QuotationDetailPage() {
                     <TableCell className="text-right">
                       {item.totalWeightMT
                         ? parseFloat(item.totalWeightMT).toFixed(4)
-                        : "—"}
+                        : "---"}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -520,12 +739,12 @@ export default function QuotationDetailPage() {
       )}
 
       {/* Revision History */}
-      {(quotation.parentQuotation || (quotation.childQuotations && quotation.childQuotations.length > 0)) && (
+      {revisionChain.length > 1 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <History className="h-5 w-5" />
-              Revision History
+              Revision History ({revisionChain.length} revisions)
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -533,74 +752,74 @@ export default function QuotationDetailPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Version</TableHead>
-                    <TableHead>Quotation No.</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>Revision</TableHead>
                     <TableHead>Date</TableHead>
-                    <TableHead>Action</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Trigger</TableHead>
+                    <TableHead className="text-right">Grand Total</TableHead>
+                    <TableHead>Prepared By</TableHead>
+                    <TableHead>Sent Date</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {quotation.parentQuotation && (
-                    <TableRow>
-                      <TableCell>Rev.{quotation.parentQuotation.version}</TableCell>
-                      <TableCell className="font-mono">{quotation.parentQuotation.quotationNo}</TableCell>
-                      <TableCell>
-                        <Badge variant={statusColors[quotation.parentQuotation.status] as any}>
-                          {quotation.parentQuotation.status.replace("_", " ")}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {format(new Date(quotation.parentQuotation.quotationDate), "dd MMM yyyy")}
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="link"
-                          className="p-0 h-auto"
-                          onClick={() => router.push(`/quotations/${quotation.parentQuotation.id}`)}
-                        >
-                          View
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                  {/* Current version */}
-                  <TableRow className="bg-muted/50">
-                    <TableCell className="font-semibold">Rev.{quotation.version} (Current)</TableCell>
-                    <TableCell className="font-mono font-semibold">{quotation.quotationNo}</TableCell>
-                    <TableCell>
-                      <Badge variant={statusColors[quotation.status] as any}>
-                        {quotation.status.replace("_", " ")}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {format(new Date(quotation.quotationDate), "dd MMM yyyy")}
-                    </TableCell>
-                    <TableCell>-</TableCell>
-                  </TableRow>
-                  {quotation.childQuotations?.map((child: any) => (
-                    <TableRow key={child.id}>
-                      <TableCell>Rev.{child.version}</TableCell>
-                      <TableCell className="font-mono">{child.quotationNo}</TableCell>
-                      <TableCell>
-                        <Badge variant={statusColors[child.status] as any}>
-                          {child.status.replace("_", " ")}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {format(new Date(child.quotationDate), "dd MMM yyyy")}
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="link"
-                          className="p-0 h-auto"
-                          onClick={() => router.push(`/quotations/${child.id}`)}
-                        >
-                          View
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {revisionChain.map((rev: any) => {
+                    const isCurrent = rev.id === quotation.id;
+                    return (
+                      <TableRow key={rev.id} className={isCurrent ? "bg-muted/50" : ""}>
+                        <TableCell className="font-semibold">
+                          Rev.{rev.version} {isCurrent && "(Current)"}
+                        </TableCell>
+                        <TableCell>
+                          {format(new Date(rev.quotationDate), "dd MMM yyyy")}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={statusColors[rev.status] as any}>
+                            {rev.status.replace(/_/g, " ")}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {rev.revisionTrigger
+                            ? REVISION_TRIGGERS.find((t) => t.code === rev.revisionTrigger)?.label || rev.revisionTrigger
+                            : rev.version === 0 ? "Original" : "---"}
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          {rev.grandTotal
+                            ? parseFloat(rev.grandTotal).toLocaleString("en-IN", { minimumFractionDigits: 2 })
+                            : "---"}
+                        </TableCell>
+                        <TableCell>{rev.preparedBy?.name || "---"}</TableCell>
+                        <TableCell>
+                          {rev.sentDate
+                            ? format(new Date(rev.sentDate), "dd MMM yyyy")
+                            : "---"}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            {!isCurrent && (
+                              <Button
+                                variant="link"
+                                className="p-0 h-auto"
+                                onClick={() => router.push(`/quotations/${rev.id}`)}
+                              >
+                                View
+                              </Button>
+                            )}
+                            {rev.version > 0 && (
+                              <Button
+                                variant="link"
+                                className="p-0 h-auto ml-2"
+                                onClick={() => router.push(`/quotations/${rev.id}/compare`)}
+                              >
+                                <ArrowRightLeft className="h-3 w-3 mr-1" />
+                                Compare
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
@@ -738,6 +957,142 @@ export default function QuotationDetailPage() {
           </Card>
         )}
 
+      {/* Revision Initiation Dialog */}
+      <Dialog open={isReviseDialogOpen} onOpenChange={setIsReviseDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Create Quotation Revision</DialogTitle>
+            <DialogDescription>
+              This will create Rev.{quotation.version + 1} of {quotation.quotationNo}, copying all items and terms from the current revision.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label>Revision Trigger *</Label>
+              <Select
+                value={revisionData.revisionTrigger}
+                onValueChange={(val) => setRevisionData({ ...revisionData, revisionTrigger: val })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select revision reason..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {REVISION_TRIGGERS.map((trigger) => (
+                    <SelectItem key={trigger.code} value={trigger.code}>
+                      {trigger.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {revisionData.revisionTrigger === "OTHER" && (
+              <div className="grid gap-2">
+                <Label>Sub-Reason *</Label>
+                <Input
+                  value={revisionData.revisionSubReason}
+                  onChange={(e) => setRevisionData({ ...revisionData, revisionSubReason: e.target.value })}
+                  placeholder="Specify reason..."
+                />
+              </div>
+            )}
+
+            <div className="grid gap-2">
+              <Label>Customer Reference</Label>
+              <Input
+                value={revisionData.customerReference}
+                onChange={(e) => setRevisionData({ ...revisionData, customerReference: e.target.value })}
+                placeholder="Customer's email/letter/PO reference..."
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Internal Notes</Label>
+              <Textarea
+                value={revisionData.revisionNotes}
+                onChange={(e) => setRevisionData({ ...revisionData, revisionNotes: e.target.value })}
+                rows={3}
+                placeholder="Internal notes (not visible to customer)..."
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsReviseDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateRevision} disabled={reviseMutation.isPending}>
+              <GitBranch className="h-4 w-4 mr-2" />
+              {reviseMutation.isPending ? "Creating..." : "Create Revision"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Loss Tracking Dialog */}
+      <Dialog open={isLossDialogOpen} onOpenChange={setIsLossDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mark Quotation as Lost</DialogTitle>
+            <DialogDescription>
+              Record why this quotation was lost. This information helps improve future quotations.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label>Loss Reason *</Label>
+              <Select
+                value={lossData.lossReason}
+                onValueChange={(val) => setLossData({ ...lossData, lossReason: val })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select loss reason..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {LOSS_REASONS.map((reason) => (
+                    <SelectItem key={reason.code} value={reason.code}>
+                      {reason.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {lossData.lossReason === "COMPETITOR_WON" && (
+              <div className="grid gap-2">
+                <Label>Competitor Name</Label>
+                <Input
+                  value={lossData.lossCompetitor}
+                  onChange={(e) => setLossData({ ...lossData, lossCompetitor: e.target.value })}
+                  placeholder="Competitor company name..."
+                />
+              </div>
+            )}
+
+            <div className="grid gap-2">
+              <Label>Notes</Label>
+              <Textarea
+                value={lossData.lossNotes}
+                onChange={(e) => setLossData({ ...lossData, lossNotes: e.target.value })}
+                rows={3}
+                placeholder="Additional details..."
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsLossDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleMarkAsLost} disabled={updateMutation.isPending}>
+              {updateMutation.isPending ? "Processing..." : "Mark as Lost"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Email Dialog */}
       <Dialog open={isEmailDialogOpen} onOpenChange={setIsEmailDialogOpen}>
         <DialogContent className="max-w-2xl">
@@ -745,6 +1100,7 @@ export default function QuotationDetailPage() {
             <DialogTitle>Send Quotation via Email</DialogTitle>
             <DialogDescription>
               Send this quotation as a PDF attachment to the customer.
+              {quotation.version > 0 && " This is a revised quotation."}
             </DialogDescription>
           </DialogHeader>
 
@@ -834,13 +1190,15 @@ export default function QuotationDetailPage() {
             <DialogDescription>
               {approvalAction === "APPROVED"
                 ? "Approving this quotation will allow it to be sent to the customer."
-                : "Rejecting this quotation will send it back to draft status."}
+                : "Rejecting this quotation will require re-submission."}
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="remarks">Remarks (Optional)</Label>
+              <Label htmlFor="remarks">
+                Remarks {approvalAction === "REJECTED" ? "*" : "(Optional)"}
+              </Label>
               <Textarea
                 id="remarks"
                 value={approvalRemarks}

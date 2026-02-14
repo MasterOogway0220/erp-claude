@@ -43,6 +43,9 @@ enum QuotationStatus {
   SENT
   WON
   LOST
+  EXPIRED
+  SUPERSEDED
+  CANCELLED
 }
 
 enum SOStatus {
@@ -533,7 +536,7 @@ model EnquiryItem {
 
 model Quotation {
   id                    String            @id @default(cuid())
-  quotationNo           String            @unique
+  quotationNo           String
   quotationDate         DateTime          @default(now())
   enquiryId             String?
   customerId            String
@@ -560,6 +563,26 @@ model Quotation {
   taxAmount             Decimal?          @db.Decimal(14, 2)
   grandTotal            Decimal?          @db.Decimal(14, 2)
   amountInWords         String?
+
+  // Revision tracking
+  revisionTrigger       String?
+  revisionSubReason     String?
+  revisionNotes         String?           @db.Text
+  customerReference     String?
+
+  // Change tracking
+  changeSnapshot        Json?
+
+  // Expiry management
+  expiryNotified7d      Boolean           @default(false)
+  expiryNotified3d      Boolean           @default(false)
+  expiryNotified1d      Boolean           @default(false)
+
+  // Loss tracking
+  lossReason            String?
+  lossCompetitor        String?
+  lossNotes             String?           @db.Text
+
   createdAt             DateTime          @default(now())
   updatedAt             DateTime          @updatedAt
 
@@ -578,11 +601,18 @@ model Quotation {
   terms              QuotationTerm[]
   salesOrders        SalesOrder[]
 
+  @@unique([quotationNo, version])
   @@index([quotationNo])
   @@index([customerId])
   @@index([enquiryId])
   @@index([buyerId])
   @@index([quotationCategory])
+  @@index([parentQuotationId])
+  @@index([status])
+  @@index([validUpto])
+  @@index([customerId, status])
+  @@index([preparedById, status])
+  @@index([revisionTrigger])
 }
 
 model QuotationItem {

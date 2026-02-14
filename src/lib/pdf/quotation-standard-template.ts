@@ -46,6 +46,7 @@ interface QuotationData {
     mobile?: string | null;
     telephone?: string | null;
   } | null;
+  version?: number;
   items: any[];
   terms: any[];
 }
@@ -409,7 +410,7 @@ export function generateStandardQuotationHtml(
 
   <!-- ZONE 3: Title -->
   <tr class="title-row">
-    <td colspan="16">Quotation Sheet</td>
+    <td colspan="16">${(quotation.version ?? 0) > 0 ? `Revised Quotation Sheet — Revision ${quotation.version}` : "Quotation Sheet"}</td>
   </tr>
 
   <!-- ZONE 4: Table header -->
@@ -473,6 +474,7 @@ export function generateStandardQuotationHtml(
   <tr><td colspan="16" style="height:8px;"></td></tr>
 
   <!-- ZONE 9: Footer -->
+  ${(quotation.version ?? 0) > 0 ? `<tr><td colspan="16" style="font-size:8pt;text-align:center;font-weight:bold;padding:4px;color:#c00;">This quotation supersedes all previous revisions.</td></tr>` : ""}
   <tr class="footer-disclaimer">
     <td colspan="12" class="left">This is a computer generated document hence not signed.</td>
     <td colspan="4" class="right">FORMAT: QTN-Rev.2, Dated: 19/12/2012</td>

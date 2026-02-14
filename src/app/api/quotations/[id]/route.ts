@@ -9,7 +9,13 @@ const VALID_QUOTATION_TRANSITIONS: Record<string, string[]> = {
   PENDING_APPROVAL: ["APPROVED", "REJECTED"],
   REJECTED: ["DRAFT"],
   APPROVED: ["SENT"],
-  SENT: ["WON", "LOST"],
+  SENT: ["WON", "LOST", "EXPIRED"],
+  EXPIRED: [], // Terminal for this revision; can create new revision
+  LOST: [], // Can create new revision from LOST
+  WON: [], // Terminal
+  SUPERSEDED: [], // Terminal
+  CANCELLED: [], // Terminal
+  REVISED: [], // Legacy status - terminal
 };
 
 export async function GET(
@@ -18,7 +24,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { authorized, session, response } = await checkAccess("quotation", "read");
+    const { authorized, response } = await checkAccess("quotation", "read");
     if (!authorized) return response!;
 
     const quotation = await prisma.quotation.findUnique({
@@ -50,6 +56,8 @@ export async function GET(
           },
           orderBy: { version: "asc" },
         },
+        paymentTerms: true,
+        deliveryTerms: true,
       },
     });
 
@@ -57,7 +65,25 @@ export async function GET(
       return NextResponse.json({ error: "Quotation not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ quotation });
+    // Fetch full revision chain (all revisions with same quotationNo)
+    const revisionChain = await prisma.quotation.findMany({
+      where: { quotationNo: quotation.quotationNo },
+      select: {
+        id: true,
+        quotationNo: true,
+        version: true,
+        quotationDate: true,
+        status: true,
+        revisionTrigger: true,
+        grandTotal: true,
+        preparedBy: { select: { name: true } },
+        sentDate: true,
+        changeSnapshot: true,
+      },
+      orderBy: { version: "asc" },
+    });
+
+    return NextResponse.json({ quotation, revisionChain });
   } catch (error) {
     console.error("Error fetching quotation:", error);
     return NextResponse.json(
@@ -77,12 +103,11 @@ export async function PATCH(
     if (!authorized) return response!;
 
     const body = await request.json();
-    const { status, approvalRemarks } = body;
+    const { status, approvalRemarks, lossReason, lossCompetitor, lossNotes } = body;
 
-    // Fetch existing quotation to validate transition
     const existing = await prisma.quotation.findUnique({
       where: { id },
-      select: { status: true },
+      select: { status: true, quotationNo: true, version: true },
     });
 
     if (!existing) {
@@ -106,7 +131,7 @@ export async function PATCH(
       if (!canApprove) return approveResponse!;
     }
 
-    // Remarks are mandatory when rejecting a quotation
+    // Remarks are mandatory when rejecting
     if (status === "REJECTED" && !approvalRemarks) {
       return NextResponse.json(
         { error: "Remarks are required when rejecting a quotation" },
@@ -114,21 +139,39 @@ export async function PATCH(
       );
     }
 
+    // Loss reason is mandatory when marking as LOST
+    if (status === "LOST" && !lossReason) {
+      return NextResponse.json(
+        { error: "Loss reason is required when marking a quotation as lost" },
+        { status: 400 }
+      );
+    }
+
+    // Build update data
+    const updateData: any = {};
+    if (status) updateData.status = status;
+
+    if (status === "APPROVED") {
+      updateData.approvedById = session.user.id;
+      updateData.approvalDate = new Date();
+      updateData.approvalRemarks = approvalRemarks || null;
+    }
+
+    if (status === "REJECTED") {
+      updateData.approvedById = session.user.id;
+      updateData.approvalDate = new Date();
+      updateData.approvalRemarks = approvalRemarks;
+    }
+
+    if (status === "LOST") {
+      updateData.lossReason = lossReason;
+      updateData.lossCompetitor = lossCompetitor || null;
+      updateData.lossNotes = lossNotes || null;
+    }
+
     const updated = await prisma.quotation.update({
       where: { id },
-      data: {
-        status,
-        ...(status === "APPROVED" && {
-          approvedById: session.user.id,
-          approvalDate: new Date(),
-          approvalRemarks,
-        }),
-        ...(status === "REJECTED" && {
-          approvedById: session.user.id,
-          approvalDate: new Date(),
-          approvalRemarks,
-        }),
-      },
+      data: updateData,
       include: {
         customer: true,
         items: true,
@@ -136,15 +179,27 @@ export async function PATCH(
       },
     });
 
-    createAuditLog({
+    // Auto-supersede: When a revision is marked WON, supersede all others in the chain
+    if (status === "WON") {
+      await prisma.quotation.updateMany({
+        where: {
+          quotationNo: existing.quotationNo,
+          id: { not: id },
+          status: { in: ["SENT", "APPROVED", "EXPIRED", "REVISED"] },
+        },
+        data: { status: "SUPERSEDED" },
+      });
+    }
+
+    await createAuditLog({
       userId: session.user.id,
       action: "UPDATE",
       tableName: "Quotation",
       recordId: id,
       fieldName: "status",
-      oldValue: existing?.status || undefined,
+      oldValue: existing.status,
       newValue: updated.status,
-    }).catch(console.error);
+    });
 
     return NextResponse.json(updated);
   } catch (error) {

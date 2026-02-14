@@ -48,6 +48,7 @@ interface QuotationData {
     mobile?: string | null;
     telephone?: string | null;
   } | null;
+  version?: number;
   items: any[];
   terms: any[];
 }
@@ -401,7 +402,7 @@ export function generateNonStandardQuotationHtml(
     <td colspan="6" rowspan="2" style="vertical-align:middle;padding:4px;">
       ${company.companyLogoUrl ? `<img src="${company.companyLogoUrl}" alt="Logo" style="max-width:200px;max-height:50px;object-fit:contain;">` : `<span style="font-size:16pt;font-weight:bold">${escapeHtml(company.companyName)}</span>`}
     </td>
-    <td colspan="3" rowspan="2" class="type-label">${variant}</td>
+    <td colspan="3" rowspan="2" class="type-label">${quotation.version && quotation.version > 0 ? `REVISED ${variant}<br><span style="font-size:10pt">Revision ${quotation.version}</span>` : variant}</td>
   </tr>
   <tr></tr>
   <tr><td colspan="9" style="height:4px;"></td></tr>

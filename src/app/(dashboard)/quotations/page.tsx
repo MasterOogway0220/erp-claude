@@ -51,6 +51,10 @@ const statusColors: Record<string, string> = {
   SENT: "outline",
   WON: "default",
   LOST: "destructive",
+  EXPIRED: "secondary",
+  SUPERSEDED: "secondary",
+  CANCELLED: "destructive",
+  REVISED: "secondary",
 };
 
 const typeLabels: Record<string, string> = {
@@ -133,13 +137,16 @@ export default function QuotationsPage() {
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="all">All Active</SelectItem>
               <SelectItem value="DRAFT">Draft</SelectItem>
               <SelectItem value="PENDING_APPROVAL">Pending Approval</SelectItem>
               <SelectItem value="APPROVED">Approved</SelectItem>
               <SelectItem value="SENT">Sent</SelectItem>
               <SelectItem value="WON">Won</SelectItem>
               <SelectItem value="LOST">Lost</SelectItem>
+              <SelectItem value="EXPIRED">Expired</SelectItem>
+              <SelectItem value="SUPERSEDED">Superseded</SelectItem>
+              <SelectItem value="CANCELLED">Cancelled</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -207,7 +214,7 @@ export default function QuotationsPage() {
                   </TableCell>
                   <TableCell>
                     <Badge variant={statusColors[quotation.status] as any}>
-                      {quotation.status.replace("_", " ")}
+                      {quotation.status.replace(/_/g, " ")}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">

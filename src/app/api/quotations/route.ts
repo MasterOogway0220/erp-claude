@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
     const status = searchParams.get("status") || "";
+    const showAll = searchParams.get("showAll") === "true";
 
     const where: any = {};
 
@@ -33,6 +34,11 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // By default, hide SUPERSEDED and REVISED quotations (show only latest active revision)
+    if (!showAll && !status) {
+      where.status = { notIn: ["SUPERSEDED", "REVISED"] as QuotationStatus[] };
+    }
+
     const quotations = await prisma.quotation.findMany({
       where,
       include: {
@@ -41,7 +47,7 @@ export async function GET(request: NextRequest) {
         preparedBy: { select: { name: true } },
         items: true,
       },
-      orderBy: { quotationDate: "desc" },
+      orderBy: [{ quotationNo: "desc" }, { version: "desc" }],
     });
 
     return NextResponse.json({ quotations });

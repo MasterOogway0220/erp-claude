@@ -132,15 +132,17 @@ export async function POST(
       0
     );
 
+    const isRevision = quotation.version > 0;
     const emailHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2>Quotation: ${quotation.quotationNo}</h2>
+        <h2>${isRevision ? "Revised Quotation" : "Quotation"}: ${quotation.quotationNo}${isRevision ? ` (Rev.${quotation.version})` : ""}</h2>
         <p>Dear ${quotation.customer.contactPerson || "Sir/Madam"},</p>
-        <p>${message || "Please find attached our quotation for your reference."}</p>
+        <p>${message || (isRevision ? "Please find attached our revised quotation for your reference. This revision supersedes all previous versions." : "Please find attached our quotation for your reference.")}</p>
 
         <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
           <h3 style="margin-top: 0;">Quotation Summary</h3>
           <p><strong>Customer:</strong> ${quotation.customer.name}</p>
+          ${isRevision ? `<p><strong>Revision:</strong> Rev.${quotation.version}</p>` : ""}
           <p><strong>Date:</strong> ${new Date(quotation.quotationDate).toLocaleDateString()}</p>
           <p><strong>Total Items:</strong> ${quotation.items.length}</p>
           <p><strong>Total Amount:</strong> ${quotation.currency} ${totalAmount.toFixed(2)}</p>
@@ -169,7 +171,7 @@ export async function POST(
       to,
       subject:
         subject ||
-        `Quotation ${quotation.quotationNo} - ${quotation.customer.name}`,
+        `${isRevision ? "Revised Quotation" : "Quotation"} ${quotation.quotationNo}${isRevision ? ` Rev.${quotation.version}` : ""} - ${quotation.customer.name}`,
       html: emailHtml,
       attachments,
     };
@@ -188,6 +190,18 @@ export async function POST(
         sentTo: to,
       },
     });
+
+    // Auto-supersede: When sending a revision, supersede all previous SENT/APPROVED revisions in chain
+    if (quotation.version > 0) {
+      await prisma.quotation.updateMany({
+        where: {
+          quotationNo: quotation.quotationNo,
+          id: { not: id },
+          status: { in: ["SENT", "APPROVED", "REVISED"] },
+        },
+        data: { status: "SUPERSEDED" },
+      });
+    }
 
     return NextResponse.json({
       success: true,

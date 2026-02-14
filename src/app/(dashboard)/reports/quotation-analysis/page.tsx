@@ -40,11 +40,16 @@ interface QuotationAnalysis {
 
 const statusColors: Record<string, string> = {
   DRAFT: "bg-gray-500",
+  PENDING_APPROVAL: "bg-yellow-500",
+  APPROVED: "bg-emerald-500",
   SENT: "bg-blue-500",
-  ACCEPTED: "bg-green-500",
-  REJECTED: "bg-red-500",
-  EXPIRED: "bg-yellow-500",
-  REVISED: "bg-orange-500",
+  WON: "bg-green-500",
+  LOST: "bg-red-500",
+  REJECTED: "bg-red-400",
+  EXPIRED: "bg-orange-500",
+  SUPERSEDED: "bg-slate-400",
+  CANCELLED: "bg-slate-500",
+  REVISED: "bg-orange-400",
 };
 
 export default function QuotationAnalysisPage() {

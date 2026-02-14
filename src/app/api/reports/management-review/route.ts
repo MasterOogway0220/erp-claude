@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
       }),
       prisma.salesOrder.count(),
       prisma.enquiry.count({ where: { status: "OPEN" } }),
-      prisma.quotation.count({ where: { status: { in: ["DRAFT", "SENT", "REVISED"] } } }),
+      prisma.quotation.count({ where: { status: { in: ["DRAFT", "SENT", "APPROVED", "PENDING_APPROVAL"] } } }),
       prisma.quotation.count(),
       prisma.quotation.count({ where: { status: "WON" } }),
       prisma.purchaseOrder.count({ where: { status: { in: ["OPEN", "SENT_TO_VENDOR", "PARTIALLY_RECEIVED"] } } }),
