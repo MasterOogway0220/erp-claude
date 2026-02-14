@@ -75,7 +75,13 @@ export async function DELETE(
     }).catch(console.error);
 
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.code === "P2003") {
+      return NextResponse.json(
+        { error: "Cannot delete product. It is referenced by other records." },
+        { status: 400 }
+      );
+    }
     console.error("Error deleting product:", error);
     return NextResponse.json(
       { error: "Failed to delete product" },

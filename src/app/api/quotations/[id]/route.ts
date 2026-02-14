@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
+import { numberToWords } from "@/lib/amount-in-words";
 import { checkAccess } from "@/lib/rbac";
 
 // Valid quotation status transitions
@@ -206,6 +207,164 @@ export async function PATCH(
     console.error("Error updating quotation:", error);
     return NextResponse.json(
       { error: "Failed to update quotation" },
+      { status: 500 }
+    );
+  }
+}
+
+// PUT — Full edit of DRAFT quotation (items, terms, header fields)
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const { authorized, session, response } = await checkAccess("quotation", "write");
+    if (!authorized) return response!;
+
+    const existing = await prisma.quotation.findUnique({
+      where: { id },
+      select: { status: true, quotationNo: true, customerId: true, enquiryId: true, quotationType: true, quotationCategory: true },
+    });
+
+    if (!existing) {
+      return NextResponse.json({ error: "Quotation not found" }, { status: 404 });
+    }
+
+    if (existing.status !== "DRAFT") {
+      return NextResponse.json(
+        { error: "Only DRAFT quotations can be edited. Use revision for approved/sent quotations." },
+        { status: 400 }
+      );
+    }
+
+    const body = await request.json();
+    const {
+      currency,
+      validUpto,
+      buyerId,
+      paymentTermsId,
+      deliveryTermsId,
+      deliveryPeriod,
+      taxRate,
+      items,
+      terms,
+    } = body;
+
+    if (!items || items.length === 0) {
+      return NextResponse.json(
+        { error: "At least one item is required" },
+        { status: 400 }
+      );
+    }
+
+    // Calculate totals
+    const subtotal = items.reduce(
+      (sum: number, item: any) => sum + (parseFloat(item.amount) || 0),
+      0
+    );
+    const parsedTaxRate = taxRate ? parseFloat(taxRate) : 0;
+    const taxAmount = parsedTaxRate > 0 ? subtotal * parsedTaxRate / 100 : 0;
+    const grandTotal = subtotal + taxAmount;
+    const effectiveCurrency = currency || "INR";
+    const computedAmountInWords = numberToWords(grandTotal, effectiveCurrency);
+
+    // Transaction: update header, delete old items/terms, create new ones
+    const updated = await prisma.$transaction(async (tx) => {
+      // Delete old items and terms
+      await tx.quotationItem.deleteMany({ where: { quotationId: id } });
+      await tx.quotationTerm.deleteMany({ where: { quotationId: id } });
+
+      // Update quotation header and recreate items/terms
+      return tx.quotation.update({
+        where: { id },
+        data: {
+          currency: effectiveCurrency,
+          validUpto: validUpto ? new Date(validUpto) : null,
+          buyerId: buyerId || null,
+          paymentTermsId: paymentTermsId || null,
+          deliveryTermsId: deliveryTermsId || null,
+          deliveryPeriod: deliveryPeriod || null,
+          subtotal,
+          taxRate: parsedTaxRate || null,
+          taxAmount: taxAmount || null,
+          grandTotal,
+          amountInWords: computedAmountInWords,
+          items: {
+            create: items.map((item: any, index: number) => ({
+              sNo: index + 1,
+              product: item.product || null,
+              material: item.material || null,
+              additionalSpec: item.additionalSpec || null,
+              sizeId: item.sizeId || null,
+              sizeLabel: item.sizeLabel || null,
+              sizeNPS: item.nps ? parseFloat(item.nps) : (item.sizeNPS ? parseFloat(item.sizeNPS) : null),
+              schedule: item.schedule || null,
+              od: item.od ? parseFloat(item.od) : null,
+              wt: item.wt ? parseFloat(item.wt) : null,
+              length: item.length || null,
+              ends: item.ends || null,
+              quantity: parseFloat(item.quantity),
+              unitRate: parseFloat(item.unitRate),
+              amount: parseFloat(item.amount),
+              delivery: item.delivery || null,
+              remark: item.remark || null,
+              materialCodeId: item.materialCodeId || null,
+              uom: item.uom || null,
+              hsnCode: item.hsnCode || null,
+              taxRate: item.taxRate ? parseFloat(item.taxRate) : null,
+              unitWeight: item.unitWeight ? parseFloat(item.unitWeight) : null,
+              totalWeightMT: item.totalWeightMT ? parseFloat(item.totalWeightMT) : null,
+              materialCost: item.materialCost ? parseFloat(item.materialCost) : null,
+              logisticsCost: item.logisticsCost ? parseFloat(item.logisticsCost) : null,
+              inspectionCost: item.inspectionCost ? parseFloat(item.inspectionCost) : null,
+              otherCosts: item.otherCosts ? parseFloat(item.otherCosts) : null,
+              totalCostPerUnit: item.totalCostPerUnit ? parseFloat(item.totalCostPerUnit) : null,
+              marginPercentage: item.marginPercentage ? parseFloat(item.marginPercentage) : null,
+              tagNo: item.tagNo || null,
+              drawingRef: item.drawingRef || null,
+              itemDescription: item.itemDescription || null,
+              certificateReq: item.certificateReq || null,
+              itemType: item.itemType || null,
+              wtType: item.wtType || null,
+              tubeLength: item.tubeLength || null,
+              tubeCount: item.tubeCount ? parseInt(item.tubeCount) : null,
+              componentPosition: item.componentPosition || null,
+            })),
+          },
+          terms: {
+            create: terms?.map((term: any, index: number) => ({
+              termNo: index + 1,
+              termName: term.termName,
+              termValue: term.termValue,
+              isDefault: term.isDefault ?? !term.isCustom,
+              isIncluded: term.isIncluded ?? true,
+              isCustom: term.isCustom ?? false,
+              isHeadingEditable: term.isHeadingEditable ?? false,
+            })) || [],
+          },
+        },
+        include: {
+          customer: true,
+          items: { orderBy: { sNo: "asc" } },
+          terms: { orderBy: { termNo: "asc" } },
+        },
+      });
+    });
+
+    createAuditLog({
+      userId: session.user.id,
+      action: "UPDATE",
+      tableName: "Quotation",
+      recordId: id,
+      newValue: JSON.stringify({ quotationNo: existing.quotationNo, itemCount: items.length }),
+    }).catch(console.error);
+
+    return NextResponse.json(updated);
+  } catch (error) {
+    console.error("Error editing draft quotation:", error);
+    return NextResponse.json(
+      { error: "Failed to edit quotation" },
       { status: 500 }
     );
   }

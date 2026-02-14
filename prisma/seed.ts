@@ -316,6 +316,8 @@ async function seedDocumentSequences() {
     { documentType: "INVOICE_EXPORT", prefix: "EXP" },
     { documentType: "RECEIPT", prefix: "REC" },
     { documentType: "STOCK_ISSUE", prefix: "ISS" },
+    { documentType: "CREDIT_NOTE", prefix: "CN" },
+    { documentType: "DEBIT_NOTE", prefix: "DBN" },
   ];
 
   for (const s of sequences) {

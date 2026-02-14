@@ -85,9 +85,28 @@ export async function DELETE(
 
     const { id } = await params;
 
-    await prisma.pipeSizeMaster.delete({
+    const pipeSize = await prisma.pipeSizeMaster.findUnique({
       where: { id },
+      select: {
+        sizeLabel: true,
+        _count: { select: { quotationItems: true } },
+      },
     });
+
+    if (!pipeSize) {
+      return NextResponse.json({ error: "Pipe size not found" }, { status: 404 });
+    }
+
+    if (pipeSize._count.quotationItems > 0) {
+      return NextResponse.json(
+        {
+          error: `Cannot delete pipe size "${pipeSize.sizeLabel}". It is used in ${pipeSize._count.quotationItems} quotation item(s).`,
+        },
+        { status: 400 }
+      );
+    }
+
+    await prisma.pipeSizeMaster.delete({ where: { id } });
 
     await createAuditLog({
       tableName: "PipeSizeMaster",

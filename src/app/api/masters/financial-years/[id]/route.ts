@@ -95,9 +95,23 @@ export async function DELETE(
 
     const { id } = await params;
 
-    await prisma.financialYear.delete({
+    const fy = await prisma.financialYear.findUnique({
       where: { id },
+      select: { label: true, isActive: true },
     });
+
+    if (!fy) {
+      return NextResponse.json({ error: "Financial year not found" }, { status: 404 });
+    }
+
+    if (fy.isActive) {
+      return NextResponse.json(
+        { error: `Cannot delete active financial year "${fy.label}". Deactivate it first.` },
+        { status: 400 }
+      );
+    }
+
+    await prisma.financialYear.delete({ where: { id } });
 
     await createAuditLog({
       tableName: "FinancialYear",
@@ -109,7 +123,13 @@ export async function DELETE(
     return NextResponse.json({
       message: "Financial year deleted successfully",
     });
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.code === "P2003") {
+      return NextResponse.json(
+        { error: "Cannot delete financial year. It is referenced by other records." },
+        { status: 400 }
+      );
+    }
     console.error("Error deleting financial year:", error);
     return NextResponse.json(
       { error: "Failed to delete financial year" },

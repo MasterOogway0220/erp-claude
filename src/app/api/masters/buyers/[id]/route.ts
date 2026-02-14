@@ -88,9 +88,29 @@ export async function DELETE(
 
     const { id } = await params;
 
-    await prisma.buyerMaster.delete({
+    const buyer = await prisma.buyerMaster.findUnique({
       where: { id },
+      select: {
+        buyerName: true,
+        _count: { select: { enquiries: true, quotations: true } },
+      },
     });
+
+    if (!buyer) {
+      return NextResponse.json({ error: "Buyer not found" }, { status: 404 });
+    }
+
+    const linkedCount = buyer._count.enquiries + buyer._count.quotations;
+    if (linkedCount > 0) {
+      return NextResponse.json(
+        {
+          error: `Cannot delete buyer "${buyer.buyerName}". It has ${buyer._count.enquiries} enquiries and ${buyer._count.quotations} quotations linked. Deactivate instead.`,
+        },
+        { status: 400 }
+      );
+    }
+
+    await prisma.buyerMaster.delete({ where: { id } });
 
     await createAuditLog({
       tableName: "BuyerMaster",

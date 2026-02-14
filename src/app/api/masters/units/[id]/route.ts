@@ -84,9 +84,16 @@ export async function DELETE(
 
     const { id } = await params;
 
-    await prisma.uomMaster.delete({
+    const unit = await prisma.uomMaster.findUnique({
       where: { id },
+      select: { code: true },
     });
+
+    if (!unit) {
+      return NextResponse.json({ error: "Unit not found" }, { status: 404 });
+    }
+
+    await prisma.uomMaster.delete({ where: { id } });
 
     await createAuditLog({
       tableName: "UomMaster",
@@ -96,7 +103,13 @@ export async function DELETE(
     });
 
     return NextResponse.json({ message: "Unit deleted successfully" });
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.code === "P2003") {
+      return NextResponse.json(
+        { error: "Cannot delete unit. It is referenced by other records." },
+        { status: 400 }
+      );
+    }
     console.error("Error deleting unit:", error);
     return NextResponse.json(
       { error: "Failed to delete unit" },

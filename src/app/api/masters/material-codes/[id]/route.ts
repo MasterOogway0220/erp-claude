@@ -90,9 +90,28 @@ export async function DELETE(
 
     const { id } = await params;
 
-    await prisma.materialCodeMaster.delete({
+    const materialCode = await prisma.materialCodeMaster.findUnique({
       where: { id },
+      select: {
+        code: true,
+        _count: { select: { quotationItems: true } },
+      },
     });
+
+    if (!materialCode) {
+      return NextResponse.json({ error: "Material code not found" }, { status: 404 });
+    }
+
+    if (materialCode._count.quotationItems > 0) {
+      return NextResponse.json(
+        {
+          error: `Cannot delete material code "${materialCode.code}". It is used in ${materialCode._count.quotationItems} quotation item(s).`,
+        },
+        { status: 400 }
+      );
+    }
+
+    await prisma.materialCodeMaster.delete({ where: { id } });
 
     await createAuditLog({
       tableName: "MaterialCodeMaster",

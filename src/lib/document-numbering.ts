@@ -15,7 +15,9 @@ export type DocumentType =
   | "INVOICE_DOMESTIC"
   | "INVOICE_EXPORT"
   | "RECEIPT"
-  | "STOCK_ISSUE";
+  | "STOCK_ISSUE"
+  | "CREDIT_NOTE"
+  | "DEBIT_NOTE";
 
 const PREFIXES: Record<DocumentType, string> = {
   ENQUIRY: "ENQ",
@@ -33,6 +35,8 @@ const PREFIXES: Record<DocumentType, string> = {
   INVOICE_EXPORT: "EXP",
   RECEIPT: "REC",
   STOCK_ISSUE: "ISS",
+  CREDIT_NOTE: "CN",
+  DEBIT_NOTE: "DBN",
 };
 
 function getCurrentFinancialYear(): string {

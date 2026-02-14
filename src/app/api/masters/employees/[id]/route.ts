@@ -86,9 +86,28 @@ export async function DELETE(
 
     const { id } = await params;
 
-    await prisma.employeeMaster.delete({
+    const employee = await prisma.employeeMaster.findUnique({
       where: { id },
+      select: {
+        name: true,
+        _count: { select: { quotationsPrepared: true } },
+      },
     });
+
+    if (!employee) {
+      return NextResponse.json({ error: "Employee not found" }, { status: 404 });
+    }
+
+    if (employee._count.quotationsPrepared > 0) {
+      return NextResponse.json(
+        {
+          error: `Cannot delete employee "${employee.name}". They have ${employee._count.quotationsPrepared} quotation(s) linked. Deactivate instead.`,
+        },
+        { status: 400 }
+      );
+    }
+
+    await prisma.employeeMaster.delete({ where: { id } });
 
     await createAuditLog({
       tableName: "EmployeeMaster",

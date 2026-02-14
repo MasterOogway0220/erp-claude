@@ -43,6 +43,12 @@ export async function GET(request: NextRequest) {
           select: { id: true, soNo: true },
         },
         customer: true,
+        originalInvoice: {
+          select: { id: true, invoiceNo: true, totalAmount: true },
+        },
+        linkedNotes: {
+          select: { id: true, invoiceNo: true, invoiceType: true, totalAmount: true, status: true },
+        },
         items: true,
         paymentReceipts: true,
       },
@@ -103,6 +109,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const isCreditNote = invoiceType === "CREDIT_NOTE";
+    const isDebitNote = invoiceType === "DEBIT_NOTE";
+    const isCreditOrDebit = isCreditNote || isDebitNote;
+
+    // Validate originalInvoiceId for credit/debit notes
+    if (isCreditOrDebit) {
+      if (!originalInvoiceId) {
+        return NextResponse.json(
+          { error: "Original invoice is required for credit/debit notes" },
+          { status: 400 }
+        );
+      }
+      const originalInvoice = await prisma.invoice.findUnique({
+        where: { id: originalInvoiceId },
+      });
+      if (!originalInvoice) {
+        return NextResponse.json(
+          { error: "Original invoice not found" },
+          { status: 404 }
+        );
+      }
+      if (originalInvoice.status === "CANCELLED") {
+        return NextResponse.json(
+          { error: "Cannot create credit/debit note against a cancelled invoice" },
+          { status: 400 }
+        );
+      }
+    }
+
     // Fetch customer to determine GST applicability based on state
     const customer = await prisma.customerMaster.findUnique({
       where: { id: customerId },
@@ -116,10 +151,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate invoice number based on type
-    const isExport = invoiceType === "EXPORT";
-    const invoiceNo = await generateDocumentNumber(
-      isExport ? "INVOICE_EXPORT" : "INVOICE_DOMESTIC"
-    );
+    let docType: "CREDIT_NOTE" | "DEBIT_NOTE" | "INVOICE_EXPORT" | "INVOICE_DOMESTIC";
+    if (isCreditNote) docType = "CREDIT_NOTE";
+    else if (isDebitNote) docType = "DEBIT_NOTE";
+    else if (invoiceType === "EXPORT") docType = "INVOICE_EXPORT";
+    else docType = "INVOICE_DOMESTIC";
+
+    const invoiceNo = await generateDocumentNumber(docType);
 
     // Calculate subtotal from items
     const subtotal = items.reduce(
@@ -132,6 +170,7 @@ export async function POST(request: NextRequest) {
     let sgst = 0;
     let igst = 0;
 
+    const isExport = invoiceType === "EXPORT";
     if (!isExport) {
       // Use the first item's tax rate as the applicable rate
       // For domestic invoices, calculate GST based on customer state
