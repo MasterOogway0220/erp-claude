@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { checkAccess } from "@/lib/rbac";
+import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, response } = await checkAccess("masters", "read");
+    if (!authorized) return response!;
 
     const templates = await prisma.offerTermTemplate.findMany({
       where: { isActive: true },
@@ -27,10 +25,8 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, session, response } = await checkAccess("masters", "write");
+    if (!authorized) return response!;
 
     const body = await request.json();
 
@@ -57,6 +53,13 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    await createAuditLog({
+      tableName: "OfferTermTemplate",
+      recordId: template.id,
+      action: "CREATE",
+      userId: session.user?.id,
+    });
+
     return NextResponse.json(template, { status: 201 });
   } catch (error) {
     console.error("Error creating offer term template:", error);
@@ -69,10 +72,8 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, session, response } = await checkAccess("masters", "write");
+    if (!authorized) return response!;
 
     const body = await request.json();
 
@@ -92,6 +93,13 @@ export async function PATCH(request: NextRequest) {
         isExportOnly: body.isExportOnly,
         isActive: body.isActive,
       },
+    });
+
+    await createAuditLog({
+      tableName: "OfferTermTemplate",
+      recordId: body.id,
+      action: "UPDATE",
+      userId: session.user?.id,
     });
 
     return NextResponse.json(template);

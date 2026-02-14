@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
 import { generateDocumentNumber } from "@/lib/document-numbering";
 import { checkAccess } from "@/lib/rbac";
+import { validateTraceability } from "@/lib/validators/business-rules";
 
 export async function GET(request: NextRequest) {
   try {
@@ -71,6 +72,12 @@ export async function POST(request: NextRequest) {
         { error: "Purchase Order is required" },
         { status: 400 }
       );
+    }
+
+    // Traceability enforcement: GRN must link to valid PO
+    const traceability = await validateTraceability("GRN", { poId });
+    if (!traceability.isValid) {
+      return NextResponse.json({ error: traceability.errors.join(". ") }, { status: 400 });
     }
 
     if (!items || items.length === 0) {

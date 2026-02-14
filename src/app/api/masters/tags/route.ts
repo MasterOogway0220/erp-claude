@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { checkAccess } from "@/lib/rbac";
+import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, response } = await checkAccess("masters", "read");
+    if (!authorized) return response!;
 
     const tags = await prisma.tag.findMany({
       orderBy: { name: "asc" },
@@ -29,10 +27,8 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, session, response } = await checkAccess("masters", "write");
+    if (!authorized) return response!;
 
     const body = await request.json();
 
@@ -45,6 +41,13 @@ export async function POST(request: NextRequest) {
 
     const tag = await prisma.tag.create({
       data: { name: body.name },
+    });
+
+    await createAuditLog({
+      tableName: "Tag",
+      recordId: tag.id,
+      action: "CREATE",
+      userId: session.user?.id,
     });
 
     return NextResponse.json(tag, { status: 201 });

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkAccess } from "@/lib/rbac";
+import { validateFIFOReservation } from "@/lib/validators/business-rules";
 
 export async function POST(
   request: NextRequest,
@@ -62,6 +63,20 @@ export async function POST(
         { error: "Insufficient stock quantity" },
         { status: 400 }
       );
+    }
+
+    // FIFO check - warn if not reserving oldest stock first
+    if (inventoryStock.heatNo && inventoryStock.product && inventoryStock.sizeLabel) {
+      const fifoCheck = await validateFIFOReservation(
+        inventoryStock.product,
+        inventoryStock.sizeLabel,
+        [inventoryStock.heatNo]
+      );
+      // FIFO is advisory, include warnings in response but don't block
+      if (fifoCheck.warnings && fifoCheck.warnings.length > 0) {
+        // Log but proceed - FIFO is a recommendation per PRD
+        console.log("FIFO advisory:", fifoCheck.warnings.join("; "));
+      }
     }
 
     // Create reservation

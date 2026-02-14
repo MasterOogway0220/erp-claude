@@ -4,6 +4,7 @@ import { createAuditLog } from "@/lib/audit";
 import { generateDocumentNumber } from "@/lib/document-numbering";
 import { SOStatus } from "@prisma/client";
 import { checkAccess } from "@/lib/rbac";
+import { validateTraceability } from "@/lib/validators/business-rules";
 
 export async function GET(request: NextRequest) {
   try {
@@ -72,6 +73,12 @@ export async function POST(request: NextRequest) {
         { error: "Customer is required" },
         { status: 400 }
       );
+    }
+
+    // Traceability enforcement: SO must link to approved quotation or customer PO
+    const traceability = await validateTraceability("SALES_ORDER", { quotationId, customerPoNo });
+    if (!traceability.isValid) {
+      return NextResponse.json({ error: traceability.errors.join(". ") }, { status: 400 });
     }
 
     // Credit limit enforcement

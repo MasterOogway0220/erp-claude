@@ -126,10 +126,22 @@ const MODULE_ACCESS: Record<string, Record<RBACAction, UserRole[]>> = {
     approve: ["ADMIN"],
   },
   reports: {
-    read: ["MANAGEMENT", "ADMIN"],
+    read: ["SALES", "PURCHASE", "STORES", "QC", "ACCOUNTS", "MANAGEMENT", "ADMIN"],
     write: ["ADMIN"],
     delete: ["ADMIN"],
     approve: ["ADMIN"],
+  },
+  admin: {
+    read: ["ADMIN"],
+    write: ["ADMIN"],
+    delete: ["ADMIN"],
+    approve: ["ADMIN"],
+  },
+  dispatch: {
+    read: ["STORES", "SALES", "ACCOUNTS", "MANAGEMENT", "ADMIN"],
+    write: ["STORES", "ADMIN"],
+    delete: ["STORES", "ADMIN"],
+    approve: ["MANAGEMENT", "ADMIN"],
   },
 };
 

@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { checkAccess } from "@/lib/rbac";
+import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, response } = await checkAccess("masters", "read");
+    if (!authorized) return response!;
 
     const company = await prisma.companyMaster.findFirst();
     return NextResponse.json({ company });
@@ -23,10 +21,8 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, session, response } = await checkAccess("masters", "write");
+    if (!authorized) return response!;
 
     const body = await request.json();
 
@@ -67,6 +63,13 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    await createAuditLog({
+      tableName: "CompanyMaster",
+      recordId: company.id,
+      action: "CREATE",
+      userId: session.user?.id,
+    });
+
     return NextResponse.json(company, { status: 201 });
   } catch (error) {
     console.error("Error creating company:", error);
@@ -79,10 +82,8 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, session, response } = await checkAccess("masters", "write");
+    if (!authorized) return response!;
 
     const body = await request.json();
     const existing = await prisma.companyMaster.findFirst();
@@ -121,6 +122,13 @@ export async function PATCH(request: NextRequest) {
         companyLogoUrl: body.companyLogoUrl ?? existing.companyLogoUrl,
         fyStartMonth: body.fyStartMonth ?? existing.fyStartMonth,
       },
+    });
+
+    await createAuditLog({
+      tableName: "CompanyMaster",
+      recordId: existing.id,
+      action: "UPDATE",
+      userId: session.user?.id,
     });
 
     return NextResponse.json(company);

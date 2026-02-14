@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { checkAccess } from "@/lib/rbac";
+import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(
@@ -9,10 +9,8 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, response } = await checkAccess("masters", "read");
+    if (!authorized) return response!;
 
     const locations = await prisma.warehouseLocation.findMany({
       where: { warehouseId: id },
@@ -35,10 +33,8 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, session, response } = await checkAccess("masters", "write");
+    if (!authorized) return response!;
 
     const body = await request.json();
     const { zone, rack, bay, shelf, locationType, capacity } = body;
@@ -58,6 +54,13 @@ export async function POST(
         locationType: locationType || "GENERAL",
         capacity: capacity || null,
       },
+    });
+
+    await createAuditLog({
+      tableName: "WarehouseLocation",
+      recordId: location.id,
+      action: "CREATE",
+      userId: session.user?.id,
     });
 
     return NextResponse.json(location, { status: 201 });

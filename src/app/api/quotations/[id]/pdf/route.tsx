@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { checkAccess } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 import { renderHtmlToPdf } from "@/lib/pdf/render-pdf";
 import { generateStandardQuotationHtml } from "@/lib/pdf/quotation-standard-template";
@@ -26,10 +25,8 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, response } = await checkAccess("quotation", "read");
+    if (!authorized) return response!;
 
     const { searchParams } = new URL(request.url);
     const variant = searchParams.get("variant") || "auto";

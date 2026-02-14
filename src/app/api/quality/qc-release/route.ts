@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { StockStatus } from "@prisma/client";
 import { createAuditLog } from "@/lib/audit";
 import { generateDocumentNumber } from "@/lib/document-numbering";
 import { checkAccess } from "@/lib/rbac";
@@ -95,12 +96,12 @@ export async function POST(request: NextRequest) {
       });
 
       // Update stock status based on decision
-      const statusMap: Record<string, string> = {
-        ACCEPT: "ACCEPTED",
-        REJECT: "REJECTED",
-        HOLD: "HOLD",
+      const statusMap: Record<string, StockStatus> = {
+        ACCEPT: StockStatus.ACCEPTED,
+        REJECT: StockStatus.REJECTED,
+        HOLD: StockStatus.HOLD,
       };
-      const newStatus = statusMap[decision || "ACCEPT"] || "ACCEPTED";
+      const newStatus = statusMap[decision || "ACCEPT"] || StockStatus.ACCEPTED;
       await tx.inventoryStock.update({
         where: { id: inventoryStockId },
         data: { status: newStatus },

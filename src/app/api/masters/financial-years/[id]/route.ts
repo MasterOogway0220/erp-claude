@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { checkAccess } from "@/lib/rbac";
+import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(
@@ -8,10 +8,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, response } = await checkAccess("masters", "read");
+    if (!authorized) return response!;
 
     const { id } = await params;
 
@@ -41,10 +39,8 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, session, response } = await checkAccess("masters", "write");
+    if (!authorized) return response!;
 
     const { id } = await params;
     const body = await request.json();
@@ -64,6 +60,13 @@ export async function PATCH(
         endDate: body.endDate ? new Date(body.endDate) : undefined,
         isActive: body.isActive ?? undefined,
       },
+    });
+
+    await createAuditLog({
+      tableName: "FinancialYear",
+      recordId: id,
+      action: "UPDATE",
+      userId: session.user?.id,
     });
 
     return NextResponse.json(financialYear);
@@ -87,15 +90,20 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, session, response } = await checkAccess("masters", "delete");
+    if (!authorized) return response!;
 
     const { id } = await params;
 
     await prisma.financialYear.delete({
       where: { id },
+    });
+
+    await createAuditLog({
+      tableName: "FinancialYear",
+      recordId: id,
+      action: "DELETE",
+      userId: session.user?.id,
     });
 
     return NextResponse.json({
