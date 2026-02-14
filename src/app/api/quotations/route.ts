@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
+import { numberToWords } from "@/lib/amount-in-words";
+import { generateDocumentNumber } from "@/lib/document-numbering";
 import { QuotationStatus, QuotationType, QuotationCategory } from "@prisma/client";
+import { checkAccess } from "@/lib/rbac";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, session, response } = await checkAccess("quotation", "read");
+    if (!authorized) return response!;
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
@@ -57,10 +56,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, session, response } = await checkAccess("quotation", "write");
+    if (!authorized) return response!;
 
     const body = await request.json();
     const {
@@ -74,6 +71,7 @@ export async function POST(request: NextRequest) {
       paymentTermsId,
       deliveryTermsId,
       deliveryPeriod,
+      taxRate,
       items,
       terms,
     } = body;
@@ -85,33 +83,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate quotation number (NPS/YY/NNNNN)
-    const year = new Date().getFullYear().toString().slice(-2);
-    const currentFY = new Date().getMonth() >= 3 ? year : (parseInt(year) - 1).toString().padStart(2, "0");
+    // Generate quotation number using shared document numbering utility
+    const quotationNo = await generateDocumentNumber("QUOTATION");
 
-    const sequence = await prisma.documentSequence.findUnique({
-      where: { documentType: "QUOTATION" },
-    });
-
-    let nextNumber = 1;
-    if (sequence) {
-      nextNumber = sequence.currentNumber + 1;
-      await prisma.documentSequence.update({
-        where: { documentType: "QUOTATION" },
-        data: { currentNumber: nextNumber },
-      });
-    } else {
-      await prisma.documentSequence.create({
-        data: {
-          documentType: "QUOTATION",
-          prefix: "NPS",
-          currentNumber: 1,
-          financialYear: currentFY,
-        },
-      });
-    }
-
-    const quotationNo = `NPS/${currentFY}/${nextNumber.toString().padStart(5, "0")}`;
+    // Calculate tax fields
+    const subtotal = items.reduce(
+      (sum: number, item: any) => sum + (parseFloat(item.amount) || 0),
+      0
+    );
+    const parsedTaxRate = taxRate ? parseFloat(taxRate) : 0;
+    const taxAmount = parsedTaxRate > 0 ? subtotal * parsedTaxRate / 100 : 0;
+    const grandTotal = subtotal + taxAmount;
+    const effectiveCurrency = currency || "INR";
+    const computedAmountInWords = numberToWords(grandTotal, effectiveCurrency);
 
     // Create quotation with items and terms
     const quotation = await prisma.quotation.create({
@@ -127,6 +111,11 @@ export async function POST(request: NextRequest) {
         paymentTermsId: paymentTermsId || null,
         deliveryTermsId: deliveryTermsId || null,
         deliveryPeriod: deliveryPeriod || null,
+        subtotal,
+        taxRate: parsedTaxRate || null,
+        taxAmount: taxAmount || null,
+        grandTotal,
+        amountInWords: computedAmountInWords,
         preparedById: session.user.id,
         items: {
           create: items.map((item: any, index: number) => ({
@@ -149,6 +138,8 @@ export async function POST(request: NextRequest) {
             remark: item.remark || null,
             materialCodeId: item.materialCodeId || null,
             uom: item.uom || null,
+            hsnCode: item.hsnCode || null,
+            taxRate: item.taxRate ? parseFloat(item.taxRate) : null,
             unitWeight: item.unitWeight ? parseFloat(item.unitWeight) : null,
             totalWeightMT: item.totalWeightMT ? parseFloat(item.totalWeightMT) : null,
             // Internal costing fields

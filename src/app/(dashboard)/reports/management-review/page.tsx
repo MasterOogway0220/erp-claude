@@ -30,10 +30,12 @@ import Link from "next/link";
 interface SalesMetrics {
   revenue: number;
   orderCount: number;
+  openSOCount: number;
   enquiryCount: number;
   quotationCount: number;
   openSOValue: number;
   poCount: number;
+  openPOValue: number;
   conversionRate: number;
 }
 
@@ -42,7 +44,7 @@ interface InventoryMetrics {
   accepted: number;
   underInspection: number;
   acceptedTotalMtr: number;
-  inventoryValue: number | null;
+  inventoryValue: number;
 }
 
 interface QualityMetrics {
@@ -137,10 +139,12 @@ export default function ManagementReviewPage() {
   const sales = data.salesMetrics || {
     revenue: 0,
     orderCount: 0,
+    openSOCount: 0,
     enquiryCount: 0,
     quotationCount: 0,
     openSOValue: 0,
     poCount: 0,
+    openPOValue: 0,
     conversionRate: 0,
   };
   const inventory = data.inventoryMetrics || {
@@ -148,7 +152,7 @@ export default function ManagementReviewPage() {
     accepted: 0,
     underInspection: 0,
     acceptedTotalMtr: 0,
-    inventoryValue: null,
+    inventoryValue: 0,
   };
   const quality = data.qualityMetrics || {
     totalNCRs: 0,
@@ -187,7 +191,7 @@ export default function ManagementReviewPage() {
           <BarChart3 className="h-5 w-5 text-blue-500" />
           <h3 className="text-lg font-semibold">Sales</h3>
         </div>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
@@ -201,15 +205,7 @@ export default function ManagementReviewPage() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{sales.orderCount}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Open SO Value</CardTitle>
+              <CardTitle className="text-sm font-medium">Open SO ({sales.openSOCount})</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-blue-600">
@@ -219,10 +215,28 @@ export default function ManagementReviewPage() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Open POs</CardTitle>
+              <CardTitle className="text-sm font-medium">Open PO ({sales.poCount})</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{sales.poCount}</div>
+              <div className="text-2xl font-bold text-violet-600">
+                {formatCurrency(sales.openPOValue)}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{sales.orderCount}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Open Enquiries</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{sales.enquiryCount}</div>
             </CardContent>
           </Card>
           <Card>
@@ -245,7 +259,7 @@ export default function ManagementReviewPage() {
           <Warehouse className="h-5 w-5 text-green-500" />
           <h3 className="text-lg font-semibold">Inventory</h3>
         </div>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Stock</CardTitle>
@@ -283,6 +297,17 @@ export default function ManagementReviewPage() {
             <CardContent>
               <div className="text-2xl font-bold">
                 {inventory.acceptedTotalMtr.toFixed(1)} Mtr
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Inventory Value</CardTitle>
+              <IndianRupee className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-emerald-600">
+                {formatCurrency(inventory.inventoryValue)}
               </div>
             </CardContent>
           </Card>

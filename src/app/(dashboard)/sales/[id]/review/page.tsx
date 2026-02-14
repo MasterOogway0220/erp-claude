@@ -119,6 +119,7 @@ export default function CustomerPOReviewPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           poAcceptanceStatus: status,
+          poReviewRemarks: remarks || null,
         }),
       });
 

@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { checkAccess } from "@/lib/rbac";
+import { createAuditLog } from "@/lib/audit";
+
+// Valid invoice status transitions
+const VALID_STATUS_TRANSITIONS: Record<string, string[]> = {
+  DRAFT: ["SENT", "CANCELLED"],
+  SENT: ["PARTIALLY_PAID", "CANCELLED"],
+  PARTIALLY_PAID: ["PAID", "CANCELLED"],
+  PAID: [], // Terminal state
+  CANCELLED: [], // Terminal state
+};
 
 export async function GET(
   request: NextRequest,
@@ -9,10 +18,8 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, response } = await checkAccess("invoice", "read");
+    if (!authorized) return response!;
 
     const invoice = await prisma.invoice.findUnique({
       where: { id },
@@ -64,13 +71,36 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, session, response } = await checkAccess("invoice", "write");
+    if (!authorized) return response!;
 
     const body = await request.json();
     const { status } = body;
+
+    // If status is being set, validate the transition
+    if (status) {
+      const existing = await prisma.invoice.findUnique({
+        where: { id },
+        select: { status: true },
+      });
+
+      if (!existing) {
+        return NextResponse.json(
+          { error: "Invoice not found" },
+          { status: 404 }
+        );
+      }
+
+      const allowedTransitions = VALID_STATUS_TRANSITIONS[existing.status] || [];
+      if (!allowedTransitions.includes(status)) {
+        return NextResponse.json(
+          {
+            error: `Invalid status transition: ${existing.status} -> ${status}. Allowed transitions: ${allowedTransitions.join(", ") || "none (terminal state)"}`,
+          },
+          { status: 400 }
+        );
+      }
+    }
 
     const invoice = await prisma.invoice.update({
       where: { id },
@@ -83,6 +113,18 @@ export async function PATCH(
         paymentReceipts: true,
       },
     });
+
+    if (status) {
+      createAuditLog({
+        userId: session.user.id,
+        action: "STATUS_CHANGE",
+        tableName: "Invoice",
+        recordId: id,
+        fieldName: "status",
+        oldValue: body._previousStatus || undefined,
+        newValue: status,
+      }).catch(console.error);
+    }
 
     return NextResponse.json(invoice);
   } catch (error) {

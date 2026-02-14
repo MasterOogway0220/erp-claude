@@ -9,6 +9,7 @@ export type DocumentType =
   | "GRN"
   | "INSPECTION"
   | "NCR"
+  | "QC_RELEASE"
   | "PACKING_LIST"
   | "DISPATCH_NOTE"
   | "INVOICE_DOMESTIC"
@@ -25,6 +26,7 @@ const PREFIXES: Record<DocumentType, string> = {
   GRN: "GRN",
   INSPECTION: "INS",
   NCR: "NCR",
+  QC_RELEASE: "QCR",
   PACKING_LIST: "PL",
   DISPATCH_NOTE: "DN",
   INVOICE_DOMESTIC: "INV",
@@ -40,7 +42,9 @@ function getCurrentFinancialYear(): string {
   // Indian FY: April to March
   // If month >= 4 (April), FY starts this year; otherwise last year
   const fyStartYear = month >= 4 ? year : year - 1;
-  return (fyStartYear % 100).toString().padStart(2, "0");
+  const fyEndYear = fyStartYear + 1;
+  // Format: YYYY-YY (e.g., 2025-26)
+  return `${fyStartYear}-${(fyEndYear % 100).toString().padStart(2, "0")}`;
 }
 
 export async function generateDocumentNumber(

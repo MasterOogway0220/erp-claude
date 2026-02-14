@@ -1,16 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
 import { generateDocumentNumber } from "@/lib/document-numbering";
+import { checkAccess } from "@/lib/rbac";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, session, response } = await checkAccess("grn", "read");
+    if (!authorized) return response!;
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
@@ -63,19 +60,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // RBAC: Only STORES and ADMIN can create GRNs
-    const allowedRoles = ["STORES", "ADMIN"];
-    if (!allowedRoles.includes(session.user.role)) {
-      return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
-    }
+    const { authorized, session, response } = await checkAccess("grn", "write");
+    if (!authorized) return response!;
 
     const body = await request.json();
-    const { poId, vendorId, remarks, items } = body;
+    const { poId, vendorId, remarks, challanNo, challanDate, vehicleNo, transporterName, items } = body;
 
     if (!poId) {
       return NextResponse.json(
@@ -91,6 +80,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate heat numbers are provided for all items
+    for (let i = 0; i < items.length; i++) {
+      if (!items[i].heatNo || items[i].heatNo.trim() === "") {
+        return NextResponse.json(
+          { error: `Heat Number is mandatory for item ${i + 1}` },
+          { status: 400 }
+        );
+      }
+    }
+
     const po = await prisma.purchaseOrder.findUnique({
       where: { id: poId },
       include: { items: true },
@@ -103,6 +102,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check for excess receipt
+    const existingGrns = await prisma.goodsReceiptNote.findMany({
+      where: { poId },
+      include: { items: { select: { receivedQtyMtr: true } } },
+    });
+    const previouslyReceived = existingGrns.reduce(
+      (sum, grn) => sum + grn.items.reduce((s, item) => s + Number(item.receivedQtyMtr), 0), 0
+    );
+    const currentReceiving = items.reduce(
+      (sum: number, item: any) => sum + (parseFloat(item.receivedQtyMtr) || 0), 0
+    );
+    const totalPOQty = po.items.reduce((sum, item) => sum + Number(item.quantity), 0);
+    if (previouslyReceived + currentReceiving > totalPOQty * 1.1) {
+      // Allow up to 10% excess, flag warning beyond that
+      console.warn(`Excess receipt detected for PO ${po.poNo}: Total received ${previouslyReceived + currentReceiving} vs PO qty ${totalPOQty}`);
+    }
+
     const grnNo = await generateDocumentNumber("GRN");
 
     const grn = await prisma.$transaction(async (tx) => {
@@ -113,6 +129,10 @@ export async function POST(request: NextRequest) {
           vendorId: vendorId || po.vendorId,
           receivedById: session.user.id,
           remarks: remarks || null,
+          challanNo: challanNo || null,
+          challanDate: challanDate ? new Date(challanDate) : null,
+          vehicleNo: vehicleNo || null,
+          transporterName: transporterName || null,
           items: {
             create: items.map((item: any, index: number) => ({
               sNo: index + 1,

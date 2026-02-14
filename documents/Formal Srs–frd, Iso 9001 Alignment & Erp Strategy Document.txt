@@ -1,0 +1,137 @@
+SOFTWARE REQUIREMENT SPECIFICATION (SRS) & FUNCTIONAL REQUIREMENT DOCUMENT (FRD)
+ERP for Oil, Gas, Power & Petrochemical Trading Company
+
+1. Document Control (ISO 9001:2018 – Clause 7.5)
+Item
+Description
+Document Title
+ERP Software – SRS & FRD
+Version
+1.0
+Prepared By
+Management / Consultant
+Approved By
+Top Management
+Date
+____
+Confidentiality
+Internal Use Only
+
+2. Purpose of the Document
+This document defines business, functional, and compliance requirements for development or implementation of an ERP system for a trading organization supplying materials and equipment to Oil, Gas, Power & Petrochemical industries. It also ensures full compliance with ISO 9001:2018.
+
+3. Scope of the ERP System
+3.1 In-Scope
+Quotation Management
+Inventory Management
+Sales Order Management
+Purchase Order Management
+Quality Control & MTC Management
+Invoicing & Payment Management
+MIS & Dashboards
+ISO 9001 documentation support
+3.2 Out-of-Scope (Phase-2)
+Manufacturing
+HR & Payroll
+CRM Automation
+
+4. Stakeholders & User Roles (ISO 9001 – Clause 5.3)
+Role
+Responsibilities
+Admin
+System configuration, access control
+Sales
+Enquiry, quotation, SO
+Purchase
+PO, vendor coordination
+QC
+Inspection, MTC, NCR
+Stores
+Inventory, dispatch
+Accounts
+Invoice, payment
+Management
+MIS, approvals
+
+5. High-Level Business Process Flow (Enquiry → Payment)
+Customer Enquiry      ↓Quotation Preparation      ↓ (Approval)Quotation Submission      ↓ (Customer PO)Sales Order Creation      ↓Purchase Order to Vendor      ↓Material Receipt      ↓Quality Inspection & MTC      ↓Inventory Stock (Accepted)      ↓Dispatch & Packing List      ↓Invoice Generation      ↓Payment Receipt      ↓MIS & Management Review
+
+6. Functional Requirements (FRD – Module Wise)
+6.1 Quotation Management Module
+Inputs: Enquiry, customer requirements Processes: Costing, margin calculation, approval Outputs: Approved quotation (PDF/email) Controls: Version control, validity, approval ISO Reference: Clause 8.2
+
+6.2 Inventory Management Module
+Inputs: Incoming material Processes: Heat-wise stock, inspection status Outputs: Stock reports, traceability Controls: FIFO, preservation ISO Reference: Clause 8.5.2, 8.5.4
+
+6.3 Sales Order Management Module
+Inputs: Approved quotation / Customer PO Processes: Reservation, delivery scheduling Outputs: SO, dispatch notes ISO Reference: Clause 8.5
+
+6.4 Purchase Order Management Module
+Inputs: SO / Purchase requisition Processes: Vendor selection, PO issue Outputs: Approved PO ISO Reference: Clause 8.4
+
+6.5 Quality Control & MTC Module
+Inputs: Incoming material, mill certificates Processes: Inspection, acceptance/rejection Outputs: Inspection report, MTC Controls: NCR, corrective action ISO Reference: Clause 8.6, 8.7
+
+6.6 Invoice & Payment Module
+Inputs: Dispatch data Processes: Tax calculation, receipt entry Outputs: Invoice, ageing report ISO Reference: Clause 8.5.1
+
+6.7 MIS & Dashboard Module
+Inputs: Transactional data Outputs: KPIs, trends, reports ISO Reference: Clause 9.1, 9.3
+
+7. ISO 9001:2018 Document List Linked to ERP Modules
+ISO Clause
+Document / Record
+ERP Module
+7.5
+Quotation Format
+Quotation Mgmt
+8.2
+Contract Review Record
+Sales
+8.4
+Approved Vendor List
+Purchase
+8.5.2
+Heat Traceability Record
+Inventory
+8.6
+Inspection Report
+QC
+8.7
+NCR Report
+QC
+8.5.1
+Invoice & Dispatch Record
+Accounts
+9.1
+MIS Reports
+MIS
+10.2
+Corrective Action Record
+QC / MIS
+
+8. ERP vs ISO Manual Alignment
+ISO Manual Section
+ERP Support
+Process Interaction
+Workflow mapping
+Document Control
+Auto-numbering & revision
+Risk Management
+Delay alerts, NCR trends
+Operational Control
+Approval workflows
+Performance Evaluation
+MIS dashboards
+Corrective Action
+NCR & CAPA tracking
+Conclusion: ERP acts as a digital ISO manual & record system.
+
+9. Acceptance Criteria
+End-to-end traceability
+ISO audit-ready reports
+Role-based access
+Zero manual registers
+
+
+This document serves as SRS, FRD, ISO alignment guide & ERP selection reference.

@@ -1,16 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
+import { generateDocumentNumber } from "@/lib/document-numbering";
 import { EnquiryStatus } from "@prisma/client";
+import { checkAccess } from "@/lib/rbac";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, session, response } = await checkAccess("enquiry", "read");
+    if (!authorized) return response!;
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
@@ -54,10 +52,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, session, response } = await checkAccess("enquiry", "write");
+    if (!authorized) return response!;
 
     const body = await request.json();
     const {
@@ -85,33 +81,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate enquiry number (ENQ/YY/NNNNN)
-    const year = new Date().getFullYear().toString().slice(-2);
-    const currentFY = new Date().getMonth() >= 3 ? year : (parseInt(year) - 1).toString().padStart(2, "0");
-
-    const sequence = await prisma.documentSequence.findUnique({
-      where: { documentType: "ENQUIRY" },
-    });
-
-    let nextNumber = 1;
-    if (sequence) {
-      nextNumber = sequence.currentNumber + 1;
-      await prisma.documentSequence.update({
-        where: { documentType: "ENQUIRY" },
-        data: { currentNumber: nextNumber },
-      });
-    } else {
-      await prisma.documentSequence.create({
-        data: {
-          documentType: "ENQUIRY",
-          prefix: "ENQ",
-          currentNumber: 1,
-          financialYear: currentFY,
-        },
-      });
-    }
-
-    const enquiryNo = `ENQ/${currentFY}/${nextNumber.toString().padStart(5, "0")}`;
+    // Generate enquiry number using shared document numbering utility
+    const enquiryNo = await generateDocumentNumber("ENQUIRY");
 
     // Create enquiry with items
     const enquiry = await prisma.enquiry.create({

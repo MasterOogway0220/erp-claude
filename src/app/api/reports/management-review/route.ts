@@ -10,6 +10,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const userRole = (session.user as any).role;
+    if (!["MANAGEMENT", "ADMIN"].includes(userRole)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     // ---- Sales Metrics ----
     const [
       revenueAgg,
@@ -20,6 +25,8 @@ export async function GET(request: NextRequest) {
       wonQuotations,
       poCount,
       openSOValueAgg,
+      openPOValueAgg,
+      openSOCount,
     ] = await Promise.all([
       prisma.invoice.aggregate({
         where: { status: "PAID" },
@@ -35,10 +42,16 @@ export async function GET(request: NextRequest) {
         where: { salesOrder: { status: { in: ["OPEN", "PARTIALLY_DISPATCHED"] } } },
         _sum: { amount: true },
       }),
+      prisma.purchaseOrder.aggregate({
+        where: { status: { in: ["OPEN", "SENT_TO_VENDOR", "PARTIALLY_RECEIVED"] } },
+        _sum: { totalAmount: true },
+      }),
+      prisma.salesOrder.count({ where: { status: { in: ["OPEN", "PARTIALLY_DISPATCHED"] } } }),
     ]);
 
     const revenue = revenueAgg._sum.totalAmount ?? 0;
     const openSOValue = Number(openSOValueAgg._sum.amount ?? 0);
+    const openPOValue = Number(openPOValueAgg._sum.totalAmount ?? 0);
     const conversionRate =
       totalQuotations > 0
         ? Number(((wonQuotations / totalQuotations) * 100).toFixed(2))
@@ -56,6 +69,61 @@ export async function GET(request: NextRequest) {
     ]);
 
     const acceptedTotalMtr = Number(inventoryQtyAgg._sum.quantityMtr ?? 0);
+
+    // Calculate inventory value by tracing stock -> GRN Item -> GRN -> PO -> PO Items
+    // Match each stock item to its corresponding PO item by product + sizeLabel to get unitRate
+    const acceptedStockWithPO = await prisma.inventoryStock.findMany({
+      where: { status: { in: ["ACCEPTED", "RESERVED"] } },
+      select: {
+        id: true,
+        quantityMtr: true,
+        product: true,
+        sizeLabel: true,
+        grnItem: {
+          select: {
+            product: true,
+            sizeLabel: true,
+            grn: {
+              select: {
+                purchaseOrder: {
+                  select: {
+                    items: {
+                      select: {
+                        product: true,
+                        sizeLabel: true,
+                        unitRate: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    let inventoryValue = 0;
+    for (const stock of acceptedStockWithPO) {
+      const qty = Number(stock.quantityMtr);
+      if (!stock.grnItem?.grn?.purchaseOrder?.items) continue;
+
+      const poItems = stock.grnItem.grn.purchaseOrder.items;
+      // Try to find matching PO item by product + sizeLabel
+      const matchingItem = poItems.find(
+        (pi) =>
+          pi.product === (stock.grnItem?.product || stock.product) &&
+          pi.sizeLabel === (stock.grnItem?.sizeLabel || stock.sizeLabel)
+      );
+
+      if (matchingItem) {
+        inventoryValue += qty * Number(matchingItem.unitRate);
+      } else if (poItems.length === 1) {
+        // If only one PO item, use its rate as fallback
+        inventoryValue += qty * Number(poItems[0].unitRate);
+      }
+      // If no match and multiple PO items, skip (cannot determine rate)
+    }
 
     // ---- Quality Metrics ----
     const [totalNCRs, openNCRs, totalInspections, passedInspections] =
@@ -143,7 +211,7 @@ export async function GET(request: NextRequest) {
       .slice(0, 10);
 
     // ---- Finance Metrics ----
-    const [invoiceTotals, paymentTotals] = await Promise.all([
+    const [, paymentTotals] = await Promise.all([
       prisma.invoice.aggregate({
         where: { status: { in: ["SENT", "PARTIALLY_PAID"] } },
         _sum: { totalAmount: true },
@@ -178,10 +246,12 @@ export async function GET(request: NextRequest) {
       salesMetrics: {
         revenue,
         orderCount,
+        openSOCount,
         enquiryCount,
         quotationCount,
         openSOValue,
         poCount,
+        openPOValue: Number(openPOValue.toFixed(2)),
         conversionRate,
       },
       inventoryMetrics: {
@@ -189,7 +259,7 @@ export async function GET(request: NextRequest) {
         underInspection,
         accepted,
         acceptedTotalMtr,
-        inventoryValue: null,
+        inventoryValue: Number(inventoryValue.toFixed(2)),
       },
       qualityMetrics: {
         totalNCRs,

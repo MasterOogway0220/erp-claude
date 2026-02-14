@@ -1,16 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
 import { generateDocumentNumber } from "@/lib/document-numbering";
+import { checkAccess } from "@/lib/rbac";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, session, response } = await checkAccess("payment", "read");
+    if (!authorized) return response!;
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
@@ -52,16 +49,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // RBAC: Only ACCOUNTS and ADMIN can create payment receipts
-    const allowedRoles = ["ACCOUNTS", "ADMIN"];
-    if (!allowedRoles.includes(session.user.role)) {
-      return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
-    }
+    const { authorized, session, response } = await checkAccess("payment", "write");
+    if (!authorized) return response!;
 
     const body = await request.json();
     const {

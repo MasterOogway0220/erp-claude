@@ -1,8 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
+import { checkAccess } from "@/lib/rbac";
+
+/**
+ * Valid Sales Order status transitions
+ * PRD §4.2 - Sales Order lifecycle
+ */
+const VALID_SO_STATUS_TRANSITIONS: Record<string, string[]> = {
+  OPEN: ["PARTIALLY_DISPATCHED", "CANCELLED"],
+  PARTIALLY_DISPATCHED: ["FULLY_DISPATCHED", "CANCELLED"],
+  FULLY_DISPATCHED: ["CLOSED"],
+};
 
 export async function GET(
   request: NextRequest,
@@ -10,10 +19,8 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, session, response } = await checkAccess("salesOrder", "read");
+    if (!authorized) return response!;
 
     const salesOrder = await prisma.salesOrder.findUnique({
       where: { id },
@@ -60,24 +67,40 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, session, response } = await checkAccess("salesOrder", "write");
+    if (!authorized) return response!;
 
     const body = await request.json();
-    const { status, poAcceptanceStatus } = body;
+    const { status, poAcceptanceStatus, poReviewRemarks } = body;
 
     const existing = await prisma.salesOrder.findUnique({
       where: { id },
       select: { status: true, poAcceptanceStatus: true },
     });
 
+    if (!existing) {
+      return NextResponse.json({ error: "Sales order not found" }, { status: 404 });
+    }
+
+    // Enforce status transition rules when status field is being set
+    if (status) {
+      const allowedTransitions = VALID_SO_STATUS_TRANSITIONS[existing.status];
+      if (!allowedTransitions || !allowedTransitions.includes(status)) {
+        return NextResponse.json(
+          {
+            error: `Invalid status transition. Cannot move from ${existing.status} to ${status}. Allowed transitions: ${allowedTransitions?.join(", ") || "none"}`,
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     const updated = await prisma.salesOrder.update({
       where: { id },
       data: {
         ...(status && { status }),
         ...(poAcceptanceStatus && { poAcceptanceStatus }),
+        ...(poReviewRemarks !== undefined && { poReviewRemarks }),
       },
       include: {
         customer: true,
@@ -91,7 +114,7 @@ export async function PATCH(
       tableName: "SalesOrder",
       recordId: id,
       fieldName: "status",
-      oldValue: existing?.status || null,
+      oldValue: existing?.status || undefined,
       newValue: updated.status,
     }).catch(console.error);
 

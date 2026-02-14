@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { createAuditLog } from "@/lib/audit";
+import { generateDocumentNumber } from "@/lib/document-numbering";
+import { checkAccess } from "@/lib/rbac";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, response } = await checkAccess("qcRelease", "read");
+    if (!authorized) return response!;
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
@@ -49,10 +48,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, session, response } = await checkAccess("qcRelease", "write");
+    if (!authorized) return response!;
 
     const body = await request.json();
     const { inspectionId, inventoryStockId, decision, remarks } = body;
@@ -82,9 +79,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate release number (use a simple counter format)
-    const count = await prisma.qCRelease.count();
-    const releaseNo = `QCR/${String(count + 1).padStart(5, "0")}`;
+    // Generate release number using standardized document numbering
+    const releaseNo = await generateDocumentNumber("QC_RELEASE");
 
     const qcRelease = await prisma.$transaction(async (tx) => {
       const created = await tx.qCRelease.create({
@@ -99,7 +95,12 @@ export async function POST(request: NextRequest) {
       });
 
       // Update stock status based on decision
-      const newStatus = decision === "REJECT" ? "REJECTED" : "ACCEPTED";
+      const statusMap: Record<string, string> = {
+        ACCEPT: "ACCEPTED",
+        REJECT: "REJECTED",
+        HOLD: "HOLD",
+      };
+      const newStatus = statusMap[decision || "ACCEPT"] || "ACCEPTED";
       await tx.inventoryStock.update({
         where: { id: inventoryStockId },
         data: { status: newStatus },
@@ -120,6 +121,14 @@ export async function POST(request: NextRequest) {
         releasedBy: { select: { name: true } },
       },
     });
+
+    createAuditLog({
+      userId: session.user.id,
+      action: "CREATE",
+      tableName: "QCRelease",
+      recordId: qcRelease.id,
+      newValue: JSON.stringify({ releaseNo }),
+    }).catch(console.error);
 
     return NextResponse.json(full, { status: 201 });
   } catch (error) {

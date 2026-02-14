@@ -1,17 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { checkAccess } from "@/lib/rbac";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, response } = await checkAccess("masters", "read");
+    if (!authorized) return response!;
 
     const { id } = await params;
     const addresses = await prisma.customerDispatchAddress.findMany({
@@ -34,10 +31,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, response } = await checkAccess("masters", "write");
+    if (!authorized) return response!;
 
     const { id } = await params;
     const body = await request.json();

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { checkAccess } from "@/lib/rbac";
+import { createAuditLog } from "@/lib/audit";
 
 export async function GET(
   request: NextRequest,
@@ -9,10 +9,8 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, response } = await checkAccess("masters", "read");
+    if (!authorized) return response!;
 
     const customer = await prisma.customerMaster.findUnique({
       where: { id },
@@ -44,10 +42,8 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, session, response } = await checkAccess("masters", "write");
+    if (!authorized) return response!;
 
     const body = await request.json();
     const {
@@ -145,6 +141,14 @@ export async function PATCH(
       },
     });
 
+    createAuditLog({
+      userId: session.user.id,
+      action: "UPDATE",
+      tableName: "CustomerMaster",
+      recordId: id,
+      newValue: JSON.stringify({ name: updated.name }),
+    }).catch(console.error);
+
     return NextResponse.json(updated);
   } catch (error) {
     console.error("Error updating customer:", error);
@@ -161,14 +165,55 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const { authorized, session, response } = await checkAccess("masters", "delete");
+    if (!authorized) return response!;
+
+    // Check for linked records before deleting
+    const customer = await prisma.customerMaster.findUnique({
+      where: { id },
+      select: {
+        name: true,
+        _count: {
+          select: {
+            enquiries: true,
+            quotations: true,
+            salesOrders: true,
+            invoices: true,
+          },
+        },
+      },
+    });
+
+    if (!customer) {
+      return NextResponse.json({ error: "Customer not found" }, { status: 404 });
+    }
+
+    const linkedCount =
+      customer._count.enquiries +
+      customer._count.quotations +
+      customer._count.salesOrders +
+      customer._count.invoices;
+
+    if (linkedCount > 0) {
+      return NextResponse.json(
+        {
+          error: `Cannot delete customer "${customer.name}". It has ${customer._count.enquiries} enquiries, ${customer._count.quotations} quotations, ${customer._count.salesOrders} sales orders, and ${customer._count.invoices} invoices linked. Deactivate instead.`,
+        },
+        { status: 400 }
+      );
     }
 
     await prisma.customerMaster.delete({
       where: { id },
     });
+
+    createAuditLog({
+      userId: session.user.id,
+      action: "DELETE",
+      tableName: "CustomerMaster",
+      recordId: id,
+      oldValue: customer.name,
+    }).catch(console.error);
 
     return NextResponse.json({ success: true });
   } catch (error) {

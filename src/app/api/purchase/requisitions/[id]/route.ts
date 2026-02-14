@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { createAuditLog } from "@/lib/audit";
+import { checkAccess } from "@/lib/rbac";
 
 export async function GET(
   request: NextRequest,
@@ -9,10 +9,8 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, session, response } = await checkAccess("purchaseRequisition", "read");
+    if (!authorized) return response!;
 
     const purchaseRequisition = await prisma.purchaseRequisition.findUnique({
       where: { id },
@@ -24,6 +22,9 @@ export async function GET(
           select: { id: true, name: true },
         },
         approvedBy: {
+          select: { id: true, name: true },
+        },
+        requestedBy: {
           select: { id: true, name: true },
         },
         items: {
@@ -58,13 +59,11 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, session, response } = await checkAccess("purchaseRequisition", "write");
+    if (!authorized) return response!;
 
     const body = await request.json();
-    const { status } = body;
+    const { status, approvalRemarks } = body;
 
     const pr = await prisma.purchaseRequisition.findUnique({
       where: { id },
@@ -94,16 +93,39 @@ export async function PATCH(
       );
     }
 
+    // Role check: Only MANAGEMENT and ADMIN can approve/reject
+    if (status === "APPROVED" || status === "REJECTED") {
+      const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { role: true },
+      });
+      if (user?.role !== "MANAGEMENT" && user?.role !== "ADMIN") {
+        return NextResponse.json(
+          { error: "Only Management or Admin can approve/reject purchase requisitions" },
+          { status: 403 }
+        );
+      }
+    }
+
     const updateData: any = { status };
 
     if (status === "APPROVED") {
-      updateData.approvedById = (session as any).user?.id;
+      updateData.approvedById = session.user.id;
       updateData.approvalDate = new Date();
+      if (approvalRemarks) updateData.approvalRemarks = approvalRemarks;
     }
 
     if (status === "REJECTED") {
-      updateData.approvedById = (session as any).user?.id;
+      updateData.approvedById = session.user.id;
       updateData.approvalDate = new Date();
+      if (approvalRemarks) updateData.approvalRemarks = approvalRemarks;
+    }
+
+    if (status === "DRAFT") {
+      // Reverting to draft - clear approval fields
+      updateData.approvedById = null;
+      updateData.approvalDate = null;
+      updateData.approvalRemarks = null;
     }
 
     const updated = await prisma.purchaseRequisition.update({
@@ -119,6 +141,9 @@ export async function PATCH(
         approvedBy: {
           select: { id: true, name: true },
         },
+        requestedBy: {
+          select: { id: true, name: true },
+        },
         items: {
           orderBy: { sNo: "asc" },
         },
@@ -127,6 +152,22 @@ export async function PATCH(
         },
       },
     });
+
+    // Determine audit action
+    const auditAction = status === "APPROVED" ? "APPROVE"
+      : status === "REJECTED" ? "REJECT"
+      : status === "PENDING_APPROVAL" ? "SUBMIT_FOR_APPROVAL"
+      : "STATUS_CHANGE";
+
+    createAuditLog({
+      userId: session.user.id,
+      action: auditAction,
+      tableName: "PurchaseRequisition",
+      recordId: id,
+      fieldName: "status",
+      oldValue: pr.status,
+      newValue: status,
+    }).catch(console.error);
 
     return NextResponse.json({ purchaseRequisition: updated });
   } catch (error) {

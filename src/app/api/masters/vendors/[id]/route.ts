@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { checkAccess } from "@/lib/rbac";
+import { createAuditLog } from "@/lib/audit";
 
 export async function GET(
   request: NextRequest,
@@ -9,10 +9,8 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, response } = await checkAccess("masters", "read");
+    if (!authorized) return response!;
 
     const vendor = await prisma.vendorMaster.findUnique({
       where: { id },
@@ -38,10 +36,8 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, session, response } = await checkAccess("masters", "write");
+    if (!authorized) return response!;
 
     const body = await request.json();
     const {
@@ -97,6 +93,14 @@ export async function PATCH(
       },
     });
 
+    createAuditLog({
+      userId: session.user.id,
+      action: "UPDATE",
+      tableName: "VendorMaster",
+      recordId: id,
+      newValue: JSON.stringify({ name: updated.name }),
+    }).catch(console.error);
+
     return NextResponse.json(updated);
   } catch (error) {
     console.error("Error updating vendor:", error);
@@ -113,14 +117,49 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const { authorized, session, response } = await checkAccess("masters", "delete");
+    if (!authorized) return response!;
+
+    // Check for linked records before deleting
+    const vendor = await prisma.vendorMaster.findUnique({
+      where: { id },
+      select: {
+        name: true,
+        _count: {
+          select: {
+            purchaseOrders: true,
+            ncrs: true,
+          },
+        },
+      },
+    });
+
+    if (!vendor) {
+      return NextResponse.json({ error: "Vendor not found" }, { status: 404 });
+    }
+
+    const linkedCount = vendor._count.purchaseOrders + vendor._count.ncrs;
+
+    if (linkedCount > 0) {
+      return NextResponse.json(
+        {
+          error: `Cannot delete vendor "${vendor.name}". It has ${vendor._count.purchaseOrders} purchase orders and ${vendor._count.ncrs} NCRs linked. Deactivate instead.`,
+        },
+        { status: 400 }
+      );
     }
 
     await prisma.vendorMaster.delete({
       where: { id },
     });
+
+    createAuditLog({
+      userId: session.user.id,
+      action: "DELETE",
+      tableName: "VendorMaster",
+      recordId: id,
+      oldValue: vendor.name,
+    }).catch(console.error);
 
     return NextResponse.json({ success: true });
   } catch (error) {

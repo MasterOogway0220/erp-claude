@@ -48,6 +48,7 @@ interface SOItem {
 interface SalesOrder {
   id: string;
   soNo: string;
+  poAcceptanceStatus: string;
   customer: {
     name: string;
   };
@@ -163,6 +164,41 @@ export default function ReserveStockPage() {
 
   if (!salesOrder) {
     return null;
+  }
+
+  if (salesOrder.poAcceptanceStatus !== "ACCEPTED") {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="Reserve Inventory Stock"
+          description={`Allocate inventory against SO: ${salesOrder.soNo}`}
+        >
+          <Button variant="outline" onClick={() => router.back()}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
+        </PageHeader>
+        <Card className="border-yellow-300 bg-yellow-50">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
+                <div>
+                  <h3 className="font-medium text-yellow-900">Customer PO Review Required</h3>
+                  <p className="text-sm text-yellow-700 mt-1">
+                    Stock reservation is blocked until the Customer PO has been reviewed and accepted
+                    (ISO 9001:2018 Clause 8.2.3). Current status: <strong>{salesOrder.poAcceptanceStatus}</strong>
+                  </p>
+                </div>
+              </div>
+              <Button onClick={() => router.push(`/sales/${salesOrder.id}/review`)}>
+                Review PO
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (

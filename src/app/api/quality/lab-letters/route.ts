@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { checkAccess } from "@/lib/rbac";
 
 function getCurrentFinancialYear(): string {
   const now = new Date();
@@ -13,10 +12,8 @@ function getCurrentFinancialYear(): string {
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, response } = await checkAccess("labLetter", "read");
+    if (!authorized) return response!;
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
@@ -53,10 +50,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, session, response } = await checkAccess("labLetter", "write");
+    if (!authorized) return response!;
 
     const body = await request.json();
     const { heatNo, specification, sizeLabel, testIds } = body;

@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { generateDocumentNumber } from "@/lib/document-numbering";
+import { checkAccess } from "@/lib/rbac";
 
 export async function GET(
   request: NextRequest,
@@ -10,10 +9,8 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, response } = await checkAccess("inventory", "read");
+    if (!authorized) return response!;
 
     const stock = await prisma.inventoryStock.findUnique({
       where: { id },
@@ -83,24 +80,11 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, session, response } = await checkAccess("inventory", "write");
+    if (!authorized) return response!;
 
     const body = await request.json();
     const { status, location, rackNo, notes, action } = body;
-
-    // Role check for status changes
-    const allowedRoles = ["QC", "ADMIN", "MANAGEMENT"];
-    if (status || action === "PARTIAL_ACCEPT") {
-      if (!allowedRoles.includes(session.user.role)) {
-        return NextResponse.json(
-          { error: "Only QC, Admin, or Management can change stock status" },
-          { status: 403 }
-        );
-      }
-    }
 
     // Handle partial acceptance: split stock into accepted + rejected
     if (action === "PARTIAL_ACCEPT") {

@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { checkAccess } from "@/lib/rbac";
+import { createAuditLog } from "@/lib/audit";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, response } = await checkAccess("masters", "read");
+    if (!authorized) return response!;
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
@@ -42,10 +40,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, session, response } = await checkAccess("masters", "write");
+    if (!authorized) return response!;
 
     const body = await request.json();
     const {
@@ -104,6 +100,14 @@ export async function POST(request: NextRequest) {
         approvalDate: approvalDate ? new Date(approvalDate) : null,
       },
     });
+
+    createAuditLog({
+      userId: session.user.id,
+      action: "CREATE",
+      tableName: "VendorMaster",
+      recordId: newVendor.id,
+      newValue: JSON.stringify({ name: newVendor.name }),
+    }).catch(console.error);
 
     return NextResponse.json(newVendor, { status: 201 });
   } catch (error) {

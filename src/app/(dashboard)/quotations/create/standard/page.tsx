@@ -21,6 +21,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, ArrowLeft, Building2, History, ChevronDown, ChevronUp, Calculator } from "lucide-react";
 import { toast } from "sonner";
+import { useCurrentUser } from "@/hooks/use-current-user";
 
 interface QuotationItem {
   product: string;
@@ -104,6 +105,7 @@ function StandardQuotationPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const enquiryId = searchParams.get("enquiryId");
+  const { user } = useCurrentUser();
 
   const [formData, setFormData] = useState({
     customerId: "",
@@ -935,7 +937,8 @@ function StandardQuotationPage() {
                   />
                 </div>
 
-                {/* Internal Costing Section (Collapsible) */}
+                {/* Internal Costing Section (Collapsible) - MANAGEMENT/ADMIN only */}
+                {(user?.role === "MANAGEMENT" || user?.role === "ADMIN") && (
                 <div className="border-t pt-2 mt-2">
                   <Button
                     type="button"
@@ -1041,6 +1044,7 @@ function StandardQuotationPage() {
                     </div>
                   )}
                 </div>
+                )}
               </div>
             ))}
 

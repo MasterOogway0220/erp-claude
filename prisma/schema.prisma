@@ -50,6 +50,7 @@ enum SOStatus {
   PARTIALLY_DISPATCHED
   FULLY_DISPATCHED
   CLOSED
+  CANCELLED
 }
 
 enum POStatus {
@@ -228,6 +229,7 @@ model User {
   preparedQuotations  Quotation[]         @relation("PreparedBy")
   approvedQuotations  Quotation[]         @relation("ApprovedBy")
   approvedPRs         PurchaseRequisition[] @relation("PRApprovedBy")
+  requestedPRs        PurchaseRequisition[] @relation("PRRequestedBy")
   receivedGRNs        GoodsReceiptNote[]  @relation("ReceivedBy")
   inspections         Inspection[]        @relation("InspectorUser")
   closedNCRs          NCR[]               @relation("NCRClosedBy")
@@ -538,7 +540,7 @@ model Quotation {
   quotationType         QuotationType     @default(DOMESTIC)
   quotationCategory     QuotationCategory @default(STANDARD)
   status                QuotationStatus   @default(DRAFT)
-  version               Int               @default(1)
+  version               Int               @default(0)
   parentQuotationId     String?
   validUpto             DateTime?
   currency              String            @default("INR")
@@ -553,6 +555,11 @@ model Quotation {
   sentTo                String?
   buyerId               String?
   preparedByEmployeeId  String?
+  subtotal              Decimal?          @db.Decimal(14, 2)
+  taxRate               Decimal?          @db.Decimal(5, 2)
+  taxAmount             Decimal?          @db.Decimal(14, 2)
+  grandTotal            Decimal?          @db.Decimal(14, 2)
+  amountInWords         String?
   createdAt             DateTime          @default(now())
   updatedAt             DateTime          @updatedAt
 
@@ -617,6 +624,8 @@ model QuotationItem {
   schedule          String?
   materialCodeId    String?
   uom               String?
+  hsnCode           String?
+  taxRate           Decimal? @db.Decimal(5, 2)
 
   // Relations
   quotation    Quotation          @relation(fields: [quotationId], references: [id], onDelete: Cascade)
@@ -823,6 +832,7 @@ model SalesOrder {
   deliverySchedule   String?
   paymentTerms       String?
   poAcceptanceStatus POAcceptanceStatus @default(PENDING)
+  poReviewRemarks    String?
   status             SOStatus           @default(OPEN)
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
@@ -859,6 +869,9 @@ model SalesOrderItem {
   deliveryDate   DateTime?
   unitWeight     Decimal?  @db.Decimal(10, 4)
   totalWeightMT  Decimal?  @db.Decimal(12, 4)
+  heatNo            String?
+  qtyDispatched     Decimal   @default(0) @db.Decimal(10, 3)
+  itemStatus        String    @default("OPEN")
 
   // Relations
   salesOrder        SalesOrder        @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
@@ -897,6 +910,8 @@ model PurchaseRequisition {
   status            PRStatus  @default(DRAFT)
   approvedById      String?
   approvalDate      DateTime?
+  requestedById     String?
+  approvalRemarks   String?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
@@ -904,6 +919,7 @@ model PurchaseRequisition {
   salesOrder      SalesOrder?    @relation(fields: [salesOrderId], references: [id])
   suggestedVendor VendorMaster?  @relation("PRVendor", fields: [suggestedVendorId], references: [id])
   approvedBy      User?          @relation("PRApprovedBy", fields: [approvedById], references: [id])
+  requestedBy     User?          @relation("PRRequestedBy", fields: [requestedById], references: [id])
   items           PRItem[]
   purchaseOrders  PurchaseOrder[]
 
@@ -935,7 +951,7 @@ model PurchaseOrder {
   vendorId            String
   prId                String?
   salesOrderId        String?
-  version             Int       @default(1)
+  version             Int       @default(0)
   parentPoId          String?
   deliveryDate        DateTime?
   specialRequirements String?
@@ -946,6 +962,9 @@ model PurchaseOrder {
   approvalDate        DateTime?
   approvalRemarks     String?
   followUpNotes       String?   @db.Text
+  paymentTerms        String?
+  deliveryAddress     String?   @db.Text
+  termsAndConditions  String?   @db.Text
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
@@ -993,6 +1012,10 @@ model GoodsReceiptNote {
   vendorId     String
   receivedById String
   remarks      String?
+  challanNo           String?
+  challanDate         DateTime?
+  vehicleNo           String?
+  transporterName     String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -1357,6 +1380,7 @@ model DispatchNote {
   salesOrderId  String
   vehicleNo     String?
   lrNo          String?
+  lrDate              DateTime?
   transporterId String?
   destination   String?
   ewayBillNo    String?
@@ -1388,6 +1412,11 @@ model Invoice {
   igst              Decimal       @default(0) @db.Decimal(14, 2)
   totalAmount       Decimal       @db.Decimal(14, 2)
   currency          String        @default("INR")
+  tcsAmount           Decimal   @default(0) @db.Decimal(14, 2)
+  roundOff            Decimal   @default(0) @db.Decimal(10, 2)
+  amountInWords       String?
+  placeOfSupply       String?
+  customerGstin       String?
   dueDate           DateTime?
   eWayBillNo        String?
   status            InvoiceStatus @default(DRAFT)
@@ -1415,6 +1444,7 @@ model InvoiceItem {
   description String?
   heatNo      String?
   sizeLabel   String?
+  uom                 String?
   quantity    Decimal  @db.Decimal(10, 3)
   unitRate    Decimal  @db.Decimal(12, 2)
   amount      Decimal  @db.Decimal(14, 2)

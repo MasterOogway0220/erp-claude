@@ -25,10 +25,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { ArrowLeft, CheckCircle, XCircle, Send, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import Link from "next/link";
+import { useCurrentUser } from "@/hooks/use-current-user";
 
 const statusColors: Record<string, string> = {
   DRAFT: "bg-gray-500",
@@ -45,9 +48,11 @@ export default function PRDetailPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
+  const { user } = useCurrentUser();
   const [pr, setPr] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [approvalRemarks, setApprovalRemarks] = useState("");
 
   useEffect(() => {
     fetchPR();
@@ -70,13 +75,18 @@ export default function PRDetailPage({
     }
   };
 
+  const isApprover = user?.role === "MANAGEMENT" || user?.role === "ADMIN";
+
   const updateStatus = async (newStatus: string) => {
     setUpdating(true);
     try {
       const response = await fetch(`/api/purchase/requisitions/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify({
+          status: newStatus,
+          ...(approvalRemarks && { approvalRemarks }),
+        }),
       });
 
       if (response.ok) {
@@ -181,6 +191,12 @@ export default function PRDetailPage({
           <CardContent className="space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
+                <p className="text-sm text-muted-foreground">Requested By</p>
+                <p className="font-medium">
+                  {pr.requestedBy?.name || "—"}
+                </p>
+              </div>
+              <div>
                 <p className="text-sm text-muted-foreground">Approved By</p>
                 <p className="font-medium">
                   {pr.approvedBy?.name || "Pending"}
@@ -194,6 +210,12 @@ export default function PRDetailPage({
                     : "Pending"}
                 </p>
               </div>
+              {pr.approvalRemarks && (
+                <div className="col-span-2">
+                  <p className="text-sm text-muted-foreground">Approval Remarks</p>
+                  <p className="font-medium">{pr.approvalRemarks}</p>
+                </div>
+              )}
             </div>
 
             {/* Linked POs */}
@@ -298,8 +320,18 @@ export default function PRDetailPage({
               </AlertDialog>
             )}
 
-            {pr.status === "PENDING_APPROVAL" && (
+            {pr.status === "PENDING_APPROVAL" && isApprover && (
               <>
+                <div className="w-full space-y-2 mb-2">
+                  <Label htmlFor="approvalRemarks">Remarks (Optional)</Label>
+                  <Textarea
+                    id="approvalRemarks"
+                    placeholder="Add remarks for approval or rejection..."
+                    value={approvalRemarks}
+                    onChange={(e) => setApprovalRemarks(e.target.value)}
+                    rows={2}
+                  />
+                </div>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="default" disabled={updating}>
@@ -351,6 +383,12 @@ export default function PRDetailPage({
                   </AlertDialogContent>
                 </AlertDialog>
               </>
+            )}
+
+            {pr.status === "PENDING_APPROVAL" && !isApprover && (
+              <p className="text-sm text-muted-foreground">
+                Awaiting approval from Management/Admin.
+              </p>
             )}
 
             {pr.status === "APPROVED" && (

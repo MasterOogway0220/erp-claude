@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { createAuditLog } from "@/lib/audit";
 import { generateDocumentNumber } from "@/lib/document-numbering";
+import { checkAccess } from "@/lib/rbac";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, response } = await checkAccess("stockIssue", "read");
+    if (!authorized) return response!;
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
@@ -49,10 +47,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, session, response } = await checkAccess("stockIssue", "write");
+    if (!authorized) return response!;
 
     const body = await request.json();
     const { salesOrderId, authorizedById, remarks, items } = body;
@@ -67,11 +63,18 @@ export async function POST(request: NextRequest) {
 
     const so = await prisma.salesOrder.findUnique({
       where: { id: salesOrderId },
-      select: { id: true, status: true },
+      select: { id: true, status: true, poAcceptanceStatus: true },
     });
 
     if (!so) {
       return NextResponse.json({ error: "Sales Order not found" }, { status: 404 });
+    }
+
+    if (so.poAcceptanceStatus !== "ACCEPTED") {
+      return NextResponse.json(
+        { error: "Customer PO must be reviewed and accepted before issuing stock. Current status: " + so.poAcceptanceStatus },
+        { status: 400 }
+      );
     }
 
     if (so.status !== "OPEN" && so.status !== "PARTIALLY_DISPATCHED") {
@@ -93,9 +96,9 @@ export async function POST(request: NextRequest) {
           { status: 404 }
         );
       }
-      if (stock.status !== "ACCEPTED" && stock.status !== "RESERVED") {
+      if (stock.status !== "ACCEPTED") {
         return NextResponse.json(
-          { error: `Stock item ${stock.heatNo || stock.id} is not in ACCEPTED/RESERVED status` },
+          { error: `Stock item ${stock.heatNo || stock.id} is not in ACCEPTED status` },
           { status: 400 }
         );
       }
@@ -128,12 +131,37 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // Update each inventory stock to DISPATCHED
+      // Update each inventory stock - decrement qty and update status
       for (const item of created.items) {
-        await tx.inventoryStock.update({
+        const stock = await tx.inventoryStock.findUnique({
           where: { id: item.inventoryStockId },
-          data: { status: "DISPATCHED" },
+          select: { quantityMtr: true, pieces: true },
         });
+        if (!stock) continue;
+
+        const remainingQty = Number(stock.quantityMtr) - Number(item.quantityMtr);
+        const remainingPieces = stock.pieces - item.pieces;
+
+        if (remainingQty <= 0) {
+          // Fully issued - mark as DISPATCHED
+          await tx.inventoryStock.update({
+            where: { id: item.inventoryStockId },
+            data: {
+              quantityMtr: 0,
+              pieces: 0,
+              status: "DISPATCHED",
+            },
+          });
+        } else {
+          // Partially issued - reduce quantity, keep status
+          await tx.inventoryStock.update({
+            where: { id: item.inventoryStockId },
+            data: {
+              quantityMtr: remainingQty,
+              pieces: remainingPieces > 0 ? remainingPieces : 0,
+            },
+          });
+        }
       }
 
       return created;
@@ -148,6 +176,14 @@ export async function POST(request: NextRequest) {
         items: true,
       },
     });
+
+    createAuditLog({
+      userId: session.user.id,
+      action: "CREATE",
+      tableName: "StockIssue",
+      recordId: stockIssue.id,
+      newValue: JSON.stringify({ issueNo }),
+    }).catch(console.error);
 
     return NextResponse.json(full, { status: 201 });
   } catch (error) {

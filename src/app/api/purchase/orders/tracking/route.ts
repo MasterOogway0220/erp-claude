@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { checkAccess } from "@/lib/rbac";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, session, response } = await checkAccess("purchaseOrder", "read");
+    if (!authorized) return response!;
 
     // Fetch all active purchase orders with delivery tracking
     const purchaseOrders = await prisma.purchaseOrder.findMany({

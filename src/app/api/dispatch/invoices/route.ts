@@ -1,17 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
 import { generateDocumentNumber } from "@/lib/document-numbering";
+import { numberToWords } from "@/lib/amount-in-words";
 import { InvoiceStatus, InvoiceType } from "@prisma/client";
+import { checkAccess } from "@/lib/rbac";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, session, response } = await checkAccess("invoice", "read");
+    if (!authorized) return response!;
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
@@ -63,16 +61,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // RBAC: Only ACCOUNTS and ADMIN can create invoices
-    const allowedRoles = ["ACCOUNTS", "ADMIN"];
-    if (!allowedRoles.includes(session.user.role)) {
-      return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
-    }
+    const { authorized, session, response } = await checkAccess("invoice", "write");
+    if (!authorized) return response!;
 
     const body = await request.json();
     const {
@@ -84,6 +74,11 @@ export async function POST(request: NextRequest) {
       dueDate,
       eWayBillNo,
       currency,
+      tcsAmount,
+      roundOff,
+      amountInWords,
+      placeOfSupply,
+      customerGstin,
       items,
     } = body;
 
@@ -157,7 +152,13 @@ export async function POST(request: NextRequest) {
     }
     // For export invoices, all taxes remain 0
 
-    const totalAmount = subtotal + cgst + sgst + igst;
+    const parsedTcsAmount = tcsAmount ? parseFloat(tcsAmount) : 0;
+    const parsedRoundOff = roundOff ? parseFloat(roundOff) : 0;
+    const totalAmount = subtotal + cgst + sgst + igst + parsedTcsAmount + parsedRoundOff;
+    const effectiveCurrency = currency || "INR";
+
+    // Auto-calculate amount in words if not provided
+    const computedAmountInWords = amountInWords || numberToWords(totalAmount, effectiveCurrency);
 
     const invoice = await prisma.invoice.create({
       data: {
@@ -171,8 +172,13 @@ export async function POST(request: NextRequest) {
         cgst,
         sgst,
         igst,
+        tcsAmount: parsedTcsAmount,
+        roundOff: parsedRoundOff,
+        amountInWords: computedAmountInWords,
+        placeOfSupply: placeOfSupply || null,
+        customerGstin: customerGstin || null,
         totalAmount,
-        currency: currency || "INR",
+        currency: effectiveCurrency,
         dueDate: dueDate ? new Date(dueDate) : null,
         eWayBillNo: eWayBillNo || null,
         status: "DRAFT",
@@ -182,6 +188,7 @@ export async function POST(request: NextRequest) {
             description: item.description || null,
             heatNo: item.heatNo || null,
             sizeLabel: item.sizeLabel || null,
+            uom: item.uom || null,
             quantity: parseFloat(item.quantity),
             unitRate: parseFloat(item.unitRate),
             amount: parseFloat(item.amount),

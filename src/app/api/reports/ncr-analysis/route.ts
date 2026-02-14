@@ -10,6 +10,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const userRole = (session.user as any).role;
+    if (!["MANAGEMENT", "ADMIN"].includes(userRole)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     // Total NCRs and breakdown by status
     const [totalNCRs, openNCRs, closedNCRs] = await Promise.all([
       prisma.nCR.count(),

@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
+import { checkAccess } from "@/lib/rbac";
+
+// Valid quotation status transitions
+const VALID_QUOTATION_TRANSITIONS: Record<string, string[]> = {
+  DRAFT: ["PENDING_APPROVAL"],
+  PENDING_APPROVAL: ["APPROVED", "REJECTED"],
+  REJECTED: ["DRAFT"],
+  APPROVED: ["SENT"],
+  SENT: ["WON", "LOST"],
+};
 
 export async function GET(
   request: NextRequest,
@@ -10,10 +18,8 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, session, response } = await checkAccess("quotation", "read");
+    if (!authorized) return response!;
 
     const quotation = await prisma.quotation.findUnique({
       where: { id },
@@ -67,24 +73,57 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, session, response } = await checkAccess("quotation", "write");
+    if (!authorized) return response!;
 
     const body = await request.json();
     const { status, approvalRemarks } = body;
 
+    // Fetch existing quotation to validate transition
     const existing = await prisma.quotation.findUnique({
       where: { id },
       select: { status: true },
     });
+
+    if (!existing) {
+      return NextResponse.json({ error: "Quotation not found" }, { status: 404 });
+    }
+
+    // Validate status transition
+    if (status) {
+      const allowedTransitions = VALID_QUOTATION_TRANSITIONS[existing.status];
+      if (!allowedTransitions || !allowedTransitions.includes(status)) {
+        return NextResponse.json(
+          { error: `Invalid status transition from ${existing.status} to ${status}` },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Only MANAGEMENT or ADMIN can approve/reject quotations
+    if (status === "APPROVED" || status === "REJECTED") {
+      const { authorized: canApprove, response: approveResponse } = await checkAccess("quotation", "approve");
+      if (!canApprove) return approveResponse!;
+    }
+
+    // Remarks are mandatory when rejecting a quotation
+    if (status === "REJECTED" && !approvalRemarks) {
+      return NextResponse.json(
+        { error: "Remarks are required when rejecting a quotation" },
+        { status: 400 }
+      );
+    }
 
     const updated = await prisma.quotation.update({
       where: { id },
       data: {
         status,
         ...(status === "APPROVED" && {
+          approvedById: session.user.id,
+          approvalDate: new Date(),
+          approvalRemarks,
+        }),
+        ...(status === "REJECTED" && {
           approvedById: session.user.id,
           approvalDate: new Date(),
           approvalRemarks,
@@ -103,7 +142,7 @@ export async function PATCH(
       tableName: "Quotation",
       recordId: id,
       fieldName: "status",
-      oldValue: existing?.status || null,
+      oldValue: existing?.status || undefined,
       newValue: updated.status,
     }).catch(console.error);
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { checkAccess } from "@/lib/rbac";
+import { createAuditLog } from "@/lib/audit";
 
 export async function PATCH(
   request: NextRequest,
@@ -9,10 +9,8 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, session, response } = await checkAccess("masters", "write");
+    if (!authorized) return response!;
 
     const body = await request.json();
     const { product, material, additionalSpec, ends, length } = body;
@@ -27,6 +25,14 @@ export async function PATCH(
         length: length || null,
       },
     });
+
+    createAuditLog({
+      userId: session.user.id,
+      action: "UPDATE",
+      tableName: "ProductSpecMaster",
+      recordId: id,
+      newValue: JSON.stringify({ product: updated.product }),
+    }).catch(console.error);
 
     return NextResponse.json(updated);
   } catch (error) {
@@ -44,14 +50,29 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const { authorized, session, response } = await checkAccess("masters", "delete");
+    if (!authorized) return response!;
+
+    const product = await prisma.productSpecMaster.findUnique({
+      where: { id },
+      select: { product: true, material: true },
+    });
+
+    if (!product) {
+      return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
     await prisma.productSpecMaster.delete({
       where: { id },
     });
+
+    createAuditLog({
+      userId: session.user.id,
+      action: "DELETE",
+      tableName: "ProductSpecMaster",
+      recordId: id,
+      oldValue: `${product.product} - ${product.material || ""}`,
+    }).catch(console.error);
 
     return NextResponse.json({ success: true });
   } catch (error) {

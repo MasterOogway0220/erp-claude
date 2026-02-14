@@ -1,16 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
 import { generateDocumentNumber } from "@/lib/document-numbering";
+import { checkAccess } from "@/lib/rbac";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, session, response } = await checkAccess("dispatchNote", "read");
+    if (!authorized) return response!;
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
@@ -74,10 +71,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { authorized, session, response } = await checkAccess("dispatchNote", "write");
+    if (!authorized) return response!;
 
     const body = await request.json();
     const {
@@ -85,6 +80,7 @@ export async function POST(request: NextRequest) {
       salesOrderId,
       vehicleNo,
       lrNo,
+      lrDate,
       transporterId,
       destination,
       ewayBillNo,
@@ -105,13 +101,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify packing list exists and load its items
+    // Verify packing list exists and load its items with quantity data
     const packingList = await prisma.packingList.findUnique({
       where: { id: packingListId },
       include: {
         items: {
           select: {
             inventoryStockId: true,
+            quantityMtr: true,
+            pieces: true,
           },
         },
       },
@@ -160,6 +158,7 @@ export async function POST(request: NextRequest) {
           salesOrderId,
           vehicleNo: vehicleNo || null,
           lrNo: lrNo || null,
+          lrDate: lrDate ? new Date(lrDate) : null,
           transporterId: transporterId || null,
           destination: destination || null,
           ewayBillNo: ewayBillNo || null,
@@ -167,15 +166,39 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // 2. Update all inventory stock items from the packing list to DISPATCHED
-      await tx.inventoryStock.updateMany({
-        where: {
-          id: { in: inventoryStockIds },
-        },
-        data: {
-          status: "DISPATCHED",
-        },
-      });
+      // 2. Update inventory stock items - decrement qty and update status
+      for (const plItem of packingList.items) {
+        const stock = await tx.inventoryStock.findUnique({
+          where: { id: plItem.inventoryStockId },
+          select: { quantityMtr: true, pieces: true },
+        });
+        if (!stock) continue;
+
+        const remainingQty =
+          Number(stock.quantityMtr) - Number(plItem.quantityMtr);
+        const remainingPieces = stock.pieces - plItem.pieces;
+
+        if (remainingQty <= 0) {
+          // Fully dispatched - mark as DISPATCHED with zero qty
+          await tx.inventoryStock.update({
+            where: { id: plItem.inventoryStockId },
+            data: {
+              quantityMtr: 0,
+              pieces: 0,
+              status: "DISPATCHED",
+            },
+          });
+        } else {
+          // Partially dispatched - reduce quantity, keep current status
+          await tx.inventoryStock.update({
+            where: { id: plItem.inventoryStockId },
+            data: {
+              quantityMtr: remainingQty,
+              pieces: remainingPieces > 0 ? remainingPieces : 0,
+            },
+          });
+        }
+      }
 
       // 3. Update all related stock reservations to DISPATCHED
       await tx.stockReservation.updateMany({

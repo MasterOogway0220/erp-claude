@@ -183,7 +183,7 @@ export default function QuotationsPage() {
                 <TableRow key={quotation.id}>
                   <TableCell className="font-medium">
                     {quotation.quotationNo}
-                    {quotation.version > 1 && (
+                    {quotation.version > 0 && (
                       <Badge variant="outline" className="ml-2">
                         Rev.{quotation.version}
                       </Badge>

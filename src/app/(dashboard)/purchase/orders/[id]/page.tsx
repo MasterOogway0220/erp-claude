@@ -66,6 +66,14 @@ interface PO {
   status: string;
   totalAmount: number;
   currency: string;
+  approvedById?: string;
+  approvalDate?: string;
+  approvalRemarks?: string;
+  approvedBy?: {
+    id: string;
+    name: string;
+    email: string;
+  };
   items: Array<{
     id: string;
     sNo: number;
@@ -117,7 +125,9 @@ export default function PurchaseOrderDetailPage() {
   const [po, setPO] = useState<PO | null>(null);
   const [loading, setLoading] = useState(true);
   const [amendDialogOpen, setAmendDialogOpen] = useState(false);
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [approvalRemarks, setApprovalRemarks] = useState("");
+  const [rejectionRemarks, setRejectionRemarks] = useState("");
   const [amendmentData, setAmendmentData] = useState({
     deliveryDate: "",
     specialRequirements: "",
@@ -198,14 +208,22 @@ export default function PurchaseOrderDetailPage() {
     }
   };
 
-  const handleApprovalAction = async (action: string) => {
+  const handleApprovalAction = async (action: string, remarks?: string) => {
     if (!po) return;
     setSubmitting(true);
     try {
+      const payload: any = { action };
+      // Use provided remarks (for rejection dialog) or the approvalRemarks state (for approve)
+      if (remarks !== undefined) {
+        payload.approvalRemarks = remarks;
+      } else if (approvalRemarks) {
+        payload.approvalRemarks = approvalRemarks;
+      }
+
       const response = await fetch(`/api/purchase/orders/${po.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, approvalRemarks }),
+        body: JSON.stringify(payload),
       });
       if (!response.ok) {
         const error = await response.json();
@@ -214,11 +232,13 @@ export default function PurchaseOrderDetailPage() {
       const labels: Record<string, string> = {
         submit_for_approval: "Submitted for approval",
         approve: "Purchase Order approved",
-        reject: "Purchase Order rejected",
+        reject: "Purchase Order rejected and reverted to Draft",
         send_to_vendor: "Sent to vendor",
       };
       toast.success(labels[action] || "Updated");
       setApprovalRemarks("");
+      setRejectionRemarks("");
+      setRejectDialogOpen(false);
       fetchPO(po.id);
     } catch (error: any) {
       toast.error(error.message);
@@ -227,7 +247,16 @@ export default function PurchaseOrderDetailPage() {
     }
   };
 
+  const handleReject = () => {
+    if (!rejectionRemarks.trim()) {
+      toast.error("Remarks are required when rejecting a Purchase Order");
+      return;
+    }
+    handleApprovalAction("reject", rejectionRemarks);
+  };
+
   const canApprove = user?.role === "MANAGEMENT" || user?.role === "ADMIN";
+  const canSubmitForApproval = user?.role === "PURCHASE" || user?.role === "ADMIN" || user?.role === "MANAGEMENT";
 
   if (loading) {
     return (
@@ -256,7 +285,7 @@ export default function PurchaseOrderDetailPage() {
       <PageHeader
         title={`Purchase Order: ${po.poNo}`}
         description={
-          po.version > 1
+          po.version > 0
             ? `Revision ${po.version} | Created on ${format(
                 new Date(po.poDate),
                 "dd MMM yyyy"
@@ -365,13 +394,18 @@ export default function PurchaseOrderDetailPage() {
       )}
 
       {/* Approval Workflow Section */}
-      {po.status === "DRAFT" && (
+      {po.status === "DRAFT" && canSubmitForApproval && (
         <Card className="border-blue-200 bg-blue-50">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-medium text-blue-900">PO is in Draft</h3>
                 <p className="text-sm text-blue-700 mt-1">Submit this PO for management approval before sending to vendor.</p>
+                {po.approvalRemarks && !po.approvedBy && (
+                  <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-800">
+                    <span className="font-medium">Previous rejection reason:</span> {po.approvalRemarks}
+                  </div>
+                )}
               </div>
               <Button onClick={() => handleApprovalAction("submit_for_approval")} disabled={submitting}>
                 <Send className="w-4 h-4 mr-2" />
@@ -390,11 +424,11 @@ export default function PurchaseOrderDetailPage() {
               <p className="text-sm text-orange-700 mt-1">This PO requires management approval.</p>
             </div>
             <div className="space-y-2">
-              <Label>Approval Remarks</Label>
+              <Label>Approval Remarks (optional)</Label>
               <Textarea
                 value={approvalRemarks}
                 onChange={(e) => setApprovalRemarks(e.target.value)}
-                placeholder="Optional remarks..."
+                placeholder="Optional remarks for approval..."
                 rows={2}
               />
             </div>
@@ -403,10 +437,44 @@ export default function PurchaseOrderDetailPage() {
                 <ThumbsUp className="w-4 h-4 mr-2" />
                 Approve
               </Button>
-              <Button variant="destructive" onClick={() => handleApprovalAction("reject")} disabled={submitting}>
-                <ThumbsDown className="w-4 h-4 mr-2" />
-                Reject
-              </Button>
+              <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="destructive" disabled={submitting}>
+                    <ThumbsDown className="w-4 h-4 mr-2" />
+                    Reject
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Reject Purchase Order</DialogTitle>
+                    <DialogDescription>
+                      This PO will be reverted to DRAFT status. Please provide a reason for rejection.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="rejectionRemarks">Rejection Remarks *</Label>
+                      <Textarea
+                        id="rejectionRemarks"
+                        value={rejectionRemarks}
+                        onChange={(e) => setRejectionRemarks(e.target.value)}
+                        placeholder="Explain why this PO is being rejected..."
+                        rows={4}
+                        required
+                      />
+                    </div>
+                    <div className="flex justify-end gap-3">
+                      <Button variant="outline" onClick={() => { setRejectDialogOpen(false); setRejectionRemarks(""); }}>
+                        Cancel
+                      </Button>
+                      <Button variant="destructive" onClick={handleReject} disabled={submitting || !rejectionRemarks.trim()}>
+                        <ThumbsDown className="w-4 h-4 mr-2" />
+                        Confirm Rejection
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
           </CardContent>
         </Card>
@@ -454,7 +522,7 @@ export default function PurchaseOrderDetailPage() {
                 <div className="text-sm text-muted-foreground">PO Number</div>
                 <div className="font-mono font-medium">
                   {po.poNo}
-                  {po.version > 1 && (
+                  {po.version > 0 && (
                     <Badge variant="outline" className="ml-2">
                       Rev.{po.version}
                     </Badge>
@@ -523,6 +591,41 @@ export default function PurchaseOrderDetailPage() {
                 <div className="text-sm text-muted-foreground">Special Requirements</div>
                 <div className="text-sm mt-1">{po.specialRequirements}</div>
               </div>
+            )}
+
+            {/* Approval Information */}
+            {(po.approvedBy || po.approvalRemarks) && (
+              <>
+                <Separator />
+                <div>
+                  <h4 className="font-medium text-sm mb-3">Approval Information</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    {po.approvedBy && (
+                      <div>
+                        <div className="text-sm text-muted-foreground">Approved By</div>
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4 text-green-600" />
+                          {po.approvedBy.name}
+                        </div>
+                      </div>
+                    )}
+                    {po.approvalDate && (
+                      <div>
+                        <div className="text-sm text-muted-foreground">Approval Date</div>
+                        <div>{format(new Date(po.approvalDate), "dd MMM yyyy, HH:mm")}</div>
+                      </div>
+                    )}
+                    {po.approvalRemarks && (
+                      <div className="col-span-2">
+                        <div className="text-sm text-muted-foreground">
+                          {po.status === "DRAFT" && !po.approvedBy ? "Rejection Remarks" : "Approval Remarks"}
+                        </div>
+                        <div className="text-sm mt-1 p-2 bg-muted rounded">{po.approvalRemarks}</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>

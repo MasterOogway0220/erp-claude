@@ -10,6 +10,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const userRole = (session.user as any).role;
+    if (!["MANAGEMENT", "ADMIN"].includes(userRole)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     // Total quotations
     const totalQuotations = await prisma.quotation.count();
 
