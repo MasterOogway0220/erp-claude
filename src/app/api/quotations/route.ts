@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search") || "";
     const status = searchParams.get("status") || "";
     const showAll = searchParams.get("showAll") === "true";
+    const revision = searchParams.get("revision") || "";
 
     const where: any = {};
 
@@ -37,6 +38,13 @@ export async function GET(request: NextRequest) {
     // By default, hide SUPERSEDED and REVISED quotations (show only latest active revision)
     if (!showAll && !status) {
       where.status = { notIn: ["SUPERSEDED", "REVISED"] as QuotationStatus[] };
+    }
+
+    // Filter by revision type: original (version 0) or revised (version > 0)
+    if (revision === "original") {
+      where.version = 0;
+    } else if (revision === "revised") {
+      where.version = { gt: 0 };
     }
 
     const quotations = await prisma.quotation.findMany({

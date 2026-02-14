@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Search, Eye, Download } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -41,6 +42,7 @@ interface Quotation {
     name: string;
   } | null;
   items: any[];
+  revisionTrigger: string | null;
 }
 
 const statusColors: Record<string, string> = {
@@ -67,6 +69,7 @@ export default function QuotationsPage() {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [revisionFilter, setRevisionFilter] = useState<"all" | "original" | "revised">("all");
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const handleDownloadPDF = async (id: string) => {
@@ -97,11 +100,12 @@ export default function QuotationsPage() {
 
   // Fetch quotations
   const { data, isLoading } = useQuery({
-    queryKey: ["quotations", search, statusFilter],
+    queryKey: ["quotations", search, statusFilter, revisionFilter],
     queryFn: async () => {
       const params = new URLSearchParams({
         search,
         ...(statusFilter !== "all" && { status: statusFilter }),
+        ...(revisionFilter !== "all" && { revision: revisionFilter }),
       });
       const res = await fetch(`/api/quotations?${params}`);
       if (!res.ok) throw new Error("Failed to fetch quotations");
@@ -120,41 +124,48 @@ export default function QuotationsPage() {
         description="Manage quotations with auto-calculations and PDF generation"
       />
 
-      {/* Filters and Actions */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4 flex-1">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search quotations..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-10"
-            />
+      {/* Tabs for Original vs Revised */}
+      <Tabs value={revisionFilter} onValueChange={(v) => setRevisionFilter(v as "all" | "original" | "revised")}>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4 flex-1">
+            <TabsList>
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="original">Original</TabsTrigger>
+              <TabsTrigger value="revised">Revisions</TabsTrigger>
+            </TabsList>
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search quotations..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Active</SelectItem>
+                <SelectItem value="DRAFT">Draft</SelectItem>
+                <SelectItem value="PENDING_APPROVAL">Pending Approval</SelectItem>
+                <SelectItem value="APPROVED">Approved</SelectItem>
+                <SelectItem value="SENT">Sent</SelectItem>
+                <SelectItem value="WON">Won</SelectItem>
+                <SelectItem value="LOST">Lost</SelectItem>
+                <SelectItem value="EXPIRED">Expired</SelectItem>
+                <SelectItem value="SUPERSEDED">Superseded</SelectItem>
+                <SelectItem value="CANCELLED">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Active</SelectItem>
-              <SelectItem value="DRAFT">Draft</SelectItem>
-              <SelectItem value="PENDING_APPROVAL">Pending Approval</SelectItem>
-              <SelectItem value="APPROVED">Approved</SelectItem>
-              <SelectItem value="SENT">Sent</SelectItem>
-              <SelectItem value="WON">Won</SelectItem>
-              <SelectItem value="LOST">Lost</SelectItem>
-              <SelectItem value="EXPIRED">Expired</SelectItem>
-              <SelectItem value="SUPERSEDED">Superseded</SelectItem>
-              <SelectItem value="CANCELLED">Cancelled</SelectItem>
-            </SelectContent>
-          </Select>
+          <Button onClick={() => router.push("/quotations/create")}>
+            <Plus className="h-4 w-4 mr-2" />
+            New Quotation
+          </Button>
         </div>
-        <Button onClick={() => router.push("/quotations/create")}>
-          <Plus className="h-4 w-4 mr-2" />
-          New Quotation
-        </Button>
-      </div>
+      </Tabs>
 
       {/* Data Table */}
       <div className="rounded-lg border bg-card overflow-x-auto">
@@ -189,11 +200,18 @@ export default function QuotationsPage() {
               data?.quotations?.map((quotation: Quotation) => (
                 <TableRow key={quotation.id}>
                   <TableCell className="font-medium">
-                    {quotation.quotationNo}
-                    {quotation.version > 0 && (
-                      <Badge variant="outline" className="ml-2">
-                        Rev.{quotation.version}
-                      </Badge>
+                    <div>
+                      {quotation.quotationNo}
+                      {quotation.version > 0 && (
+                        <Badge variant="outline" className="ml-2">
+                          Rev.{quotation.version}
+                        </Badge>
+                      )}
+                    </div>
+                    {revisionFilter === "revised" && quotation.revisionTrigger && (
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        {quotation.revisionTrigger.replace(/_/g, " ")}
+                      </div>
                     )}
                   </TableCell>
                   <TableCell>

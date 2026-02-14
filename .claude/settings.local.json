@@ -95,7 +95,8 @@
       "Bash(git -C:*)",
       "WebFetch(domain:nps-erp-web.onrender.com)",
       "Bash(# Check if auto-seed ran - look for user creation in seed files grep -r \"\"email.*@\"\" /Users/adi0220/projects/erp-claude/prisma/seed*)",
-      "Bash(head -5 grep -r \"admin.*email\\\\|email.*admin\" /Users/adi0220/projects/erp-claude/prisma/)"
+      "Bash(head -5 grep -r \"admin.*email\\\\|email.*admin\" /Users/adi0220/projects/erp-claude/prisma/)",
+      "Bash(head:*)"
     ]
   }
 }
