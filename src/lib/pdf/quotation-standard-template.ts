@@ -142,22 +142,22 @@ export function generateStandardQuotationHtml(
     })
     .join("\n");
 
-  const termRows = includedTerms
+  const termItems = includedTerms
     .map((term: any, index: number) => {
-      return `<tr class="term-row">
-        <td class="term-num bl-med">${index + 1}</td>
-        <td class="term-name" colspan="4">${escapeHtml(term.termName)}</td>
-        <td class="term-value" colspan="11">: ${escapeHtml(term.termValue)}</td>
-      </tr>`;
+      return `<div class="term-item">
+        <span class="term-num">${index + 1}</span>
+        <span class="term-name">${escapeHtml(term.termName)}</span>
+        <span class="term-value">: ${escapeHtml(term.termValue)}</span>
+      </div>`;
     })
     .join("\n");
 
-  const noteRows = exportNotes
+  const noteItems = exportNotes
     .map((note, index) => {
-      return `<tr class="note-row">
-        <td class="note-num bl-med">${index + 1})</td>
-        <td class="note-text" colspan="15">${escapeHtml(note)}</td>
-      </tr>`;
+      return `<div class="note-item">
+        <span class="note-num">${index + 1})</span>
+        <span class="note-text">${escapeHtml(note)}</span>
+      </div>`;
     })
     .join("\n");
 
@@ -193,18 +193,18 @@ export function generateStandardQuotationHtml(
   .b-med { border: 2px solid #000; }
 
   /* ZONE 1: Letterhead */
-  .letterhead { height: 70px; }
+  .letterhead { height: 40px; }
   .letterhead td { vertical-align: middle; }
-  .logo-cell { width: 180px; }
-  .logo-cell img { max-width: 170px; max-height: 60px; object-fit: contain; }
+  .logo-cell { width: 150px; }
+  .logo-cell img { max-width: 140px; max-height: 36px; object-fit: contain; }
   .company-name {
-    font-size: 18pt;
+    font-size: 16pt;
     font-weight: bold;
     text-align: center;
   }
 
   /* ZONE 2: Header info grid */
-  .header-grid td { height: 20.1pt; font-size: 11pt; vertical-align: middle; }
+  .header-grid td { height: 17pt; font-size: 10pt; vertical-align: middle; }
   .hdr-label { text-align: right; padding-right: 4px; font-weight: normal; color: #333; }
   .hdr-value { text-align: left; padding-left: 4px; font-weight: normal; }
   .hdr-value-right { text-align: left; padding-left: 4px; color: #444; }
@@ -212,19 +212,19 @@ export function generateStandardQuotationHtml(
 
   /* ZONE 3: Title */
   .title-row td {
-    font-size: 12pt;
+    font-size: 11pt;
     font-weight: bold;
     text-align: center;
-    height: 21pt;
+    height: 18pt;
     border: 2px solid #000;
   }
 
   /* ZONE 4: Table header */
   .table-header th {
-    font-size: 11pt;
+    font-size: 10pt;
     font-weight: bold;
     text-align: center;
-    height: 34.5pt;
+    height: 30pt;
     border-top: 2px solid #000;
     border-bottom: 1px solid #000;
     border-left: 1px solid #000;
@@ -268,46 +268,72 @@ export function generateStandardQuotationHtml(
   .total-row td:first-child { border-left: 2px solid #000; }
   .total-row td:last-child { border-right: 2px solid #000; }
 
-  /* ZONE 7: Offer terms */
-  .terms-header td {
-    font-size: 10pt;
-    font-weight: bold;
-    text-align: left;
-    padding-top: 6px;
-    padding-bottom: 2px;
+  /* ZONE 7-9: Terms + Notes + Footer — single block, avoid page-break splitting */
+  .terms-notes-footer {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin-top: 2px;
+  }
+  .terms-section {
     border-top: 2px solid #000;
+    border-left: 2px solid #000;
+    padding: 2px 6px;
   }
-  .term-row td { font-size: 10pt; height: 13.5pt; }
-  .term-num { text-align: center; width: 25px; }
-  .term-name { font-weight: bold; text-align: left; padding-left: 4px; }
-  .term-value { font-weight: normal; text-align: left; }
-
-  /* ZONE 8: Notes */
-  .notes-header td {
-    font-size: 10pt;
+  .terms-title {
+    font-size: 8.5pt;
     font-weight: bold;
-    text-align: left;
-    padding-top: 8px;
-    padding-bottom: 2px;
+    margin-bottom: 0;
   }
-  .note-row td { font-size: 9pt; height: 13.5pt; }
-  .note-num { text-align: right; width: 25px; padding-right: 3px; }
-  .note-text { text-align: left; padding-left: 2px; }
+  .term-item {
+    font-size: 8.5pt;
+    line-height: 1.25;
+    display: flex;
+    gap: 3px;
+  }
+  .term-num { min-width: 18px; text-align: center; }
+  .term-name { font-weight: bold; white-space: nowrap; }
+  .term-value { font-weight: normal; }
 
-  /* ZONE 9: Footer */
-  .footer-disclaimer { font-size: 7pt; color: #666; height: 14pt; }
-  .footer-disclaimer .left { text-align: left; }
-  .footer-disclaimer .right { text-align: right; font-size: 7pt; color: #666; }
+  .notes-section {
+    margin-top: 1px;
+    padding: 0 6px;
+  }
+  .notes-title {
+    font-size: 8.5pt;
+    font-weight: bold;
+    margin-bottom: 0;
+    border-left: 2px solid #000;
+    padding-left: 6px;
+  }
+  .note-item {
+    font-size: 7.5pt;
+    line-height: 1.25;
+    display: flex;
+    gap: 2px;
+    padding-left: 6px;
+  }
+  .note-num { min-width: 18px; text-align: right; padding-right: 2px; flex-shrink: 0; }
+  .note-text { text-align: left; }
+
+  .footer-section {
+    margin-top: 2px;
+  }
+  .footer-disclaimer {
+    font-size: 6.5pt;
+    color: #666;
+    display: flex;
+    justify-content: space-between;
+    padding: 0;
+  }
   .footer-appreciation {
-    font-size: 9pt;
+    font-size: 7.5pt;
     text-align: center;
-    height: 16pt;
-    padding-top: 4px;
+    padding: 1px 0;
   }
   .footer-address {
-    font-size: 10pt;
+    font-size: 8pt;
     text-align: center;
-    height: 16pt;
+    padding: 0;
   }
 
   /* Column widths - 16 columns (A through P) */
@@ -352,14 +378,12 @@ export function generateStandardQuotationHtml(
 
   <!-- ZONE 1: Letterhead -->
   <tr class="letterhead">
-    <td colspan="3" rowspan="3" class="logo-cell">
-      ${company.companyLogoUrl ? `<img src="${company.companyLogoUrl}" alt="Logo">` : `<span style="font-size:18pt;font-weight:bold">${escapeHtml(company.companyName)}</span>`}
+    <td colspan="3" rowspan="2" class="logo-cell">
+      ${company.companyLogoUrl ? `<img src="${company.companyLogoUrl}" alt="Logo">` : `<span style="font-size:16pt;font-weight:bold">${escapeHtml(company.companyName)}</span>`}
     </td>
     <td colspan="13" class="company-name">${escapeHtml(company.companyName)}</td>
   </tr>
   <tr class="letterhead"><td colspan="13"></td></tr>
-  <tr class="letterhead"><td colspan="13"></td></tr>
-  <tr><td colspan="16" style="height:4px;"></td></tr>
 
   <!-- ZONE 2: Header info grid -->
   <!-- Row 6 -->
@@ -451,41 +475,32 @@ export function generateStandardQuotationHtml(
       <strong>Amount in Words:</strong> ${escapeHtml(numberToWords(totalAmount, quotation.currency))}
     </td>
   </tr>
-
-  <!-- Spacer -->
-  <tr><td colspan="16" style="height:6px;"></td></tr>
-
-  <!-- ZONE 7: Offer Terms -->
-  <tr class="terms-header">
-    <td colspan="16" class="bl-med bt-med">OFFER TERMS:</td>
-  </tr>
-  ${termRows}
-
-  <!-- Spacer -->
-  <tr><td colspan="16" style="height:6px;"></td></tr>
-
-  <!-- ZONE 8: Notes -->
-  <tr class="notes-header">
-    <td colspan="16" class="bl-med">NOTES:</td>
-  </tr>
-  ${noteRows}
-
-  <!-- Spacer -->
-  <tr><td colspan="16" style="height:8px;"></td></tr>
-
-  <!-- ZONE 9: Footer -->
-  ${(quotation.version ?? 0) > 0 ? `<tr><td colspan="16" style="font-size:8pt;text-align:center;font-weight:bold;padding:4px;color:#c00;">This quotation supersedes all previous revisions.</td></tr>` : ""}
-  <tr class="footer-disclaimer">
-    <td colspan="12" class="left">This is a computer generated document hence not signed.</td>
-    <td colspan="4" class="right">FORMAT: QTN-Rev.2, Dated: 19/12/2012</td>
-  </tr>
-  <tr class="footer-appreciation">
-    <td colspan="16">YOUR ORDER WILL BE GREATLY APPRECIATED AND WILL RECEIVE OUR PROMPT AND CAREFUL ATTENTION.</td>
-  </tr>
-  <tr class="footer-address">
-    <td colspan="16">Regd. Address: ${escapeHtml(footerAddress)}. ${escapeHtml(footerContact)}</td>
-  </tr>
 </table>
+
+<!-- ZONE 7-9: Terms + Notes + Footer — one block, never split -->
+<div class="terms-notes-footer">
+  <div class="terms-section">
+    <div class="terms-title">OFFER TERMS:</div>
+    ${termItems}
+  </div>
+
+  <div class="notes-section">
+    <div class="notes-title">NOTES:</div>
+    ${noteItems}
+  </div>
+
+  ${(quotation.version ?? 0) > 0 ? `<div style="font-size:8pt;text-align:center;font-weight:bold;padding:3px;color:#c00;">This quotation supersedes all previous revisions.</div>` : ""}
+
+  <div class="footer-section">
+    <div class="footer-disclaimer">
+      <span>This is a computer generated document hence not signed.</span>
+      <span>FORMAT: QTN-Rev.2, Dated: 19/12/2012</span>
+    </div>
+    <div class="footer-appreciation">YOUR ORDER WILL BE GREATLY APPRECIATED AND WILL RECEIVE OUR PROMPT AND CAREFUL ATTENTION.</div>
+    <div class="footer-address">Regd. Address: ${escapeHtml(footerAddress)}. ${escapeHtml(footerContact)}</div>
+  </div>
+</div>
+
 </body>
 </html>`;
 }

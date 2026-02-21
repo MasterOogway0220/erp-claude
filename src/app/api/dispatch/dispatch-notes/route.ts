@@ -186,12 +186,34 @@ export async function POST(request: NextRequest) {
             },
           });
         } else {
-          // Partially reserved - clear reservation link, keep remaining available
+          // Partially used - keep remaining stock as ACCEPTED for future orders
           await tx.inventoryStock.update({
             where: { id: plItem.inventoryStockId },
             data: {
-              status: "DISPATCHED",
+              status: "ACCEPTED",
               reservedForSO: null,
+            },
+          });
+        }
+      }
+
+      // 2b. Update qtyDispatched on SO items
+      for (const plItem of packingList.items) {
+        // Find which SO item this stock was reserved against
+        const reservation = await tx.stockReservation.findFirst({
+          where: {
+            inventoryStockId: plItem.inventoryStockId,
+            salesOrderItem: { salesOrderId },
+          },
+          select: { salesOrderItemId: true, reservedQtyMtr: true },
+        });
+        if (reservation) {
+          await tx.salesOrderItem.update({
+            where: { id: reservation.salesOrderItemId },
+            data: {
+              qtyDispatched: {
+                increment: Number(plItem.quantityMtr || reservation.reservedQtyMtr),
+              },
             },
           });
         }
@@ -208,8 +230,7 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // 4. Determine and update sales order status
-      // Reload the sales order items with their reservations after the updates above
+      // 4. Determine and update sales order + item statuses
       const soItems = await tx.salesOrderItem.findMany({
         where: { salesOrderId },
         include: {
@@ -217,7 +238,23 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // Check if all reservations across all items are dispatched
+      // Update item-level status based on dispatched quantity
+      for (const item of soItems) {
+        const dispatched = Number(item.qtyDispatched);
+        const ordered = Number(item.quantity);
+        const itemStatus =
+          dispatched >= ordered
+            ? "FULLY_DISPATCHED"
+            : dispatched > 0
+              ? "PARTIALLY_DISPATCHED"
+              : "OPEN";
+        await tx.salesOrderItem.update({
+          where: { id: item.id },
+          data: { itemStatus },
+        });
+      }
+
+      // Check if all items are fully dispatched
       const allReservations = soItems.flatMap((item) => item.stockReservations);
       const hasReservations = allReservations.length > 0;
       const allDispatched =

@@ -122,15 +122,10 @@ export async function POST(request: NextRequest) {
       });
 
       // Update inventory stock status based on overall result
-      if (inventoryStockId) {
-        let stockStatus: "ACCEPTED" | "REJECTED" | "HOLD";
-        if (overallResult === "PASS") {
-          stockStatus = "ACCEPTED";
-        } else if (overallResult === "FAIL") {
-          stockStatus = "REJECTED";
-        } else {
-          stockStatus = "HOLD";
-        }
+      // For PASS: leave as UNDER_INSPECTION — QC Release will formally accept
+      // For FAIL/HOLD: transition immediately (QC release not needed)
+      if (inventoryStockId && overallResult !== "PASS") {
+        const stockStatus = overallResult === "FAIL" ? "REJECTED" : "HOLD";
 
         await tx.inventoryStock.update({
           where: { id: inventoryStockId },

@@ -932,15 +932,33 @@ function StandardQuotationPage() {
                   </div>
                   <div className="grid gap-2">
                     <Label>OD (mm)</Label>
-                    <Input value={item.od} readOnly className="bg-muted" />
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={item.od}
+                      onChange={(e) => updateItem(index, "od", e.target.value)}
+                      placeholder="Auto or manual"
+                    />
                   </div>
                   <div className="grid gap-2">
                     <Label>WT (mm)</Label>
-                    <Input value={item.wt} readOnly className="bg-muted" />
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={item.wt}
+                      onChange={(e) => updateItem(index, "wt", e.target.value)}
+                      placeholder="Auto or manual"
+                    />
                   </div>
                   <div className="grid gap-2">
                     <Label>Unit Wt (kg/m)</Label>
-                    <Input value={item.unitWeight} readOnly className="bg-muted" />
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={item.unitWeight}
+                      onChange={(e) => updateItem(index, "unitWeight", e.target.value)}
+                      placeholder="Auto or manual"
+                    />
                   </div>
                   <div className="grid gap-2">
                     <Label>Ends</Label>

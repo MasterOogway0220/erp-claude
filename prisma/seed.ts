@@ -310,6 +310,7 @@ async function seedDocumentSequences() {
     { documentType: "GRN", prefix: "GRN" },
     { documentType: "INSPECTION", prefix: "IR" },
     { documentType: "NCR", prefix: "NCR" },
+    { documentType: "QC_RELEASE", prefix: "QCR" },
     { documentType: "PACKING_LIST", prefix: "PL" },
     { documentType: "DISPATCH_NOTE", prefix: "DN" },
     { documentType: "INVOICE_DOMESTIC", prefix: "INV" },

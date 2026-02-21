@@ -38,7 +38,7 @@ export async function POST(
     // Create amendment (new PO with incremented version)
     const amendedPo = await prisma.purchaseOrder.create({
       data: {
-        poNo: originalPo.poNo,
+        poNo: `${originalPo.poNo}-R${originalPo.version + 1}`,
         vendorId: originalPo.vendorId,
         prId: originalPo.prId,
         salesOrderId: originalPo.salesOrderId,
@@ -75,25 +75,25 @@ export async function POST(
       },
     });
 
-    // Create change log entry
-    await prisma.$executeRaw`
-      INSERT INTO "AuditLog" ("id", "tableName", "recordId", "action", "userId", "changes", "timestamp")
-      VALUES (
-        gen_random_uuid(),
-        'PurchaseOrder',
-        ${amendedPo.id},
-        'AMENDMENT',
-        ${session.user.id},
-        ${JSON.stringify({
+    // Create change log entry using Prisma (not raw SQL)
+    await prisma.auditLog.create({
+      data: {
+        tableName: "PurchaseOrder",
+        recordId: amendedPo.id,
+        action: "CREATE",
+        fieldName: "amendment",
+        oldValue: JSON.stringify({
+          version: originalPo.version,
+          amount: originalPo.totalAmount,
+        }),
+        newValue: JSON.stringify({
+          version: amendedPo.version,
+          amount: totalAmount,
           reason: changeReason,
-          originalVersion: originalPo.version,
-          newVersion: amendedPo.version,
-          originalAmount: originalPo.totalAmount,
-          newAmount: totalAmount,
-        })},
-        NOW()
-      )
-    `;
+        }),
+        userId: session.user.id,
+      },
+    });
 
     return NextResponse.json(amendedPo, { status: 201 });
   } catch (error) {
