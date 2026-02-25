@@ -51,7 +51,6 @@ export async function GET(request: NextRequest) {
       where,
       include: {
         customer: true,
-        enquiry: true,
         preparedBy: { select: { name: true } },
         items: true,
       },
@@ -76,7 +75,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const {
       customerId,
-      enquiryId,
       quotationType,
       quotationCategory,
       currency,
@@ -88,6 +86,9 @@ export async function POST(request: NextRequest) {
       taxRate,
       items,
       terms,
+      quotationDate,
+      inquiryNo,
+      inquiryDate,
     } = body;
 
     if (!customerId) {
@@ -141,12 +142,14 @@ export async function POST(request: NextRequest) {
       data: {
         quotationNo,
         customerId,
-        enquiryId: enquiryId || null,
         quotationType: quotationType || QuotationType.DOMESTIC,
         quotationCategory: quotationCategory || QuotationCategory.STANDARD,
         currency: currency || "INR",
+        ...(quotationDate ? { quotationDate: new Date(quotationDate) } : {}),
         validUpto: validUpto ? new Date(validUpto) : null,
         buyerId: buyerId || null,
+        inquiryNo: inquiryNo || null,
+        inquiryDate: inquiryDate ? new Date(inquiryDate) : null,
         paymentTermsId: paymentTermsId || null,
         deliveryTermsId: deliveryTermsId || null,
         deliveryPeriod: deliveryPeriod || null,
@@ -227,14 +230,6 @@ export async function POST(request: NextRequest) {
       recordId: quotation.id,
       newValue: JSON.stringify({ quotationNo: quotation.quotationNo }),
     }).catch(console.error);
-
-    // Update enquiry status if linked
-    if (enquiryId) {
-      await prisma.enquiry.update({
-        where: { id: enquiryId },
-        data: { status: "QUOTATION_PREPARED" },
-      });
-    }
 
     return NextResponse.json(quotation, { status: 201 });
   } catch (error: any) {

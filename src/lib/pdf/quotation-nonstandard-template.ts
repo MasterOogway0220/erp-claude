@@ -23,6 +23,8 @@ interface QuotationData {
   quotationDate: string | Date;
   validUpto?: string | Date | null;
   currency: string;
+  inquiryNo?: string | null;
+  inquiryDate?: string | Date | null;
   customer: {
     name: string;
     addressLine1?: string | null;
@@ -35,11 +37,6 @@ interface QuotationData {
     email?: string | null;
     phone?: string | null;
   };
-  enquiry?: {
-    enquiryNo?: string;
-    enquiryDate?: string | Date;
-    mode?: string;
-  } | null;
   preparedBy?: { name?: string; email?: string; phone?: string } | null;
   buyer?: {
     buyerName?: string | null;
@@ -131,9 +128,9 @@ function buildItemDescription(item: any): string {
 export function generateNonStandardQuotationHtml(
   quotation: QuotationData,
   company: CompanyInfo,
-  variant: "COMMERCIAL" | "TECHNICAL"
+  variant: "QUOTED" | "UNQUOTED"
 ): string {
-  const isTechnical = variant === "TECHNICAL";
+  const isUnquoted = variant === "UNQUOTED";
 
   const totalQty = quotation.items.reduce(
     (sum, item) => sum + (parseFloat(item.quantity) || 0),
@@ -171,8 +168,8 @@ export function generateNonStandardQuotationHtml(
         <td class="cell-center cell-top">${item.sNo}</td>
         <td class="cell-left cell-top cell-wrap" colspan="4">${desc}</td>
         <td class="cell-left cell-top cell-wrap">${formatNumber(item.quantity, 0)}</td>
-        <td class="cell-right cell-top">${isTechnical ? '<span class="quoted-bold">QUOTED</span>' : formatNumber(item.unitRate, 2)}</td>
-        <td class="cell-right cell-top">${isTechnical ? '<span class="quoted-normal">QUOTED</span>' : formatNumber(item.amount, 0)}</td>
+        <td class="cell-right cell-top">${isUnquoted ? '<span class="quoted-bold">QUOTED</span>' : formatNumber(item.unitRate, 2)}</td>
+        <td class="cell-right cell-top">${isUnquoted ? '<span class="quoted-normal">QUOTED</span>' : formatNumber(item.amount, 0)}</td>
         <td class="cell-center cell-top cell-wrap">${escapeHtml(item.delivery)}</td>
       </tr>`;
     })
@@ -418,6 +415,16 @@ export function generateNonStandardQuotationHtml(
     <td class="info-label">Dated:</td>
     <td class="info-value" colspan="2">${formatDate(quotation.quotationDate)}</td>
   </tr>
+  ${quotation.inquiryNo ? `<tr class="qtn-block">
+    <td colspan="6"></td>
+    <td class="info-label">Client Inquiry No.:</td>
+    <td class="info-value" colspan="2">${escapeHtml(quotation.inquiryNo)}</td>
+  </tr>` : ""}
+  ${quotation.inquiryDate ? `<tr class="qtn-block">
+    <td colspan="6"></td>
+    <td class="info-label">Inquiry Date:</td>
+    <td class="info-value" colspan="2">${formatDate(quotation.inquiryDate)}</td>
+  </tr>` : ""}
   <tr><td colspan="9" style="height:4px;"></td></tr>
 
   <!-- ZONE 2: Customer / Buyer / Prepared By info grid -->
@@ -434,12 +441,12 @@ export function generateNonStandardQuotationHtml(
   <tr class="info-grid">
     <td class="info-value" colspan="2">${escapeHtml(quotation.customer.addressLine1)}</td>
     <td class="info-value" colspan="2">${escapeHtml(quotation.buyer?.designation)}</td>
-    <td class="info-value" colspan="5">Enquiry Reference: ${quotation.enquiry ? escapeHtml(quotation.enquiry.enquiryNo) : ""}</td>
+    <td class="info-value" colspan="5"></td>
   </tr>
   <tr class="info-grid">
     <td class="info-value" colspan="2">${[quotation.customer.city, quotation.customer.state, quotation.customer.pincode].filter(Boolean).join(", ")}</td>
     <td class="info-value" colspan="2">${escapeHtml(quotation.buyer?.email || quotation.customer.email)}</td>
-    <td class="info-small" colspan="5">${quotation.enquiry ? `Client Ref No. - ${escapeHtml(quotation.enquiry.enquiryNo)}` : ""}</td>
+    <td class="info-small" colspan="5"></td>
   </tr>
   <tr class="info-grid">
     <td class="info-value" colspan="2">${escapeHtml(quotation.customer.country)}</td>
@@ -478,11 +485,11 @@ export function generateNonStandardQuotationHtml(
     <td colspan="5">Grand Total</td>
     <td>${formatNumber(totalQty, 0)}</td>
     <td></td>
-    <td>${isTechnical ? "" : formatNumber(totalAmount, 0)}</td>
+    <td>${isUnquoted ? "" : formatNumber(totalAmount, 0)}</td>
     <td></td>
   </tr>
 
-  ${!isTechnical ? `<!-- Amount in Words -->
+  ${!isUnquoted ? `<!-- Amount in Words -->
   <tr>
     <td colspan="9" style="font-size:10pt;padding:4px 6px;text-align:left;border:0.5px solid #999;">
       <strong>Amount in Words:</strong> ${escapeHtml(numberToWords(totalAmount, quotation.currency))}

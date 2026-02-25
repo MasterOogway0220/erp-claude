@@ -32,7 +32,6 @@ export async function GET(
       where: { id },
       include: {
         customer: true,
-        enquiry: true,
         buyer: true,
         preparedBy: { select: { name: true, email: true } },
         approvedBy: { select: { name: true } },
@@ -275,7 +274,7 @@ export async function PUT(
 
     const existing = await prisma.quotation.findUnique({
       where: { id },
-      select: { status: true, quotationNo: true, customerId: true, enquiryId: true, quotationType: true, quotationCategory: true },
+      select: { status: true, quotationNo: true, customerId: true, quotationType: true, quotationCategory: true },
     });
 
     if (!existing) {
@@ -300,6 +299,9 @@ export async function PUT(
       taxRate,
       items,
       terms,
+      quotationDate,
+      inquiryNo,
+      inquiryDate,
     } = body;
 
     if (!items || items.length === 0) {
@@ -331,8 +333,11 @@ export async function PUT(
         where: { id },
         data: {
           currency: effectiveCurrency,
+          ...(quotationDate ? { quotationDate: new Date(quotationDate) } : {}),
           validUpto: validUpto ? new Date(validUpto) : null,
           buyerId: buyerId || null,
+          inquiryNo: inquiryNo || null,
+          inquiryDate: inquiryDate ? new Date(inquiryDate) : null,
           paymentTermsId: paymentTermsId || null,
           deliveryTermsId: deliveryTermsId || null,
           deliveryPeriod: deliveryPeriod || null,

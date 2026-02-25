@@ -7,7 +7,6 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -17,11 +16,10 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProductMaterialSelect } from "@/components/shared/product-material-select";
+import { SmartCombobox } from "@/components/shared/smart-combobox";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, ArrowLeft, Building2, History, ChevronDown, ChevronUp, Calculator } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Building2 } from "lucide-react";
 import { toast } from "sonner";
-import { useCurrentUser } from "@/hooks/use-current-user";
 import { PageLoading } from "@/components/shared/page-loading";
 
 interface QuotationItem {
@@ -43,14 +41,6 @@ interface QuotationItem {
   remark: string;
   unitWeight: string;
   totalWeightMT: string;
-  // Internal costing fields
-  materialCost: string;
-  logisticsCost: string;
-  inspectionCost: string;
-  otherCosts: string;
-  totalCostPerUnit: string;
-  marginPercentage: string;
-  costingExpanded: boolean;
 }
 
 const emptyItem: QuotationItem = {
@@ -71,28 +61,15 @@ const emptyItem: QuotationItem = {
   delivery: "6-8 Weeks",
   remark: "",
   unitWeight: "",
-  totalWeightMT: "0.0000",
-  // Internal costing fields
-  materialCost: "",
-  logisticsCost: "",
-  inspectionCost: "",
-  otherCosts: "",
-  totalCostPerUnit: "",
-  marginPercentage: "",
-  costingExpanded: false,
+  totalWeightMT: "",
 };
 
-const hardCodedNotes = [
-  "Prices are subject to review if items are deleted or if quantities are changed.",
-  "This quotation is subject to confirmation at the time of order placement.",
-  "Invoicing shall be based on the actual quantity supplied at the agreed unit rate.",
-  "Shipping date will be calculated based on the number of business days after receipt of the techno-commercial Purchase Order (PO).",
-  "Supply shall be made as close as possible to the requested quantity in the fixed lengths indicated.",
-  "Once an order is placed, it cannot be cancelled under any circumstances.",
-  "The quoted specification complies with the standard practice of the specification, without supplementary requirements (unless otherwise specifically stated in the offer).",
-  "Reduction in quantity after placement of order will not be accepted. Any increase in quantity will be subject to our acceptance.",
-  "In case of any changes in Government duties, taxes, or policies, the rates are liable to revision.",
-];
+function getPipeType(product: string): "CS_AS" | "SS_DS" | null {
+  const p = product.toUpperCase();
+  if (p.startsWith("C.S.") || p.startsWith("A.S.")) return "CS_AS";
+  if (p.startsWith("S.S.") || p.startsWith("D.S.")) return "SS_DS";
+  return null;
+}
 
 export default function StandardQuotationPageWrapper() {
   return (
@@ -105,21 +82,18 @@ export default function StandardQuotationPageWrapper() {
 function StandardQuotationPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const enquiryId = searchParams.get("enquiryId");
   const editId = searchParams.get("editId");
-  const { user } = useCurrentUser();
 
   const [formData, setFormData] = useState({
     customerId: "",
     buyerId: "",
-    enquiryId: enquiryId || "",
     quotationType: "DOMESTIC",
     quotationCategory: "STANDARD",
     currency: "INR",
     validUpto: "",
-    paymentTermsId: "",
-    deliveryTermsId: "",
-    deliveryPeriod: "",
+    quotationDate: new Date().toISOString().split("T")[0],
+    inquiryNo: "",
+    inquiryDate: "",
   });
   const [items, setItems] = useState<QuotationItem[]>([emptyItem]);
   const [terms, setTerms] = useState<{
@@ -129,7 +103,17 @@ function StandardQuotationPage() {
     isCustom: boolean;
     isHeadingEditable: boolean;
   }[]>([]);
-  const [showHistory, setShowHistory] = useState(false);
+
+  // Preview quotation number
+  const { data: previewData } = useQuery({
+    queryKey: ["quotation-preview-number"],
+    queryFn: async () => {
+      const res = await fetch("/api/quotations/preview-number");
+      if (!res.ok) throw new Error("Failed to fetch preview number");
+      return res.json();
+    },
+    enabled: !editId,
+  });
 
   // Fetch customers
   const { data: customersData } = useQuery({
@@ -152,7 +136,7 @@ function StandardQuotationPage() {
     },
   });
 
-  // Fetch pipe sizes for NPS/Schedule dropdowns
+  // Fetch pipe sizes for Size dropdown
   const { data: pipeSizesData } = useQuery({
     queryKey: ["pipe-sizes"],
     queryFn: async () => {
@@ -162,93 +146,61 @@ function StandardQuotationPage() {
     },
   });
 
-  // Fetch enquiry if linked
-  const { data: enquiryData } = useQuery({
-    queryKey: ["enquiry", enquiryId],
-    enabled: !!enquiryId,
-    queryFn: async () => {
-      const res = await fetch(`/api/enquiries/${enquiryId}`);
-      if (!res.ok) throw new Error("Failed to fetch enquiry");
-      return res.json();
-    },
-  });
-
-  // Fetch offer term templates
+  // Fetch offer term templates filtered by quotation type
   const { data: templatesData } = useQuery({
-    queryKey: ["offer-term-templates"],
+    queryKey: ["offer-term-templates", formData.quotationType],
     queryFn: async () => {
-      const res = await fetch("/api/offer-term-templates");
+      const res = await fetch(`/api/offer-term-templates?quotationType=${formData.quotationType}`);
       if (!res.ok) throw new Error("Failed to fetch templates");
       return res.json();
     },
   });
 
-  // Fetch payment terms master
-  const { data: paymentTermsData } = useQuery({
-    queryKey: ["payment-terms"],
-    queryFn: async () => {
-      const res = await fetch("/api/masters/payment-terms");
-      if (!res.ok) throw new Error("Failed to fetch payment terms");
-      return res.json();
-    },
-  });
+  // Parse NPS numeric value from sizeLabel like '1/2" NB X Sch 40' for sorting
+  const parseNpsFromLabel = (label: string): number => {
+    const match = label.match(/^([\d/]+)/);
+    if (!match) return 999;
+    const frac = match[1];
+    if (frac.includes("/")) {
+      const [num, den] = frac.split("/").map(Number);
+      return den ? num / den : num;
+    }
+    return parseFloat(frac) || 999;
+  };
 
-  // Fetch delivery terms master
-  const { data: deliveryTermsData } = useQuery({
-    queryKey: ["delivery-terms"],
-    queryFn: async () => {
-      const res = await fetch("/api/masters/delivery-terms");
-      if (!res.ok) throw new Error("Failed to fetch delivery terms");
-      return res.json();
-    },
-  });
-
-  // Fetch quotation history for selected customer
-  const { data: historyData } = useQuery({
-    queryKey: ["quotation-history", formData.customerId],
-    enabled: !!formData.customerId,
-    queryFn: async () => {
-      const res = await fetch(`/api/masters/customers/${formData.customerId}/quotation-history`);
-      if (!res.ok) throw new Error("Failed to fetch history");
-      return res.json();
-    },
-  });
-
-  // Derive NPS and Schedule options from pipe sizes
-  const { npsOptions, getSchedulesForNps, findPipeSize } = useMemo(() => {
+  // Derive combined size options filtered by pipe type
+  const getSizeOptionsForProduct = useMemo(() => {
     const sizes = pipeSizesData?.pipeSizes || [];
-    const npsSet = new Map<string, number>();
-    sizes.forEach((s: any) => {
-      if (s.nps !== null && s.nps !== undefined) {
-        const npsVal = parseFloat(s.nps);
-        const npsStr = npsVal.toString();
-        if (!npsSet.has(npsStr)) npsSet.set(npsStr, npsVal);
-      }
-    });
-    const npsOpts = Array.from(npsSet.entries())
-      .sort((a, b) => a[1] - b[1])
-      .map(([str]) => str);
 
-    const getSchedulesForNps = (nps: string): string[] => {
-      const schedules = new Set<string>();
-      sizes.forEach((s: any) => {
-        if (s.nps !== null && parseFloat(s.nps).toString() === nps && s.schedule) {
-          schedules.add(s.schedule);
-        }
-      });
-      return Array.from(schedules).sort();
+    return (product: string) => {
+      const pipeType = getPipeType(product);
+      if (!pipeType) return [];
+
+      return sizes
+        .filter((s: any) => s.pipeType === pipeType)
+        .sort((a: any, b: any) => {
+          const npsA = a.nps != null ? parseFloat(a.nps) : parseNpsFromLabel(a.sizeLabel || "");
+          const npsB = b.nps != null ? parseFloat(b.nps) : parseNpsFromLabel(b.sizeLabel || "");
+          if (npsA !== npsB) return npsA - npsB;
+          return (a.sizeLabel || "").localeCompare(b.sizeLabel || "");
+        })
+        .map((s: any) => ({
+          id: s.id,
+          sizeLabel: s.sizeLabel,
+          nps: s.nps != null ? parseFloat(s.nps).toString() : "",
+          schedule: s.schedule || "",
+          od: parseFloat(s.od).toString(),
+          wt: parseFloat(s.wt).toString(),
+          weight: parseFloat(s.weight).toString(),
+        }));
     };
+  }, [pipeSizesData]);
 
-    const findPipeSize = (nps: string, schedule: string) => {
-      return sizes.find(
-        (s: any) =>
-          s.nps !== null &&
-          parseFloat(s.nps).toString() === nps &&
-          s.schedule === schedule
-      );
-    };
-
-    return { npsOptions: npsOpts, getSchedulesForNps, findPipeSize };
+  const findPipeSizeById = useMemo(() => {
+    const sizes = pipeSizesData?.pipeSizes || [];
+    const map = new Map<string, any>();
+    sizes.forEach((s: any) => map.set(s.id, s));
+    return (id: string) => map.get(id) || null;
   }, [pipeSizesData]);
 
   const selectedCustomer = customersData?.customers?.find(
@@ -259,36 +211,12 @@ function StandardQuotationPage() {
     (b: any) => b.id === formData.buyerId
   );
 
-  // Pre-fill from enquiry
-  useEffect(() => {
-    if (enquiryData?.enquiry) {
-      const enq = enquiryData.enquiry;
-      setFormData((prev) => ({
-        ...prev,
-        customerId: enq.customerId,
-        buyerId: enq.buyerId || "",
-      }));
-      if (enq.items?.length > 0) {
-        setItems(
-          enq.items.map((item: any) => ({
-            ...emptyItem,
-            product: item.product || "",
-            material: item.material || "",
-            additionalSpec: item.additionalSpec || "",
-            sizeLabel: item.size || "",
-            ends: item.ends || "BE",
-            quantity: item.quantity?.toString() || "",
-            remark: item.remarks || "",
-          }))
-        );
-      }
-    }
-  }, [enquiryData]);
-
-  // Auto-set currency for export
+  // Auto-set currency based on market type
   useEffect(() => {
     if (formData.quotationType === "EXPORT" && formData.currency === "INR") {
       setFormData((prev) => ({ ...prev, currency: "USD" }));
+    } else if (formData.quotationType === "DOMESTIC" && formData.currency !== "INR") {
+      setFormData((prev) => ({ ...prev, currency: "INR" }));
     }
   }, [formData.quotationType]);
 
@@ -304,14 +232,11 @@ function StandardQuotationPage() {
     setFormData((prev) => ({ ...prev, buyerId: "" }));
   }, [formData.customerId]);
 
-  // Set terms from templates
+  // Set terms from templates (skip if in edit mode with terms already loaded)
   useEffect(() => {
-    if (templatesData?.templates) {
-      const filtered = templatesData.templates.filter((t: any) =>
-        formData.quotationType === "EXPORT" ? true : !t.isExportOnly
-      );
+    if (templatesData?.templates && !(editData?.quotation?.terms?.length > 0)) {
       setTerms(
-        filtered.map((t: any) => ({
+        templatesData.templates.map((t: any) => ({
           termName: t.termName,
           termValue: t.termDefaultValue || "",
           isIncluded: true,
@@ -320,7 +245,7 @@ function StandardQuotationPage() {
         }))
       );
     }
-  }, [templatesData, formData.quotationType]);
+  }, [templatesData]);
 
   const toggleTermIncluded = (index: number) => {
     const newTerms = [...terms];
@@ -369,14 +294,13 @@ function StandardQuotationPage() {
       setFormData({
         customerId: q.customerId || "",
         buyerId: q.buyerId || "",
-        enquiryId: q.enquiryId || "",
         quotationType: q.quotationType || "DOMESTIC",
         quotationCategory: q.quotationCategory || "STANDARD",
         currency: q.currency || "INR",
         validUpto: q.validUpto ? new Date(q.validUpto).toISOString().split("T")[0] : "",
-        paymentTermsId: q.paymentTermsId || "",
-        deliveryTermsId: q.deliveryTermsId || "",
-        deliveryPeriod: q.deliveryPeriod || "",
+        quotationDate: q.quotationDate ? new Date(q.quotationDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+        inquiryNo: q.inquiryNo || "",
+        inquiryDate: q.inquiryDate ? new Date(q.inquiryDate).toISOString().split("T")[0] : "",
       });
       if (q.items?.length > 0) {
         setItems(q.items.map((item: any) => ({
@@ -396,18 +320,8 @@ function StandardQuotationPage() {
           amount: String(item.amount),
           delivery: item.delivery || "",
           remark: item.remark || "",
-          materialCodeId: item.materialCodeId || "",
-          uom: item.uom || "",
-          hsnCode: item.hsnCode || "",
-          taxRate: item.taxRate ? String(item.taxRate) : "",
           unitWeight: item.unitWeight ? String(item.unitWeight) : "",
           totalWeightMT: item.totalWeightMT ? String(item.totalWeightMT) : "",
-          materialCost: item.materialCost ? String(item.materialCost) : "",
-          logisticsCost: item.logisticsCost ? String(item.logisticsCost) : "",
-          inspectionCost: item.inspectionCost ? String(item.inspectionCost) : "",
-          otherCosts: item.otherCosts ? String(item.otherCosts) : "",
-          totalCostPerUnit: item.totalCostPerUnit ? String(item.totalCostPerUnit) : "",
-          marginPercentage: item.marginPercentage ? String(item.marginPercentage) : "",
         })));
       }
       if (q.terms?.length > 0) {
@@ -450,95 +364,56 @@ function StandardQuotationPage() {
     if (items.length > 1) setItems(items.filter((_, i) => i !== index));
   };
 
-  // Helper to recalculate costing-derived fields for an item
-  const recalcCosting = (item: QuotationItem) => {
-    const matCost = parseFloat(item.materialCost) || 0;
-    const logCost = parseFloat(item.logisticsCost) || 0;
-    const inspCost = parseFloat(item.inspectionCost) || 0;
-    const othCost = parseFloat(item.otherCosts) || 0;
-    const totalCost = matCost + logCost + inspCost + othCost;
-    const margin = parseFloat(item.marginPercentage) || 0;
-
-    item.totalCostPerUnit = totalCost > 0 ? totalCost.toFixed(2) : "";
-
-    // Only auto-fill unitRate if any costing field is filled
-    if (totalCost > 0) {
-      const sellingPrice = totalCost * (1 + margin / 100);
-      item.unitRate = sellingPrice.toFixed(2);
-    }
-
-    // Recalculate amount
-    const qty = parseFloat(item.quantity) || 0;
-    const rate = parseFloat(item.unitRate) || 0;
-    item.amount = (qty * rate).toFixed(2);
-  };
-
   const updateItem = (index: number, field: keyof QuotationItem, value: string) => {
-    const newItems = [...items];
-    (newItems[index] as any)[field] = value;
+    setItems((prev) => {
+      const newItems = prev.map((item, i) => (i === index ? { ...item } : item));
+      (newItems[index] as any)[field] = value;
 
-    const costingFields: (keyof QuotationItem)[] = [
-      "materialCost",
-      "logisticsCost",
-      "inspectionCost",
-      "otherCosts",
-      "marginPercentage",
-    ];
-
-    if (costingFields.includes(field)) {
-      // Costing field changed - recalculate totalCostPerUnit, unitRate, amount
-      recalcCosting(newItems[index]);
-    } else if (field === "quantity" || field === "unitRate") {
-      const qty = parseFloat(newItems[index].quantity) || 0;
-      const rate = parseFloat(newItems[index].unitRate) || 0;
-      newItems[index].amount = (qty * rate).toFixed(2);
-      if (newItems[index].unitWeight) {
-        newItems[index].totalWeightMT = ((qty * parseFloat(newItems[index].unitWeight)) / 1000).toFixed(4);
-      }
-      // If unitRate is manually changed and costing fields exist, back-calculate margin
-      if (field === "unitRate") {
-        const totalCost = parseFloat(newItems[index].totalCostPerUnit) || 0;
-        if (totalCost > 0) {
-          const newMargin = ((rate / totalCost - 1) * 100);
-          newItems[index].marginPercentage = newMargin >= 0 ? newMargin.toFixed(2) : newMargin.toFixed(2);
-        }
-      }
-    }
-
-    // When NPS or Schedule changes, auto-fill OD, WT, Weight
-    if (field === "nps" || field === "schedule") {
-      const nps = field === "nps" ? value : newItems[index].nps;
-      const sch = field === "schedule" ? value : newItems[index].schedule;
-      if (nps && sch) {
-        const pipeSize = findPipeSize(nps, sch);
-        if (pipeSize) {
-          newItems[index].sizeId = pipeSize.id;
-          newItems[index].sizeLabel = pipeSize.sizeLabel;
-          newItems[index].od = parseFloat(pipeSize.od).toString();
-          newItems[index].wt = parseFloat(pipeSize.wt).toString();
-          newItems[index].unitWeight = parseFloat(pipeSize.weight).toString();
-          if (newItems[index].quantity) {
-            const qty = parseFloat(newItems[index].quantity);
-            newItems[index].totalWeightMT = ((qty * parseFloat(pipeSize.weight)) / 1000).toFixed(4);
-          }
-        }
-      }
-      // Reset schedule options when NPS changes
-      if (field === "nps") {
+      // When product changes, reset size-related fields
+      if (field === "product") {
+        newItems[index].sizeId = "";
+        newItems[index].sizeLabel = "";
+        newItems[index].nps = "";
         newItems[index].schedule = "";
         newItems[index].od = "";
         newItems[index].wt = "";
         newItems[index].unitWeight = "";
+        newItems[index].totalWeightMT = "";
       }
-    }
 
-    setItems(newItems);
-  };
+      // When sizeId changes, auto-fill from pipe size master
+      if (field === "sizeId" && value) {
+        const pipeSize = findPipeSizeById(value);
+        if (pipeSize) {
+          newItems[index].sizeLabel = pipeSize.sizeLabel;
+          newItems[index].nps = pipeSize.nps != null ? parseFloat(pipeSize.nps).toString() : "";
+          newItems[index].schedule = pipeSize.schedule || "";
+          newItems[index].od = parseFloat(pipeSize.od).toString();
+          newItems[index].wt = parseFloat(pipeSize.wt).toString();
+          newItems[index].unitWeight = parseFloat(pipeSize.weight).toString();
+        }
+      }
 
-  const toggleCosting = (index: number) => {
-    const newItems = [...items];
-    newItems[index].costingExpanded = !newItems[index].costingExpanded;
-    setItems(newItems);
+      // Recalculate amount
+      if (field === "quantity" || field === "unitRate") {
+        const qty = parseFloat(newItems[index].quantity) || 0;
+        const rate = parseFloat(newItems[index].unitRate) || 0;
+        newItems[index].amount = (qty * rate).toFixed(2);
+      }
+
+      // Recalculate total weight when quantity or unitWeight changes
+      if (field === "quantity" || field === "unitRate" || field === "sizeId") {
+        const qty = parseFloat(newItems[index].quantity) || 0;
+        const uw = parseFloat(newItems[index].unitWeight) || 0;
+        if (qty > 0 && uw > 0) {
+          newItems[index].totalWeightMT = ((qty * uw) / 1000).toFixed(3);
+        } else {
+          newItems[index].totalWeightMT = "";
+        }
+      }
+
+      return newItems;
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -551,11 +426,12 @@ function StandardQuotationPage() {
       toast.error("Please fill quantity and unit rate for all items");
       return;
     }
-    // Strip UI-only fields before sending to API
-    const apiItems = items.map(({ costingExpanded, ...item }) => item);
     createMutation.mutate({
       ...formData,
-      items: apiItems,
+      quotationDate: formData.quotationDate || undefined,
+      inquiryNo: formData.inquiryNo || undefined,
+      inquiryDate: formData.inquiryDate || undefined,
+      items,
       terms,
     });
   };
@@ -571,7 +447,7 @@ function StandardQuotationPage() {
         </Button>
         <PageHeader
           title="Standard Quotation"
-          description={enquiryId ? "From Enquiry" : "Pipes, Fittings, Flanges from masters"}
+          description="Pipes, Fittings, Flanges from masters"
         />
       </div>
 
@@ -582,7 +458,8 @@ function StandardQuotationPage() {
             <CardTitle>Quotation Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            {/* Row 1: Customer, Buyer, Market Type, Quotation No, Rev No, Quotation Date */}
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
               <div className="grid gap-2">
                 <Label>Customer *</Label>
                 <Select
@@ -645,6 +522,38 @@ function StandardQuotationPage() {
               </div>
 
               <div className="grid gap-2">
+                <Label>Quotation No.</Label>
+                <Input
+                  value={editId ? (editData?.quotation?.quotationNo || "") : (previewData?.previewNumber || "")}
+                  readOnly
+                  className="bg-muted"
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Rev. No.</Label>
+                <Input
+                  value={editId ? String(editData?.quotation?.version ?? 0) : "0"}
+                  readOnly
+                  className="bg-muted"
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Quotation Date</Label>
+                <Input
+                  type="date"
+                  value={formData.quotationDate}
+                  onChange={(e) =>
+                    setFormData({ ...formData, quotationDate: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+
+            {/* Row 2: Currency, Valid Until, (empty), Inquiry No, Inquiry Date, (empty) */}
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+              <div className="grid gap-2">
                 <Label>Currency</Label>
                 <Select
                   value={formData.currency}
@@ -674,63 +583,32 @@ function StandardQuotationPage() {
                   }
                 />
               </div>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="grid gap-2">
-                <Label>Payment Terms</Label>
-                <Select
-                  value={formData.paymentTermsId || "NONE"}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, paymentTermsId: value === "NONE" ? "" : value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select payment terms" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="NONE">Select payment terms</SelectItem>
-                    {(paymentTermsData?.paymentTerms || paymentTermsData?.data || []).map((pt: any) => (
-                      <SelectItem key={pt.id} value={pt.id}>
-                        {pt.name || pt.termName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <div /> {/* spacer */}
 
               <div className="grid gap-2">
-                <Label>Delivery Terms</Label>
-                <Select
-                  value={formData.deliveryTermsId || "NONE"}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, deliveryTermsId: value === "NONE" ? "" : value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select delivery terms" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="NONE">Select delivery terms</SelectItem>
-                    {(deliveryTermsData?.deliveryTerms || deliveryTermsData?.data || []).map((dt: any) => (
-                      <SelectItem key={dt.id} value={dt.id}>
-                        {dt.name || dt.termName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid gap-2">
-                <Label>Delivery Period</Label>
+                <Label>Inquiry No.</Label>
                 <Input
-                  value={formData.deliveryPeriod}
+                  value={formData.inquiryNo}
                   onChange={(e) =>
-                    setFormData({ ...formData, deliveryPeriod: e.target.value })
+                    setFormData({ ...formData, inquiryNo: e.target.value })
                   }
-                  placeholder="e.g., 4-6 weeks from PO receipt"
+                  placeholder="Client inquiry ref."
                 />
               </div>
+
+              <div className="grid gap-2">
+                <Label>Inquiry Date</Label>
+                <Input
+                  type="date"
+                  value={formData.inquiryDate}
+                  onChange={(e) =>
+                    setFormData({ ...formData, inquiryDate: e.target.value })
+                  }
+                />
+              </div>
+
+              <div /> {/* spacer */}
             </div>
 
             {/* Customer + Buyer Info */}
@@ -739,19 +617,6 @@ function StandardQuotationPage() {
                 <div className="flex items-center gap-2 mb-3">
                   <Building2 className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm font-medium">Customer Details</span>
-                  {formData.customerId && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="ml-auto h-7 text-xs"
-                      onClick={() => setShowHistory(!showHistory)}
-                    >
-                      <History className="h-3 w-3 mr-1" />
-                      Quotation History
-                      {showHistory ? <ChevronUp className="h-3 w-3 ml-1" /> : <ChevronDown className="h-3 w-3 ml-1" />}
-                    </Button>
-                  )}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-2 text-sm">
                   {(selectedCustomer.addressLine1 || selectedCustomer.city) && (
@@ -760,11 +625,6 @@ function StandardQuotationPage() {
                       {[selectedCustomer.addressLine1, selectedCustomer.city, selectedCustomer.state, selectedCustomer.pincode]
                         .filter(Boolean)
                         .join(", ")}
-                    </div>
-                  )}
-                  {selectedCustomer.gstNo && (
-                    <div>
-                      <span className="text-muted-foreground">GST:</span> {selectedCustomer.gstNo}
                     </div>
                   )}
                   {selectedBuyer ? (
@@ -799,62 +659,19 @@ function StandardQuotationPage() {
                       )}
                     </>
                   )}
-                  {selectedCustomer.paymentTerms && (
-                    <div>
-                      <span className="text-muted-foreground">Payment Terms:</span> {selectedCustomer.paymentTerms}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Quotation History Panel */}
-            {showHistory && historyData?.quotations?.length > 0 && (
-              <div className="rounded-lg border p-4 max-h-64 overflow-y-auto">
-                <h4 className="text-sm font-medium mb-3">Previous Quotations for this Customer</h4>
-                <div className="space-y-2">
-                  {historyData.quotations.map((q: any) => (
-                    <div
-                      key={q.id}
-                      className="flex items-center justify-between text-sm border-b pb-2 last:border-0"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="font-mono text-xs">{q.quotationNo}</span>
-                        <span className="text-muted-foreground text-xs">
-                          {new Date(q.quotationDate).toLocaleDateString("en-IN")}
-                        </span>
-                        {q.buyer?.buyerName && (
-                          <Badge variant="outline" className="text-xs">
-                            {q.buyer.buyerName}
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Badge
-                          variant={q.status === "WON" ? "default" : q.status === "LOST" ? "destructive" : "secondary"}
-                          className="text-xs"
-                        >
-                          {q.status}
-                        </Badge>
-                        <span className="font-medium text-xs">
-                          {q.currency || "INR"} {q.totalValue?.toLocaleString("en-IN") || "0"}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
                 </div>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Line Items with NPS + Schedule */}
+        {/* Line Items with Combined Size */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle>Quotation Items</CardTitle>
               <p className="text-sm text-muted-foreground mt-1">
-                Select NPS + Schedule to auto-fill OD, WT, Weight
+                Select product then pick Size (NPS x Schedule) to auto-fill OD, WT, Weight
               </p>
             </div>
             <Button type="button" variant="outline" size="sm" onClick={addItem}>
@@ -863,298 +680,190 @@ function StandardQuotationPage() {
             </Button>
           </CardHeader>
           <CardContent className="space-y-6">
-            {items.map((item, index) => (
-              <div key={index} className="grid gap-4 p-4 border rounded-lg relative">
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-sm">Item #{index + 1}</span>
-                  {items.length > 1 && (
-                    <Button type="button" variant="ghost" size="icon" onClick={() => removeItem(index)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  )}
-                </div>
+            {items.map((item, index) => {
+              const sizeOptions = getSizeOptionsForProduct(item.product);
+              const hasPipeType = !!getPipeType(item.product);
 
-                <ProductMaterialSelect
-                  product={item.product}
-                  material={item.material}
-                  additionalSpec={item.additionalSpec}
-                  onProductChange={(val) => updateItem(index, "product", val)}
-                  onMaterialChange={(val) => updateItem(index, "material", val)}
-                  onAdditionalSpecChange={(val) => updateItem(index, "additionalSpec", val)}
-                  showAdditionalSpec
-                  onAutoFill={(fields) => {
-                    if (fields.ends) updateItem(index, "ends", fields.ends);
-                    if (fields.length) updateItem(index, "length", fields.length);
-                  }}
-                />
+              return (
+                <div key={index} className="grid gap-4 p-4 border rounded-lg relative">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-sm">Item #{index + 1}</span>
+                    {items.length > 1 && (
+                      <Button type="button" variant="ghost" size="icon" onClick={() => removeItem(index)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    )}
+                  </div>
 
-                {/* NPS + Schedule + OD + WT row */}
-                <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-                  <div className="grid gap-2">
-                    <Label>Size (NPS) *</Label>
-                    <Select
-                      value={item.nps || "NONE"}
-                      onValueChange={(v) => updateItem(index, "nps", v === "NONE" ? "" : v)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="NPS" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="NONE">Select NPS</SelectItem>
-                        {npsOptions.map((nps) => (
-                          <SelectItem key={nps} value={nps}>
-                            {nps}&quot;
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Schedule *</Label>
-                    <Select
-                      value={item.schedule || "NONE"}
-                      onValueChange={(v) => updateItem(index, "schedule", v === "NONE" ? "" : v)}
-                      disabled={!item.nps}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Schedule" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="NONE">Select Schedule</SelectItem>
-                        {item.nps &&
-                          getSchedulesForNps(item.nps).map((sch) => (
-                            <SelectItem key={sch} value={sch}>
-                              {sch}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>OD (mm)</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={item.od}
-                      onChange={(e) => updateItem(index, "od", e.target.value)}
-                      placeholder="Auto or manual"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>WT (mm)</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={item.wt}
-                      onChange={(e) => updateItem(index, "wt", e.target.value)}
-                      placeholder="Auto or manual"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Unit Wt (kg/m)</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={item.unitWeight}
-                      onChange={(e) => updateItem(index, "unitWeight", e.target.value)}
-                      placeholder="Auto or manual"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Ends</Label>
-                    <Select
-                      value={item.ends}
-                      onValueChange={(value) => updateItem(index, "ends", value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="BE">BE</SelectItem>
-                        <SelectItem value="PE">PE</SelectItem>
-                        <SelectItem value="NPTM">NPTM</SelectItem>
-                        <SelectItem value="BSPT">BSPT</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-                  <div className="grid gap-2">
-                    <Label>Length</Label>
-                    <Input
-                      value={item.length}
-                      onChange={(e) => updateItem(index, "length", e.target.value)}
-                      placeholder="9.00-11.8"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Qty (Mtr) *</Label>
-                    <Input
-                      type="number"
-                      step="0.001"
-                      value={item.quantity}
-                      onChange={(e) => updateItem(index, "quantity", e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Unit Rate ({formData.currency}) *</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={item.unitRate}
-                      onChange={(e) => updateItem(index, "unitRate", e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Amount ({formData.currency})</Label>
-                    <Input value={item.amount} readOnly className="bg-muted font-semibold" />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Delivery</Label>
-                    <Input
-                      value={item.delivery}
-                      onChange={(e) => updateItem(index, "delivery", e.target.value)}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Weight (MT)</Label>
-                    <Input value={item.totalWeightMT} readOnly className="bg-muted" />
-                  </div>
-                </div>
-
-                <div className="grid gap-2">
-                  <Label>Remark / Material Code</Label>
-                  <Input
-                    value={item.remark}
-                    onChange={(e) => updateItem(index, "remark", e.target.value)}
+                  <ProductMaterialSelect
+                    product={item.product}
+                    material={item.material}
+                    additionalSpec={item.additionalSpec}
+                    onProductChange={(val) => updateItem(index, "product", val)}
+                    onMaterialChange={(val) => updateItem(index, "material", val)}
+                    onAdditionalSpecChange={(val) => updateItem(index, "additionalSpec", val)}
+                    showAdditionalSpec
+                    onAutoFill={(fields) => {
+                      if (fields.ends) updateItem(index, "ends", fields.ends);
+                      if (fields.length) updateItem(index, "length", fields.length);
+                    }}
                   />
-                </div>
 
-                {/* Internal Costing Section (Collapsible) - MANAGEMENT/ADMIN only */}
-                {(user?.role === "MANAGEMENT" || user?.role === "ADMIN") && (
-                <div className="border-t pt-2 mt-2">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 text-xs gap-1 text-muted-foreground"
-                    onClick={() => toggleCosting(index)}
-                  >
-                    <Calculator className="h-3 w-3" />
-                    Internal Costing
-                    {item.costingExpanded ? (
-                      <ChevronUp className="h-3 w-3" />
-                    ) : (
-                      <ChevronDown className="h-3 w-3" />
-                    )}
-                    {item.totalCostPerUnit && (
-                      <Badge variant="secondary" className="ml-2 text-xs">
-                        Cost: {item.totalCostPerUnit} | Margin: {item.marginPercentage || "0"}%
-                      </Badge>
-                    )}
-                  </Button>
-
-                  {item.costingExpanded && (
-                    <div className="mt-3 p-3 rounded-md bg-muted/30 border border-dashed">
-                      <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-                        <div className="grid gap-2">
-                          <Label className="text-xs">Material Cost/Unit</Label>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            placeholder="0.00"
-                            value={item.materialCost}
-                            onChange={(e) =>
-                              updateItem(index, "materialCost", e.target.value)
-                            }
-                          />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label className="text-xs">Logistics Cost/Unit</Label>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            placeholder="0.00"
-                            value={item.logisticsCost}
-                            onChange={(e) =>
-                              updateItem(index, "logisticsCost", e.target.value)
-                            }
-                          />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label className="text-xs">Inspection Cost/Unit</Label>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            placeholder="0.00"
-                            value={item.inspectionCost}
-                            onChange={(e) =>
-                              updateItem(index, "inspectionCost", e.target.value)
-                            }
-                          />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label className="text-xs">Other Costs/Unit</Label>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            placeholder="0.00"
-                            value={item.otherCosts}
-                            onChange={(e) =>
-                              updateItem(index, "otherCosts", e.target.value)
-                            }
-                          />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label className="text-xs">Total Cost/Unit</Label>
-                          <Input
-                            value={item.totalCostPerUnit}
-                            readOnly
-                            className="bg-muted font-semibold"
-                          />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label className="text-xs">Margin %</Label>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            placeholder="0.00"
-                            value={item.marginPercentage}
-                            onChange={(e) =>
-                              updateItem(index, "marginPercentage", e.target.value)
-                            }
-                          />
-                        </div>
-                      </div>
-                      {item.totalCostPerUnit && (
-                        <div className="mt-2 flex gap-4 text-xs text-muted-foreground">
-                          <span>
-                            Selling Price = {item.totalCostPerUnit} x (1 + {item.marginPercentage || "0"}%) ={" "}
-                            <span className="font-semibold text-foreground">{item.unitRate || "0.00"}</span>
-                          </span>
-                        </div>
-                      )}
+                  {/* Size (combined) + OD + WT + Length + Ends */}
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                    <div className="grid gap-2">
+                      <Label>Size (NPS x Sch) *</Label>
+                      <SmartCombobox
+                        options={sizeOptions}
+                        value={item.sizeLabel || ""}
+                        onSelect={(s: any) => updateItem(index, "sizeId", s.id)}
+                        onChange={(text) => {
+                          // Allow typing to filter but don't set sizeId until selected
+                          setItems((prev) => {
+                            const newItems = [...prev];
+                            newItems[index] = { ...newItems[index], sizeLabel: text, sizeId: "" };
+                            return newItems;
+                          });
+                        }}
+                        displayFn={(s: any) => s.sizeLabel}
+                        filterFn={(s: any, query) =>
+                          s.sizeLabel.toLowerCase().includes(query.toLowerCase())
+                        }
+                        placeholder={hasPipeType ? "Type to search sizes..." : "Select product first"}
+                        disabled={!hasPipeType}
+                      />
                     </div>
-                  )}
+                    <div className="grid gap-2">
+                      <Label>OD (mm)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={item.od}
+                        onChange={(e) => updateItem(index, "od", e.target.value)}
+                        placeholder="Auto"
+                        readOnly={!!item.sizeId}
+                        className={item.sizeId ? "bg-muted" : ""}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>WT (mm)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={item.wt}
+                        onChange={(e) => updateItem(index, "wt", e.target.value)}
+                        placeholder="Auto"
+                        readOnly={!!item.sizeId}
+                        className={item.sizeId ? "bg-muted" : ""}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Length</Label>
+                      <Input
+                        value={item.length}
+                        onChange={(e) => updateItem(index, "length", e.target.value)}
+                        placeholder="9.00-11.8"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Ends</Label>
+                      <Select
+                        value={item.ends}
+                        onValueChange={(value) => updateItem(index, "ends", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="BE">BE</SelectItem>
+                          <SelectItem value="PE">PE</SelectItem>
+                          <SelectItem value="NPTM">NPTM</SelectItem>
+                          <SelectItem value="BSPT">BSPT</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                    <div className="grid gap-2">
+                      <Label>Qty (Mtr) *</Label>
+                      <Input
+                        type="number"
+                        step="0.001"
+                        value={item.quantity}
+                        onChange={(e) => updateItem(index, "quantity", e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Unit Rate ({formData.currency}) *</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={item.unitRate}
+                        onChange={(e) => updateItem(index, "unitRate", e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Amount ({formData.currency})</Label>
+                      <Input value={item.amount} readOnly className="bg-muted font-semibold" />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Delivery</Label>
+                      <Input
+                        value={item.delivery}
+                        onChange={(e) => updateItem(index, "delivery", e.target.value)}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Remark</Label>
+                      <Input
+                        value={item.remark}
+                        onChange={(e) => updateItem(index, "remark", e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Unit Weight + Total Weight row */}
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                    <div className="grid gap-2">
+                      <Label className="text-xs text-muted-foreground">Unit Wt (kg/m)</Label>
+                      <Input
+                        value={item.unitWeight}
+                        readOnly
+                        className="bg-muted text-sm h-8"
+                        placeholder="Auto from size"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label className="text-xs text-muted-foreground">Total Wt (MT)</Label>
+                      <Input
+                        value={item.totalWeightMT}
+                        readOnly
+                        className="bg-muted text-sm h-8"
+                        placeholder="Auto"
+                      />
+                    </div>
+                  </div>
+
                 </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
 
             {/* Totals */}
             <div className="flex justify-end gap-8 pt-4 border-t">
+              {totalWeight > 0 && (
+                <div className="text-right">
+                  <div className="text-sm text-muted-foreground">Total Weight</div>
+                  <div className="text-xl font-bold">{totalWeight.toFixed(3)} MT</div>
+                </div>
+              )}
               <div className="text-right">
                 <div className="text-sm text-muted-foreground">Total Amount</div>
                 <div className="text-2xl font-bold">
                   {formData.currency} {totalAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                 </div>
-              </div>
-              <div className="text-right">
-                <div className="text-sm text-muted-foreground">Total Weight</div>
-                <div className="text-2xl font-bold">{totalWeight.toFixed(4)} MT</div>
               </div>
             </div>
           </CardContent>
@@ -1227,32 +936,13 @@ function StandardQuotationPage() {
           </CardContent>
         </Card>
 
-        {/* Notes */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Quotation Notes</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              These 9 standard notes appear on every quotation PDF (not editable)
-            </p>
-          </CardHeader>
-          <CardContent>
-            <ol className="space-y-2 text-sm">
-              {hardCodedNotes.map((note, index) => (
-                <li key={index}>
-                  <span className="font-semibold">{index + 1})</span> {note}
-                </li>
-              ))}
-            </ol>
-          </CardContent>
-        </Card>
-
         {/* Actions */}
         <div className="flex justify-end gap-4">
           <Button type="button" variant="outline" onClick={() => router.push("/quotations/create")}>
             Cancel
           </Button>
           <Button type="submit" disabled={createMutation.isPending}>
-            {createMutation.isPending ? "Creating..." : "Create Quotation"}
+            {createMutation.isPending ? "Saving..." : editId ? "Update Quotation" : "Save Quotation"}
           </Button>
         </div>
       </form>

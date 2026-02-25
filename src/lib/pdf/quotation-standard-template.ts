@@ -22,6 +22,8 @@ interface QuotationData {
   quotationDate: string | Date;
   validUpto?: string | Date | null;
   currency: string;
+  inquiryNo?: string | null;
+  inquiryDate?: string | Date | null;
   customer: {
     name: string;
     addressLine1?: string | null;
@@ -34,10 +36,6 @@ interface QuotationData {
     email?: string | null;
     phone?: string | null;
   };
-  enquiry?: {
-    enquiryNo?: string;
-    enquiryDate?: string | Date;
-  } | null;
   preparedBy?: { name?: string; email?: string } | null;
   buyer?: {
     buyerName?: string | null;
@@ -89,8 +87,11 @@ function formatNumber(val: any, decimals: number = 2): string {
 
 export function generateStandardQuotationHtml(
   quotation: QuotationData,
-  company: CompanyInfo
+  company: CompanyInfo,
+  variant: "QUOTED" | "UNQUOTED" = "QUOTED"
 ): string {
+  const isUnquoted = variant === "UNQUOTED";
+
   const totalQty = quotation.items.reduce(
     (sum, item) => sum + (parseFloat(item.quantity) || 0),
     0
@@ -134,8 +135,8 @@ export function generateStandardQuotationHtml(
         <td class="cell-center">${escapeHtml(item.length)}</td>
         <td class="cell-center">${escapeHtml(item.ends)}</td>
         <td class="cell-center">${formatNumber(item.quantity, 0)}</td>
-        <td class="cell-center green-bg">${formatNumber(item.unitRate, 2)}</td>
-        <td class="cell-center">${formatNumber(item.amount, 0)}</td>
+        <td class="cell-center green-bg">${isUnquoted ? "QUOTED" : formatNumber(item.unitRate, 2)}</td>
+        <td class="cell-center">${isUnquoted ? "QUOTED" : formatNumber(item.amount, 0)}</td>
         <td class="cell-center">${escapeHtml(item.delivery)}</td>
         <td class="cell-center br-med">${escapeHtml(item.remark) || escapeHtml(item.materialCode?.code)}</td>
       </tr>`;
@@ -390,8 +391,8 @@ export function generateStandardQuotationHtml(
   <tr class="header-grid">
     <td class="hdr-label bt-med" colspan="2">Customer :</td>
     <td class="hdr-value bt-med" colspan="5">${escapeHtml(quotation.customer.name)}</td>
-    <td class="hdr-label bt-med" colspan="2">Enquiry Reference :</td>
-    <td class="hdr-value bt-med" colspan="3">${quotation.enquiry ? escapeHtml(quotation.enquiry.enquiryNo) : ""}</td>
+    <td class="hdr-label bt-med" colspan="2">Inquiry No. :</td>
+    <td class="hdr-value bt-med" colspan="3">${escapeHtml(quotation.inquiryNo)}</td>
     <td class="hdr-label-right bt-med" colspan="2">Quotation No. :</td>
     <td class="hdr-value-right bt-med" colspan="2">${escapeHtml(quotation.quotationNo)}</td>
   </tr>
@@ -399,8 +400,8 @@ export function generateStandardQuotationHtml(
   <tr class="header-grid">
     <td class="hdr-label" colspan="2">Address :</td>
     <td class="hdr-value" colspan="5">${escapeHtml(quotation.customer.addressLine1)}${quotation.customer.city ? `, ${escapeHtml(quotation.customer.city)}` : ""}</td>
-    <td class="hdr-label" colspan="2">Date :</td>
-    <td class="hdr-value" colspan="3">${quotation.enquiry?.enquiryDate ? formatDate(quotation.enquiry.enquiryDate) : ""}</td>
+    <td class="hdr-label" colspan="2">Inquiry Date :</td>
+    <td class="hdr-value" colspan="3">${formatDate(quotation.inquiryDate)}</td>
     <td class="hdr-label-right" colspan="2">Date :</td>
     <td class="hdr-value-right" colspan="2">${formatDate(quotation.quotationDate)}</td>
   </tr>
@@ -464,17 +465,17 @@ export function generateStandardQuotationHtml(
     <td colspan="11" class="bl-med" style="text-align:center">Total</td>
     <td>${formatNumber(totalQty, 0)}</td>
     <td class="green-bg"></td>
-    <td>${formatNumber(totalAmount, 0)}</td>
+    <td>${isUnquoted ? "" : formatNumber(totalAmount, 0)}</td>
     <td></td>
     <td class="br-med"></td>
   </tr>
 
-  <!-- Amount in Words -->
+  ${!isUnquoted ? `<!-- Amount in Words -->
   <tr>
     <td colspan="16" class="bl-med br-med" style="font-size:10pt;padding:4px 6px;text-align:left;">
       <strong>Amount in Words:</strong> ${escapeHtml(numberToWords(totalAmount, quotation.currency))}
     </td>
-  </tr>
+  </tr>` : ""}
 </table>
 
 <!-- ZONE 7-9: Terms + Notes + Footer — one block, never split -->

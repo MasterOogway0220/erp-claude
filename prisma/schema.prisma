@@ -122,28 +122,6 @@ enum InvoiceStatus {
   CANCELLED
 }
 
-enum EnquiryStatus {
-  OPEN
-  QUOTATION_PREPARED
-  WON
-  LOST
-  CANCELLED
-}
-
-enum EnquiryMode {
-  EMAIL
-  PHONE
-  WALK_IN
-  TENDER_PORTAL
-  REFERRAL
-}
-
-enum EnquiryPriority {
-  NORMAL
-  URGENT
-  CRITICAL
-}
-
 enum RequisitionType {
   AGAINST_SO
   STOCK_REPLENISHMENT
@@ -280,7 +258,6 @@ model CustomerMaster {
   updatedAt            DateTime     @updatedAt
 
   // Relations
-  enquiries            Enquiry[]
   quotations           Quotation[]
   salesOrders          SalesOrder[]
   invoices             Invoice[]
@@ -479,66 +456,12 @@ model TransporterMaster {
   dispatchNotes DispatchNote[]
 }
 
-// ==================== ENQUIRY & QUOTATION ====================
-
-model Enquiry {
-  id                String        @id @default(cuid())
-  enquiryNo         String        @unique
-  enquiryDate       DateTime      @default(now())
-  customerId        String
-  buyerName         String?
-  buyerDesignation  String?
-  buyerEmail        String?
-  buyerContact      String?
-  clientInquiryNo   String?
-  clientInquiryDate DateTime?
-  enquiryMode       EnquiryMode     @default(EMAIL)
-  projectName       String?
-  projectLocation   String?
-  endUser           String?
-  priority          EnquiryPriority @default(NORMAL)
-  expectedClosureDate DateTime?
-  remarks           String?         @db.Text
-  lostReason        String?
-  status            EnquiryStatus   @default(OPEN)
-  buyerId           String?
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
-
-  // Relations
-  customer   CustomerMaster @relation(fields: [customerId], references: [id])
-  buyer      BuyerMaster?   @relation(fields: [buyerId], references: [id])
-  items      EnquiryItem[]
-  quotations Quotation[]
-
-  @@index([enquiryNo])
-  @@index([customerId])
-}
-
-model EnquiryItem {
-  id             String   @id @default(cuid())
-  enquiryId      String
-  sNo            Int
-  product        String?
-  material       String?
-  additionalSpec String?
-  size           String?
-  ends           String?
-  quantity       Decimal? @db.Decimal(10, 3)
-  uom            String?
-  remarks        String?
-
-  // Relations
-  enquiry Enquiry @relation(fields: [enquiryId], references: [id], onDelete: Cascade)
-
-  @@index([enquiryId])
-}
+// ==================== QUOTATION ====================
 
 model Quotation {
   id                    String            @id @default(cuid())
   quotationNo           String
   quotationDate         DateTime          @default(now())
-  enquiryId             String?
   customerId            String
   quotationType         QuotationType     @default(DOMESTIC)
   quotationCategory     QuotationCategory @default(STANDARD)
@@ -570,6 +493,10 @@ model Quotation {
   revisionNotes         String?           @db.Text
   customerReference     String?
 
+  // Client inquiry reference
+  inquiryNo             String?
+  inquiryDate           DateTime?
+
   // Change tracking
   changeSnapshot        Json?
 
@@ -587,7 +514,6 @@ model Quotation {
   updatedAt             DateTime          @updatedAt
 
   // Relations
-  enquiry            Enquiry?            @relation(fields: [enquiryId], references: [id])
   customer           CustomerMaster      @relation(fields: [customerId], references: [id])
   parentQuotation    Quotation?          @relation("QuotationRevisions", fields: [parentQuotationId], references: [id])
   childQuotations    Quotation[]         @relation("QuotationRevisions")
@@ -604,7 +530,6 @@ model Quotation {
   @@unique([quotationNo, version])
   @@index([quotationNo])
   @@index([customerId])
-  @@index([enquiryId])
   @@index([buyerId])
   @@index([quotationCategory])
   @@index([parentQuotationId])
@@ -761,7 +686,6 @@ model BuyerMaster {
 
   // Relations
   customer   CustomerMaster @relation(fields: [customerId], references: [id])
-  enquiries  Enquiry[]
   quotations Quotation[]
 
   @@index([customerId])
@@ -841,7 +765,7 @@ model OfferTermTemplate {
   termName         String
   termDefaultValue String?
   sortOrder        Int      @default(0)
-  isExportOnly     Boolean  @default(false)
+  quotationType    String   @default("DOMESTIC") // "DOMESTIC" or "EXPORT"
   isActive         Boolean  @default(true)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt

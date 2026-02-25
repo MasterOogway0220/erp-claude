@@ -17,8 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, ArrowLeft, Building2, History, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
 
@@ -54,17 +53,6 @@ const emptyItem: NonStdItem = {
   delivery: "8-10 Weeks, Ex-works",
 };
 
-const hardCodedNotes = [
-  "Prices are subject to review if items are deleted or if quantities are changed.",
-  "This quotation is subject to confirmation at the time of order placement.",
-  "Invoicing shall be based on the actual quantity supplied at the agreed unit rate.",
-  "Shipping date will be calculated based on the number of business days after receipt of the techno-commercial Purchase Order (PO).",
-  "Supply shall be made as close as possible to the requested quantity in the fixed lengths indicated.",
-  "Once an order is placed, it cannot be cancelled under any circumstances.",
-  "The quoted specification complies with the standard practice of the specification, without supplementary requirements (unless otherwise specifically stated in the offer).",
-  "Reduction in quantity after placement of order will not be accepted. Any increase in quantity will be subject to our acceptance.",
-  "In case of any changes in Government duties, taxes, or policies, the rates are liable to revision.",
-];
 
 export default function NonStandardQuotationPageWrapper() {
   return (
@@ -77,17 +65,18 @@ export default function NonStandardQuotationPageWrapper() {
 function NonStandardQuotationPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const enquiryId = searchParams.get("enquiryId");
   const editId = searchParams.get("editId");
 
   const [formData, setFormData] = useState({
     customerId: "",
     buyerId: "",
-    enquiryId: enquiryId || "",
     quotationType: "DOMESTIC",
     quotationCategory: "NON_STANDARD",
-    currency: "USD",
+    currency: "INR",
     validUpto: "",
+    quotationDate: new Date().toISOString().split("T")[0],
+    inquiryNo: "",
+    inquiryDate: "",
   });
   const [items, setItems] = useState<NonStdItem[]>([emptyItem]);
   const [terms, setTerms] = useState<{
@@ -97,8 +86,18 @@ function NonStandardQuotationPage() {
     isCustom: boolean;
     isHeadingEditable: boolean;
   }[]>([]);
-  const [showHistory, setShowHistory] = useState(false);
   const [useStructuredInput, setUseStructuredInput] = useState<boolean[]>([true]);
+
+  // Preview quotation number
+  const { data: previewData } = useQuery({
+    queryKey: ["quotation-preview-number"],
+    queryFn: async () => {
+      const res = await fetch("/api/quotations/preview-number");
+      if (!res.ok) throw new Error("Failed to fetch preview number");
+      return res.json();
+    },
+    enabled: !editId,
+  });
 
   // Fetch customers
   const { data: customersData } = useQuery({
@@ -121,23 +120,12 @@ function NonStandardQuotationPage() {
     },
   });
 
-  // Fetch offer term templates
+  // Fetch offer term templates filtered by quotation type
   const { data: templatesData } = useQuery({
-    queryKey: ["offer-term-templates"],
+    queryKey: ["offer-term-templates", formData.quotationType],
     queryFn: async () => {
-      const res = await fetch("/api/offer-term-templates");
+      const res = await fetch(`/api/offer-term-templates?quotationType=${formData.quotationType}`);
       if (!res.ok) throw new Error("Failed to fetch templates");
-      return res.json();
-    },
-  });
-
-  // Fetch quotation history for selected customer
-  const { data: historyData } = useQuery({
-    queryKey: ["quotation-history", formData.customerId],
-    enabled: !!formData.customerId,
-    queryFn: async () => {
-      const res = await fetch(`/api/masters/customers/${formData.customerId}/quotation-history`);
-      if (!res.ok) throw new Error("Failed to fetch history");
       return res.json();
     },
   });
@@ -150,10 +138,12 @@ function NonStandardQuotationPage() {
     (b: any) => b.id === formData.buyerId
   );
 
-  // Auto-set currency for export
+  // Auto-set currency based on market type
   useEffect(() => {
     if (formData.quotationType === "EXPORT" && formData.currency === "INR") {
       setFormData((prev) => ({ ...prev, currency: "USD" }));
+    } else if (formData.quotationType === "DOMESTIC" && formData.currency !== "INR") {
+      setFormData((prev) => ({ ...prev, currency: "INR" }));
     }
   }, [formData.quotationType]);
 
@@ -169,14 +159,11 @@ function NonStandardQuotationPage() {
     setFormData((prev) => ({ ...prev, buyerId: "" }));
   }, [formData.customerId]);
 
-  // Set terms from templates
+  // Set terms from templates (skip if in edit mode with terms already loaded)
   useEffect(() => {
-    if (templatesData?.templates) {
-      const filtered = templatesData.templates.filter((t: any) =>
-        formData.quotationType === "EXPORT" ? true : !t.isExportOnly
-      );
+    if (templatesData?.templates && !(editData?.quotation?.terms?.length > 0)) {
       setTerms(
-        filtered.map((t: any) => ({
+        templatesData.templates.map((t: any) => ({
           termName: t.termName,
           termValue: t.termDefaultValue || "",
           isIncluded: true,
@@ -185,7 +172,7 @@ function NonStandardQuotationPage() {
         }))
       );
     }
-  }, [templatesData, formData.quotationType]);
+  }, [templatesData]);
 
   // Build description from structured fields
   const buildDescription = (item: NonStdItem): string => {
@@ -252,11 +239,13 @@ function NonStandardQuotationPage() {
       setFormData({
         customerId: q.customerId || "",
         buyerId: q.buyerId || "",
-        enquiryId: q.enquiryId || "",
         quotationType: q.quotationType || "DOMESTIC",
         quotationCategory: q.quotationCategory || "NON_STANDARD",
-        currency: q.currency || "USD",
+        currency: q.currency || "INR",
         validUpto: q.validUpto ? new Date(q.validUpto).toISOString().split("T")[0] : "",
+        quotationDate: q.quotationDate ? new Date(q.quotationDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+        inquiryNo: q.inquiryNo || "",
+        inquiryDate: q.inquiryDate ? new Date(q.inquiryDate).toISOString().split("T")[0] : "",
       });
       if (q.items?.length > 0) {
         setItems(q.items.map((item: any) => ({
@@ -322,16 +311,18 @@ function NonStandardQuotationPage() {
   };
 
   const updateItem = (index: number, field: keyof NonStdItem, value: string) => {
-    const newItems = [...items];
-    newItems[index][field] = value;
+    setItems((prev) => {
+      const newItems = prev.map((item, i) => (i === index ? { ...item } : item));
+      newItems[index][field] = value;
 
-    if (field === "quantity" || field === "unitRate") {
-      const qty = parseFloat(newItems[index].quantity) || 0;
-      const rate = parseFloat(newItems[index].unitRate) || 0;
-      newItems[index].amount = (qty * rate).toFixed(2);
-    }
+      if (field === "quantity" || field === "unitRate") {
+        const qty = parseFloat(newItems[index].quantity) || 0;
+        const rate = parseFloat(newItems[index].unitRate) || 0;
+        newItems[index].amount = (qty * rate).toFixed(2);
+      }
 
-    setItems(newItems);
+      return newItems;
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -376,6 +367,9 @@ function NonStandardQuotationPage() {
 
     createMutation.mutate({
       ...formData,
+      quotationDate: formData.quotationDate || undefined,
+      inquiryNo: formData.inquiryNo || undefined,
+      inquiryDate: formData.inquiryDate || undefined,
       items: apiItems,
       terms,
     });
@@ -385,7 +379,7 @@ function NonStandardQuotationPage() {
   const totalQty = items.reduce((sum, item) => sum + parseFloat(item.quantity || "0"), 0);
 
   return (
-    <div className="space-y-6 max-w-6xl">
+    <div className="space-y-6 max-w-7xl">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => router.push("/quotations/create")}>
           <ArrowLeft className="h-4 w-4" />
@@ -403,7 +397,8 @@ function NonStandardQuotationPage() {
             <CardTitle>Quotation Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            {/* Row 1: Customer, Buyer, Market Type, Quotation No, Rev No, Quotation Date */}
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
               <div className="grid gap-2">
                 <Label>Customer *</Label>
                 <Select
@@ -462,6 +457,38 @@ function NonStandardQuotationPage() {
               </div>
 
               <div className="grid gap-2">
+                <Label>Quotation No.</Label>
+                <Input
+                  value={editId ? (editData?.quotation?.quotationNo || "") : (previewData?.previewNumber || "")}
+                  readOnly
+                  className="bg-muted"
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Rev. No.</Label>
+                <Input
+                  value={editId ? String(editData?.quotation?.version ?? 0) : "0"}
+                  readOnly
+                  className="bg-muted"
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Quotation Date</Label>
+                <Input
+                  type="date"
+                  value={formData.quotationDate}
+                  onChange={(e) =>
+                    setFormData({ ...formData, quotationDate: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+
+            {/* Row 2: Currency, Valid Until, (empty), Inquiry No, Inquiry Date, (empty) */}
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+              <div className="grid gap-2">
                 <Label>Currency</Label>
                 <Select
                   value={formData.currency}
@@ -491,6 +518,32 @@ function NonStandardQuotationPage() {
                   }
                 />
               </div>
+
+              <div /> {/* spacer */}
+
+              <div className="grid gap-2">
+                <Label>Inquiry No.</Label>
+                <Input
+                  value={formData.inquiryNo}
+                  onChange={(e) =>
+                    setFormData({ ...formData, inquiryNo: e.target.value })
+                  }
+                  placeholder="Client inquiry ref."
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Inquiry Date</Label>
+                <Input
+                  type="date"
+                  value={formData.inquiryDate}
+                  onChange={(e) =>
+                    setFormData({ ...formData, inquiryDate: e.target.value })
+                  }
+                />
+              </div>
+
+              <div /> {/* spacer */}
             </div>
 
             {/* Customer + Buyer Info */}
@@ -499,19 +552,6 @@ function NonStandardQuotationPage() {
                 <div className="flex items-center gap-2 mb-3">
                   <Building2 className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm font-medium">Customer Details</span>
-                  {formData.customerId && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="ml-auto h-7 text-xs"
-                      onClick={() => setShowHistory(!showHistory)}
-                    >
-                      <History className="h-3 w-3 mr-1" />
-                      History
-                      {showHistory ? <ChevronUp className="h-3 w-3 ml-1" /> : <ChevronDown className="h-3 w-3 ml-1" />}
-                    </Button>
-                  )}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-2 text-sm">
                   {(selectedCustomer.addressLine1 || selectedCustomer.city) && (
@@ -527,30 +567,7 @@ function NonStandardQuotationPage() {
                       {selectedBuyer.designation && ` (${selectedBuyer.designation})`}
                     </div>
                   )}
-                  {selectedCustomer.gstNo && (
-                    <div><span className="text-muted-foreground">GST:</span> {selectedCustomer.gstNo}</div>
-                  )}
                 </div>
-              </div>
-            )}
-
-            {/* History Panel */}
-            {showHistory && historyData?.quotations?.length > 0 && (
-              <div className="rounded-lg border p-4 max-h-48 overflow-y-auto">
-                <h4 className="text-sm font-medium mb-2">Previous Quotations</h4>
-                {historyData.quotations.map((q: any) => (
-                  <div key={q.id} className="flex items-center justify-between text-sm border-b pb-2 mb-2 last:border-0">
-                    <div className="flex items-center gap-3">
-                      <span className="font-mono text-xs">{q.quotationNo}</span>
-                      <span className="text-muted-foreground text-xs">
-                        {new Date(q.quotationDate).toLocaleDateString("en-IN")}
-                      </span>
-                    </div>
-                    <Badge variant={q.status === "WON" ? "default" : "secondary"} className="text-xs">
-                      {q.status}
-                    </Badge>
-                  </div>
-                ))}
               </div>
             )}
           </CardContent>
@@ -829,32 +846,13 @@ function NonStandardQuotationPage() {
           </CardContent>
         </Card>
 
-        {/* Notes */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Quotation Notes</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              These 9 standard notes appear on every quotation PDF
-            </p>
-          </CardHeader>
-          <CardContent>
-            <ol className="space-y-2 text-sm">
-              {hardCodedNotes.map((note, i) => (
-                <li key={i}>
-                  <span className="font-semibold">{i + 1})</span> {note}
-                </li>
-              ))}
-            </ol>
-          </CardContent>
-        </Card>
-
         {/* Actions */}
         <div className="flex justify-end gap-4">
           <Button type="button" variant="outline" onClick={() => router.push("/quotations/create")}>
             Cancel
           </Button>
           <Button type="submit" disabled={createMutation.isPending}>
-            {createMutation.isPending ? "Creating..." : "Create Quotation"}
+            {createMutation.isPending ? "Saving..." : editId ? "Update Quotation" : "Save Quotation"}
           </Button>
         </div>
       </form>

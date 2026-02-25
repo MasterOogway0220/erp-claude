@@ -447,32 +447,25 @@ export default function QuotationDetailPage() {
               <Mail className="h-4 w-4 mr-2" />
               {quotation.status === "SENT" ? "Resend" : "Send to Customer"}
             </Button>
-            {quotation.quotationCategory === "NON_STANDARD" ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" disabled={isDownloading}>
-                    <Download className="h-4 w-4 mr-2" />
-                    {isDownloading ? "Generating..." : "Download PDF"}
-                    <ChevronDown className="h-4 w-4 ml-2" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem onClick={() => handleDownloadPDF("commercial")}>
-                    <FileText className="h-4 w-4 mr-2" />
-                    Commercial PDF
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleDownloadPDF("technical")}>
-                    <FileText className="h-4 w-4 mr-2" />
-                    Technical PDF
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Button variant="outline" onClick={() => handleDownloadPDF()} disabled={isDownloading}>
-                <Download className="h-4 w-4 mr-2" />
-                {isDownloading ? "Generating PDF..." : "Download PDF"}
-              </Button>
-            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" disabled={isDownloading}>
+                  <Download className="h-4 w-4 mr-2" />
+                  {isDownloading ? "Generating..." : "Download PDF"}
+                  <ChevronDown className="h-4 w-4 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => handleDownloadPDF("quoted")}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Quoted PDF
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleDownloadPDF("unquoted")}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Unquoted PDF
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             {quotation.status === "SENT" && (
               <Button
                 variant="default"
@@ -554,6 +547,20 @@ export default function QuotationDetailPage() {
                 </div>
               </div>
             )}
+            {quotation.inquiryNo && (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="text-sm text-muted-foreground">Inquiry No.</div>
+                <div className="font-medium">{quotation.inquiryNo}</div>
+              </div>
+            )}
+            {quotation.inquiryDate && (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="text-sm text-muted-foreground">Inquiry Date</div>
+                <div className="font-medium">
+                  {format(new Date(quotation.inquiryDate), "dd MMM yyyy")}
+                </div>
+              </div>
+            )}
             {quotation.revisionTrigger && (
               <div className="grid grid-cols-2 gap-2">
                 <div className="text-sm text-muted-foreground">Revision Reason</div>
@@ -621,20 +628,6 @@ export default function QuotationDetailPage() {
                 <div className="text-sm text-muted-foreground">Sent Date</div>
                 <div className="font-medium">
                   {format(new Date(quotation.sentDate), "dd MMM yyyy")}
-                </div>
-              </div>
-            )}
-            {quotation.enquiry && (
-              <div className="grid grid-cols-2 gap-2">
-                <div className="text-sm text-muted-foreground">Linked Enquiry</div>
-                <div className="font-medium">
-                  <Button
-                    variant="link"
-                    className="p-0 h-auto"
-                    onClick={() => router.push(`/enquiries/${quotation.enquiry.id}`)}
-                  >
-                    {quotation.enquiry.enquiryNo}
-                  </Button>
                 </div>
               </div>
             )}
