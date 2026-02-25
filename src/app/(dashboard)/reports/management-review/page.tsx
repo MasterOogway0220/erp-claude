@@ -31,7 +31,6 @@ interface SalesMetrics {
   revenue: number;
   orderCount: number;
   openSOCount: number;
-  enquiryCount: number;
   quotationCount: number;
   openSOValue: number;
   poCount: number;
@@ -140,7 +139,6 @@ export default function ManagementReviewPage() {
     revenue: 0,
     orderCount: 0,
     openSOCount: 0,
-    enquiryCount: 0,
     quotationCount: 0,
     openSOValue: 0,
     poCount: 0,
@@ -229,14 +227,6 @@ export default function ManagementReviewPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{sales.orderCount}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Open Enquiries</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{sales.enquiryCount}</div>
             </CardContent>
           </Card>
           <Card>

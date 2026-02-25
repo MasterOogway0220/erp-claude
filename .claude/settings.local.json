@@ -98,7 +98,13 @@
       "Bash(head:*)",
       "Bash(kill %1:*)",
       "WebSearch",
-      "WebFetch(domain:ui.shadcn.com)"
+      "WebFetch(domain:ui.shadcn.com)",
+      "WebFetch(domain:app.letstranzact.com)",
+      "Bash(pip3 install:*)",
+      "Bash(/opt/homebrew/Cellar/postgresql@17/17.7_1/bin/psql:*)",
+      "Bash(git log:*)",
+      "Bash(which psql 2>/dev/null || brew --prefix postgresql 2>/dev/null || ls /opt/homebrew/opt/postgresql*/bin/psql 2>/dev/null || ls /usr/local/opt/postgresql*/bin/psql 2>/dev/null)",
+      "Bash(/opt/homebrew/opt/postgresql@14/bin/psql nps_erp:*)"
     ]
   }
 }

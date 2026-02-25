@@ -195,7 +195,7 @@ export default function QuotationAnalysisPage() {
       {(data as any).lostReasonsSummary && (data as any).lostReasonsSummary.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Lost Enquiry Reasons</CardTitle>
+            <CardTitle>Lost Quotation Reasons</CardTitle>
           </CardHeader>
           <CardContent>
             <Table>

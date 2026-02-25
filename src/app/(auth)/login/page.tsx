@@ -96,8 +96,8 @@ export default function LoginPage() {
           <div className="space-y-4 max-w-md">
             <FeatureItem
               icon={<ArrowRightLeft className="h-5 w-5" />}
-              title="Enquiry to Cash"
-              description="Complete workflow from enquiry, quotation, purchase orders through to invoicing and dispatch."
+              title="Quotation to Cash"
+              description="Complete workflow from quotation, purchase orders through to invoicing and dispatch."
             />
             <FeatureItem
               icon={<ShieldCheck className="h-5 w-5" />}

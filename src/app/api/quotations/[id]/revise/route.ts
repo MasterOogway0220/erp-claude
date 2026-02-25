@@ -273,7 +273,6 @@ export async function POST(
         data: {
           quotationNo: original.quotationNo, // FE-12: Same quotation number
           quotationDate: new Date(),
-          enquiryId: original.enquiryId, // FE-02: Cannot change
           customerId: original.customerId, // FE-01: Cannot change
           quotationType: original.quotationType, // FE-03: Cannot change
           quotationCategory: original.quotationCategory, // FE-04: Cannot change

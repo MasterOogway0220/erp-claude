@@ -3,13 +3,19 @@ import { checkAccess } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const { authorized, response } = await checkAccess("masters", "read");
     if (!authorized) return response!;
 
+    const quotationType = request.nextUrl.searchParams.get("quotationType");
+    const includeInactive = request.nextUrl.searchParams.get("includeInactive") === "true";
+
     const templates = await prisma.offerTermTemplate.findMany({
-      where: { isActive: true },
+      where: {
+        ...(!includeInactive ? { isActive: true } : {}),
+        ...(quotationType ? { quotationType } : {}),
+      },
       orderBy: { sortOrder: "asc" },
     });
 
@@ -37,8 +43,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get max sortOrder
+    // Get max sortOrder for the given quotationType
+    const qt = body.quotationType || "DOMESTIC";
     const maxSort = await prisma.offerTermTemplate.findFirst({
+      where: { quotationType: qt },
       orderBy: { sortOrder: "desc" },
       select: { sortOrder: true },
     });
@@ -48,7 +56,7 @@ export async function POST(request: NextRequest) {
         termName: body.termName,
         termDefaultValue: body.termDefaultValue || null,
         sortOrder: body.sortOrder ?? (maxSort ? maxSort.sortOrder + 1 : 1),
-        isExportOnly: body.isExportOnly ?? false,
+        quotationType: qt,
         isActive: body.isActive ?? true,
       },
     });
@@ -90,7 +98,7 @@ export async function PATCH(request: NextRequest) {
         termName: body.termName,
         termDefaultValue: body.termDefaultValue,
         sortOrder: body.sortOrder,
-        isExportOnly: body.isExportOnly,
+        quotationType: body.quotationType,
         isActive: body.isActive,
       },
     });

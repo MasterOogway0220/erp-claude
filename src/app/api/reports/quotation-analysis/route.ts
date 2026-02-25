@@ -29,30 +29,7 @@ export async function GET(request: NextRequest) {
         ? Number(((wonCount / totalQuotations) * 100).toFixed(2))
         : 0;
 
-    // Average response time: difference between quotation date and associated enquiry date
-    const quotationsWithEnquiry = await prisma.quotation.findMany({
-      where: { enquiryId: { not: null } },
-      select: {
-        quotationDate: true,
-        enquiry: {
-          select: { enquiryDate: true },
-        },
-      },
-    });
-
-    let avgResponseTimeDays = 0;
-    if (quotationsWithEnquiry.length > 0) {
-      const totalDays = quotationsWithEnquiry.reduce((sum, q) => {
-        if (!q.enquiry) return sum;
-        const diffMs =
-          q.quotationDate.getTime() - q.enquiry.enquiryDate.getTime();
-        const diffDays = diffMs / (1000 * 60 * 60 * 24);
-        return sum + Math.max(0, diffDays);
-      }, 0);
-      avgResponseTimeDays = Number(
-        (totalDays / quotationsWithEnquiry.length).toFixed(1)
-      );
-    }
+    const avgResponseTimeDays = 0;
 
     // Recent 10 quotations
     const recentQuotations = await prisma.quotation.findMany({
@@ -62,20 +39,17 @@ export async function GET(request: NextRequest) {
         customer: {
           select: { id: true, name: true },
         },
-        enquiry: {
-          select: { id: true, enquiryNo: true },
-        },
       },
     });
 
-    // Lost reasons from enquiries
-    const lostReasons = await prisma.enquiry.findMany({
-      where: { status: "LOST", lostReason: { not: null } },
-      select: { lostReason: true },
+    // Lost reasons from quotations
+    const lostQuotations = await prisma.quotation.findMany({
+      where: { status: "LOST", lossReason: { not: null } },
+      select: { lossReason: true },
     });
     const reasonCounts: Record<string, number> = {};
-    for (const e of lostReasons) {
-      const reason = e.lostReason || "Unknown";
+    for (const q of lostQuotations) {
+      const reason = q.lossReason || "Unknown";
       reasonCounts[reason] = (reasonCounts[reason] || 0) + 1;
     }
     const lostReasonsSummary = Object.entries(reasonCounts)

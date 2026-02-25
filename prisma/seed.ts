@@ -302,7 +302,6 @@ async function seedDocumentSequences() {
   const financialYear = fy.toString().padStart(2, "0");
 
   const sequences = [
-    { documentType: "ENQUIRY", prefix: "ENQ" },
     { documentType: "QUOTATION", prefix: "NPS" },
     { documentType: "SALES_ORDER", prefix: "SO" },
     { documentType: "PURCHASE_REQUISITION", prefix: "PR" },
@@ -438,27 +437,53 @@ async function seedFinancialYears() {
 
 async function seedOfferTermTemplates() {
   console.log("Seeding Offer Term Templates...");
-  const terms = [
-    { termName: "Price", termDefaultValue: "As mentioned above", sortOrder: 1, isExportOnly: false },
-    { termName: "Delivery", termDefaultValue: "4-6 weeks from the date of confirmed order", sortOrder: 2, isExportOnly: false },
-    { termName: "Payment", termDefaultValue: "100% against Proforma Invoice before dispatch", sortOrder: 3, isExportOnly: false },
-    { termName: "GST", termDefaultValue: "As applicable extra", sortOrder: 4, isExportOnly: false },
-    { termName: "Packing", termDefaultValue: "Standard seaworthy export packing", sortOrder: 5, isExportOnly: false },
-    { termName: "Freight", termDefaultValue: "Extra at actuals", sortOrder: 6, isExportOnly: false },
-    { termName: "Insurance", termDefaultValue: "Extra at actuals", sortOrder: 7, isExportOnly: false },
-    { termName: "Validity", termDefaultValue: "7 days from the date of offer", sortOrder: 8, isExportOnly: false },
-    { termName: "MTC", termDefaultValue: "EN 10204 3.1 Mill Test Certificate", sortOrder: 9, isExportOnly: false },
-    { termName: "Inspection", termDefaultValue: "Manufacturer's standard inspection", sortOrder: 10, isExportOnly: false },
-    { termName: "Testing", termDefaultValue: "As per applicable standard", sortOrder: 11, isExportOnly: false },
-    { termName: "Origin", termDefaultValue: "Indian", sortOrder: 12, isExportOnly: true },
-    { termName: "Quantity Tolerance", termDefaultValue: "+/- 10% at our option", sortOrder: 13, isExportOnly: false },
-    { termName: "Dimension Tolerance", termDefaultValue: "As per applicable standard", sortOrder: 14, isExportOnly: false },
-    { termName: "Part Orders", termDefaultValue: "Allowed", sortOrder: 15, isExportOnly: false },
+
+  const domesticTerms = [
+    { termName: "Price", termDefaultValue: "Ex-Godown, Navi Mumbai, India" },
+    { termName: "Delivery", termDefaultValue: "As above FOR Site basis + QAP approval Period. LR date will be considered as the date of delivery." },
+    { termName: "Payment", termDefaultValue: "100% within 30 days after receipt of materials." },
+    { termName: "Offer validity", termDefaultValue: "1 week; further subject to our acceptance." },
+    { termName: "Freight", termDefaultValue: "Extra at actual / To your account" },
+    { termName: "TPI & Testing", termDefaultValue: "Inclusive" },
+    { termName: "P & F charges", termDefaultValue: "NIL" },
+    { termName: "Insurance", termDefaultValue: "To your account. Dispatch details will be shared immediately after dispatch." },
+    { termName: "GST", termDefaultValue: "18% GST extra" },
+    { termName: "Certification", termDefaultValue: "MTC as per EN 10204 - 3.1" },
+    { termName: "Material origin", termDefaultValue: "EIL Approved Mill" },
+    { termName: "Quantity tolerance", termDefaultValue: "-0/+1 R/L of 5 to 7 mtrs" },
+    { termName: "Part orders", termDefaultValue: "Acceptable, subject to reconfirmation" },
+    { termName: "LD Clause", termDefaultValue: "Acceptable, 0.5% per week, maximum 5%" },
   ];
-  for (const t of terms) {
-    await prisma.offerTermTemplate.create({ data: t });
+
+  const exportTerms = [
+    { termName: "Currency", termDefaultValue: "USD ($)" },
+    { termName: "Price", termDefaultValue: "Ex-work, Mumbai, India/ Jebel Ali, UAE" },
+    { termName: "Delivery", termDefaultValue: "As above, ex-works, after receipt of PO" },
+    { termName: "Payment", termDefaultValue: "100% within 30 Days from date of dispatch" },
+    { termName: "Offer validity", termDefaultValue: "6 Days, subject to stock remain unsold" },
+    { termName: "Packing", termDefaultValue: "Inclusive" },
+    { termName: "Freight", termDefaultValue: "Extra at actual / To your account" },
+    { termName: "Insurance", termDefaultValue: "Extra at actual / To your account" },
+    { termName: "Certification", termDefaultValue: "Not Applicable" },
+    { termName: "T/T charges", termDefaultValue: "To your account, Full Invoice amount to be remitted. No deduction of T/T charges acceptable." },
+    { termName: "Third Party Inspection", termDefaultValue: "Not Applicable" },
+    { termName: "Material origin", termDefaultValue: "International" },
+    { termName: "Qty. Tolerance", termDefaultValue: "Not Applicable" },
+    { termName: "Dimension Tolerance", termDefaultValue: "Not Applicable" },
+    { termName: "Part orders", termDefaultValue: "Not Applicable" },
+  ];
+
+  for (let i = 0; i < domesticTerms.length; i++) {
+    await prisma.offerTermTemplate.create({
+      data: { ...domesticTerms[i], sortOrder: i + 1, quotationType: "DOMESTIC", isActive: true },
+    });
   }
-  console.log(`  Inserted ${terms.length} offer term templates`);
+  for (let i = 0; i < exportTerms.length; i++) {
+    await prisma.offerTermTemplate.create({
+      data: { ...exportTerms[i], sortOrder: i + 1, quotationType: "EXPORT", isActive: true },
+    });
+  }
+  console.log(`  Inserted ${domesticTerms.length} domestic + ${exportTerms.length} export offer term templates`);
 }
 
 async function main() {
@@ -495,8 +520,6 @@ async function main() {
   await prisma.quotationTerm.deleteMany();
   await prisma.quotationItem.deleteMany();
   await prisma.quotation.deleteMany();
-  await prisma.enquiryItem.deleteMany();
-  await prisma.enquiry.deleteMany();
   // New tables
   await prisma.customerTag.deleteMany();
   await prisma.tag.deleteMany();

@@ -11,7 +11,6 @@ export async function GET(request: NextRequest) {
     const [
       revenueAgg,
       orderCount,
-      enquiryCount,
       quotationCount,
       totalQuotations,
       wonQuotations,
@@ -25,7 +24,6 @@ export async function GET(request: NextRequest) {
         _sum: { totalAmount: true },
       }),
       prisma.salesOrder.count(),
-      prisma.enquiry.count({ where: { status: "OPEN" } }),
       prisma.quotation.count({ where: { status: { in: ["DRAFT", "SENT", "APPROVED", "PENDING_APPROVAL"] } } }),
       prisma.quotation.count(),
       prisma.quotation.count({ where: { status: "WON" } }),
@@ -239,7 +237,6 @@ export async function GET(request: NextRequest) {
         revenue,
         orderCount,
         openSOCount,
-        enquiryCount,
         quotationCount,
         openSOValue,
         poCount,

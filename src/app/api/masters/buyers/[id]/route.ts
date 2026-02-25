@@ -92,7 +92,7 @@ export async function DELETE(
       where: { id },
       select: {
         buyerName: true,
-        _count: { select: { enquiries: true, quotations: true } },
+        _count: { select: { quotations: true } },
       },
     });
 
@@ -100,11 +100,11 @@ export async function DELETE(
       return NextResponse.json({ error: "Buyer not found" }, { status: 404 });
     }
 
-    const linkedCount = buyer._count.enquiries + buyer._count.quotations;
+    const linkedCount = buyer._count.quotations;
     if (linkedCount > 0) {
       return NextResponse.json(
         {
-          error: `Cannot delete buyer "${buyer.buyerName}". It has ${buyer._count.enquiries} enquiries and ${buyer._count.quotations} quotations linked. Deactivate instead.`,
+          error: `Cannot delete buyer "${buyer.buyerName}". It has ${buyer._count.quotations} quotations linked. Deactivate instead.`,
         },
         { status: 400 }
       );

@@ -17,7 +17,6 @@ export async function GET(request: NextRequest) {
     const searchFilter = { contains: q, mode: "insensitive" as const };
 
     const [
-      enquiries,
       quotations,
       salesOrders,
       purchaseOrders,
@@ -29,12 +28,6 @@ export async function GET(request: NextRequest) {
       dispatchNotes,
       invoices,
     ] = await Promise.all([
-      prisma.enquiry.findMany({
-        where: { enquiryNo: searchFilter },
-        select: { id: true, enquiryNo: true, projectName: true, status: true },
-        take: 5,
-        orderBy: { enquiryDate: "desc" },
-      }),
       prisma.quotation.findMany({
         where: { quotationNo: searchFilter },
         select: { id: true, quotationNo: true, status: true, customer: { select: { name: true } } },
@@ -98,13 +91,6 @@ export async function GET(request: NextRequest) {
     ]);
 
     const results = [
-      ...enquiries.map((e) => ({
-        type: "Enquiry" as const,
-        id: e.id,
-        label: e.enquiryNo,
-        description: e.projectName || e.status,
-        href: `/enquiries/${e.id}`,
-      })),
       ...quotations.map((q) => ({
         type: "Quotation" as const,
         id: q.id,

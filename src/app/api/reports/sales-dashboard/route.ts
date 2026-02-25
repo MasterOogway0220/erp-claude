@@ -47,9 +47,8 @@ export async function GET(request: NextRequest) {
     const totalRevenue = paidInvoices._sum.totalAmount ?? 0;
 
     // Count totals
-    const [totalEnquiries, totalQuotations, totalSalesOrders, wonQuotations] =
+    const [totalQuotations, totalSalesOrders, wonQuotations] =
       await Promise.all([
-        prisma.enquiry.count({ where: fromDate || toDate ? { createdAt: { ...(fromDate ? { gte: fromDate } : {}), ...(toDate ? { lte: toDate } : {}) } } : undefined }),
         prisma.quotation.count({ where: quotationDateFilter.createdAt ? { createdAt: quotationDateFilter.createdAt } : undefined }),
         prisma.salesOrder.count({ where: soDateFilter.soDate ? { soDate: soDateFilter.soDate } : undefined }),
         prisma.quotation.count({ where: { status: "WON", ...(quotationDateFilter.createdAt ? { createdAt: quotationDateFilter.createdAt } : {}) } }),
@@ -115,7 +114,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       totalRevenue,
-      totalEnquiries,
       totalQuotations,
       totalSalesOrders,
       conversionRate,

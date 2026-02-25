@@ -175,7 +175,6 @@ export async function DELETE(
         name: true,
         _count: {
           select: {
-            enquiries: true,
             quotations: true,
             salesOrders: true,
             invoices: true,
@@ -189,7 +188,6 @@ export async function DELETE(
     }
 
     const linkedCount =
-      customer._count.enquiries +
       customer._count.quotations +
       customer._count.salesOrders +
       customer._count.invoices;
@@ -197,7 +195,7 @@ export async function DELETE(
     if (linkedCount > 0) {
       return NextResponse.json(
         {
-          error: `Cannot delete customer "${customer.name}". It has ${customer._count.enquiries} enquiries, ${customer._count.quotations} quotations, ${customer._count.salesOrders} sales orders, and ${customer._count.invoices} invoices linked. Deactivate instead.`,
+          error: `Cannot delete customer "${customer.name}". It has ${customer._count.quotations} quotations, ${customer._count.salesOrders} sales orders, and ${customer._count.invoices} invoices linked. Deactivate instead.`,
         },
         { status: 400 }
       );

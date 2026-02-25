@@ -8,7 +8,6 @@ const labelMap: Record<string, string> = {
   // Top-level modules
   masters: "Masters",
   quotations: "Quotations",
-  enquiries: "Enquiries",
   sales: "Sales Orders",
   purchase: "Purchase",
   inventory: "Inventory",

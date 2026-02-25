@@ -22,7 +22,6 @@ export enum AuditAction {
 }
 
 export enum AuditModule {
-  ENQUIRY = 'ENQUIRY',
   QUOTATION = 'QUOTATION',
   SALES_ORDER = 'SALES_ORDER',
   PURCHASE_REQUISITION = 'PURCHASE_REQUISITION',

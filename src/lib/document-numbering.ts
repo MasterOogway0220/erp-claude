@@ -1,7 +1,6 @@
 import { prisma } from "./prisma";
 
 export type DocumentType =
-  | "ENQUIRY"
   | "QUOTATION"
   | "SALES_ORDER"
   | "PURCHASE_REQUISITION"
@@ -19,8 +18,7 @@ export type DocumentType =
   | "CREDIT_NOTE"
   | "DEBIT_NOTE";
 
-const PREFIXES: Record<DocumentType, string> = {
-  ENQUIRY: "ENQ",
+export const PREFIXES: Record<DocumentType, string> = {
   QUOTATION: "NPS",
   SALES_ORDER: "SO",
   PURCHASE_REQUISITION: "PR",
@@ -39,7 +37,7 @@ const PREFIXES: Record<DocumentType, string> = {
   DEBIT_NOTE: "DBN",
 };
 
-function getCurrentFinancialYear(): string {
+export function getCurrentFinancialYear(): string {
   const now = new Date();
   const month = now.getMonth() + 1; // 1-12
   const year = now.getFullYear();

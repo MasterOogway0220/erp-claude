@@ -32,7 +32,6 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
-  Mail,
   X,
   LogOut,
 } from "lucide-react";
@@ -91,6 +90,7 @@ const navSections: NavSection[] = [
           { title: "Tax Rates", href: "/masters/tax" },
           { title: "Inspection Agencies", href: "/masters/inspection-agencies" },
           { title: "Financial Years", href: "/masters/financial-years", roles: ["ADMIN"] },
+          { title: "Offer Terms", href: "/masters/offer-terms" },
           { title: "Other Masters", href: "/masters/other" },
         ],
       },
@@ -99,16 +99,6 @@ const navSections: NavSection[] = [
   {
     label: "OPERATIONS",
     items: [
-      {
-        title: "Enquiries",
-        icon: <Mail className="h-5 w-5" />,
-        iconColorClass: "text-amber-500",
-        roles: ["SALES", "MANAGEMENT", "ADMIN"],
-        children: [
-          { title: "Enquiry List", href: "/enquiries" },
-          { title: "Create Enquiry", href: "/enquiries/create" },
-        ],
-      },
       {
         title: "Quotations",
         icon: <FileText className="h-5 w-5" />,

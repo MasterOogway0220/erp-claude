@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/dialog";
 import {
   Search,
-  FileQuestion,
   FileText,
   ShoppingCart,
   Package,
@@ -41,7 +40,6 @@ interface GroupedResults {
 // ==================== Entity icons ====================
 
 const entityIcons: Record<string, React.ReactNode> = {
-  Enquiry: <FileQuestion className="h-4 w-4 text-blue-500" />,
   Quotation: <FileText className="h-4 w-4 text-green-500" />,
   "Sales Order": <ShoppingCart className="h-4 w-4 text-purple-500" />,
   "Purchase Order": <Package className="h-4 w-4 text-orange-500" />,
@@ -226,7 +224,7 @@ export function GlobalSearch() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Search enquiries, quotations, orders, stock..."
+              placeholder="Search quotations, orders, stock..."
               className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none h-11"
             />
           </div>

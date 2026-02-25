@@ -44,7 +44,6 @@ export async function POST(
       where: { id },
       include: {
         customer: true,
-        enquiry: true,
         preparedBy: { select: { name: true, email: true } },
         buyer: true,
         items: {
@@ -73,40 +72,26 @@ export async function POST(
     const baseName = quotation.quotationNo.replace(/\//g, "-");
 
     try {
-      if (isNonStandard) {
-        // Generate sequentially to avoid resource issues
-        const commercialHtml = generateNonStandardQuotationHtml(
-          quotation as any,
-          companyInfo as any,
-          "COMMERCIAL"
-        );
-        const commercialBuf = await renderHtmlToPdf(commercialHtml, false);
-        attachments.push({
-          filename: `${baseName}-COMMERCIAL.pdf`,
-          content: commercialBuf,
-        });
+      const landscape = !isNonStandard;
+      const generateHtml = isNonStandard
+        ? generateNonStandardQuotationHtml
+        : generateStandardQuotationHtml;
 
-        const technicalHtml = generateNonStandardQuotationHtml(
-          quotation as any,
-          companyInfo as any,
-          "TECHNICAL"
-        );
-        const technicalBuf = await renderHtmlToPdf(technicalHtml, false);
-        attachments.push({
-          filename: `${baseName}-TECHNICAL.pdf`,
-          content: technicalBuf,
-        });
-      } else {
-        const html = generateStandardQuotationHtml(
-          quotation as any,
-          companyInfo as any
-        );
-        const pdfBuffer = await renderHtmlToPdf(html, true);
-        attachments.push({
-          filename: `${baseName}.pdf`,
-          content: pdfBuffer,
-        });
-      }
+      // Generate Quoted PDF
+      const quotedHtml = generateHtml(quotation as any, companyInfo as any, "QUOTED");
+      const quotedBuf = await renderHtmlToPdf(quotedHtml, landscape);
+      attachments.push({
+        filename: `${baseName}.pdf`,
+        content: quotedBuf,
+      });
+
+      // Generate Unquoted PDF
+      const unquotedHtml = generateHtml(quotation as any, companyInfo as any, "UNQUOTED");
+      const unquotedBuf = await renderHtmlToPdf(unquotedHtml, landscape);
+      attachments.push({
+        filename: `${baseName}-UNQUOTED.pdf`,
+        content: unquotedBuf,
+      });
     } catch (pdfError) {
       console.error("Error generating PDF for email attachment:", pdfError);
       return NextResponse.json(

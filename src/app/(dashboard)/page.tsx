@@ -34,7 +34,6 @@ import {
   TrendingUp,
   ReceiptText,
   PackageCheck,
-  Search,
   ScrollText,
 } from "lucide-react";
 
@@ -129,11 +128,6 @@ export default function DashboardPage() {
   // Compact metric cards (bottom rows - 8 smaller)
   const compactCards = [
     {
-      title: "Open Enquiries",
-      value: metrics?.salesMetrics?.enquiryCount ?? "0",
-      icon: <Search className="h-5 w-5 text-blue-500" />,
-    },
-    {
       title: "Sales Orders",
       value: metrics?.salesMetrics?.orderCount ?? "0",
       icon: <ShoppingCart className="h-5 w-5 text-purple-500" />,
@@ -178,12 +172,6 @@ export default function DashboardPage() {
 
   const quickActions = [
     {
-      label: "New Enquiry",
-      href: "/enquiries/create",
-      icon: <Search className="h-4 w-4" />,
-      color: "bg-blue-600 hover:bg-blue-700 text-white",
-    },
-    {
       label: "Create Quotation",
       href: "/quotations/create",
       icon: <ScrollText className="h-4 w-4" />,
@@ -205,7 +193,6 @@ export default function DashboardPage() {
 
   // Quick stats for the summary bar
   const quickStats = [
-    { label: "Enquiries", value: metrics?.salesMetrics?.enquiryCount ?? "—" },
     { label: "Quotations", value: metrics?.salesMetrics?.quotationCount ?? "—" },
     { label: "Orders", value: metrics?.salesMetrics?.orderCount ?? "—" },
     { label: "Stock Items", value: metrics?.inventoryMetrics?.totalStock ?? "—" },

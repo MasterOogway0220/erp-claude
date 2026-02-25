@@ -35,7 +35,6 @@ export async function GET(
       where: { id },
       include: {
         customer: true,
-        enquiry: true,
         preparedBy: { select: { name: true, email: true } },
         buyer: true,
         items: {
@@ -58,32 +57,22 @@ export async function GET(
 
     const isNonStandard = quotation.quotationCategory === "NON_STANDARD";
 
-    let resolvedVariant: "standard" | "commercial" | "technical";
-    if (variant === "auto") {
-      resolvedVariant = isNonStandard ? "commercial" : "standard";
-    } else {
-      resolvedVariant = variant as "standard" | "commercial" | "technical";
-    }
+    // Resolve variant: "quoted" or "unquoted" (default: "quoted")
+    const isUnquoted = variant === "unquoted";
+    const pdfVariant: "QUOTED" | "UNQUOTED" = isUnquoted ? "UNQUOTED" : "QUOTED";
 
     let html: string;
     let landscape: boolean;
-    let filenameSuffix = "";
 
-    if (resolvedVariant === "standard") {
-      html = generateStandardQuotationHtml(quotation as any, companyInfo as any);
-      landscape = true;
-    } else {
-      const pdfVariant =
-        resolvedVariant === "technical" ? "TECHNICAL" : "COMMERCIAL";
-      html = generateNonStandardQuotationHtml(
-        quotation as any,
-        companyInfo as any,
-        pdfVariant
-      );
+    if (isNonStandard) {
+      html = generateNonStandardQuotationHtml(quotation as any, companyInfo as any, pdfVariant);
       landscape = false;
-      filenameSuffix = `-${pdfVariant}`;
+    } else {
+      html = generateStandardQuotationHtml(quotation as any, companyInfo as any, pdfVariant);
+      landscape = true;
     }
 
+    const filenameSuffix = isUnquoted ? "-UNQUOTED" : "";
     const pdfBuffer = await renderHtmlToPdf(html, landscape);
     const filename = `${quotation.quotationNo.replace(/\//g, "-")}${filenameSuffix}.pdf`;
 

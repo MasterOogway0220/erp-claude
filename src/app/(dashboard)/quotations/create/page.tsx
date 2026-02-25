@@ -1,33 +1,13 @@
 "use client";
 
-import { Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, FileText, PenLine } from "lucide-react";
-import { PageLoading } from "@/components/shared/page-loading";
 
-export default function CreateQuotationPageWrapper() {
-  return (
-    <Suspense fallback={<PageLoading />}>
-      <QuotationTypeSelector />
-    </Suspense>
-  );
-}
-
-function QuotationTypeSelector() {
+export default function CreateQuotationPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const enquiryId = searchParams.get("enquiryId");
-
-  const buildUrl = (path: string) => {
-    const url = new URL(path, "http://placeholder");
-    if (enquiryId) {
-      url.searchParams.set("enquiryId", enquiryId);
-    }
-    return `${url.pathname}${url.search}`;
-  };
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -45,7 +25,7 @@ function QuotationTypeSelector() {
         {/* Standard Quotation Card */}
         <Card
           className="cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-primary/50 hover:-translate-y-1 group"
-          onClick={() => router.push(buildUrl("/quotations/create/standard"))}
+          onClick={() => router.push("/quotations/create/standard")}
         >
           <CardHeader className="text-center pb-2">
             <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors">
@@ -67,7 +47,7 @@ function QuotationTypeSelector() {
         {/* Non-Standard Quotation Card */}
         <Card
           className="cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-primary/50 hover:-translate-y-1 group"
-          onClick={() => router.push(buildUrl("/quotations/create/nonstandard"))}
+          onClick={() => router.push("/quotations/create/nonstandard")}
         >
           <CardHeader className="text-center pb-2">
             <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-orange-500/10 group-hover:bg-orange-500/20 transition-colors">
@@ -86,13 +66,6 @@ function QuotationTypeSelector() {
           </CardContent>
         </Card>
       </div>
-
-      {enquiryId && (
-        <div className="rounded-lg border bg-muted/50 p-4 text-sm text-muted-foreground">
-          Linked to Enquiry — the selected quotation type will be pre-filled
-          with enquiry details.
-        </div>
-      )}
     </div>
   );
 }

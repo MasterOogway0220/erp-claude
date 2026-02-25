@@ -17,12 +17,6 @@ export type RBACAction = "read" | "write" | "delete" | "approve";
  * ADMIN has full access to all modules
  */
 const MODULE_ACCESS: Record<string, Record<RBACAction, UserRole[]>> = {
-  enquiry: {
-    read: ["SALES", "MANAGEMENT", "ADMIN"],
-    write: ["SALES", "ADMIN"],
-    delete: ["SALES", "ADMIN"],
-    approve: ["MANAGEMENT", "ADMIN"],
-  },
   quotation: {
     read: ["SALES", "MANAGEMENT", "ADMIN"],
     write: ["SALES", "ADMIN"],
