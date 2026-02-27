@@ -827,26 +827,6 @@ export default function QuotationDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Terms */}
-      {quotation.terms && quotation.terms.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Offer Terms & Conditions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {quotation.terms.map((term: any, index: number) => (
-                <div key={term.id} className="flex gap-4">
-                  <div className="font-medium min-w-[200px]">
-                    {index + 1}. {term.termName}:
-                  </div>
-                  <div className="text-muted-foreground">{term.termValue}</div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Revision History */}
       {revisionChain.length > 1 && (
