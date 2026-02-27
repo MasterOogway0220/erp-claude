@@ -15,7 +15,25 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, CreditCard, Send } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  ArrowLeft,
+  CreditCard,
+  Send,
+  Download,
+  Mail,
+  FileJson,
+} from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -44,9 +62,22 @@ export default function InvoiceDetailPage() {
   const [invoice, setInvoice] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailForm, setEmailForm] = useState({
+    to: "",
+    cc: "",
+    subject: "",
+    message: "",
+  });
+  const [emailLogs, setEmailLogs] = useState<any[]>([]);
 
   useEffect(() => {
-    if (params.id) fetchInvoice(params.id as string);
+    if (params.id) {
+      fetchInvoice(params.id as string);
+      fetchEmailLogs(params.id as string);
+    }
   }, [params.id]);
 
   const fetchInvoice = async (id: string) => {
@@ -60,6 +91,18 @@ export default function InvoiceDetailPage() {
       router.push("/dispatch");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchEmailLogs = async (id: string) => {
+    try {
+      const response = await fetch(`/api/dispatch/invoices/${id}/emails`);
+      if (response.ok) {
+        const data = await response.json();
+        setEmailLogs(data.emailLogs || []);
+      }
+    } catch {
+      // Non-critical
     }
   };
 
@@ -82,6 +125,94 @@ export default function InvoiceDetailPage() {
     }
   };
 
+  const downloadPdf = async () => {
+    if (!invoice) return;
+    setDownloading(true);
+    try {
+      const response = await fetch(
+        `/api/dispatch/invoices/${invoice.id}/pdf`
+      );
+      if (!response.ok) throw new Error("Failed to generate PDF");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${invoice.invoiceNo.replace(/\//g, "-")}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success("PDF downloaded");
+    } catch (error) {
+      toast.error("Failed to download PDF");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const downloadEInvoice = async () => {
+    if (!invoice) return;
+    try {
+      const response = await fetch(
+        `/api/dispatch/invoices/${invoice.id}/e-invoice`
+      );
+      if (!response.ok) throw new Error("Failed to generate e-invoice");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `e-invoice-${invoice.invoiceNo.replace(/\//g, "-")}.json`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success("E-Invoice JSON downloaded");
+    } catch (error) {
+      toast.error("Failed to download e-invoice");
+    }
+  };
+
+  const openEmailDialog = () => {
+    if (!invoice) return;
+    setEmailForm({
+      to: invoice.customer?.email || "",
+      cc: "",
+      subject: `Invoice ${invoice.invoiceNo} - ${invoice.customer?.name || ""}`,
+      message: "",
+    });
+    setEmailDialogOpen(true);
+  };
+
+  const sendEmail = async () => {
+    if (!emailForm.to) {
+      toast.error("Recipient email is required");
+      return;
+    }
+    setSendingEmail(true);
+    try {
+      const response = await fetch(
+        `/api/dispatch/invoices/${invoice.id}/email`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(emailForm),
+        }
+      );
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to send");
+      }
+      toast.success("Invoice emailed successfully");
+      setEmailDialogOpen(false);
+      fetchInvoice(invoice.id);
+      fetchEmailLogs(invoice.id);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to send email");
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
   if (loading) {
     return <PageLoading />;
   }
@@ -101,10 +232,26 @@ export default function InvoiceDetailPage() {
         title={`Invoice: ${invoice.invoiceNo}`}
         description={`Created on ${format(new Date(invoice.invoiceDate), "dd MMM yyyy")}`}
       >
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button variant="outline" onClick={() => router.back()}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
+          </Button>
+          <Button
+            variant="outline"
+            onClick={downloadPdf}
+            disabled={downloading}
+          >
+            <Download className="w-4 h-4 mr-2" />
+            {downloading ? "Generating..." : "Download PDF"}
+          </Button>
+          <Button variant="outline" onClick={openEmailDialog}>
+            <Mail className="w-4 h-4 mr-2" />
+            Email Invoice
+          </Button>
+          <Button variant="outline" onClick={downloadEInvoice}>
+            <FileJson className="w-4 h-4 mr-2" />
+            E-Invoice JSON
           </Button>
           {invoice.status === "DRAFT" && (
             <Button variant="outline" onClick={markAsSent} disabled={updating}>
@@ -418,6 +565,124 @@ export default function InvoiceDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      {emailLogs.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Email History</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Sent At</TableHead>
+                  <TableHead>To</TableHead>
+                  <TableHead>Subject</TableHead>
+                  <TableHead>Sent By</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {emailLogs.map((log: any) => (
+                  <TableRow key={log.id}>
+                    <TableCell>
+                      {format(new Date(log.sentAt), "dd MMM yyyy HH:mm")}
+                    </TableCell>
+                    <TableCell className="text-sm">{log.sentTo}</TableCell>
+                    <TableCell className="text-sm">{log.subject}</TableCell>
+                    <TableCell className="text-sm">
+                      {log.sentBy?.name || "---"}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        className={
+                          log.status === "SUCCESS"
+                            ? "bg-green-500"
+                            : "bg-red-500"
+                        }
+                      >
+                        {log.status}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Email Dialog */}
+      <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Email Invoice</DialogTitle>
+            <DialogDescription>
+              Send invoice {invoice.invoiceNo} with PDF attachment.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="email-to">To *</Label>
+              <Input
+                id="email-to"
+                type="email"
+                placeholder="recipient@example.com"
+                value={emailForm.to}
+                onChange={(e) =>
+                  setEmailForm({ ...emailForm, to: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email-cc">CC</Label>
+              <Input
+                id="email-cc"
+                type="email"
+                placeholder="cc@example.com"
+                value={emailForm.cc}
+                onChange={(e) =>
+                  setEmailForm({ ...emailForm, cc: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email-subject">Subject</Label>
+              <Input
+                id="email-subject"
+                value={emailForm.subject}
+                onChange={(e) =>
+                  setEmailForm({ ...emailForm, subject: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email-message">Message</Label>
+              <Textarea
+                id="email-message"
+                placeholder="Optional message to include in the email body"
+                value={emailForm.message}
+                onChange={(e) =>
+                  setEmailForm({ ...emailForm, message: e.target.value })
+                }
+                rows={4}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setEmailDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={sendEmail} disabled={sendingEmail}>
+              <Mail className="w-4 h-4 mr-2" />
+              {sendingEmail ? "Sending..." : "Send Email"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -15,7 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Truck } from "lucide-react";
+import { ArrowLeft, Truck, Download } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -26,6 +26,7 @@ export default function PackingListDetailPage() {
   const params = useParams();
   const [packingList, setPackingList] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     if (params.id) fetchPackingList(params.id as string);
@@ -42,6 +43,31 @@ export default function PackingListDetailPage() {
       router.push("/dispatch");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const downloadPdf = async () => {
+    if (!packingList) return;
+    setDownloading(true);
+    try {
+      const response = await fetch(
+        `/api/dispatch/packing-lists/${packingList.id}/pdf`
+      );
+      if (!response.ok) throw new Error("Failed to generate PDF");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${packingList.plNo.replace(/\//g, "-")}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success("PDF downloaded");
+    } catch (error) {
+      toast.error("Failed to download PDF");
+    } finally {
+      setDownloading(false);
     }
   };
 
@@ -79,6 +105,14 @@ export default function PackingListDetailPage() {
           <Button variant="outline" onClick={() => router.back()}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
+          </Button>
+          <Button
+            variant="outline"
+            onClick={downloadPdf}
+            disabled={downloading}
+          >
+            <Download className="w-4 h-4 mr-2" />
+            {downloading ? "Generating..." : "Download PDF"}
           </Button>
           {!hasDN && (
             <Button

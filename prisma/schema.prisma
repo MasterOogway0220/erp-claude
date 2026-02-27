@@ -235,6 +235,7 @@ model User {
   authorizedStockIssues StockIssue[]      @relation("AuthorizedBy")
   qcReleases          QCRelease[]         @relation("ReleasedBy")
   emailsSent          QuotationEmailLog[] @relation("EmailSentBy")
+  invoiceEmailsSent   InvoiceEmailLog[]   @relation("InvoiceEmailSentBy")
   approvedVendors     VendorMaster[]      @relation("VendorApprovedBy")
 
   @@index([email])
@@ -1450,6 +1451,7 @@ model Invoice {
   linkedNotes     Invoice[]        @relation("CreditDebitNoteLink")
   items           InvoiceItem[]
   paymentReceipts PaymentReceipt[]
+  emailLogs       InvoiceEmailLog[]
 
   @@index([invoiceNo])
   @@index([customerId])
@@ -1474,6 +1476,25 @@ model InvoiceItem {
   invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
   @@index([invoiceId])
+}
+
+model InvoiceEmailLog {
+  id           String         @id @default(cuid())
+  invoiceId    String
+  sentTo       String
+  sentCc       String?
+  subject      String
+  messageBody  String         @db.Text
+  sentById     String?
+  sentAt       DateTime       @default(now())
+  status       EmailLogStatus
+  errorMessage String?        @db.Text
+
+  invoice      Invoice        @relation(fields: [invoiceId], references: [id])
+  sentBy       User?          @relation("InvoiceEmailSentBy", fields: [sentById], references: [id])
+
+  @@index([invoiceId])
+  @@index([sentById])
 }
 
 model PaymentReceipt {

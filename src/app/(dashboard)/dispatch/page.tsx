@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { DataTable, Column } from "@/components/shared/data-table";
 import { Button } from "@/components/ui/button";
@@ -34,8 +34,14 @@ const invoiceStatusColors: Record<string, string> = {
   CANCELLED: "bg-red-500",
 };
 
-export default function DispatchPage() {
+function DispatchPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const defaultTab = ["packing-lists", "dispatch-notes", "invoices", "payments"].includes(tabParam || "")
+    ? tabParam!
+    : "packing-lists";
+
   const [packingLists, setPackingLists] = useState<any[]>([]);
   const [dispatchNotes, setDispatchNotes] = useState<any[]>([]);
   const [invoices, setInvoices] = useState<any[]>([]);
@@ -316,7 +322,7 @@ export default function DispatchPage() {
         </div>
       </PageHeader>
 
-      <Tabs defaultValue="packing-lists" className="space-y-4">
+      <Tabs defaultValue={defaultTab} className="space-y-4">
         <TabsList>
           <TabsTrigger value="packing-lists">
             Packing Lists ({packingLists.length})
@@ -433,5 +439,23 @@ export default function DispatchPage() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function DispatchPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="space-y-6">
+          <div className="h-10 w-64 bg-muted animate-pulse rounded" />
+          <div className="h-10 w-96 bg-muted animate-pulse rounded" />
+          <div className="space-y-2">
+            {[...Array(5)].map((_, i) => <div key={i} className="h-12 bg-muted animate-pulse rounded" />)}
+          </div>
+        </div>
+      }
+    >
+      <DispatchPageContent />
+    </Suspense>
   );
 }
