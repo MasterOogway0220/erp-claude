@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { AlertTriangle, CheckCircle, XCircle, FileWarning } from "lucide-react";
+import { AlertTriangle, CheckCircle, XCircle, FileWarning, Wrench, ShieldCheck, Clock, CalendarClock } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -50,6 +50,10 @@ interface NCRAnalysisData {
   totalNCRs: number;
   openNCRs: number;
   closedNCRs: number;
+  caInProgressNCRs: number;
+  verifiedNCRs: number;
+  overdueNCRs: number;
+  avgClosureDays: number;
   byVendor: NCRByVendor[];
   byType: NCRByType[];
   monthlyTrend: NCRMonthly[];
@@ -143,6 +147,17 @@ export default function NCRAnalysisPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">CA In Progress</CardTitle>
+            <Wrench className="h-4 w-4 text-orange-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">
+              {data.caInProgressNCRs || 0}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Closed</CardTitle>
             <CheckCircle className="h-4 w-4 text-green-500" />
           </CardHeader>
@@ -152,14 +167,40 @@ export default function NCRAnalysisPage() {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Under Review</CardTitle>
-            <XCircle className="h-4 w-4 text-yellow-500" />
+            <CardTitle className="text-sm font-medium">Verified</CardTitle>
+            <ShieldCheck className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">
-              {Math.max(0, (data.totalNCRs || 0) - (data.openNCRs || 0) - (data.closedNCRs || 0))}
+            <div className="text-2xl font-bold text-blue-600">
+              {data.verifiedNCRs || 0}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Overdue CAs</CardTitle>
+            <Clock className="h-4 w-4 text-red-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">
+              {data.overdueNCRs || 0}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Avg Closure Days</CardTitle>
+            <CalendarClock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {data.avgClosureDays || 0}
+              <span className="text-sm font-normal text-muted-foreground ml-1">days</span>
             </div>
           </CardContent>
         </Card>

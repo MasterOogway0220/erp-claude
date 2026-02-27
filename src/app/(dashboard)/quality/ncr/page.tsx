@@ -20,6 +20,7 @@ import { useRouter } from "next/navigation";
 const ncrStatusColors: Record<string, string> = {
   OPEN: "bg-red-500",
   UNDER_INVESTIGATION: "bg-yellow-500",
+  CORRECTIVE_ACTION_IN_PROGRESS: "bg-orange-500",
   CLOSED: "bg-green-500",
   VERIFIED: "bg-blue-500",
 };
@@ -117,6 +118,7 @@ export default function NCRListPage() {
             <SelectItem value="ALL">All Statuses</SelectItem>
             <SelectItem value="OPEN">Open</SelectItem>
             <SelectItem value="UNDER_INVESTIGATION">Under Investigation</SelectItem>
+            <SelectItem value="CORRECTIVE_ACTION_IN_PROGRESS">Corrective Action</SelectItem>
             <SelectItem value="CLOSED">Closed</SelectItem>
             <SelectItem value="VERIFIED">Verified</SelectItem>
           </SelectContent>

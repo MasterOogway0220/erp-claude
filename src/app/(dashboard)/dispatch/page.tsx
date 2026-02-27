@@ -167,6 +167,27 @@ function DispatchPageContent() {
       ),
     },
     {
+      key: "heatNos",
+      header: "Heat Nos.",
+      cell: (row) => {
+        const items = (row.packingList as any)?.items || [];
+        const heatNos = items
+          .map((i: any) => i.heatNo)
+          .filter((h: any) => h)
+          .filter((v: string, i: number, a: string[]) => a.indexOf(v) === i);
+        return (
+          <span className="font-mono text-xs">
+            {heatNos.length > 0 ? heatNos.join(", ") : "---"}
+          </span>
+        );
+      },
+    },
+    {
+      key: "customer",
+      header: "Customer",
+      cell: (row) => (row.salesOrder as any)?.customer?.name || "---",
+    },
+    {
       key: "vehicleNo",
       header: "Vehicle",
       cell: (row) => (row.vehicleNo as string) || "---",

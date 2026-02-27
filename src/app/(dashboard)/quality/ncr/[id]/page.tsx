@@ -54,9 +54,12 @@ export default function NCRDetailPage() {
   const [ncr, setNcr] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [investigateDialogOpen, setInvestigateDialogOpen] = useState(false);
+  const [correctiveDialogOpen, setCorrectiveDialogOpen] = useState(false);
   const [closeDialogOpen, setCloseDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [targetClosureDate, setTargetClosureDate] = useState("");
+  const [responsiblePersonId, setResponsiblePersonId] = useState("");
+  const [users, setUsers] = useState<any[]>([]);
   const [capaData, setCAPAData] = useState({
     rootCause: "",
     correctiveAction: "",
@@ -66,7 +69,18 @@ export default function NCRDetailPage() {
 
   useEffect(() => {
     if (params.id) fetchNCR(params.id as string);
+    fetchUsers();
   }, [params.id]);
+
+  const fetchUsers = async () => {
+    try {
+      const res = await fetch("/api/users");
+      if (res.ok) {
+        const data = await res.json();
+        setUsers(data.users || []);
+      }
+    } catch {}
+  };
 
   const fetchNCR = async (id: string) => {
     try {
@@ -121,6 +135,7 @@ export default function NCRDetailPage() {
         body: JSON.stringify({
           status: "CORRECTIVE_ACTION_IN_PROGRESS",
           targetClosureDate: targetClosureDate || undefined,
+          responsiblePersonId: responsiblePersonId || undefined,
         }),
       });
       if (!response.ok) {
@@ -128,6 +143,7 @@ export default function NCRDetailPage() {
         throw new Error(error.error || "Failed to update NCR");
       }
       toast.success("NCR moved to corrective action phase");
+      setCorrectiveDialogOpen(false);
       fetchNCR(params.id as string);
     } catch (error: any) {
       toast.error(error.message);
@@ -251,10 +267,55 @@ export default function NCRDetailPage() {
             </Dialog>
           )}
           {ncr.status === "UNDER_INVESTIGATION" && (
-            <Button variant="outline" onClick={handleMoveToCorrective} disabled={submitting}>
-              <Wrench className="w-4 h-4 mr-2" />
-              Start Corrective Action
-            </Button>
+            <Dialog open={correctiveDialogOpen} onOpenChange={setCorrectiveDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <Wrench className="w-4 h-4 mr-2" />
+                  Start Corrective Action
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Start Corrective Action</DialogTitle>
+                  <DialogDescription>
+                    Set a target closure date and assign a responsible person for this NCR.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Target Closure Date</Label>
+                    <Input
+                      type="date"
+                      value={targetClosureDate}
+                      onChange={(e) => setTargetClosureDate(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Responsible Person</Label>
+                    <Select value={responsiblePersonId} onValueChange={setResponsiblePersonId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select responsible person" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {users.map((u: any) => (
+                          <SelectItem key={u.id} value={u.id}>
+                            {u.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex justify-end gap-3 pt-4">
+                    <Button variant="outline" onClick={() => setCorrectiveDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleMoveToCorrective} disabled={submitting}>
+                      {submitting ? "Updating..." : "Start Corrective Action"}
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           )}
           {ncr.status === "CORRECTIVE_ACTION_IN_PROGRESS" && (
             <Dialog open={closeDialogOpen} onOpenChange={setCloseDialogOpen}>
@@ -429,6 +490,26 @@ export default function NCRDetailPage() {
               <div className="text-sm mt-1 whitespace-pre-wrap">{ncr.description || "—"}</div>
             </div>
 
+            {(ncr.targetClosureDate || ncr.responsiblePerson) && (
+              <>
+                <Separator />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-sm text-muted-foreground">Target Closure Date</div>
+                    <div>
+                      {ncr.targetClosureDate
+                        ? format(new Date(ncr.targetClosureDate), "dd MMM yyyy")
+                        : "—"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-muted-foreground">Responsible Person</div>
+                    <div>{ncr.responsiblePerson?.name || "—"}</div>
+                  </div>
+                </div>
+              </>
+            )}
+
             {ncr.closedDate && (
               <>
                 <Separator />
@@ -440,6 +521,26 @@ export default function NCRDetailPage() {
                   <div>
                     <div className="text-sm text-muted-foreground">Closed By</div>
                     <div>{ncr.closedBy?.name || "—"}</div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {ncr.verifiedBy && (
+              <>
+                <Separator />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-sm text-muted-foreground">Verified Date</div>
+                    <div>
+                      {ncr.verifiedDate
+                        ? format(new Date(ncr.verifiedDate), "dd MMM yyyy")
+                        : "—"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-muted-foreground">Verified By</div>
+                    <div>{ncr.verifiedBy?.name || "—"}</div>
                   </div>
                 </div>
               </>

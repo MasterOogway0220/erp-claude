@@ -8,11 +8,36 @@ export async function GET(request: NextRequest) {
     if (!authorized) return response!;
 
     // Total NCRs and breakdown by status
-    const [totalNCRs, openNCRs, closedNCRs] = await Promise.all([
+    const [totalNCRs, openNCRs, closedNCRs, caInProgressNCRs, verifiedNCRs, overdueNCRs] = await Promise.all([
       prisma.nCR.count(),
       prisma.nCR.count({ where: { status: "OPEN" } }),
       prisma.nCR.count({ where: { status: "CLOSED" } }),
+      prisma.nCR.count({ where: { status: "CORRECTIVE_ACTION_IN_PROGRESS" } }),
+      prisma.nCR.count({ where: { status: "VERIFIED" } }),
+      prisma.nCR.count({
+        where: {
+          targetClosureDate: { lt: new Date() },
+          status: { notIn: ["CLOSED", "VERIFIED"] },
+        },
+      }),
     ]);
+
+    // Average closure days for closed NCRs
+    const closedNCRsForAvg = await prisma.nCR.findMany({
+      where: { status: { in: ["CLOSED", "VERIFIED"] }, closedDate: { not: null } },
+      select: { ncrDate: true, closedDate: true },
+    });
+
+    let avgClosureDays = 0;
+    if (closedNCRsForAvg.length > 0) {
+      const totalDays = closedNCRsForAvg.reduce((sum, n) => {
+        const days = Math.ceil(
+          (new Date(n.closedDate!).getTime() - new Date(n.ncrDate).getTime()) / (1000 * 60 * 60 * 24)
+        );
+        return sum + days;
+      }, 0);
+      avgClosureDays = Math.round(totalDays / closedNCRsForAvg.length);
+    }
 
     // By vendor (top vendors by NCR count)
     const vendorGroups = await prisma.nCR.groupBy({
@@ -87,6 +112,10 @@ export async function GET(request: NextRequest) {
       totalNCRs,
       openNCRs,
       closedNCRs,
+      caInProgressNCRs,
+      verifiedNCRs,
+      overdueNCRs,
+      avgClosureDays,
       byVendor,
       byType,
       monthlyTrend,

@@ -61,6 +61,12 @@ export async function GET(
         closedBy: {
           select: { id: true, name: true, email: true },
         },
+        responsiblePerson: {
+          select: { id: true, name: true, email: true },
+        },
+        verifiedBy: {
+          select: { id: true, name: true },
+        },
       },
     });
 
@@ -207,6 +213,8 @@ export async function PATCH(
         vendor: { select: { id: true, name: true } },
         purchaseOrder: { select: { id: true, poNo: true } },
         closedBy: { select: { id: true, name: true } },
+        responsiblePerson: { select: { id: true, name: true } },
+        verifiedBy: { select: { id: true, name: true } },
       },
     });
 

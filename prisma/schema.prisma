@@ -228,6 +228,8 @@ model User {
   receivedGRNs        GoodsReceiptNote[]  @relation("ReceivedBy")
   inspections         Inspection[]        @relation("InspectorUser")
   closedNCRs          NCR[]               @relation("NCRClosedBy")
+  responsibleNCRs     NCR[]               @relation("NCRResponsiblePerson")
+  verifiedNCRs        NCR[]               @relation("NCRVerifiedBy")
   generatedLabLetters LabLetter[]         @relation("LabLetterGeneratedBy")
   auditLogs           AuditLog[]
   employee            EmployeeMaster?
@@ -1224,7 +1226,9 @@ model NCR {
   inventoryStock InventoryStock? @relation(fields: [inventoryStockId], references: [id])
   purchaseOrder  PurchaseOrder?  @relation(fields: [poId], references: [id])
   vendor         VendorMaster?   @relation(fields: [vendorId], references: [id])
-  closedBy       User?           @relation("NCRClosedBy", fields: [closedById], references: [id])
+  closedBy          User?           @relation("NCRClosedBy", fields: [closedById], references: [id])
+  responsiblePerson User?           @relation("NCRResponsiblePerson", fields: [responsiblePersonId], references: [id])
+  verifiedBy        User?           @relation("NCRVerifiedBy", fields: [verifiedById], references: [id])
 
   @@index([ncrNo])
   @@index([heatNo])

@@ -17,6 +17,9 @@ export async function GET(request: NextRequest) {
     if (search) {
       where.OR = [
         { dnNo: { contains: search } },
+        { salesOrder: { soNo: { contains: search } } },
+        { salesOrder: { customer: { name: { contains: search, mode: "insensitive" } } } },
+        { packingList: { items: { some: { heatNo: { contains: search, mode: "insensitive" } } } } },
       ];
     }
 
@@ -28,6 +31,9 @@ export async function GET(request: NextRequest) {
             id: true,
             plNo: true,
             plDate: true,
+            items: {
+              select: { heatNo: true },
+            },
           },
         },
         salesOrder: {
