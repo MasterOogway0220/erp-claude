@@ -193,14 +193,31 @@ export async function PATCH(
       });
     }
 
+    // Determine specific audit action based on status transition
+    let auditAction: "APPROVE" | "REJECT" | "SUBMIT_FOR_APPROVAL" | "STATUS_CHANGE";
+    if (status === "APPROVED") {
+      auditAction = "APPROVE";
+    } else if (status === "REJECTED") {
+      auditAction = "REJECT";
+    } else if (status === "PENDING_APPROVAL") {
+      auditAction = "SUBMIT_FOR_APPROVAL";
+    } else {
+      auditAction = "STATUS_CHANGE";
+    }
+
     await createAuditLog({
       userId: session.user.id,
-      action: "UPDATE",
+      action: auditAction,
       tableName: "Quotation",
       recordId: id,
       fieldName: "status",
       oldValue: existing.status,
-      newValue: updated.status,
+      newValue: JSON.stringify({
+        status: updated.status,
+        ...(approvalRemarks ? { remarks: approvalRemarks } : {}),
+        ...(lossReason ? { lossReason } : {}),
+        ...(lossCompetitor ? { lossCompetitor } : {}),
+      }),
     });
 
     return NextResponse.json(updated);
@@ -239,8 +256,9 @@ export async function DELETE(
       );
     }
 
-    // Delete items and terms first, then the quotation
+    // Delete related records first, then the quotation
     await prisma.$transaction(async (tx) => {
+      await tx.quotationEmailLog.deleteMany({ where: { quotationId: id } });
       await tx.quotationItem.deleteMany({ where: { quotationId: id } });
       await tx.quotationTerm.deleteMany({ where: { quotationId: id } });
       await tx.quotation.delete({ where: { id } });

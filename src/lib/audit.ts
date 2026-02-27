@@ -3,7 +3,7 @@ import { prisma } from "./prisma";
 export async function createAuditLog(params: {
   tableName: string;
   recordId: string;
-  action: "CREATE" | "UPDATE" | "DELETE" | "APPROVE" | "REJECT" | "SUBMIT_FOR_APPROVAL" | "STATUS_CHANGE";
+  action: "CREATE" | "UPDATE" | "DELETE" | "APPROVE" | "REJECT" | "SUBMIT_FOR_APPROVAL" | "STATUS_CHANGE" | "EMAIL_SENT";
   fieldName?: string;
   oldValue?: string;
   newValue?: string;

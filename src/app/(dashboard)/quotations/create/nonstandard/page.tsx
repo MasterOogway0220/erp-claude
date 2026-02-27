@@ -84,6 +84,9 @@ function NonStandardQuotationPage() {
     placeOfSupplyCity: "",
     placeOfSupplyState: "",
     placeOfSupplyCountry: "India",
+    dealOwnerId: "",
+    nextActionDate: "",
+    kindAttention: "",
   });
   const [items, setItems] = useState<NonStdItem[]>([emptyItem]);
   const [terms, setTerms] = useState<{
@@ -143,6 +146,16 @@ function NonStandardQuotationPage() {
     queryFn: async () => {
       const res = await fetch(`/api/masters/buyers?customerId=${formData.customerId}`);
       if (!res.ok) throw new Error("Failed to fetch buyers");
+      return res.json();
+    },
+  });
+
+  // Fetch users for Deal Owner dropdown
+  const { data: usersData } = useQuery({
+    queryKey: ["users"],
+    queryFn: async () => {
+      const res = await fetch("/api/users");
+      if (!res.ok) throw new Error("Failed to fetch users");
       return res.json();
     },
   });
@@ -311,6 +324,9 @@ function NonStandardQuotationPage() {
         placeOfSupplyCity: q.placeOfSupplyCity || "",
         placeOfSupplyState: q.placeOfSupplyState || "",
         placeOfSupplyCountry: q.placeOfSupplyCountry || "India",
+        dealOwnerId: q.dealOwnerId || "",
+        nextActionDate: q.nextActionDate ? new Date(q.nextActionDate).toISOString().split("T")[0] : "",
+        kindAttention: q.kindAttention || "",
       });
       setTaxRate(q.taxRate ? String(q.taxRate) : "");
       setAdditionalDiscount(q.additionalDiscount ? String(q.additionalDiscount) : "");
@@ -440,6 +456,9 @@ function NonStandardQuotationPage() {
       quotationDate: formData.quotationDate || undefined,
       inquiryNo: formData.inquiryNo || undefined,
       inquiryDate: formData.inquiryDate || undefined,
+      dealOwnerId: formData.dealOwnerId || undefined,
+      nextActionDate: formData.nextActionDate || undefined,
+      kindAttention: formData.kindAttention || undefined,
       taxRate: taxRate || undefined,
       additionalDiscount: additionalDiscount || undefined,
       rcmEnabled,
@@ -622,6 +641,52 @@ function NonStandardQuotationPage() {
                   type="date"
                   value={formData.inquiryDate}
                   onChange={(e) => setFormData({ ...formData, inquiryDate: e.target.value })}
+                />
+              </div>
+            </div>
+
+            {/* Row 3: Deal Owner, Next Action Date, Kind Attention */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid gap-2">
+                <Label>Deal Owner</Label>
+                <Select
+                  value={formData.dealOwnerId || "NONE"}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, dealOwnerId: value === "NONE" ? "" : value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select deal owner" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NONE">No deal owner</SelectItem>
+                    {usersData?.users?.map((u: any) => (
+                      <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Next Action Date</Label>
+                <Input
+                  type="date"
+                  value={formData.nextActionDate}
+                  onChange={(e) =>
+                    setFormData({ ...formData, nextActionDate: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Kind Attention</Label>
+                <Input
+                  value={formData.kindAttention}
+                  onChange={(e) =>
+                    setFormData({ ...formData, kindAttention: e.target.value.slice(0, 200) })
+                  }
+                  placeholder="Attention to (max 200 chars)"
+                  maxLength={200}
                 />
               </div>
             </div>

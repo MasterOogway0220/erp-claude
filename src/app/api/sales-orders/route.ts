@@ -19,9 +19,9 @@ export async function GET(request: NextRequest) {
 
     if (search) {
       where.OR = [
-        { soNo: { contains: search } },
-        { customer: { name: { contains: search } } },
-        { customerPoNo: { contains: search } },
+        { soNo: { contains: search, mode: "insensitive" } },
+        { customer: { name: { contains: search, mode: "insensitive" } } },
+        { customerPoNo: { contains: search, mode: "insensitive" } },
       ];
     }
 
@@ -75,10 +75,54 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate items array
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return NextResponse.json(
+        { error: "At least one line item is required" },
+        { status: 400 }
+      );
+    }
+
+    // Validate individual items
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const qty = parseFloat(item.quantity);
+      const rate = parseFloat(item.unitRate);
+      if (isNaN(qty) || qty <= 0) {
+        return NextResponse.json(
+          { error: `Item ${i + 1}: Quantity must be a positive number` },
+          { status: 400 }
+        );
+      }
+      if (isNaN(rate) || rate <= 0) {
+        return NextResponse.json(
+          { error: `Item ${i + 1}: Unit rate must be a positive number` },
+          { status: 400 }
+        );
+      }
+    }
+
     // Traceability enforcement: SO must link to approved quotation or customer PO
     const traceability = await validateTraceability("SALES_ORDER", { quotationId, customerPoNo });
     if (!traceability.isValid) {
       return NextResponse.json({ error: traceability.errors.join(". ") }, { status: 400 });
+    }
+
+    // Prevent duplicate SOs from the same quotation
+    if (quotationId) {
+      const existingSO = await prisma.salesOrder.findFirst({
+        where: {
+          quotationId,
+          status: { not: "CANCELLED" },
+        },
+        select: { soNo: true },
+      });
+      if (existingSO) {
+        return NextResponse.json(
+          { error: `Quotation already linked to Sales Order ${existingSO.soNo}. Cannot create duplicate.` },
+          { status: 400 }
+        );
+      }
     }
 
     // Credit limit enforcement
@@ -120,8 +164,8 @@ export async function POST(request: NextRequest) {
       const outstanding = totalInvoiceAmount - totalPayments;
 
       // Calculate new SO value from items
-      const newSOValue = (items || []).reduce(
-        (sum: number, item: any) => sum + (parseFloat(item.amount) || 0),
+      const newSOValue = items.reduce(
+        (sum: number, item: any) => sum + (parseFloat(item.quantity) * parseFloat(item.unitRate) || 0),
         0
       );
 
@@ -142,51 +186,55 @@ export async function POST(request: NextRequest) {
     // Generate SO number
     const soNo = await generateDocumentNumber("SALES_ORDER");
 
-    // Create sales order with items
-    const salesOrder = await prisma.salesOrder.create({
-      data: {
-        soNo,
-        customerId,
-        quotationId: quotationId || null,
-        customerPoNo: customerPoNo || null,
-        customerPoDate: customerPoDate ? new Date(customerPoDate) : null,
-        customerPoDocument: customerPoDocument || null,
-        projectName: projectName || null,
-        deliverySchedule: deliverySchedule || null,
-        paymentTerms: paymentTerms || null,
-        poAcceptanceStatus: "PENDING",
-        items: {
-          create: items.map((item: any, index: number) => ({
-            sNo: index + 1,
-            product: item.product || null,
-            material: item.material || null,
-            additionalSpec: item.additionalSpec || null,
-            sizeLabel: item.sizeLabel || null,
-            od: item.od ? parseFloat(item.od) : null,
-            wt: item.wt ? parseFloat(item.wt) : null,
-            ends: item.ends || null,
-            quantity: parseFloat(item.quantity),
-            unitRate: parseFloat(item.unitRate),
-            amount: parseFloat(item.amount),
-            deliveryDate: item.deliveryDate ? new Date(item.deliveryDate) : null,
-            unitWeight: item.unitWeight ? parseFloat(item.unitWeight) : null,
-            totalWeightMT: item.totalWeightMT ? parseFloat(item.totalWeightMT) : null,
-          })),
+    // Use transaction to create SO + update quotation atomically
+    const salesOrder = await prisma.$transaction(async (tx) => {
+      const so = await tx.salesOrder.create({
+        data: {
+          soNo,
+          customerId,
+          quotationId: quotationId || null,
+          customerPoNo: customerPoNo || null,
+          customerPoDate: customerPoDate ? new Date(customerPoDate) : null,
+          customerPoDocument: customerPoDocument || null,
+          projectName: projectName || null,
+          deliverySchedule: deliverySchedule || null,
+          paymentTerms: paymentTerms || null,
+          poAcceptanceStatus: "PENDING",
+          items: {
+            create: items.map((item: any, index: number) => ({
+              sNo: index + 1,
+              product: item.product || null,
+              material: item.material || null,
+              additionalSpec: item.additionalSpec || null,
+              sizeLabel: item.sizeLabel || null,
+              od: item.od ? parseFloat(item.od) : null,
+              wt: item.wt ? parseFloat(item.wt) : null,
+              ends: item.ends || null,
+              quantity: parseFloat(item.quantity),
+              unitRate: parseFloat(item.unitRate),
+              amount: parseFloat(item.quantity) * parseFloat(item.unitRate),
+              deliveryDate: item.deliveryDate ? new Date(item.deliveryDate) : null,
+              unitWeight: item.unitWeight ? parseFloat(item.unitWeight) : null,
+              totalWeightMT: item.totalWeightMT ? parseFloat(item.totalWeightMT) : null,
+            })),
+          },
         },
-      },
-      include: {
-        customer: true,
-        items: true,
-      },
-    });
-
-    // Update quotation status if linked
-    if (quotationId) {
-      await prisma.quotation.update({
-        where: { id: quotationId },
-        data: { status: "WON" },
+        include: {
+          customer: true,
+          items: true,
+        },
       });
-    }
+
+      // Update quotation status if linked — inside same transaction
+      if (quotationId) {
+        await tx.quotation.update({
+          where: { id: quotationId },
+          data: { status: "WON" },
+        });
+      }
+
+      return so;
+    });
 
     createAuditLog({
       userId: session.user.id,

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAccess } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
+import { createAuditLog } from "@/lib/audit";
 import { renderHtmlToPdf } from "@/lib/pdf/render-pdf";
 import { generateStandardQuotationHtml } from "@/lib/pdf/quotation-standard-template";
 import { generateNonStandardQuotationHtml } from "@/lib/pdf/quotation-nonstandard-template";
@@ -26,7 +27,7 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const { authorized, response } = await checkAccess("quotation", "read");
+    const { authorized, session, response } = await checkAccess("quotation", "read");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -164,9 +165,37 @@ export async function POST(
       mailOptions.cc = cc;
     }
 
-    await transporter.sendMail(mailOptions);
+    // Send email and log result
+    const emailSubject = mailOptions.subject as string;
+    try {
+      await transporter.sendMail(mailOptions);
+    } catch (sendError: any) {
+      // Email failed — log the failure and return error
+      try {
+        await prisma.quotationEmailLog.create({
+          data: {
+            quotationId: id,
+            sentTo: to,
+            sentCc: cc || null,
+            subject: emailSubject,
+            messageBody: emailHtml,
+            sentById: session?.user?.id || null,
+            status: "FAILED",
+            errorMessage: sendError?.message || "Unknown error",
+          },
+        });
+      } catch (logErr) {
+        console.error("Failed to log email failure:", logErr);
+      }
 
-    // Update quotation status to SENT
+      console.error("Error sending email:", sendError?.message || sendError);
+      return NextResponse.json(
+        { error: sendError?.message || "Failed to send email" },
+        { status: 500 }
+      );
+    }
+
+    // Email sent successfully — update status first (critical), then log (non-blocking)
     await prisma.quotation.update({
       where: { id },
       data: {
@@ -188,12 +217,37 @@ export async function POST(
       });
     }
 
+    // Log email and audit trail — non-blocking, should not prevent success response
+    try {
+      await prisma.quotationEmailLog.create({
+        data: {
+          quotationId: id,
+          sentTo: to,
+          sentCc: cc || null,
+          subject: emailSubject,
+          messageBody: emailHtml,
+          sentById: session?.user?.id || null,
+          status: "SUCCESS",
+        },
+      });
+    } catch (logErr) {
+      console.error("Failed to log successful email:", logErr);
+    }
+
+    createAuditLog({
+      userId: session?.user?.id,
+      action: "EMAIL_SENT",
+      tableName: "Quotation",
+      recordId: id,
+      newValue: JSON.stringify({ to, cc: cc || null, subject: emailSubject }),
+    }).catch((err) => console.error("Failed to create audit log:", err));
+
     return NextResponse.json({
       success: true,
       message: "Quotation sent successfully",
     });
   } catch (error: any) {
-    console.error("Error sending email:", error?.message || error);
+    console.error("Error in email route:", error?.message || error);
     return NextResponse.json(
       { error: error?.message || "Failed to send email" },
       { status: 500 }

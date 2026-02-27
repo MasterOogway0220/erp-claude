@@ -403,8 +403,8 @@ export async function validateTraceability(
 
           if (!quotation) {
             errors.push('Linked quotation not found.');
-          } else if (quotation.status !== 'APPROVED') {
-            errors.push(`Cannot create SO from unapproved quotation ${quotation.quotationNo}. Please get quotation approved first.`);
+          } else if (quotation.status !== 'APPROVED' && quotation.status !== 'SENT') {
+            errors.push(`Cannot create SO from quotation ${quotation.quotationNo} with status "${quotation.status}". Quotation must be Approved or Sent.`);
           }
         }
 

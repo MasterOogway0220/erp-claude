@@ -1,20 +1,12 @@
 import { PrismaClient } from "@prisma/client";
-import { PrismaMariaDb } from "@prisma/adapter-mariadb";
+import { PrismaPg } from "@prisma/adapter-pg";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
 function createAdapter() {
-  const url = new URL(process.env.DATABASE_URL!);
-  return new PrismaMariaDb({
-    host: url.hostname,
-    port: url.port ? parseInt(url.port) : 3306,
-    user: decodeURIComponent(url.username),
-    password: decodeURIComponent(url.password),
-    database: url.pathname.slice(1),
-    connectionLimit: 5,
-  });
+  return new PrismaPg(process.env.DATABASE_URL!);
 }
 
 export const prisma =

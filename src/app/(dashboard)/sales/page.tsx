@@ -34,6 +34,7 @@ const soStatusColors: Record<string, string> = {
   PARTIALLY_DISPATCHED: "bg-yellow-500",
   FULLY_DISPATCHED: "bg-green-500",
   CLOSED: "bg-gray-500",
+  CANCELLED: "bg-red-500",
 };
 
 const poAcceptanceColors: Record<string, string> = {

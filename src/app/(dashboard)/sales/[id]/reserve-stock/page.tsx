@@ -15,17 +15,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import { ArrowLeft, Package, CheckCircle, AlertCircle } from "lucide-react";
+import { ArrowLeft, Package, CheckCircle, AlertCircle, Trash2, ShoppingCart } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
@@ -40,8 +37,11 @@ interface SOItem {
   stockReservations?: Array<{
     id: string;
     reservedQtyMtr: number;
+    status: string;
+    reservedDate: string;
     inventoryStock: {
       heatNo: string;
+      mtcNo?: string;
     };
   }>;
 }
@@ -66,9 +66,63 @@ interface AvailableStock {
   pieces: number;
   mtcDate: string;
   mtcNo: string;
-  vendor: {
-    name: string;
-  };
+  make: string;
+}
+
+// Extracted component to avoid useState inside .map()
+function StockRow({
+  stock,
+  defaultQty,
+  reserving,
+  onReserve,
+}: {
+  stock: AvailableStock;
+  defaultQty: number;
+  reserving: boolean;
+  onReserve: (stockId: string, qty: number) => void;
+}) {
+  const [qtyInput, setQtyInput] = useState(
+    Math.max(0, defaultQty).toFixed(3)
+  );
+
+  return (
+    <TableRow>
+      <TableCell className="font-mono font-medium">
+        {stock.heatNo || "—"}
+      </TableCell>
+      <TableCell className="font-mono text-sm">{stock.mtcNo || "—"}</TableCell>
+      <TableCell>
+        {stock.mtcDate
+          ? format(new Date(stock.mtcDate), "dd MMM yyyy")
+          : "—"}
+      </TableCell>
+      <TableCell className="text-sm">{stock.make || "—"}</TableCell>
+      <TableCell className="text-right font-medium">
+        {Number(stock.quantityMtr).toFixed(3)}
+      </TableCell>
+      <TableCell className="text-right">{stock.pieces}</TableCell>
+      <TableCell>
+        <Input
+          type="number"
+          step="0.001"
+          min="0.001"
+          max={stock.quantityMtr}
+          defaultValue={qtyInput}
+          onChange={(e) => setQtyInput(e.target.value)}
+          className="w-28"
+        />
+      </TableCell>
+      <TableCell>
+        <Button
+          size="sm"
+          onClick={() => onReserve(stock.id, parseFloat(qtyInput))}
+          disabled={reserving || parseFloat(qtyInput) <= 0}
+        >
+          Reserve
+        </Button>
+      </TableCell>
+    </TableRow>
+  );
 }
 
 export default function ReserveStockPage() {
@@ -81,6 +135,7 @@ export default function ReserveStockPage() {
   const [loadingStock, setLoadingStock] = useState(false);
   const [reserving, setReserving] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [generatingPR, setGeneratingPR] = useState(false);
 
   useEffect(() => {
     if (params.id) {
@@ -127,6 +182,11 @@ export default function ReserveStockPage() {
   const handleReserveStock = async (stockId: string, qtyToReserve: number) => {
     if (!selectedItem) return;
 
+    if (qtyToReserve <= 0 || isNaN(qtyToReserve)) {
+      toast.error("Please enter a valid quantity");
+      return;
+    }
+
     setReserving(true);
     try {
       const response = await fetch(`/api/sales-orders/${params.id}/reserve`, {
@@ -140,9 +200,15 @@ export default function ReserveStockPage() {
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to reserve stock");
+        throw new Error(data.error || "Failed to reserve stock");
+      }
+
+      // Show FIFO warnings if any
+      if (data.fifoWarnings && data.fifoWarnings.length > 0) {
+        toast.warning(data.fifoWarnings[0]);
       }
 
       toast.success("Stock reserved successfully");
@@ -152,6 +218,52 @@ export default function ReserveStockPage() {
       toast.error(error.message);
     } finally {
       setReserving(false);
+    }
+  };
+
+  const handleReleaseReservation = async (reservationId: string) => {
+    if (!confirm("Release this stock reservation? The stock will become available again.")) return;
+
+    try {
+      const response = await fetch(`/api/sales-orders/${params.id}/reserve`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reservationId }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to release reservation");
+      }
+
+      toast.success("Reservation released");
+      fetchSalesOrder(params.id as string);
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
+  const handleGeneratePR = async () => {
+    if (!confirm("Generate a Purchase Requisition for shortfall items?")) return;
+
+    setGeneratingPR(true);
+    try {
+      const response = await fetch(`/api/sales-orders/${params.id}/generate-pr`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        toast.success(`PR ${data.prNo} generated with ${data.itemCount} item(s)`);
+      } else {
+        toast.info(data.message || "No PR generated");
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Failed to generate PR");
+    } finally {
+      setGeneratingPR(false);
     }
   };
 
@@ -198,16 +310,46 @@ export default function ReserveStockPage() {
     );
   }
 
+  const hasShortfall = salesOrder.items.some((item) => {
+    const reservedQty =
+      item.stockReservations?.reduce(
+        (sum, res) => sum + Number(res.reservedQtyMtr),
+        0
+      ) || 0;
+    return Number(item.quantity) - reservedQty > 0.001;
+  });
+
+  const allFullyReserved = salesOrder.items.every((item) => {
+    const reservedQty =
+      item.stockReservations?.reduce(
+        (sum, res) => sum + Number(res.reservedQtyMtr),
+        0
+      ) || 0;
+    return Number(item.quantity) - reservedQty <= 0.001;
+  });
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Reserve Inventory Stock"
         description={`Allocate inventory against SO: ${salesOrder.soNo}`}
       >
-        <Button variant="outline" onClick={() => router.back()}>
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => router.back()}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
+          {hasShortfall && (
+            <Button
+              variant="outline"
+              onClick={handleGeneratePR}
+              disabled={generatingPR}
+            >
+              <ShoppingCart className="w-4 h-4 mr-2" />
+              {generatingPR ? "Generating..." : "Generate PR for Shortfall"}
+            </Button>
+          )}
+        </div>
       </PageHeader>
 
       <Card>
@@ -286,14 +428,75 @@ export default function ReserveStockPage() {
             </TableBody>
           </Table>
 
-          {salesOrder.items.every((item) => {
-            const reservedQty =
-              item.stockReservations?.reduce(
-                (sum, res) => sum + Number(res.reservedQtyMtr),
-                0
-              ) || 0;
-            return Number(item.quantity) - reservedQty <= 0.001;
-          }) && (
+          {/* Existing reservations detail */}
+          {salesOrder.items.some(
+            (item) => item.stockReservations && item.stockReservations.length > 0
+          ) && (
+            <div className="mt-6 space-y-4">
+              <h4 className="font-medium text-sm text-muted-foreground">Current Reservations</h4>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Item #</TableHead>
+                    <TableHead>Heat No</TableHead>
+                    <TableHead>MTC No</TableHead>
+                    <TableHead className="text-right">Reserved Qty (Mtr)</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {salesOrder.items.flatMap((item) =>
+                    (item.stockReservations || []).map((res) => (
+                      <TableRow key={res.id}>
+                        <TableCell>#{item.sNo}</TableCell>
+                        <TableCell className="font-mono font-medium">
+                          {res.inventoryStock.heatNo || "—"}
+                        </TableCell>
+                        <TableCell className="font-mono text-sm">
+                          {res.inventoryStock.mtcNo || "—"}
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          {Number(res.reservedQtyMtr).toFixed(3)}
+                        </TableCell>
+                        <TableCell>
+                          {format(new Date(res.reservedDate), "dd MMM yyyy")}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            className={
+                              res.status === "RESERVED"
+                                ? "bg-blue-500"
+                                : res.status === "DISPATCHED"
+                                ? "bg-green-500"
+                                : "bg-gray-500"
+                            }
+                          >
+                            {res.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {res.status === "RESERVED" && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleReleaseReservation(res.id)}
+                            >
+                              <Trash2 className="w-3 h-3 mr-1" />
+                              Release
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+
+          {allFullyReserved && (
             <div className="mt-6 p-4 rounded-lg bg-green-50 border border-green-200">
               <div className="flex items-center gap-3">
                 <CheckCircle className="w-5 h-5 text-green-600" />
@@ -318,6 +521,17 @@ export default function ReserveStockPage() {
             <DialogDescription>
               Product: {selectedItem?.product} | Material: {selectedItem?.material} | Size:{" "}
               {selectedItem?.sizeLabel}
+              {selectedItem && (
+                <span className="ml-2">
+                  | Remaining: {(
+                    Number(selectedItem.quantity) -
+                    (selectedItem.stockReservations?.reduce(
+                      (sum, res) => sum + Number(res.reservedQtyMtr),
+                      0
+                    ) || 0)
+                  ).toFixed(3)} Mtr
+                </span>
+              )}
             </DialogDescription>
           </DialogHeader>
 
@@ -331,7 +545,7 @@ export default function ReserveStockPage() {
                 <AlertCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
                 <p className="font-medium">No matching stock available</p>
                 <p className="text-sm mt-2">
-                  Consider creating a Purchase Requisition for this item.
+                  Use "Generate PR for Shortfall" to create a Purchase Requisition.
                 </p>
               </div>
             </div>
@@ -346,7 +560,7 @@ export default function ReserveStockPage() {
                     <TableHead>Heat No</TableHead>
                     <TableHead>MTC No</TableHead>
                     <TableHead>MTC Date</TableHead>
-                    <TableHead>Vendor</TableHead>
+                    <TableHead>Make</TableHead>
                     <TableHead className="text-right">Available Qty</TableHead>
                     <TableHead className="text-right">Pieces</TableHead>
                     <TableHead>Reserve Qty</TableHead>
@@ -355,55 +569,25 @@ export default function ReserveStockPage() {
                 </TableHeader>
                 <TableBody>
                   {availableStock.map((stock) => {
-                    const [qtyInput, setQtyInput] = useState(
-                      Math.min(
-                        Number(stock.quantityMtr),
-                        selectedItem
-                          ? Number(selectedItem.quantity) -
-                            (selectedItem.stockReservations?.reduce(
-                              (sum, res) => sum + Number(res.reservedQtyMtr),
-                              0
-                            ) || 0)
-                          : 0
-                      ).toFixed(3)
-                    );
+                    const remainingShortfall = selectedItem
+                      ? Number(selectedItem.quantity) -
+                        (selectedItem.stockReservations?.reduce(
+                          (sum, res) => sum + Number(res.reservedQtyMtr),
+                          0
+                        ) || 0)
+                      : 0;
 
                     return (
-                      <TableRow key={stock.id}>
-                        <TableCell className="font-mono font-medium">
-                          {stock.heatNo}
-                        </TableCell>
-                        <TableCell className="font-mono text-sm">{stock.mtcNo}</TableCell>
-                        <TableCell>
-                          {format(new Date(stock.mtcDate), "dd MMM yyyy")}
-                        </TableCell>
-                        <TableCell className="text-sm">{stock.vendor.name}</TableCell>
-                        <TableCell className="text-right font-medium">
-                          {Number(stock.quantityMtr).toFixed(3)}
-                        </TableCell>
-                        <TableCell className="text-right">{stock.pieces}</TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            step="0.001"
-                            max={stock.quantityMtr}
-                            defaultValue={qtyInput}
-                            onChange={(e) => setQtyInput(e.target.value)}
-                            className="w-28"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            size="sm"
-                            onClick={() =>
-                              handleReserveStock(stock.id, parseFloat(qtyInput))
-                            }
-                            disabled={reserving}
-                          >
-                            Reserve
-                          </Button>
-                        </TableCell>
-                      </TableRow>
+                      <StockRow
+                        key={stock.id}
+                        stock={stock}
+                        defaultQty={Math.min(
+                          Number(stock.quantityMtr),
+                          remainingShortfall
+                        )}
+                        reserving={reserving}
+                        onReserve={handleReserveStock}
+                      />
                     );
                   })}
                 </TableBody>

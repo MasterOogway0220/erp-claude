@@ -39,75 +39,122 @@ export async function POST(
       );
     }
 
-    // Check if stock is available
-    const inventoryStock = await prisma.inventoryStock.findUnique({
-      where: { id: inventoryStockId },
+    const qty = parseFloat(reservedQtyMtr);
+    if (isNaN(qty) || qty <= 0) {
+      return NextResponse.json(
+        { error: "Quantity must be a positive number" },
+        { status: 400 }
+      );
+    }
+
+    // Use transaction with row-level locking to prevent race conditions
+    const result = await prisma.$transaction(async (tx) => {
+      // Get SO item with existing reservations
+      const soItem = await tx.salesOrderItem.findUnique({
+        where: { id: soItemId },
+        include: {
+          stockReservations: {
+            where: { status: "RESERVED" },
+            select: { reservedQtyMtr: true },
+          },
+        },
+      });
+
+      if (!soItem) {
+        throw new Error("SO Item not found");
+      }
+
+      // Check if reservation would exceed SO item quantity
+      const alreadyReserved = soItem.stockReservations.reduce(
+        (sum, r) => sum + Number(r.reservedQtyMtr),
+        0
+      );
+      const remaining = Number(soItem.quantity) - alreadyReserved;
+
+      if (qty > remaining + 0.001) {
+        throw new Error(
+          `Cannot reserve ${qty.toFixed(3)} Mtr. Only ${remaining.toFixed(3)} Mtr remaining for this item.`
+        );
+      }
+
+      // Lock and check stock availability
+      // Use raw query for row-level lock (SELECT ... FOR UPDATE)
+      const stocks = await tx.$queryRaw<Array<{ id: string; quantityMtr: any; status: string; heatNo: string | null; product: string | null; sizeLabel: string | null }>>`
+        SELECT id, "quantityMtr", status, "heatNo", product, "sizeLabel"
+        FROM "InventoryStock"
+        WHERE id = ${inventoryStockId}
+        FOR UPDATE
+      `;
+
+      if (stocks.length === 0) {
+        throw new Error("Stock not found");
+      }
+
+      const inventoryStock = stocks[0];
+
+      if (inventoryStock.status !== "ACCEPTED") {
+        throw new Error("Stock is not in ACCEPTED status. Current: " + inventoryStock.status);
+      }
+
+      const availableQty = Number(inventoryStock.quantityMtr);
+
+      if (qty > availableQty + 0.001) {
+        throw new Error(
+          `Insufficient stock. Available: ${availableQty.toFixed(3)} Mtr, Requested: ${qty.toFixed(3)} Mtr`
+        );
+      }
+
+      // Create reservation
+      const reservation = await tx.stockReservation.create({
+        data: {
+          salesOrderItemId: soItemId,
+          inventoryStockId,
+          reservedQtyMtr: qty,
+          reservedPieces: reservedPieces || 0,
+        },
+        include: {
+          inventoryStock: true,
+        },
+      });
+
+      // Deduct from available stock quantity but keep status as ACCEPTED
+      // so remaining stock is still available for other SOs
+      const newQty = availableQty - qty;
+      await tx.inventoryStock.update({
+        where: { id: inventoryStockId },
+        data: {
+          quantityMtr: newQty,
+          // Only set RESERVED if all quantity is now reserved (none left)
+          ...(newQty <= 0.001 && { status: "RESERVED", reservedForSO: id }),
+        },
+      });
+
+      return { reservation, inventoryStock };
     });
 
-    if (!inventoryStock) {
-      return NextResponse.json({ error: "Stock not found" }, { status: 404 });
-    }
-
-    if (inventoryStock.status !== "ACCEPTED") {
-      return NextResponse.json(
-        { error: "Stock is not in ACCEPTED status" },
-        { status: 400 }
-      );
-    }
-
-    const qty = parseFloat(reservedQtyMtr);
-    const availableQty = parseFloat(inventoryStock.quantityMtr.toString());
-
-    if (qty > availableQty) {
-      return NextResponse.json(
-        { error: "Insufficient stock quantity" },
-        { status: 400 }
-      );
-    }
-
-    // FIFO check - warn if not reserving oldest stock first
-    if (inventoryStock.heatNo && inventoryStock.product && inventoryStock.sizeLabel) {
+    // FIFO check — advisory warnings returned to user
+    let fifoWarnings: string[] = [];
+    const stock = result.inventoryStock;
+    if (stock.heatNo && stock.product && stock.sizeLabel) {
       const fifoCheck = await validateFIFOReservation(
-        inventoryStock.product,
-        inventoryStock.sizeLabel,
-        [inventoryStock.heatNo]
+        stock.product,
+        stock.sizeLabel,
+        [stock.heatNo]
       );
-      // FIFO is advisory, include warnings in response but don't block
       if (fifoCheck.warnings && fifoCheck.warnings.length > 0) {
-        // Log but proceed - FIFO is a recommendation per PRD
-        console.log("FIFO advisory:", fifoCheck.warnings.join("; "));
+        fifoWarnings = fifoCheck.warnings;
       }
     }
 
-    // Create reservation
-    const reservation = await prisma.stockReservation.create({
-      data: {
-        salesOrderItemId: soItemId,
-        inventoryStockId,
-        reservedQtyMtr: qty,
-        reservedPieces: reservedPieces || 0,
-      },
-      include: {
-        inventoryStock: true,
-      },
-    });
-
-    // Update inventory stock
-    await prisma.inventoryStock.update({
-      where: { id: inventoryStockId },
-      data: {
-        status: "RESERVED",
-        reservedForSO: id,
-        quantityMtr: availableQty - qty,
-      },
-    });
-
-    return NextResponse.json(reservation, { status: 201 });
-  } catch (error) {
+    return NextResponse.json(
+      { ...result.reservation, fifoWarnings },
+      { status: 201 }
+    );
+  } catch (error: any) {
     console.error("Error creating reservation:", error);
     return NextResponse.json(
-      { error: "Failed to create reservation" },
-      { status: 500 }
+      { error: error.message || "Failed to create reservation" },
+      { status: error.message ? 400 : 500 }
     );
   }
 }
@@ -142,14 +189,38 @@ export async function GET(
     }
 
     // Find matching available stock (FIFO by MTC date)
+    // Match by product, material/specification, AND sizeLabel
+    const whereClause: any = {
+      status: "ACCEPTED",
+      quantityMtr: { gt: 0 },
+    };
+
+    if (soItem.product) {
+      whereClause.product = { contains: soItem.product };
+    }
+    if (soItem.sizeLabel) {
+      whereClause.sizeLabel = soItem.sizeLabel;
+    }
+    // Match material against specification field in InventoryStock
+    if (soItem.material) {
+      whereClause.specification = { contains: soItem.material };
+    }
+
     const availableStock = await prisma.inventoryStock.findMany({
-      where: {
-        status: "ACCEPTED",
-        ...(soItem.product && { product: { contains: soItem.product } }),
-        ...(soItem.sizeLabel && { sizeLabel: soItem.sizeLabel }),
-        quantityMtr: { gt: 0 },
-      },
+      where: whereClause,
       orderBy: { mtcDate: "asc" }, // FIFO
+      select: {
+        id: true,
+        heatNo: true,
+        product: true,
+        specification: true,
+        sizeLabel: true,
+        quantityMtr: true,
+        pieces: true,
+        mtcDate: true,
+        mtcNo: true,
+        make: true,
+      },
     });
 
     return NextResponse.json({ availableStock });
@@ -158,6 +229,84 @@ export async function GET(
     return NextResponse.json(
       { error: "Failed to fetch available stock" },
       { status: 500 }
+    );
+  }
+}
+
+// Release a stock reservation
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const { authorized, session, response } = await checkAccess("salesOrder", "write");
+    if (!authorized) return response!;
+
+    const body = await request.json();
+    const { reservationId } = body;
+
+    if (!reservationId) {
+      return NextResponse.json(
+        { error: "Reservation ID is required" },
+        { status: 400 }
+      );
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // Get reservation details
+      const reservation = await tx.stockReservation.findUnique({
+        where: { id: reservationId },
+        include: {
+          salesOrderItem: {
+            select: { salesOrderId: true },
+          },
+        },
+      });
+
+      if (!reservation) {
+        throw new Error("Reservation not found");
+      }
+
+      // Verify reservation belongs to this SO
+      if (reservation.salesOrderItem.salesOrderId !== id) {
+        throw new Error("Reservation does not belong to this Sales Order");
+      }
+
+      if (reservation.status !== "RESERVED") {
+        throw new Error(`Cannot release reservation with status: ${reservation.status}`);
+      }
+
+      // Restore quantity to inventory stock
+      const inventoryStock = await tx.inventoryStock.findUnique({
+        where: { id: reservation.inventoryStockId },
+      });
+
+      if (inventoryStock) {
+        const restoredQty = Number(inventoryStock.quantityMtr) + Number(reservation.reservedQtyMtr);
+        await tx.inventoryStock.update({
+          where: { id: reservation.inventoryStockId },
+          data: {
+            quantityMtr: restoredQty,
+            status: "ACCEPTED",
+            reservedForSO: null,
+          },
+        });
+      }
+
+      // Update reservation status
+      await tx.stockReservation.update({
+        where: { id: reservationId },
+        data: { status: "RELEASED" },
+      });
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error("Error releasing reservation:", error);
+    return NextResponse.json(
+      { error: error.message || "Failed to release reservation" },
+      { status: error.message ? 400 : 500 }
     );
   }
 }

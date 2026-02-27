@@ -39,6 +39,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ArrowLeft,
   FileText,
@@ -56,6 +57,7 @@ import {
   Ban,
   Pencil,
   Trash2,
+  Activity,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -149,6 +151,26 @@ export default function QuotationDetailPage() {
     },
   });
 
+  // Fetch email logs
+  const { data: emailLogsData } = useQuery({
+    queryKey: ["quotation-emails", params.id],
+    queryFn: async () => {
+      const res = await fetch(`/api/quotations/${params.id}/emails`);
+      if (!res.ok) throw new Error("Failed to fetch email logs");
+      return res.json();
+    },
+  });
+
+  // Fetch activity trail
+  const { data: activityData } = useQuery({
+    queryKey: ["quotation-activity", params.id],
+    queryFn: async () => {
+      const res = await fetch(`/api/quotations/${params.id}/activity`);
+      if (!res.ok) throw new Error("Failed to fetch activity");
+      return res.json();
+    },
+  });
+
   // Update quotation mutation
   const updateMutation = useMutation({
     mutationFn: async (payload: Record<string, any>) => {
@@ -165,6 +187,7 @@ export default function QuotationDetailPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["quotation", params.id] });
+      queryClient.invalidateQueries({ queryKey: ["quotation-activity", params.id] });
       toast.success("Quotation updated successfully");
       setIsApprovalDialogOpen(false);
       setIsLossDialogOpen(false);
@@ -217,6 +240,8 @@ export default function QuotationDetailPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["quotation", params.id] });
+      queryClient.invalidateQueries({ queryKey: ["quotation-emails", params.id] });
+      queryClient.invalidateQueries({ queryKey: ["quotation-activity", params.id] });
       toast.success("Quotation sent successfully");
       setIsEmailDialogOpen(false);
       setEmailData({ to: "", cc: "", subject: "", message: "" });
@@ -1046,6 +1071,138 @@ export default function QuotationDetailPage() {
             </CardContent>
           </Card>
         )}
+
+      {/* Activity & Communication History */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="h-5 w-5" />
+            Activity & Communication History
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="activity">
+            <TabsList>
+              <TabsTrigger value="activity">
+                <History className="h-4 w-4 mr-1" />
+                Activity Trail
+              </TabsTrigger>
+              <TabsTrigger value="emails">
+                <Mail className="h-4 w-4 mr-1" />
+                Email Log
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="activity" className="mt-4">
+              {activityData?.activities?.length > 0 ? (
+                <div className="space-y-3">
+                  {activityData.activities.map((act: any) => {
+                    const actionColors: Record<string, string> = {
+                      CREATE: "bg-green-100 text-green-800",
+                      APPROVE: "bg-blue-100 text-blue-800",
+                      REJECT: "bg-red-100 text-red-800",
+                      SUBMIT_FOR_APPROVAL: "bg-yellow-100 text-yellow-800",
+                      STATUS_CHANGE: "bg-purple-100 text-purple-800",
+                      EMAIL_SENT: "bg-cyan-100 text-cyan-800",
+                      UPDATE: "bg-gray-100 text-gray-800",
+                      DELETE: "bg-red-100 text-red-800",
+                    };
+                    let parsedNew: any = null;
+                    try {
+                      parsedNew = act.newValue ? JSON.parse(act.newValue) : null;
+                    } catch {
+                      parsedNew = act.newValue;
+                    }
+                    return (
+                      <div
+                        key={act.id}
+                        className="flex items-start gap-3 p-3 rounded-lg border"
+                      >
+                        <div className="flex-shrink-0 mt-0.5">
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${actionColors[act.action] || "bg-gray-100 text-gray-800"}`}
+                          >
+                            {act.action.replace(/_/g, " ")}
+                          </span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 text-sm">
+                            <span className="font-medium">{act.user?.name || "System"}</span>
+                            <span className="text-muted-foreground">
+                              {format(new Date(act.timestamp), "dd MMM yyyy, HH:mm")}
+                            </span>
+                          </div>
+                          {act.oldValue && act.fieldName === "status" && (
+                            <div className="text-sm text-muted-foreground mt-1">
+                              {act.oldValue} → {typeof parsedNew === "object" && parsedNew?.status ? parsedNew.status : (parsedNew || "")}
+                            </div>
+                          )}
+                          {typeof parsedNew === "object" && parsedNew?.remarks && (
+                            <div className="text-sm text-muted-foreground mt-1 italic">
+                              {"\u201C"}{parsedNew.remarks}{"\u201D"}
+                            </div>
+                          )}
+                          {typeof parsedNew === "object" && parsedNew?.to && (
+                            <div className="text-sm text-muted-foreground mt-1">
+                              To: {parsedNew.to}
+                              {parsedNew.cc && ` | CC: ${parsedNew.cc}`}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center text-muted-foreground py-8 text-sm">
+                  No activity recorded yet
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="emails" className="mt-4">
+              {emailLogsData?.emailLogs?.length > 0 ? (
+                <div className="rounded-lg border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>To</TableHead>
+                        <TableHead>CC</TableHead>
+                        <TableHead>Subject</TableHead>
+                        <TableHead>Sent By</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {emailLogsData.emailLogs.map((log: any) => (
+                        <TableRow key={log.id}>
+                          <TableCell className="whitespace-nowrap">
+                            {format(new Date(log.sentAt), "dd MMM yyyy, HH:mm")}
+                          </TableCell>
+                          <TableCell className="max-w-[200px] truncate">{log.sentTo}</TableCell>
+                          <TableCell className="max-w-[200px] truncate">{log.sentCc || "---"}</TableCell>
+                          <TableCell className="max-w-[250px] truncate">{log.subject}</TableCell>
+                          <TableCell>{log.sentBy?.name || "---"}</TableCell>
+                          <TableCell>
+                            <Badge variant={log.status === "SUCCESS" ? "default" : "destructive"}>
+                              {log.status}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="text-center text-muted-foreground py-8 text-sm">
+                  No emails sent yet
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
 
       {/* Revision Initiation Dialog */}
       <Dialog open={isReviseDialogOpen} onOpenChange={setIsReviseDialogOpen}>

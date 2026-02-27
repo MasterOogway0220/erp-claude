@@ -54,16 +54,17 @@ export async function analyzeSalesOrderShortfall(
   // Check each SO item for shortfall
   for (const item of so.items) {
     // Get available inventory matching product, material, and size
+    // Note: SalesOrderItem.material maps to InventoryStock.specification
+    const stockWhere: any = {
+      status: 'ACCEPTED',
+      quantityMtr: { gt: 0 },
+    };
+    if (item.product) stockWhere.product = { contains: item.product };
+    if (item.material) stockWhere.specification = { contains: item.material };
+    if (item.sizeLabel) stockWhere.sizeLabel = item.sizeLabel;
+
     const availableStock = await prisma.inventoryStock.findMany({
-      where: {
-        product: item.product || undefined,
-        specification: item.material || undefined,
-        sizeLabel: item.sizeLabel || undefined,
-        status: 'ACCEPTED',
-        quantityMtr: {
-          gt: 0,
-        },
-      },
+      where: stockWhere,
       select: {
         quantityMtr: true,
       },
@@ -136,70 +137,70 @@ export async function autoGeneratePRFromShortfall(
 
   console.log(`Shortfall detected for ${analysis.totalShortfallItems} item(s). Generating PR...`);
 
-  // Get current financial year for PR numbering
-  const year = new Date().getFullYear().toString().slice(-2);
-  const month = new Date().getMonth();
-  const currentFY = month >= 3 ? year : (parseInt(year) - 1).toString().padStart(2, '0');
+  // Use transaction to atomically increment sequence and create PR
+  const pr = await prisma.$transaction(async (tx) => {
+    // Get current financial year for PR numbering
+    const year = new Date().getFullYear().toString().slice(-2);
+    const month = new Date().getMonth();
+    const currentFY = month >= 3 ? year : (parseInt(year) - 1).toString().padStart(2, '0');
 
-  // Get next PR sequence number
-  let sequence = await prisma.documentSequence.findUnique({
-    where: { documentType: 'PURCHASE_REQUISITION' },
-  });
-
-  let nextNumber = 1;
-  if (sequence) {
-    nextNumber = sequence.currentNumber + 1;
-    await prisma.documentSequence.update({
+    // Get next PR sequence number with row lock
+    let sequence = await tx.documentSequence.findUnique({
       where: { documentType: 'PURCHASE_REQUISITION' },
-      data: { currentNumber: nextNumber },
     });
-  } else {
-    await prisma.documentSequence.create({
+
+    let nextNumber = 1;
+    if (sequence) {
+      nextNumber = sequence.currentNumber + 1;
+      await tx.documentSequence.update({
+        where: { documentType: 'PURCHASE_REQUISITION' },
+        data: { currentNumber: nextNumber },
+      });
+    } else {
+      await tx.documentSequence.create({
+        data: {
+          documentType: 'PURCHASE_REQUISITION',
+          prefix: 'PR',
+          currentNumber: 1,
+          financialYear: currentFY,
+        },
+      });
+    }
+
+    const prNo = `PR/${currentFY}/${nextNumber.toString().padStart(5, '0')}`;
+
+    // Create PR inside same transaction
+    return tx.purchaseRequisition.create({
       data: {
-        documentType: 'PURCHASE_REQUISITION',
-        prefix: 'PR',
-        currentNumber: 1,
-        financialYear: currentFY,
+        prNo,
+        prDate: new Date(),
+        requiredByDate: addDays(new Date(), 45),
+        status: 'DRAFT',
+        salesOrderId: salesOrderId,
+        items: {
+          create: analysis.items.map((item, index) => ({
+            sNo: index + 1,
+            product: item.product,
+            material: item.material,
+            sizeLabel: item.sizeLabel,
+            additionalSpec: item.additionalSpec || null,
+            quantity: item.shortfallQty,
+            uom: 'MTR',
+            remarks: `For SO ${analysis.salesOrderNo}`,
+          })),
+        },
+      },
+      include: {
+        items: true,
       },
     });
-  }
-
-  const prNo = `PR/${currentFY}/${nextNumber.toString().padStart(5, '0')}`;
-
-  // Create PR
-  const pr = await prisma.purchaseRequisition.create({
-    data: {
-      prNo,
-      prDate: new Date(),
-      requiredByDate: addDays(new Date(), 45), // Default: 45 days
-      status: 'DRAFT',
-      salesOrderId: salesOrderId,
-      items: {
-        create: analysis.items.map((item, index) => ({
-          sNo: index + 1,
-          product: item.product,
-          material: item.material,
-          sizeLabel: item.sizeLabel,
-          additionalSpec: item.additionalSpec || null,
-          quantity: item.shortfallQty, // Request shortfall quantity
-          uom: 'MTR',
-          remarks: `For SO ${analysis.salesOrderNo}`,
-        })),
-      },
-    },
-    include: {
-      items: true,
-    },
   });
-
-  // Link PR to SO (if you have a linking table)
-  // await prisma.soPRLink.create({ data: { soId: salesOrderId, prId: pr.id } });
 
   // Log PR creation
   await logCreate(
     requestedById,
     AuditModule.PURCHASE_REQUISITION,
-    prNo,
+    pr.prNo,
     pr.id,
     pr,
     ipAddress,
@@ -207,11 +208,11 @@ export async function autoGeneratePRFromShortfall(
     `Auto-generated PR from SO shortfall: ${analysis.salesOrderNo}`
   );
 
-  console.log(`✅ PR ${prNo} created successfully with ${analysis.totalShortfallItems} item(s)`);
+  console.log(`PR ${pr.prNo} created successfully with ${analysis.totalShortfallItems} item(s)`);
 
   return {
     prId: pr.id,
-    prNo,
+    prNo: pr.prNo,
     itemCount: analysis.totalShortfallItems,
   };
 }

@@ -179,9 +179,9 @@ function CreateSalesOrderPage() {
 
     // Auto-calculate amount
     if (field === "quantity" || field === "unitRate") {
-      const qty = field === "quantity" ? parseFloat(value) : updatedItems[index].quantity;
-      const rate = field === "unitRate" ? parseFloat(value) : updatedItems[index].unitRate;
-      updatedItems[index].amount = qty * rate;
+      const qty = field === "quantity" ? (parseFloat(value) || 0) : updatedItems[index].quantity;
+      const rate = field === "unitRate" ? (parseFloat(value) || 0) : updatedItems[index].unitRate;
+      updatedItems[index].amount = Math.max(0, qty * rate);
     }
 
     setItems(updatedItems);
@@ -198,6 +198,23 @@ function CreateSalesOrderPage() {
     if (items.length === 0) {
       toast.error("Please add at least one item");
       return;
+    }
+
+    // Validate items
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (!item.quantity || item.quantity <= 0) {
+        toast.error(`Item ${i + 1}: Quantity must be greater than zero`);
+        return;
+      }
+      if (!item.unitRate || item.unitRate <= 0) {
+        toast.error(`Item ${i + 1}: Unit rate must be greater than zero`);
+        return;
+      }
+      if (!item.product) {
+        toast.error(`Item ${i + 1}: Product is required`);
+        return;
+      }
     }
 
     await submitOrder(false);
