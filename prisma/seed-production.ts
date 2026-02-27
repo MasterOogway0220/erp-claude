@@ -197,7 +197,60 @@ async function seedProduction() {
     }
     console.log(`✅ Employees: ${empCreated} created, ${employees.length - empCreated} existing`);
 
-    // 8. Summary
+    // 8. Offer Term Templates (Domestic + Export)
+    const domesticTerms = [
+      { termName: 'Price', termDefaultValue: 'Ex-Godown, Navi Mumbai, India' },
+      { termName: 'Delivery', termDefaultValue: 'As above FOR Site basis + QAP approval Period. LR date will be considered as the date of delivery.' },
+      { termName: 'Payment', termDefaultValue: '100% within 30 days after receipt of materials.' },
+      { termName: 'Offer validity', termDefaultValue: '1 week; further subject to our acceptance.' },
+      { termName: 'Freight', termDefaultValue: 'Extra at actual / To your account' },
+      { termName: 'TPI & Testing', termDefaultValue: 'Inclusive (Testing as per HMEL Standard ITP: 9112-000-INP-614-008, REV. 01)' },
+      { termName: 'P & F charges', termDefaultValue: 'NIL' },
+      { termName: 'Insurance', termDefaultValue: 'To your account. Dispatch details will be shared immediately after dispatch.' },
+      { termName: 'GST', termDefaultValue: '18% GST extra' },
+      { termName: 'Certification', termDefaultValue: 'MTC as per EN 10204 - 3.1' },
+      { termName: 'Material origin', termDefaultValue: 'EIL Approved Mill' },
+      { termName: 'Quantity tolerance', termDefaultValue: '-0/+1 R/L of 5 to 7 mtrs' },
+      { termName: 'Part orders', termDefaultValue: 'Acceptable, subject to reconfirmation' },
+      { termName: 'LD Clause', termDefaultValue: 'Acceptable, 0.5% per week, maximum 5%' },
+    ];
+    const exportTerms = [
+      { termName: 'Currency', termDefaultValue: 'USD ($)' },
+      { termName: 'Price', termDefaultValue: 'Ex-work, Mumbai, India/ Jebel Ali, UAE' },
+      { termName: 'Delivery', termDefaultValue: 'As above, ex-works, after receipt of PO' },
+      { termName: 'Payment', termDefaultValue: '100% within 30 Days from date of dispatch' },
+      { termName: 'Offer validity', termDefaultValue: '6 Days, subject to stock remain unsold' },
+      { termName: 'Packing', termDefaultValue: 'Inclusive' },
+      { termName: 'Freight', termDefaultValue: 'Extra at actual / To your account' },
+      { termName: 'Insurance', termDefaultValue: 'Extra at actual / To your account' },
+      { termName: 'Certification', termDefaultValue: 'Not Applicable' },
+      { termName: 'T/T charges', termDefaultValue: 'To your account, Full Invoice amount to be remitted. No deduction of T/T charges acceptable.' },
+      { termName: 'Third Party Inspection', termDefaultValue: 'Not Applicable' },
+      { termName: 'Material origin', termDefaultValue: 'International' },
+      { termName: 'Qty. Tolerance', termDefaultValue: 'Not Applicable' },
+      { termName: 'Dimension Tolerance', termDefaultValue: 'Not Applicable' },
+      { termName: 'Part orders', termDefaultValue: 'Not Applicable' },
+    ];
+
+    // Check if any terms already exist to avoid duplicates
+    const existingTermsCount = await prisma.offerTermTemplate.count();
+    if (existingTermsCount === 0) {
+      for (let i = 0; i < domesticTerms.length; i++) {
+        await prisma.offerTermTemplate.create({
+          data: { ...domesticTerms[i], sortOrder: i + 1, quotationType: 'DOMESTIC', isActive: true },
+        });
+      }
+      for (let i = 0; i < exportTerms.length; i++) {
+        await prisma.offerTermTemplate.create({
+          data: { ...exportTerms[i], sortOrder: i + 1, quotationType: 'EXPORT', isActive: true },
+        });
+      }
+      console.log(`✅ Offer Terms: ${domesticTerms.length} domestic + ${exportTerms.length} export created`);
+    } else {
+      console.log(`ℹ️  Offer Terms: ${existingTermsCount} already exist, skipping`);
+    }
+
+    // 10. Summary
     console.log('\n✅ Production seed completed successfully!');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('📧 Admin Email:', adminEmail);
