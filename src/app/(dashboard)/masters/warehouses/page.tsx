@@ -47,6 +47,8 @@ export default function WarehousesPage() {
   const [locShelf, setLocShelf] = useState("");
   const [locType, setLocType] = useState("GENERAL");
   const [locCapacity, setLocCapacity] = useState("");
+  const [locPreservation, setLocPreservation] = useState("");
+  const [locStorageConditions, setLocStorageConditions] = useState("");
 
   useEffect(() => {
     fetchWarehouses();
@@ -110,6 +112,8 @@ export default function WarehousesPage() {
           shelf: locShelf,
           locationType: locType,
           capacity: locCapacity,
+          preservationMethod: locPreservation || null,
+          storageConditions: locStorageConditions || null,
         }),
       });
       if (!res.ok) {
@@ -125,6 +129,8 @@ export default function WarehousesPage() {
       setLocShelf("");
       setLocType("GENERAL");
       setLocCapacity("");
+      setLocPreservation("");
+      setLocStorageConditions("");
       fetchWarehouses();
     } catch (error) {
       toast.error("Failed to add location");
@@ -248,24 +254,30 @@ export default function WarehousesPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b">
+                    <th className="p-2 text-left">Location Tag</th>
                     <th className="p-2 text-left">Zone</th>
                     <th className="p-2 text-left">Rack</th>
                     <th className="p-2 text-left">Bay</th>
                     <th className="p-2 text-left">Shelf</th>
                     <th className="p-2 text-left">Type</th>
                     <th className="p-2 text-left">Capacity</th>
+                    <th className="p-2 text-left">Preservation</th>
+                    <th className="p-2 text-left">Storage Conditions</th>
                     <th className="p-2 text-left">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {wh.locations.map((loc: any) => (
                     <tr key={loc.id} className="border-b">
+                      <td className="p-2 font-mono text-xs">{loc.locationTag || "\u2014"}</td>
                       <td className="p-2">{loc.zone || "\u2014"}</td>
                       <td className="p-2">{loc.rack || "\u2014"}</td>
                       <td className="p-2">{loc.bay || "\u2014"}</td>
                       <td className="p-2">{loc.shelf || "\u2014"}</td>
                       <td className="p-2"><Badge variant="outline">{loc.locationType}</Badge></td>
                       <td className="p-2">{loc.capacity || "\u2014"}</td>
+                      <td className="p-2">{loc.preservationMethod || "\u2014"}</td>
+                      <td className="p-2 max-w-[200px] truncate">{loc.storageConditions || "\u2014"}</td>
                       <td className="p-2">
                         <Badge className={loc.isActive ? "bg-green-500" : "bg-gray-500"}>
                           {loc.isActive ? "Active" : "Inactive"}
@@ -322,6 +334,27 @@ export default function WarehousesPage() {
                 <Label>Capacity</Label>
                 <Input value={locCapacity} onChange={(e) => setLocCapacity(e.target.value)} placeholder="e.g. 50 MT" />
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Preservation Method</Label>
+              <Select value={locPreservation} onValueChange={setLocPreservation}>
+                <SelectTrigger><SelectValue placeholder="Select preservation method" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Indoor Protected">Indoor Protected</SelectItem>
+                  <SelectItem value="Climate Controlled">Climate Controlled</SelectItem>
+                  <SelectItem value="Open Yard">Open Yard</SelectItem>
+                  <SelectItem value="Covered Shed">Covered Shed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Storage Conditions</Label>
+              <Textarea
+                value={locStorageConditions}
+                onChange={(e) => setLocStorageConditions(e.target.value)}
+                placeholder="Special storage notes..."
+                rows={2}
+              />
             </div>
             <Button onClick={handleAddLocation} disabled={submitting} className="w-full">
               {submitting ? "Adding..." : "Add Location"}

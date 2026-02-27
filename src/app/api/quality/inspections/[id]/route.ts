@@ -34,10 +34,12 @@ export async function GET(
             id: true,
             heatNo: true,
             product: true,
+            specification: true,
             sizeLabel: true,
             status: true,
             quantityMtr: true,
             pieces: true,
+            make: true,
           },
         },
         inspector: {
@@ -130,19 +132,14 @@ export async function PATCH(
         });
 
         // Update inventory stock status if linked
-        if (existing.inventoryStockId) {
-          let stockStatus: "ACCEPTED" | "REJECTED" | "HOLD";
-          if (overallResult === "PASS") {
-            stockStatus = "ACCEPTED";
-          } else if (overallResult === "FAIL") {
-            stockStatus = "REJECTED";
-          } else {
-            stockStatus = "HOLD";
-          }
+        // For PASS: leave as UNDER_INSPECTION — QC Release will formally accept
+        // For FAIL/HOLD: transition immediately
+        if (existing.inventoryStockId && overallResult !== "PASS") {
+          const stockStatus = overallResult === "FAIL" ? "REJECTED" : "HOLD";
 
           await tx.inventoryStock.update({
             where: { id: existing.inventoryStockId },
-            data: { status: stockStatus },
+            data: { status: stockStatus as any },
           });
         }
       });

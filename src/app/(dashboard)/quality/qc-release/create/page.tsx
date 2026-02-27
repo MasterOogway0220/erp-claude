@@ -32,12 +32,23 @@ export default function CreateQCReleasePage() {
 
   const fetchInspections = async () => {
     try {
-      const res = await fetch("/api/quality/inspections");
-      if (res.ok) {
-        const data = await res.json();
-        // Filter to PASS inspections only
-        const passInspections = (data.inspections || []).filter(
-          (i: any) => i.overallResult === "PASS"
+      const [inspRes, qcrRes] = await Promise.all([
+        fetch("/api/quality/inspections"),
+        fetch("/api/quality/qc-release"),
+      ]);
+      if (inspRes.ok && qcrRes.ok) {
+        const inspData = await inspRes.json();
+        const qcrData = await qcrRes.json();
+        // Get stock IDs that already have QC releases
+        const releasedStockIds = new Set(
+          (qcrData.qcReleases || []).map((r: any) => r.inventoryStockId || r.inventoryStock?.id)
+        );
+        // Filter to PASS inspections with UNDER_INSPECTION stock that hasn't been released
+        const passInspections = (inspData.inspections || []).filter(
+          (i: any) =>
+            i.overallResult === "PASS" &&
+            i.inventoryStock?.status === "UNDER_INSPECTION" &&
+            !releasedStockIds.has(i.inventoryStock?.id || i.inventoryStockId)
         );
         setInspections(passInspections);
       }
@@ -189,6 +200,7 @@ export default function CreateQCReleasePage() {
                     <SelectContent>
                       <SelectItem value="ACCEPT">Accept - Release to Stock</SelectItem>
                       <SelectItem value="REJECT">Reject</SelectItem>
+                      <SelectItem value="HOLD">Hold</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

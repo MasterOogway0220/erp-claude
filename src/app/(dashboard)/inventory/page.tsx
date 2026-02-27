@@ -182,6 +182,13 @@ export default function InventoryPage() {
     },
   ];
 
+  const issueStatusColors: Record<string, string> = {
+    DRAFT: "bg-gray-500",
+    PENDING_AUTHORIZATION: "bg-yellow-500",
+    AUTHORIZED: "bg-green-500",
+    REJECTED: "bg-red-500",
+  };
+
   const stockIssueColumns: Column<any>[] = [
     {
       key: "issueNo",
@@ -209,6 +216,15 @@ export default function InventoryPage() {
       key: "customer",
       header: "Customer",
       cell: (row) => (row.salesOrder as any)?.customer?.name || "—",
+    },
+    {
+      key: "status",
+      header: "Status",
+      cell: (row) => (
+        <Badge className={issueStatusColors[row.status as string] || "bg-gray-500"}>
+          {(row.status as string || "DRAFT").replace(/_/g, " ")}
+        </Badge>
+      ),
     },
     {
       key: "items",

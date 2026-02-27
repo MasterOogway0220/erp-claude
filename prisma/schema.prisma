@@ -5,7 +5,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
 }
 
 // ==================== ENUMS ====================
@@ -95,6 +95,13 @@ enum InspectionResult {
   PASS
   FAIL
   HOLD
+}
+
+enum StockIssueStatus {
+  DRAFT
+  PENDING_AUTHORIZATION
+  AUTHORIZED
+  REJECTED
 }
 
 enum PaymentMode {
@@ -192,6 +199,11 @@ enum QuotationCategory {
   NON_STANDARD
 }
 
+enum EmailLogStatus {
+  SUCCESS
+  FAILED
+}
+
 // ==================== USER & AUTH ====================
 
 model User {
@@ -222,6 +234,8 @@ model User {
   issuedStockIssues   StockIssue[]        @relation("IssuedBy")
   authorizedStockIssues StockIssue[]      @relation("AuthorizedBy")
   qcReleases          QCRelease[]         @relation("ReleasedBy")
+  emailsSent          QuotationEmailLog[] @relation("EmailSentBy")
+  approvedVendors     VendorMaster[]      @relation("VendorApprovedBy")
 
   @@index([email])
 }
@@ -282,7 +296,7 @@ model VendorMaster {
   state            String?
   country          String   @default("India")
   pincode          String?
-  approvedStatus   Boolean  @default(true)
+  approvedStatus   Boolean  @default(false)
   productsSupplied String?
   avgLeadTimeDays  Int?
   performanceScore Decimal? @db.Decimal(3, 1)
@@ -298,11 +312,14 @@ model VendorMaster {
   bankName         String?
   vendorRating     Decimal? @db.Decimal(3, 1)
   approvalDate     DateTime?
+  approvedById     String?
+  approvalRemarks  String?
   pan              String?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
   // Relations
+  approvedBy           User?                 @relation("VendorApprovedBy", fields: [approvedById], references: [id])
   purchaseRequisitions PurchaseRequisition[] @relation("PRVendor")
   purchaseOrders       PurchaseOrder[]
   goodsReceiptNotes    GoodsReceiptNote[]
@@ -548,6 +565,7 @@ model Quotation {
   items              QuotationItem[]
   terms              QuotationTerm[]
   salesOrders        SalesOrder[]
+  emailLogs          QuotationEmailLog[]
 
   @@unique([quotationNo, version])
   @@index([quotationNo])
@@ -562,6 +580,25 @@ model Quotation {
   @@index([revisionTrigger])
   @@index([dealOwnerId])
   @@index([nextActionDate])
+}
+
+model QuotationEmailLog {
+  id           String         @id @default(cuid())
+  quotationId  String
+  sentTo       String
+  sentCc       String?
+  subject      String
+  messageBody  String         @db.Text
+  sentById     String?
+  sentAt       DateTime       @default(now())
+  status       EmailLogStatus
+  errorMessage String?        @db.Text
+
+  quotation    Quotation      @relation(fields: [quotationId], references: [id])
+  sentBy       User?          @relation("EmailSentBy", fields: [sentById], references: [id])
+
+  @@index([quotationId])
+  @@index([sentById])
 }
 
 model QuotationItem {
@@ -1225,17 +1262,20 @@ model WarehouseMaster {
 }
 
 model WarehouseLocation {
-  id           String   @id @default(cuid())
-  warehouseId  String
-  zone         String?
-  rack         String?
-  bay          String?
-  shelf        String?
-  locationType String   @default("GENERAL")
-  capacity     String?
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                  String   @id @default(cuid())
+  warehouseId         String
+  zone                String?
+  rack                String?
+  bay                 String?
+  shelf               String?
+  locationType        String   @default("GENERAL")
+  capacity            String?
+  locationTag         String?  @unique
+  preservationMethod  String?
+  storageConditions   String?  @db.Text
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   // Relations
   warehouse      WarehouseMaster  @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
@@ -1247,15 +1287,16 @@ model WarehouseLocation {
 // ==================== STOCK ISSUE ====================
 
 model StockIssue {
-  id             String   @id @default(cuid())
-  issueNo        String   @unique
-  issueDate      DateTime @default(now())
+  id             String           @id @default(cuid())
+  issueNo        String           @unique
+  issueDate      DateTime         @default(now())
   salesOrderId   String
   issuedById     String
   authorizedById String?
+  status         StockIssueStatus @default(DRAFT)
   remarks        String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
 
   // Relations
   salesOrder  SalesOrder      @relation(fields: [salesOrderId], references: [id])

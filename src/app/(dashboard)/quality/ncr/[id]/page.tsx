@@ -168,6 +168,10 @@ export default function NCRDetailPage() {
       toast.error("Please provide a corrective action");
       return;
     }
+    if (!capaData.preventiveAction.trim()) {
+      toast.error("Please provide a preventive action");
+      return;
+    }
     if (!capaData.disposition) {
       toast.error("Please select a disposition");
       return;
@@ -287,7 +291,7 @@ export default function NCRDetailPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Preventive Action</Label>
+                    <Label>Preventive Action *</Label>
                     <Textarea
                       value={capaData.preventiveAction}
                       onChange={(e) => setCAPAData({ ...capaData, preventiveAction: e.target.value })}

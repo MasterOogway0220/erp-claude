@@ -506,6 +506,10 @@ export default function QualityPage() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>MTC Document Repository</CardTitle>
+                <Button onClick={() => router.push("/quality/mtc/create")}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Upload MTC
+                </Button>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">

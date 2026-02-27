@@ -48,6 +48,8 @@ export async function GET(request: NextRequest) {
             product: true,
             sizeLabel: true,
             status: true,
+            quantityMtr: true,
+            pieces: true,
           },
         },
         inspector: {

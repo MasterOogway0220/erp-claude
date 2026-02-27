@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     if (!authorized) return response!;
 
     const body = await request.json();
-    const { salesOrderId, authorizedById, remarks, items } = body;
+    const { salesOrderId, remarks, items } = body;
 
     if (!salesOrderId) {
       return NextResponse.json({ error: "Sales Order is required" }, { status: 400 });
@@ -106,63 +106,28 @@ export async function POST(request: NextRequest) {
 
     const issueNo = await generateDocumentNumber("STOCK_ISSUE");
 
-    const stockIssue = await prisma.$transaction(async (tx) => {
-      const created = await tx.stockIssue.create({
-        data: {
-          issueNo,
-          salesOrderId,
-          issuedById: session.user.id,
-          authorizedById: authorizedById || null,
-          remarks: remarks || null,
-          items: {
-            create: items.map((item: any) => ({
-              inventoryStockId: item.inventoryStockId,
-              heatNo: item.heatNo || null,
-              sizeLabel: item.sizeLabel || null,
-              material: item.material || null,
-              quantityMtr: parseFloat(item.quantityMtr) || 0,
-              pieces: parseInt(item.pieces) || 0,
-              location: item.location || null,
-            })),
-          },
+    const stockIssue = await prisma.stockIssue.create({
+      data: {
+        issueNo,
+        salesOrderId,
+        issuedById: session.user.id,
+        status: "DRAFT",
+        remarks: remarks || null,
+        items: {
+          create: items.map((item: any) => ({
+            inventoryStockId: item.inventoryStockId,
+            heatNo: item.heatNo || null,
+            sizeLabel: item.sizeLabel || null,
+            material: item.material || null,
+            quantityMtr: parseFloat(item.quantityMtr) || 0,
+            pieces: parseInt(item.pieces) || 0,
+            location: item.location || null,
+          })),
         },
-        include: {
-          items: true,
-        },
-      });
-
-      // Update each inventory stock status (quantity was already decremented during reservation)
-      for (const item of created.items) {
-        const stock = await tx.inventoryStock.findUnique({
-          where: { id: item.inventoryStockId },
-          select: { quantityMtr: true, pieces: true },
-        });
-        if (!stock) continue;
-
-        if (Number(stock.quantityMtr) <= 0) {
-          // Fully reserved/dispatched - mark as DISPATCHED and clear reservation link
-          await tx.inventoryStock.update({
-            where: { id: item.inventoryStockId },
-            data: {
-              quantityMtr: 0,
-              pieces: 0,
-              status: "DISPATCHED",
-              reservedForSO: null,
-            },
-          });
-        } else {
-          // Partially reserved - mark dispatched, clear reservation link
-          await tx.inventoryStock.update({
-            where: { id: item.inventoryStockId },
-            data: {
-              status: "DISPATCHED",
-              reservedForSO: null,
-            },
-          });
-        }
-      }
-
-      return created;
+      },
+      include: {
+        items: true,
+      },
     });
 
     const full = await prisma.stockIssue.findUnique({

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkAccess } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
+import { generateLocationTag } from "@/lib/location-tag";
 
 export async function GET(
   request: NextRequest,
@@ -37,11 +38,23 @@ export async function POST(
     if (!authorized) return response!;
 
     const body = await request.json();
-    const { zone, rack, bay, shelf, locationType, capacity } = body;
+    const { zone, rack, bay, shelf, locationType, capacity, preservationMethod, storageConditions } = body;
 
     const warehouse = await prisma.warehouseMaster.findUnique({ where: { id } });
     if (!warehouse) {
       return NextResponse.json({ error: "Warehouse not found" }, { status: 404 });
+    }
+
+    // Generate location tag
+    const locationTag = generateLocationTag(warehouse.code, zone, rack, bay, shelf);
+
+    // Check uniqueness
+    const existing = await prisma.warehouseLocation.findUnique({ where: { locationTag } });
+    if (existing) {
+      return NextResponse.json(
+        { error: `Location tag "${locationTag}" already exists` },
+        { status: 409 }
+      );
     }
 
     const location = await prisma.warehouseLocation.create({
@@ -53,6 +66,9 @@ export async function POST(
         shelf: shelf || null,
         locationType: locationType || "GENERAL",
         capacity: capacity || null,
+        locationTag,
+        preservationMethod: preservationMethod || null,
+        storageConditions: storageConditions || null,
       },
     });
 
