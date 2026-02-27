@@ -16,10 +16,10 @@ export async function GET(request: NextRequest) {
 
     if (search) {
       where.OR = [
-        { name: { contains: search as const } },
-        { email: { contains: search as const } },
-        { gstNo: { contains: search as const } },
-        { contactPerson: { contains: search as const } },
+        { name: { contains: search } },
+        { email: { contains: search } },
+        { gstNo: { contains: search } },
+        { contactPerson: { contains: search } },
       ];
     }
 

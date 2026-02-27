@@ -22,8 +22,8 @@ export async function GET(request: NextRequest) {
 
     if (search) {
       where.OR = [
-        { quotationNo: { contains: search as const } },
-        { customer: { name: { contains: search as const } } },
+        { quotationNo: { contains: search } },
+        { customer: { name: { contains: search } } },
       ];
     }
 

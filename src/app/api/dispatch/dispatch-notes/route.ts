@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 
     if (search) {
       where.OR = [
-        { dnNo: { contains: search as const } },
+        { dnNo: { contains: search } },
       ];
     }
 

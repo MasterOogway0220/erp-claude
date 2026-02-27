@@ -18,9 +18,9 @@ export async function GET(request: NextRequest) {
 
     if (search) {
       where.OR = [
-        { poNo: { contains: search as const } },
-        { vendor: { name: { contains: search as const } } },
-        { salesOrder: { soNo: { contains: search as const } } },
+        { poNo: { contains: search } },
+        { vendor: { name: { contains: search } } },
+        { salesOrder: { soNo: { contains: search } } },
       ];
     }
 

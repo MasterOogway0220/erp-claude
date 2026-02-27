@@ -15,8 +15,8 @@ export async function GET(request: NextRequest) {
     const where: any = {};
     if (search) {
       where.OR = [
-        { issueNo: { contains: search as const } },
-        { salesOrder: { soNo: { contains: search as const } } },
+        { issueNo: { contains: search } },
+        { salesOrder: { soNo: { contains: search } } },
       ];
     }
 

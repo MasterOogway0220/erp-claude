@@ -21,8 +21,8 @@ export async function GET(request: NextRequest) {
 
     if (search) {
       where.OR = [
-        { tableName: { contains: search as const } },
-        { recordId: { contains: search as const } },
+        { tableName: { contains: search } },
+        { recordId: { contains: search } },
       ];
     }
 

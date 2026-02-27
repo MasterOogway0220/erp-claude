@@ -15,7 +15,7 @@ export async function GET(
 
     const stocks = await prisma.inventoryStock.findMany({
       where: {
-        heatNo: { equals: heatNo as const },
+        heatNo: { equals: heatNo },
       },
       include: {
         grnItem: {

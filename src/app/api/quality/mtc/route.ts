@@ -16,8 +16,8 @@ export async function GET(request: NextRequest) {
 
     if (search) {
       where.OR = [
-        { mtcNo: { contains: search as const } },
-        { heatNo: { contains: search as const } },
+        { mtcNo: { contains: search } },
+        { heatNo: { contains: search } },
       ];
     }
 

@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ results: [] });
     }
 
-    const searchFilter = { contains: q as const };
+    const searchFilter = { contains: q };
 
     const [
       quotations,
@@ -92,70 +92,70 @@ export async function GET(request: NextRequest) {
 
     const results = [
       ...quotations.map((q) => ({
-        type: "Quotation" as const,
+        type: "Quotation",
         id: q.id,
         label: q.quotationNo,
         description: q.customer?.name || q.status,
         href: `/quotations/${q.id}`,
       })),
       ...salesOrders.map((so) => ({
-        type: "Sales Order" as const,
+        type: "Sales Order",
         id: so.id,
         label: so.soNo,
         description: so.customer?.name || so.status,
         href: `/sales-orders/${so.id}`,
       })),
       ...purchaseOrders.map((po) => ({
-        type: "Purchase Order" as const,
+        type: "Purchase Order",
         id: po.id,
         label: po.poNo,
         description: po.vendor?.name || po.status,
         href: `/purchase/orders/${po.id}`,
       })),
       ...grns.map((g) => ({
-        type: "GRN" as const,
+        type: "GRN",
         id: g.id,
         label: g.grnNo,
         description: g.vendor?.name || "",
         href: `/inventory/grn/${g.id}`,
       })),
       ...stocks.map((s) => ({
-        type: "Stock" as const,
+        type: "Stock",
         id: s.id,
         label: s.heatNo || s.id,
         description: [s.product, s.sizeLabel, s.status].filter(Boolean).join(" - "),
         href: `/inventory/stock/${s.id}`,
       })),
       ...inspections.map((i) => ({
-        type: "Inspection" as const,
+        type: "Inspection",
         id: i.id,
         label: i.inspectionNo,
         description: i.overallResult || "",
         href: `/quality/inspections/${i.id}`,
       })),
       ...ncrs.map((n) => ({
-        type: "NCR" as const,
+        type: "NCR",
         id: n.id,
         label: n.ncrNo,
         description: [n.heatNo, n.status].filter(Boolean).join(" - "),
         href: `/quality/ncr/${n.id}`,
       })),
       ...packingLists.map((pl) => ({
-        type: "Packing List" as const,
+        type: "Packing List",
         id: pl.id,
         label: pl.plNo,
         description: pl.salesOrder?.soNo || "",
         href: `/dispatch/packing-lists/${pl.id}`,
       })),
       ...dispatchNotes.map((dn) => ({
-        type: "Dispatch Note" as const,
+        type: "Dispatch Note",
         id: dn.id,
         label: dn.dnNo,
         description: dn.destination || "",
         href: `/dispatch/dispatch-notes/${dn.id}`,
       })),
       ...invoices.map((inv) => ({
-        type: "Invoice" as const,
+        type: "Invoice",
         id: inv.id,
         label: inv.invoiceNo,
         description: inv.status || "",
