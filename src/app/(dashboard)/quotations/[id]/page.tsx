@@ -547,21 +547,7 @@ export default function QuotationDetailPage() {
                 </div>
               </div>
             )}
-            {quotation.inquiryNo && (
-              <div className="grid grid-cols-2 gap-2">
-                <div className="text-sm text-muted-foreground">Inquiry No.</div>
-                <div className="font-medium">{quotation.inquiryNo}</div>
-              </div>
-            )}
-            {quotation.inquiryDate && (
-              <div className="grid grid-cols-2 gap-2">
-                <div className="text-sm text-muted-foreground">Inquiry Date</div>
-                <div className="font-medium">
-                  {format(new Date(quotation.inquiryDate), "dd MMM yyyy")}
-                </div>
-              </div>
-            )}
-            {quotation.revisionTrigger && (
+{quotation.revisionTrigger && (
               <div className="grid grid-cols-2 gap-2">
                 <div className="text-sm text-muted-foreground">Revision Reason</div>
                 <div className="font-medium">

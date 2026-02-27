@@ -58,8 +58,7 @@ async function seedProduction() {
 
     // 2. Create Document Sequences (idempotent)
     const sequences = [
-      { documentType: 'ENQUIRY', prefix: 'ENQ', financialYear: '25' },
-      { documentType: 'QUOTATION', prefix: 'QT', financialYear: '25' },
+{ documentType: 'QUOTATION', prefix: 'QT', financialYear: '25' },
       { documentType: 'SALES_ORDER', prefix: 'SO', financialYear: '25' },
       { documentType: 'PURCHASE_REQUISITION', prefix: 'PR', financialYear: '25' },
       { documentType: 'PURCHASE_ORDER', prefix: 'PO', financialYear: '25' },

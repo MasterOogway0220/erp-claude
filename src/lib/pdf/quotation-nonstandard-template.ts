@@ -23,8 +23,6 @@ interface QuotationData {
   quotationDate: string | Date;
   validUpto?: string | Date | null;
   currency: string;
-  inquiryNo?: string | null;
-  inquiryDate?: string | Date | null;
   customer: {
     name: string;
     addressLine1?: string | null;
@@ -415,16 +413,6 @@ export function generateNonStandardQuotationHtml(
     <td class="info-label">Dated:</td>
     <td class="info-value" colspan="2">${formatDate(quotation.quotationDate)}</td>
   </tr>
-  ${quotation.inquiryNo ? `<tr class="qtn-block">
-    <td colspan="6"></td>
-    <td class="info-label">Client Inquiry No.:</td>
-    <td class="info-value" colspan="2">${escapeHtml(quotation.inquiryNo)}</td>
-  </tr>` : ""}
-  ${quotation.inquiryDate ? `<tr class="qtn-block">
-    <td colspan="6"></td>
-    <td class="info-label">Inquiry Date:</td>
-    <td class="info-value" colspan="2">${formatDate(quotation.inquiryDate)}</td>
-  </tr>` : ""}
   <tr><td colspan="9" style="height:4px;"></td></tr>
 
   <!-- ZONE 2: Customer / Buyer / Prepared By info grid -->
