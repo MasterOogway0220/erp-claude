@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { createAuditLog } from "@/lib/audit";
 import { checkAccess } from "@/lib/rbac";
 
 export async function PATCH(
@@ -7,12 +8,12 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { authorized, response } = await checkAccess("mtc", "write");
+    const { authorized, session, response } = await checkAccess("mtc", "write");
     if (!authorized) return response!;
 
     const { id } = await params;
     const body = await request.json();
-    const { verificationStatus, remarks } = body;
+    const { verificationStatus, remarks, filePath } = body;
 
     const validStatuses = ["PENDING", "VERIFIED", "DISCREPANT"];
     if (verificationStatus && !validStatuses.includes(verificationStatus)) {
@@ -30,9 +31,18 @@ export async function PATCH(
       );
     }
 
+    // Mandatory attachment: MTC file required before marking as VERIFIED
+    if (verificationStatus === "VERIFIED" && !existing.filePath && !filePath) {
+      return NextResponse.json(
+        { error: "MTC file attachment is mandatory before marking as VERIFIED" },
+        { status: 400 }
+      );
+    }
+
     const updateData: any = {};
     if (verificationStatus) updateData.verificationStatus = verificationStatus;
     if (remarks !== undefined) updateData.remarks = remarks;
+    if (filePath !== undefined) updateData.filePath = filePath;
 
     const updated = await prisma.mTCDocument.update({
       where: { id },
@@ -49,6 +59,16 @@ export async function PATCH(
         },
       },
     });
+
+    createAuditLog({
+      userId: session.user.id,
+      action: "UPDATE",
+      tableName: "MTCDocument",
+      recordId: id,
+      fieldName: "verificationStatus",
+      oldValue: existing.verificationStatus || undefined,
+      newValue: verificationStatus || existing.verificationStatus || undefined,
+    }).catch(console.error);
 
     return NextResponse.json(updated);
   } catch (error) {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { createAuditLog } from "@/lib/audit";
 import { generateDocumentNumber } from "@/lib/document-numbering";
 import { checkAccess } from "@/lib/rbac";
 
@@ -189,6 +190,16 @@ export async function PATCH(
         return { acceptedStock, rejectedStock };
       });
 
+      createAuditLog({
+        userId: session.user.id,
+        action: "UPDATE",
+        tableName: "InventoryStock",
+        recordId: id,
+        fieldName: "status",
+        oldValue: "UNDER_INSPECTION",
+        newValue: "ACCEPTED (partial split)",
+      }).catch(console.error);
+
       return NextResponse.json(result);
     }
 
@@ -199,10 +210,28 @@ export async function PATCH(
     if (rackNo !== undefined) updateData.rackNo = rackNo;
     if (notes !== undefined) updateData.notes = notes;
 
+    // Fetch existing status for audit trail
+    const existingForAudit = status ? await prisma.inventoryStock.findUnique({
+      where: { id },
+      select: { status: true },
+    }) : null;
+
     const stock = await prisma.inventoryStock.update({
       where: { id },
       data: updateData,
     });
+
+    if (status && existingForAudit) {
+      createAuditLog({
+        userId: session.user.id,
+        action: "UPDATE",
+        tableName: "InventoryStock",
+        recordId: id,
+        fieldName: "status",
+        oldValue: existingForAudit.status,
+        newValue: status,
+      }).catch(console.error);
+    }
 
     // Auto-create NCR if status changed to REJECTED
     if (status === "REJECTED") {
@@ -219,7 +248,7 @@ export async function PATCH(
         },
       });
 
-      await prisma.nCR.create({
+      const ncr = await prisma.nCR.create({
         data: {
           ncrNo,
           grnItemId: stockWithGrn?.grnItemId || null,
@@ -232,6 +261,14 @@ export async function PATCH(
           status: "OPEN",
         },
       });
+
+      createAuditLog({
+        userId: session.user.id,
+        action: "CREATE",
+        tableName: "NCR",
+        recordId: ncr.id,
+        newValue: JSON.stringify({ ncrNo, inventoryStockId: id }),
+      }).catch(console.error);
     }
 
     return NextResponse.json(stock);

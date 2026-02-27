@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
     if (!authorized) return response!;
 
     const body = await request.json();
-    const { grnItemId, inventoryStockId, inspectionType, remarks, parameters } = body;
+    const { grnItemId, inventoryStockId, inspectionType, remarks, parameters, reportPath } = body;
 
     if (!parameters || parameters.length === 0) {
       return NextResponse.json(
@@ -94,6 +94,14 @@ export async function POST(request: NextRequest) {
       overallResult = "HOLD";
     }
 
+    // Mandatory attachment: inspection report required for PASS result
+    if (overallResult === "PASS" && !reportPath) {
+      return NextResponse.json(
+        { error: "Inspection report attachment is mandatory for PASS result" },
+        { status: 400 }
+      );
+    }
+
     const inspectionNo = await generateDocumentNumber("INSPECTION");
 
     const inspection = await prisma.$transaction(async (tx) => {
@@ -106,6 +114,7 @@ export async function POST(request: NextRequest) {
           inspectionType: inspectionType || null,
           overallResult,
           remarks: remarks || null,
+          reportPath: reportPath || null,
           parameters: {
             create: parameters.map((p: any) => ({
               parameterName: p.parameterName,

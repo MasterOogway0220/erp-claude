@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { createAuditLog } from "@/lib/audit";
 import { checkAccess } from "@/lib/rbac";
 
 export async function GET(
@@ -74,11 +75,11 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const { authorized, response } = await checkAccess("inspection", "write");
+    const { authorized, session, response } = await checkAccess("inspection", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
-    const { remarks, parameters } = body;
+    const { remarks, parameters, reportPath } = body;
 
     const existing = await prisma.inspection.findUnique({
       where: { id },
@@ -93,6 +94,7 @@ export async function PATCH(
 
     const updateData: any = {};
     if (remarks !== undefined) updateData.remarks = remarks;
+    if (reportPath !== undefined) updateData.reportPath = reportPath;
 
     // If parameters are provided, delete existing and recreate
     if (parameters && parameters.length > 0) {
@@ -105,6 +107,14 @@ export async function PATCH(
         overallResult = "HOLD";
       }
       updateData.overallResult = overallResult;
+
+      // Mandatory attachment: inspection report required for PASS result
+      if (overallResult === "PASS" && !existing.reportPath && !reportPath) {
+        return NextResponse.json(
+          { error: "Inspection report attachment is mandatory for PASS result" },
+          { status: 400 }
+        );
+      }
 
       await prisma.$transaction(async (tx) => {
         // Delete existing parameters
@@ -164,6 +174,18 @@ export async function PATCH(
         parameters: true,
       },
     });
+
+    if (parameters && parameters.length > 0) {
+      createAuditLog({
+        userId: session.user.id,
+        action: "UPDATE",
+        tableName: "Inspection",
+        recordId: id,
+        fieldName: "overallResult",
+        oldValue: existing.overallResult,
+        newValue: updated?.overallResult || existing.overallResult,
+      }).catch(console.error);
+    }
 
     return NextResponse.json(updated);
   } catch (error) {

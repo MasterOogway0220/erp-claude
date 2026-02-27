@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { PipeType } from "@prisma/client";
+import { createAuditLog } from "@/lib/audit";
 import { checkAccess } from "@/lib/rbac";
 
 export async function GET(request: NextRequest) {
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { authorized, response } = await checkAccess("masters", "write");
+    const { authorized, session, response } = await checkAccess("masters", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -59,6 +60,14 @@ export async function POST(request: NextRequest) {
         pipeType,
       },
     });
+
+    createAuditLog({
+      userId: session.user.id,
+      action: "CREATE",
+      tableName: "PipeSizeMaster",
+      recordId: newSize.id,
+      newValue: JSON.stringify({ sizeLabel, pipeType }),
+    }).catch(console.error);
 
     return NextResponse.json(newSize, { status: 201 });
   } catch (error) {

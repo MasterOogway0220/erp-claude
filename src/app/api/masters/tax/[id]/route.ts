@@ -57,10 +57,21 @@ export async function DELETE(
 
     const existing = await prisma.taxMaster.findUnique({
       where: { id },
-      select: { name: true },
+      select: { name: true, percentage: true },
     });
     if (!existing) {
       return NextResponse.json({ error: "Tax rate not found" }, { status: 404 });
+    }
+
+    // Proactive linked-record check
+    const linkedQuotations = await prisma.quotation.count({
+      where: { taxRate: existing.percentage },
+    });
+    if (linkedQuotations > 0) {
+      return NextResponse.json(
+        { error: `Cannot delete tax rate. It is used in ${linkedQuotations} quotation(s). Consider deactivating instead.` },
+        { status: 400 }
+      );
     }
 
     await prisma.taxMaster.delete({ where: { id } });

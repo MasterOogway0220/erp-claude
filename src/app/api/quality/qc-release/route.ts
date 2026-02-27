@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
     // Validate inspection exists with PASS result
     const inspection = await prisma.inspection.findUnique({
       where: { id: inspectionId },
-      select: { id: true, overallResult: true, inspectionNo: true, inventoryStockId: true },
+      select: { id: true, overallResult: true, inspectionNo: true, inventoryStockId: true, reportPath: true },
     });
 
     if (!inspection) {
@@ -113,6 +113,29 @@ export async function POST(request: NextRequest) {
         { error: `Stock must be in UNDER_INSPECTION status for QC release (current: ${stock.status})` },
         { status: 400 }
       );
+    }
+
+    // Mandatory attachment checks for ACCEPT decision
+    if ((decision || "ACCEPT") === "ACCEPT") {
+      // Check inspection report attachment
+      if (!inspection.reportPath) {
+        return NextResponse.json(
+          { error: "Inspection report attachment required before QC acceptance" },
+          { status: 400 }
+        );
+      }
+
+      // Check verified MTC document
+      const verifiedMtc = await prisma.mTCDocument.findFirst({
+        where: { inventoryStockId, verificationStatus: "VERIFIED" },
+        select: { id: true },
+      });
+      if (!verifiedMtc) {
+        return NextResponse.json(
+          { error: "Verified MTC document required before QC acceptance" },
+          { status: 400 }
+        );
+      }
     }
 
     // Generate release number using standardized document numbering

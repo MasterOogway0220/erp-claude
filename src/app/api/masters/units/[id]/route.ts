@@ -93,6 +93,19 @@ export async function DELETE(
       return NextResponse.json({ error: "Unit not found" }, { status: 404 });
     }
 
+    // Proactive linked-record check
+    const [quotationItemCount, prItemCount] = await Promise.all([
+      prisma.quotationItem.count({ where: { uom: unit.code } }),
+      prisma.pRItem.count({ where: { uom: unit.code } }),
+    ]);
+    const linkedUomCount = quotationItemCount + prItemCount;
+    if (linkedUomCount > 0) {
+      return NextResponse.json(
+        { error: `Cannot delete unit. It is referenced by ${linkedUomCount} line item(s) across quotations and purchase requisitions.` },
+        { status: 400 }
+      );
+    }
+
     await prisma.uomMaster.delete({ where: { id } });
 
     await createAuditLog({

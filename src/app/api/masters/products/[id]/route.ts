@@ -62,6 +62,20 @@ export async function DELETE(
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
+    // Proactive linked-record check
+    const [quotationItemCount, soItemCount, poItemCount] = await Promise.all([
+      prisma.quotationItem.count({ where: { product: product.product } }),
+      prisma.salesOrderItem.count({ where: { product: product.product } }),
+      prisma.pOItem.count({ where: { product: product.product } }),
+    ]);
+    const linkedCount = quotationItemCount + soItemCount + poItemCount;
+    if (linkedCount > 0) {
+      return NextResponse.json(
+        { error: `Cannot delete product. It is referenced by ${linkedCount} line item(s) across quotations, sales orders, and purchase orders.` },
+        { status: 400 }
+      );
+    }
+
     await prisma.productSpecMaster.delete({
       where: { id },
     });
