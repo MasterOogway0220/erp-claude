@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Search, Eye, Download } from "lucide-react";
+import { Plus, Search, Eye, Download, CalendarClock, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -31,18 +31,18 @@ interface Quotation {
   id: string;
   quotationNo: string;
   quotationDate: string;
-  customer: {
-    name: string;
-  };
+  customer: { name: string };
   quotationType: string;
   currency: string;
   status: string;
   version: number;
-  preparedBy: {
-    name: string;
-  } | null;
-  items: any[];
+  grandTotal: number | null;
+  preparedBy: { name: string } | null;
+  dealOwner: { name: string } | null;
+  nextActionDate: string | null;
+  items: { amount: string }[];
   revisionTrigger: string | null;
+  salesOrders: { id: string; orderNo: string }[];
 }
 
 const statusColors: Record<string, string> = {
@@ -69,6 +69,7 @@ export default function QuotationsPage() {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [conversionFilter, setConversionFilter] = useState<string>("all");
   const [revisionFilter, setRevisionFilter] = useState<"all" | "original" | "revised">("all");
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
@@ -98,13 +99,13 @@ export default function QuotationsPage() {
     }
   };
 
-  // Fetch quotations
   const { data, isLoading } = useQuery({
-    queryKey: ["quotations", search, statusFilter, revisionFilter],
+    queryKey: ["quotations", search, statusFilter, conversionFilter, revisionFilter],
     queryFn: async () => {
       const params = new URLSearchParams({
         search,
         ...(statusFilter !== "all" && { status: statusFilter }),
+        ...(conversionFilter !== "all" && { conversionStatus: conversionFilter }),
         ...(revisionFilter !== "all" && { revision: revisionFilter }),
       });
       const res = await fetch(`/api/quotations?${params}`);
@@ -113,8 +114,14 @@ export default function QuotationsPage() {
     },
   });
 
-  const calculateTotal = (items: any[]) => {
-    return items.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
+  const getAmount = (quotation: Quotation) => {
+    if (quotation.grandTotal != null) return Number(quotation.grandTotal);
+    return quotation.items.reduce((sum, item) => sum + parseFloat(item.amount || "0"), 0);
+  };
+
+  const isOverdue = (dateStr: string | null) => {
+    if (!dateStr) return false;
+    return new Date(dateStr) < new Date();
   };
 
   return (
@@ -124,27 +131,29 @@ export default function QuotationsPage() {
         description="Manage quotations with auto-calculations and PDF generation"
       />
 
-      {/* Tabs for Original vs Revised */}
+      {/* Filters row */}
       <Tabs value={revisionFilter} onValueChange={(v) => setRevisionFilter(v as "all" | "original" | "revised")}>
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4 flex-1">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3 flex-1">
             <TabsList>
               <TabsTrigger value="all">All</TabsTrigger>
               <TabsTrigger value="original">Original</TabsTrigger>
               <TabsTrigger value="revised">Revisions</TabsTrigger>
             </TabsList>
-            <div className="relative flex-1 max-w-sm">
+
+            <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Search quotations..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-10"
+                className="pl-10 w-[220px]"
               />
             </div>
+
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Filter by status" />
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Active</SelectItem>
@@ -159,7 +168,19 @@ export default function QuotationsPage() {
                 <SelectItem value="CANCELLED">Cancelled</SelectItem>
               </SelectContent>
             </Select>
+
+            <Select value={conversionFilter} onValueChange={setConversionFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Conversion" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Conversions</SelectItem>
+                <SelectItem value="pending">Pending (No OC)</SelectItem>
+                <SelectItem value="converted">Converted (OC Created)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+
           <Button onClick={() => router.push("/quotations/create")}>
             <Plus className="h-4 w-4 mr-2" />
             New Quotation
@@ -178,6 +199,9 @@ export default function QuotationsPage() {
               <TableHead>Type</TableHead>
               <TableHead>Items</TableHead>
               <TableHead>Amount</TableHead>
+              <TableHead>Deal Owner</TableHead>
+              <TableHead>Next Action</TableHead>
+              <TableHead>OC Created</TableHead>
               <TableHead>Prepared By</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -186,13 +210,13 @@ export default function QuotationsPage() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={12} className="text-center py-8 text-muted-foreground">
                   Loading quotations...
                 </TableCell>
               </TableRow>
             ) : data?.quotations?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={12} className="text-center py-8 text-muted-foreground">
                   No quotations found. Create your first quotation!
                 </TableCell>
               </TableRow>
@@ -225,7 +249,31 @@ export default function QuotationsPage() {
                   </TableCell>
                   <TableCell>{quotation.items.length}</TableCell>
                   <TableCell className="font-semibold">
-                    {quotation.currency} {calculateTotal(quotation.items).toFixed(2)}
+                    {quotation.currency}{" "}
+                    {getAmount(quotation).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {quotation.dealOwner?.name || <span className="text-muted-foreground">—</span>}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {quotation.nextActionDate ? (
+                      <div className={`flex items-center gap-1 ${isOverdue(quotation.nextActionDate) ? "text-destructive" : ""}`}>
+                        <CalendarClock className="h-3.5 w-3.5" />
+                        {format(new Date(quotation.nextActionDate), "dd MMM")}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {quotation.salesOrders?.length > 0 ? (
+                      <div className="flex items-center gap-1 text-sm text-green-600">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        {quotation.salesOrders[0].orderNo}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">—</span>
+                    )}
                   </TableCell>
                   <TableCell className="text-sm">
                     {quotation.preparedBy?.name || "—"}

@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
 }
 
 // ==================== ENUMS ====================
@@ -209,6 +209,7 @@ model User {
   // Relations
   preparedQuotations  Quotation[]         @relation("PreparedBy")
   approvedQuotations  Quotation[]         @relation("ApprovedBy")
+  ownedQuotations     Quotation[]         @relation("DealOwner")
   approvedPRs         PurchaseRequisition[] @relation("PRApprovedBy")
   requestedPRs        PurchaseRequisition[] @relation("PRRequestedBy")
   receivedGRNs        GoodsReceiptNote[]  @relation("ReceivedBy")
@@ -510,6 +511,25 @@ model Quotation {
   lossCompetitor        String?
   lossNotes             String?           @db.Text
 
+  // Deal management (TranZact parity)
+  dealOwnerId           String?
+  nextActionDate        DateTime?
+  kindAttention         String?           @db.VarChar(200)
+
+  // Discount & financial calculations
+  additionalDiscount    Decimal?          @db.Decimal(10, 2)  // percentage discount
+  discountAmount        Decimal?          @db.Decimal(14, 2)  // calculated: subtotal * additionalDiscount / 100
+  totalAfterDiscount    Decimal?          @db.Decimal(14, 2)  // subtotal - discountAmount
+  rcmEnabled            Boolean           @default(false)
+  roundOff              Boolean           @default(false)
+  roundOffAmount        Decimal?          @db.Decimal(10, 2)
+  advanceToPay          Decimal?          @db.Decimal(14, 2)
+
+  // Place of supply (GST compliance)
+  placeOfSupplyCity     String?
+  placeOfSupplyState    String?
+  placeOfSupplyCountry  String?           @default("India")
+
   createdAt             DateTime          @default(now())
   updatedAt             DateTime          @updatedAt
 
@@ -519,6 +539,7 @@ model Quotation {
   childQuotations    Quotation[]         @relation("QuotationRevisions")
   preparedBy         User?               @relation("PreparedBy", fields: [preparedById], references: [id])
   approvedBy         User?               @relation("ApprovedBy", fields: [approvedById], references: [id])
+  dealOwner          User?               @relation("DealOwner", fields: [dealOwnerId], references: [id])
   buyer              BuyerMaster?        @relation(fields: [buyerId], references: [id])
   preparedByEmployee EmployeeMaster?     @relation(fields: [preparedByEmployeeId], references: [id])
   paymentTerms       PaymentTermsMaster? @relation(fields: [paymentTermsId], references: [id])
@@ -538,6 +559,8 @@ model Quotation {
   @@index([customerId, status])
   @@index([preparedById, status])
   @@index([revisionTrigger])
+  @@index([dealOwnerId])
+  @@index([nextActionDate])
 }
 
 model QuotationItem {

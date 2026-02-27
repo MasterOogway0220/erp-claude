@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status") || "";
     const showAll = searchParams.get("showAll") === "true";
     const revision = searchParams.get("revision") || "";
+    const conversionStatus = searchParams.get("conversionStatus") || ""; // "pending" | "converted"
 
     const where: any = {};
 
@@ -47,12 +48,21 @@ export async function GET(request: NextRequest) {
       where.version = { gt: 0 };
     }
 
+    // Conversion status filter: pending (no sales orders) or converted (has sales orders)
+    if (conversionStatus === "pending") {
+      where.salesOrders = { none: {} };
+    } else if (conversionStatus === "converted") {
+      where.salesOrders = { some: {} };
+    }
+
     const quotations = await prisma.quotation.findMany({
       where,
       include: {
         customer: true,
         preparedBy: { select: { name: true } },
+        dealOwner: { select: { name: true } },
         items: true,
+        salesOrders: { select: { id: true, orderNo: true } },
       },
       orderBy: [{ quotationNo: "desc" }, { version: "desc" }],
     });
@@ -89,6 +99,17 @@ export async function POST(request: NextRequest) {
       quotationDate,
       inquiryNo,
       inquiryDate,
+      // New fields
+      dealOwnerId,
+      nextActionDate,
+      kindAttention,
+      additionalDiscount,
+      rcmEnabled,
+      roundOff,
+      advanceToPay,
+      placeOfSupplyCity,
+      placeOfSupplyState,
+      placeOfSupplyCountry,
     } = body;
 
     if (!customerId) {
@@ -126,14 +147,20 @@ export async function POST(request: NextRequest) {
     // Generate quotation number using shared document numbering utility
     const quotationNo = await generateDocumentNumber("QUOTATION");
 
-    // Calculate tax fields
+    // Calculate financial fields
     const subtotal = items.reduce(
       (sum: number, item: any) => sum + (parseFloat(item.amount) || 0),
       0
     );
+    const parsedDiscount = additionalDiscount ? parseFloat(additionalDiscount) : 0;
+    const discountAmount = parsedDiscount > 0 ? (subtotal * parsedDiscount) / 100 : 0;
+    const totalAfterDiscount = subtotal - discountAmount;
     const parsedTaxRate = taxRate ? parseFloat(taxRate) : 0;
-    const taxAmount = parsedTaxRate > 0 ? subtotal * parsedTaxRate / 100 : 0;
-    const grandTotal = subtotal + taxAmount;
+    // RCM: tax is paid by recipient, so invoice shows 0 tax
+    const taxAmount = (!rcmEnabled && parsedTaxRate > 0) ? (totalAfterDiscount * parsedTaxRate) / 100 : 0;
+    const grandTotalBeforeRoundOff = totalAfterDiscount + taxAmount;
+    const roundOffAmount = roundOff ? (Math.round(grandTotalBeforeRoundOff) - grandTotalBeforeRoundOff) : 0;
+    const grandTotal = grandTotalBeforeRoundOff + roundOffAmount;
     const effectiveCurrency = currency || "INR";
     const computedAmountInWords = numberToWords(grandTotal, effectiveCurrency);
 
@@ -153,6 +180,21 @@ export async function POST(request: NextRequest) {
         paymentTermsId: paymentTermsId || null,
         deliveryTermsId: deliveryTermsId || null,
         deliveryPeriod: deliveryPeriod || null,
+        // New fields
+        dealOwnerId: dealOwnerId || null,
+        nextActionDate: nextActionDate ? new Date(nextActionDate) : null,
+        kindAttention: kindAttention || null,
+        additionalDiscount: parsedDiscount || null,
+        discountAmount: discountAmount || null,
+        totalAfterDiscount: discountAmount > 0 ? totalAfterDiscount : null,
+        rcmEnabled: rcmEnabled || false,
+        roundOff: roundOff || false,
+        roundOffAmount: roundOff ? roundOffAmount : null,
+        advanceToPay: advanceToPay ? parseFloat(advanceToPay) : null,
+        placeOfSupplyCity: placeOfSupplyCity || null,
+        placeOfSupplyState: placeOfSupplyState || null,
+        placeOfSupplyCountry: placeOfSupplyCountry || null,
+        // Financials
         subtotal,
         taxRate: parsedTaxRate || null,
         taxAmount: taxAmount || null,

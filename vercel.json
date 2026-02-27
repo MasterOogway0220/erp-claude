@@ -1,0 +1,16 @@
+{
+  "functions": {
+    "src/app/api/quotations/[id]/pdf/route.tsx": {
+      "maxDuration": 60,
+      "memory": 1024
+    },
+    "src/app/api/quotations/[id]/email/route.tsx": {
+      "maxDuration": 60,
+      "memory": 1024
+    },
+    "src/app/api/dispatch/dispatch-notes/[id]/bundle-pdf/route.tsx": {
+      "maxDuration": 60,
+      "memory": 1024
+    }
+  }
+}

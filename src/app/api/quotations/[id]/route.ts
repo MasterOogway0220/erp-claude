@@ -35,8 +35,10 @@ export async function GET(
         buyer: true,
         preparedBy: { select: { name: true, email: true } },
         approvedBy: { select: { name: true } },
+        dealOwner: { select: { name: true } },
         items: { orderBy: { sNo: "asc" } },
         terms: { orderBy: { termNo: "asc" } },
+        salesOrders: { select: { id: true, orderNo: true, createdAt: true } },
         parentQuotation: {
           select: {
             id: true,
@@ -302,6 +304,17 @@ export async function PUT(
       quotationDate,
       inquiryNo,
       inquiryDate,
+      // New fields
+      dealOwnerId,
+      nextActionDate,
+      kindAttention,
+      additionalDiscount,
+      rcmEnabled,
+      roundOff,
+      advanceToPay,
+      placeOfSupplyCity,
+      placeOfSupplyState,
+      placeOfSupplyCountry,
     } = body;
 
     if (!items || items.length === 0) {
@@ -316,9 +329,14 @@ export async function PUT(
       (sum: number, item: any) => sum + (parseFloat(item.amount) || 0),
       0
     );
+    const parsedDiscount = additionalDiscount ? parseFloat(additionalDiscount) : 0;
+    const discountAmount = parsedDiscount > 0 ? (subtotal * parsedDiscount) / 100 : 0;
+    const totalAfterDiscount = subtotal - discountAmount;
     const parsedTaxRate = taxRate ? parseFloat(taxRate) : 0;
-    const taxAmount = parsedTaxRate > 0 ? subtotal * parsedTaxRate / 100 : 0;
-    const grandTotal = subtotal + taxAmount;
+    const taxAmount = (!rcmEnabled && parsedTaxRate > 0) ? (totalAfterDiscount * parsedTaxRate) / 100 : 0;
+    const grandTotalBeforeRoundOff = totalAfterDiscount + taxAmount;
+    const roundOffAmount = roundOff ? (Math.round(grandTotalBeforeRoundOff) - grandTotalBeforeRoundOff) : 0;
+    const grandTotal = grandTotalBeforeRoundOff + roundOffAmount;
     const effectiveCurrency = currency || "INR";
     const computedAmountInWords = numberToWords(grandTotal, effectiveCurrency);
 
@@ -341,6 +359,20 @@ export async function PUT(
           paymentTermsId: paymentTermsId || null,
           deliveryTermsId: deliveryTermsId || null,
           deliveryPeriod: deliveryPeriod || null,
+          // New fields
+          dealOwnerId: dealOwnerId || null,
+          nextActionDate: nextActionDate ? new Date(nextActionDate) : null,
+          kindAttention: kindAttention || null,
+          additionalDiscount: parsedDiscount || null,
+          discountAmount: discountAmount || null,
+          totalAfterDiscount: discountAmount > 0 ? totalAfterDiscount : null,
+          rcmEnabled: rcmEnabled || false,
+          roundOff: roundOff || false,
+          roundOffAmount: roundOff ? roundOffAmount : null,
+          advanceToPay: advanceToPay ? parseFloat(advanceToPay) : null,
+          placeOfSupplyCity: placeOfSupplyCity || null,
+          placeOfSupplyState: placeOfSupplyState || null,
+          placeOfSupplyCountry: placeOfSupplyCountry || null,
           subtotal,
           taxRate: parsedTaxRate || null,
           taxAmount: taxAmount || null,

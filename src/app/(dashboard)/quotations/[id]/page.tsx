@@ -575,6 +575,22 @@ export default function QuotationDetailPage() {
                 <div className="font-medium text-sm">{quotation.revisionNotes}</div>
               </div>
             )}
+            {quotation.kindAttention && (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="text-sm text-muted-foreground">Kind Attention</div>
+                <div className="font-medium text-sm">{quotation.kindAttention}</div>
+              </div>
+            )}
+            {(quotation.placeOfSupplyCity || quotation.placeOfSupplyState) && (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="text-sm text-muted-foreground">Place of Supply</div>
+                <div className="font-medium text-sm">
+                  {[quotation.placeOfSupplyCity, quotation.placeOfSupplyState, quotation.placeOfSupplyCountry]
+                    .filter(Boolean)
+                    .join(", ")}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -599,6 +615,28 @@ export default function QuotationDetailPage() {
                 {quotation.preparedBy?.name || "---"}
               </div>
             </div>
+            {quotation.dealOwner && (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="text-sm text-muted-foreground">Deal Owner</div>
+                <div className="font-medium">{quotation.dealOwner.name}</div>
+              </div>
+            )}
+            {quotation.nextActionDate && (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="text-sm text-muted-foreground">Next Action Date</div>
+                <div className={`font-medium ${new Date(quotation.nextActionDate) < new Date() ? "text-destructive" : ""}`}>
+                  {format(new Date(quotation.nextActionDate), "dd MMM yyyy")}
+                </div>
+              </div>
+            )}
+            {quotation.salesOrders?.length > 0 && (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="text-sm text-muted-foreground">OC Created</div>
+                <div className="font-medium text-green-600">
+                  {quotation.salesOrders.map((so: any) => so.orderNo).join(", ")}
+                </div>
+              </div>
+            )}
             {quotation.approvedBy && (
               <>
                 <div className="grid grid-cols-2 gap-2">
@@ -658,30 +696,62 @@ export default function QuotationDetailPage() {
             <CardTitle>Financial Summary</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex justify-end gap-8">
-              <div className="text-right">
-                <div className="text-sm text-muted-foreground">Subtotal</div>
-                <div className="text-lg font-semibold">
-                  {quotation.currency} {parseFloat(quotation.subtotal || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+            <div className="flex justify-end">
+              <div className="space-y-2 text-sm w-full max-w-sm">
+                <div className="flex justify-between py-1">
+                  <span className="text-muted-foreground">Subtotal</span>
+                  <span className="font-medium">
+                    {quotation.currency} {parseFloat(quotation.subtotal || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                  </span>
                 </div>
-              </div>
-              {quotation.taxRate && parseFloat(quotation.taxRate) > 0 && (
-                <div className="text-right">
-                  <div className="text-sm text-muted-foreground">Tax ({parseFloat(quotation.taxRate)}%)</div>
-                  <div className="text-lg font-semibold">
-                    {quotation.currency} {parseFloat(quotation.taxAmount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                {quotation.additionalDiscount && parseFloat(quotation.additionalDiscount) > 0 && (
+                  <>
+                    <div className="flex justify-between py-1 text-orange-600">
+                      <span>Discount ({parseFloat(quotation.additionalDiscount)}%)</span>
+                      <span>− {quotation.currency} {parseFloat(quotation.discountAmount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+                    </div>
+                    <div className="flex justify-between py-1">
+                      <span className="text-muted-foreground">After Discount</span>
+                      <span className="font-medium">
+                        {quotation.currency} {parseFloat(quotation.totalAfterDiscount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  </>
+                )}
+                {quotation.taxRate && parseFloat(quotation.taxRate) > 0 && !quotation.rcmEnabled && (
+                  <div className="flex justify-between py-1">
+                    <span className="text-muted-foreground">GST ({parseFloat(quotation.taxRate)}%)</span>
+                    <span>{quotation.currency} {parseFloat(quotation.taxAmount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
                   </div>
+                )}
+                {quotation.rcmEnabled && (
+                  <div className="flex justify-between py-1 text-amber-600">
+                    <span>Tax — RCM (paid by buyer)</span>
+                    <span>₹0.00</span>
+                  </div>
+                )}
+                {quotation.roundOff && quotation.roundOffAmount != null && (
+                  <div className="flex justify-between py-1 text-muted-foreground">
+                    <span>Round-off</span>
+                    <span>{parseFloat(quotation.roundOffAmount) >= 0 ? "+" : ""}{parseFloat(quotation.roundOffAmount).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+                  </div>
+                )}
+                <div className="flex justify-between py-2 border-t font-bold text-base">
+                  <span>Grand Total</span>
+                  <span>
+                    {quotation.currency} {parseFloat(quotation.grandTotal || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                  </span>
                 </div>
-              )}
-              <div className="text-right">
-                <div className="text-sm text-muted-foreground">Grand Total</div>
-                <div className="text-xl font-bold">
-                  {quotation.currency} {parseFloat(quotation.grandTotal || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                </div>
+                {quotation.advanceToPay && parseFloat(quotation.advanceToPay) > 0 && (
+                  <div className="flex justify-between py-1 text-green-600">
+                    <span>Advance to Pay</span>
+                    <span>{quotation.currency} {parseFloat(quotation.advanceToPay).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+                  </div>
+                )}
               </div>
             </div>
             {quotation.amountInWords && (
-              <div className="mt-2 text-right text-sm text-muted-foreground italic">
+              <div className="mt-3 text-right text-sm text-muted-foreground italic">
                 {quotation.amountInWords}
               </div>
             )}

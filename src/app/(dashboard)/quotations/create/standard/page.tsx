@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -18,7 +19,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProductMaterialSelect } from "@/components/shared/product-material-select";
 import { SmartCombobox } from "@/components/shared/smart-combobox";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Trash2, ArrowLeft, Building2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+import { Plus, Trash2, ArrowLeft, Building2, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
 
@@ -41,6 +44,8 @@ interface QuotationItem {
   remark: string;
   unitWeight: string;
   totalWeightMT: string;
+  taxRate: string;
+  hsnCode: string;
 }
 
 const emptyItem: QuotationItem = {
@@ -62,7 +67,11 @@ const emptyItem: QuotationItem = {
   remark: "",
   unitWeight: "",
   totalWeightMT: "",
+  taxRate: "",
+  hsnCode: "",
 };
+
+const GST_RATES = ["0", "5", "12", "18", "28"];
 
 function getPipeType(product: string): "CS_AS" | "SS_DS" | null {
   const p = product.toUpperCase();
@@ -94,7 +103,22 @@ function StandardQuotationPage() {
     quotationDate: new Date().toISOString().split("T")[0],
     inquiryNo: "",
     inquiryDate: "",
+    // New fields
+    dealOwnerId: "",
+    nextActionDate: "",
+    kindAttention: "",
+    placeOfSupplyCity: "",
+    placeOfSupplyState: "",
+    placeOfSupplyCountry: "India",
   });
+
+  // Financial controls
+  const [taxRate, setTaxRate] = useState("");
+  const [additionalDiscount, setAdditionalDiscount] = useState("");
+  const [rcmEnabled, setRcmEnabled] = useState(false);
+  const [roundOff, setRoundOff] = useState(false);
+  const [advanceToPay, setAdvanceToPay] = useState("");
+
   const [items, setItems] = useState<QuotationItem[]>([emptyItem]);
   const [terms, setTerms] = useState<{
     termName: string;
@@ -121,6 +145,16 @@ function StandardQuotationPage() {
     queryFn: async () => {
       const res = await fetch("/api/masters/customers");
       if (!res.ok) throw new Error("Failed to fetch customers");
+      return res.json();
+    },
+  });
+
+  // Fetch users for Deal Owner select
+  const { data: usersData } = useQuery({
+    queryKey: ["users-active"],
+    queryFn: async () => {
+      const res = await fetch("/api/users");
+      if (!res.ok) throw new Error("Failed to fetch users");
       return res.json();
     },
   });
@@ -227,6 +261,18 @@ function StandardQuotationPage() {
     }
   }, [selectedCustomer?.defaultCurrency]);
 
+  // Auto-fill place of supply from customer state
+  useEffect(() => {
+    if (selectedCustomer && !editId) {
+      setFormData((prev) => ({
+        ...prev,
+        placeOfSupplyCity: selectedCustomer.city || prev.placeOfSupplyCity,
+        placeOfSupplyState: selectedCustomer.state || prev.placeOfSupplyState,
+        placeOfSupplyCountry: selectedCustomer.country || prev.placeOfSupplyCountry || "India",
+      }));
+    }
+  }, [selectedCustomer, editId]);
+
   // Reset buyer when customer changes
   useEffect(() => {
     setFormData((prev) => ({ ...prev, buyerId: "" }));
@@ -301,7 +347,18 @@ function StandardQuotationPage() {
         quotationDate: q.quotationDate ? new Date(q.quotationDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
         inquiryNo: q.inquiryNo || "",
         inquiryDate: q.inquiryDate ? new Date(q.inquiryDate).toISOString().split("T")[0] : "",
+        dealOwnerId: q.dealOwnerId || "",
+        nextActionDate: q.nextActionDate ? new Date(q.nextActionDate).toISOString().split("T")[0] : "",
+        kindAttention: q.kindAttention || "",
+        placeOfSupplyCity: q.placeOfSupplyCity || "",
+        placeOfSupplyState: q.placeOfSupplyState || "",
+        placeOfSupplyCountry: q.placeOfSupplyCountry || "India",
       });
+      setTaxRate(q.taxRate ? String(q.taxRate) : "");
+      setAdditionalDiscount(q.additionalDiscount ? String(q.additionalDiscount) : "");
+      setRcmEnabled(q.rcmEnabled || false);
+      setRoundOff(q.roundOff || false);
+      setAdvanceToPay(q.advanceToPay ? String(q.advanceToPay) : "");
       if (q.items?.length > 0) {
         setItems(q.items.map((item: any) => ({
           product: item.product || "",
@@ -322,6 +379,8 @@ function StandardQuotationPage() {
           remark: item.remark || "",
           unitWeight: item.unitWeight ? String(item.unitWeight) : "",
           totalWeightMT: item.totalWeightMT ? String(item.totalWeightMT) : "",
+          taxRate: item.taxRate ? String(item.taxRate) : "",
+          hsnCode: item.hsnCode || "",
         })));
       }
       if (q.terms?.length > 0) {
@@ -401,7 +460,7 @@ function StandardQuotationPage() {
         newItems[index].amount = (qty * rate).toFixed(2);
       }
 
-      // Recalculate total weight when quantity or unitWeight changes
+      // Recalculate total weight when quantity or sizeId changes
       if (field === "quantity" || field === "unitRate" || field === "sizeId") {
         const qty = parseFloat(newItems[index].quantity) || 0;
         const uw = parseFloat(newItems[index].unitWeight) || 0;
@@ -431,13 +490,36 @@ function StandardQuotationPage() {
       quotationDate: formData.quotationDate || undefined,
       inquiryNo: formData.inquiryNo || undefined,
       inquiryDate: formData.inquiryDate || undefined,
+      dealOwnerId: formData.dealOwnerId || undefined,
+      nextActionDate: formData.nextActionDate || undefined,
+      kindAttention: formData.kindAttention || undefined,
+      placeOfSupplyCity: formData.placeOfSupplyCity || undefined,
+      placeOfSupplyState: formData.placeOfSupplyState || undefined,
+      placeOfSupplyCountry: formData.placeOfSupplyCountry || undefined,
+      taxRate: taxRate || undefined,
+      additionalDiscount: additionalDiscount || undefined,
+      rcmEnabled,
+      roundOff,
+      advanceToPay: advanceToPay || undefined,
       items,
       terms,
     });
   };
 
-  const totalAmount = items.reduce((sum, item) => sum + parseFloat(item.amount || "0"), 0);
+  // Totals calculations
+  const subtotal = items.reduce((sum, item) => sum + parseFloat(item.amount || "0"), 0);
   const totalWeight = items.reduce((sum, item) => sum + parseFloat(item.totalWeightMT || "0"), 0);
+  const parsedDiscount = parseFloat(additionalDiscount) || 0;
+  const discountAmount = parsedDiscount > 0 ? (subtotal * parsedDiscount) / 100 : 0;
+  const totalAfterDiscount = subtotal - discountAmount;
+  const parsedTaxRate = parseFloat(taxRate) || 0;
+  const taxAmount = (!rcmEnabled && parsedTaxRate > 0) ? (totalAfterDiscount * parsedTaxRate) / 100 : 0;
+  const grandTotalBeforeRoundOff = totalAfterDiscount + taxAmount;
+  const roundOffAmount = roundOff ? (Math.round(grandTotalBeforeRoundOff) - grandTotalBeforeRoundOff) : 0;
+  const grandTotal = grandTotalBeforeRoundOff + roundOffAmount;
+
+  const fmt = (n: number) => n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const curr = formData.currency;
 
   return (
     <div className="space-y-6 max-w-7xl">
@@ -551,7 +633,7 @@ function StandardQuotationPage() {
               </div>
             </div>
 
-            {/* Row 2: Currency, Valid Until, (empty), Inquiry No, Inquiry Date, (empty) */}
+            {/* Row 2: Currency, Valid Until, Deal Owner, Inquiry No, Inquiry Date, Next Action Date */}
             <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
               <div className="grid gap-2">
                 <Label>Currency</Label>
@@ -584,7 +666,27 @@ function StandardQuotationPage() {
                 />
               </div>
 
-              <div /> {/* spacer */}
+              <div className="grid gap-2">
+                <Label>Deal Owner</Label>
+                <Select
+                  value={formData.dealOwnerId || "NONE"}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, dealOwnerId: value === "NONE" ? "" : value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Assign owner" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NONE">Unassigned</SelectItem>
+                    {usersData?.users?.map((user: any) => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
               <div className="grid gap-2">
                 <Label>Inquiry No.</Label>
@@ -608,7 +710,35 @@ function StandardQuotationPage() {
                 />
               </div>
 
-              <div /> {/* spacer */}
+              <div className="grid gap-2">
+                <Label>Next Action Date</Label>
+                <Input
+                  type="date"
+                  value={formData.nextActionDate}
+                  onChange={(e) =>
+                    setFormData({ ...formData, nextActionDate: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+
+            {/* Row 3: Kind Attention (full width) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label>
+                  Kind Attention
+                  <span className="text-xs text-muted-foreground ml-2">
+                    ({(formData.kindAttention || "").length}/200)
+                  </span>
+                </Label>
+                <Input
+                  value={formData.kindAttention}
+                  onChange={(e) =>
+                    setFormData({ ...formData, kindAttention: e.target.value.slice(0, 200) })
+                  }
+                  placeholder="e.g. Mr. Rajesh Sharma, Purchase Manager"
+                />
+              </div>
             </div>
 
             {/* Customer + Buyer Info */}
@@ -665,7 +795,46 @@ function StandardQuotationPage() {
           </CardContent>
         </Card>
 
-        {/* Line Items with Combined Size */}
+        {/* Place of Supply */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-base">Place of Supply</CardTitle>
+              <span className="text-xs text-muted-foreground">(Determines CGST+SGST vs IGST)</span>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid gap-2">
+                <Label>City</Label>
+                <Input
+                  value={formData.placeOfSupplyCity}
+                  onChange={(e) => setFormData({ ...formData, placeOfSupplyCity: e.target.value })}
+                  placeholder="e.g. Mumbai"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>State</Label>
+                <Input
+                  value={formData.placeOfSupplyState}
+                  onChange={(e) => setFormData({ ...formData, placeOfSupplyState: e.target.value })}
+                  placeholder="e.g. Maharashtra"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Country</Label>
+                <Input
+                  value={formData.placeOfSupplyCountry}
+                  onChange={(e) => setFormData({ ...formData, placeOfSupplyCountry: e.target.value })}
+                  placeholder="India"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Line Items */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
@@ -709,7 +878,7 @@ function StandardQuotationPage() {
                     }}
                   />
 
-                  {/* Size (combined) + OD + WT + Length + Ends */}
+                  {/* Size + OD + WT + Length + Ends */}
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                     <div className="grid gap-2">
                       <Label>Size (NPS x Sch) *</Label>
@@ -718,7 +887,6 @@ function StandardQuotationPage() {
                         value={item.sizeLabel || ""}
                         onSelect={(s: any) => updateItem(index, "sizeId", s.id)}
                         onChange={(text) => {
-                          // Allow typing to filter but don't set sizeId until selected
                           setItems((prev) => {
                             const newItems = [...prev];
                             newItems[index] = { ...newItems[index], sizeLabel: text, sizeId: "" };
@@ -784,6 +952,7 @@ function StandardQuotationPage() {
                     </div>
                   </div>
 
+                  {/* Qty, Rate, Amount, HSN, Tax Rate */}
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                     <div className="grid gap-2">
                       <Label>Qty (Mtr) *</Label>
@@ -796,7 +965,7 @@ function StandardQuotationPage() {
                       />
                     </div>
                     <div className="grid gap-2">
-                      <Label>Unit Rate ({formData.currency}) *</Label>
+                      <Label>Unit Rate ({curr}) *</Label>
                       <Input
                         type="number"
                         step="0.01"
@@ -806,9 +975,38 @@ function StandardQuotationPage() {
                       />
                     </div>
                     <div className="grid gap-2">
-                      <Label>Amount ({formData.currency})</Label>
+                      <Label>Amount ({curr})</Label>
                       <Input value={item.amount} readOnly className="bg-muted font-semibold" />
                     </div>
+                    <div className="grid gap-2">
+                      <Label>HSN Code</Label>
+                      <Input
+                        value={item.hsnCode}
+                        onChange={(e) => updateItem(index, "hsnCode", e.target.value)}
+                        placeholder="e.g. 7304"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>GST Rate (%)</Label>
+                      <Select
+                        value={item.taxRate || "NONE"}
+                        onValueChange={(value) => updateItem(index, "taxRate", value === "NONE" ? "" : value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select rate" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="NONE">—</SelectItem>
+                          {GST_RATES.map((r) => (
+                            <SelectItem key={r} value={r}>{r}%</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Delivery + Remark + Weight row */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="grid gap-2">
                       <Label>Delivery</Label>
                       <Input
@@ -823,16 +1021,12 @@ function StandardQuotationPage() {
                         onChange={(e) => updateItem(index, "remark", e.target.value)}
                       />
                     </div>
-                  </div>
-
-                  {/* Unit Weight + Total Weight row */}
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                     <div className="grid gap-2">
                       <Label className="text-xs text-muted-foreground">Unit Wt (kg/m)</Label>
                       <Input
                         value={item.unitWeight}
                         readOnly
-                        className="bg-muted text-sm h-8"
+                        className="bg-muted text-sm"
                         placeholder="Auto from size"
                       />
                     </div>
@@ -841,29 +1035,154 @@ function StandardQuotationPage() {
                       <Input
                         value={item.totalWeightMT}
                         readOnly
-                        className="bg-muted text-sm h-8"
+                        className="bg-muted text-sm"
                         placeholder="Auto"
                       />
                     </div>
                   </div>
-
                 </div>
               );
             })}
+          </CardContent>
+        </Card>
 
-            {/* Totals */}
-            <div className="flex justify-end gap-8 pt-4 border-t">
-              {totalWeight > 0 && (
-                <div className="text-right">
-                  <div className="text-sm text-muted-foreground">Total Weight</div>
-                  <div className="text-xl font-bold">{totalWeight.toFixed(3)} MT</div>
+        {/* Financial Summary */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Financial Summary</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Left: Tax rate + discount controls */}
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label>Header GST Rate (%)</Label>
+                    <Select
+                      value={taxRate || "NONE"}
+                      onValueChange={(v) => setTaxRate(v === "NONE" ? "" : v)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select rate" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="NONE">0% / Exempt</SelectItem>
+                        {GST_RATES.map((r) => (
+                          <SelectItem key={r} value={r}>{r}%</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Additional Discount (%)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                      value={additionalDiscount}
+                      onChange={(e) => setAdditionalDiscount(e.target.value)}
+                      placeholder="0.00"
+                    />
+                  </div>
                 </div>
-              )}
-              <div className="text-right">
-                <div className="text-sm text-muted-foreground">Total Amount</div>
-                <div className="text-2xl font-bold">
-                  {formData.currency} {totalAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+
+                <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id="rcm"
+                      checked={rcmEnabled}
+                      onCheckedChange={setRcmEnabled}
+                    />
+                    <Label htmlFor="rcm" className="cursor-pointer">
+                      RCM (Reverse Charge)
+                    </Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id="roundoff"
+                      checked={roundOff}
+                      onCheckedChange={setRoundOff}
+                    />
+                    <Label htmlFor="roundoff" className="cursor-pointer">
+                      Round-off
+                    </Label>
+                  </div>
                 </div>
+
+                <div className="grid gap-2">
+                  <Label>Advance to Pay ({curr})</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={advanceToPay}
+                    onChange={(e) => setAdvanceToPay(e.target.value)}
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+
+              {/* Right: Calculation breakdown */}
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between py-1">
+                  <span className="text-muted-foreground">Subtotal</span>
+                  <span className="font-medium">{curr} {fmt(subtotal)}</span>
+                </div>
+
+                {discountAmount > 0 && (
+                  <>
+                    <div className="flex justify-between py-1 text-orange-600">
+                      <span>Discount ({parsedDiscount}%)</span>
+                      <span>− {curr} {fmt(discountAmount)}</span>
+                    </div>
+                    <div className="flex justify-between py-1">
+                      <span className="text-muted-foreground">After Discount</span>
+                      <span className="font-medium">{curr} {fmt(totalAfterDiscount)}</span>
+                    </div>
+                  </>
+                )}
+
+                {parsedTaxRate > 0 && !rcmEnabled && (
+                  <div className="flex justify-between py-1">
+                    <span className="text-muted-foreground">GST ({parsedTaxRate}%)</span>
+                    <span>{curr} {fmt(taxAmount)}</span>
+                  </div>
+                )}
+
+                {rcmEnabled && (
+                  <div className="flex justify-between py-1 text-amber-600">
+                    <span>Tax (RCM — paid by buyer)</span>
+                    <span>₹0.00</span>
+                  </div>
+                )}
+
+                {roundOff && (
+                  <div className="flex justify-between py-1 text-muted-foreground">
+                    <span>Round-off</span>
+                    <span>{roundOffAmount >= 0 ? "+" : ""}{curr} {fmt(roundOffAmount)}</span>
+                  </div>
+                )}
+
+                <Separator />
+                <div className="flex justify-between py-2">
+                  <span className="font-bold text-base">Grand Total</span>
+                  <span className="font-bold text-base">{curr} {fmt(grandTotal)}</span>
+                </div>
+
+                {totalWeight > 0 && (
+                  <div className="flex justify-between py-1 text-muted-foreground">
+                    <span>Total Weight</span>
+                    <span>{totalWeight.toFixed(3)} MT</span>
+                  </div>
+                )}
+
+                {parseFloat(advanceToPay) > 0 && (
+                  <div className="flex justify-between py-1 text-green-600">
+                    <span>Advance to Pay</span>
+                    <span>{curr} {fmt(parseFloat(advanceToPay))}</span>
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>
