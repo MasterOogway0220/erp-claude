@@ -601,9 +601,9 @@ function StandardQuotationPage() {
           <CardHeader>
             <CardTitle>Quotation Details</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Row 1: Customer, Buyer, Market Type, Quotation No, Rev No, Quotation Date */}
-            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+          <CardContent className="space-y-5">
+            {/* Row 1: Customer + Buyer (large dropdowns, 2 per row) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label>Customer *</Label>
                 <Select
@@ -655,7 +655,10 @@ function StandardQuotationPage() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
 
+            {/* Row 2: Market Type, Currency, Quotation No, Rev No (small fields, 4 per row) */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="grid gap-2">
                 <Label>Market Type</Label>
                 <Select
@@ -674,38 +677,6 @@ function StandardQuotationPage() {
                 </Select>
               </div>
 
-              <div className="grid gap-2">
-                <Label>Quotation No.</Label>
-                <Input
-                  value={editId ? (editData?.quotation?.quotationNo || "") : (previewData?.previewNumber || "")}
-                  readOnly
-                  className="bg-muted"
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label>Rev. No.</Label>
-                <Input
-                  value={editId ? String(editData?.quotation?.version ?? 0) : "0"}
-                  readOnly
-                  className="bg-muted"
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label>Quotation Date</Label>
-                <Input
-                  type="date"
-                  value={formData.quotationDate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, quotationDate: e.target.value })
-                  }
-                />
-              </div>
-            </div>
-
-            {/* Row 2: Currency, Valid Until, Deal Owner, Inquiry No, Inquiry Date, Next Action Date */}
-            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
               <div className="grid gap-2">
                 <Label>Currency</Label>
                 <Select
@@ -727,6 +698,38 @@ function StandardQuotationPage() {
               </div>
 
               <div className="grid gap-2">
+                <Label>Quotation No.</Label>
+                <Input
+                  value={editId ? (editData?.quotation?.quotationNo || "") : (previewData?.previewNumber || "")}
+                  readOnly
+                  className="bg-muted"
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Rev. No.</Label>
+                <Input
+                  value={editId ? String(editData?.quotation?.version ?? 0) : "0"}
+                  readOnly
+                  className="bg-muted"
+                />
+              </div>
+            </div>
+
+            {/* Row 3: Dates (small fields, 4 per row) */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid gap-2">
+                <Label>Quotation Date</Label>
+                <Input
+                  type="date"
+                  value={formData.quotationDate}
+                  onChange={(e) =>
+                    setFormData({ ...formData, quotationDate: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="grid gap-2">
                 <Label>Valid Until</Label>
                 <Input
                   type="date"
@@ -737,6 +740,27 @@ function StandardQuotationPage() {
                 />
               </div>
 
+              <div className="grid gap-2">
+                <Label>Inquiry No.</Label>
+                <Input
+                  value={formData.inquiryNo}
+                  onChange={(e) => setFormData({ ...formData, inquiryNo: e.target.value })}
+                  placeholder="Client inquiry ref."
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Inquiry Date</Label>
+                <Input
+                  type="date"
+                  value={formData.inquiryDate}
+                  onChange={(e) => setFormData({ ...formData, inquiryDate: e.target.value })}
+                />
+              </div>
+            </div>
+
+            {/* Row 4: Deal Owner, Next Action, Kind Attention (3 per row) */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="grid gap-2">
                 <Label>Deal Owner</Label>
                 <Select
@@ -760,24 +784,6 @@ function StandardQuotationPage() {
               </div>
 
               <div className="grid gap-2">
-                <Label>Inquiry No.</Label>
-                <Input
-                  value={formData.inquiryNo}
-                  onChange={(e) => setFormData({ ...formData, inquiryNo: e.target.value })}
-                  placeholder="Client inquiry ref."
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label>Inquiry Date</Label>
-                <Input
-                  type="date"
-                  value={formData.inquiryDate}
-                  onChange={(e) => setFormData({ ...formData, inquiryDate: e.target.value })}
-                />
-              </div>
-
-              <div className="grid gap-2">
                 <Label>Next Action Date</Label>
                 <Input
                   type="date"
@@ -787,10 +793,7 @@ function StandardQuotationPage() {
                   }
                 />
               </div>
-            </div>
 
-            {/* Row 3: Kind Attention (full width) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label>
                   Kind Attention
@@ -947,9 +950,9 @@ function StandardQuotationPage() {
                     }}
                   />
 
-                  {/* Size + OD + WT + Length + Ends */}
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                    <div className="grid gap-2">
+                  {/* Size + Dimensions */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid gap-2 md:col-span-2">
                       <Label>Size (NPS x Sch) *</Label>
                       <SmartCombobox
                         options={sizeOptions}
@@ -994,6 +997,10 @@ function StandardQuotationPage() {
                         className={item.sizeId ? "bg-muted" : ""}
                       />
                     </div>
+                  </div>
+
+                  {/* Length, Ends, Qty, Rate */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="grid gap-2">
                       <Label>Length</Label>
                       <Input
@@ -1019,10 +1026,6 @@ function StandardQuotationPage() {
                         </SelectContent>
                       </Select>
                     </div>
-                  </div>
-
-                  {/* Qty, Rate, Amount, HSN, Tax Rate */}
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                     <div className="grid gap-2">
                       <Label>Qty (Mtr) *</Label>
                       <Input
@@ -1043,6 +1046,10 @@ function StandardQuotationPage() {
                         required
                       />
                     </div>
+                  </div>
+
+                  {/* Amount, HSN, GST, Delivery */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="grid gap-2">
                       <Label>Amount ({curr})</Label>
                       <Input value={item.amount} readOnly className="bg-muted font-semibold" />
@@ -1074,10 +1081,6 @@ function StandardQuotationPage() {
                         </Select>
                       </div>
                     )}
-                  </div>
-
-                  {/* Delivery + Remark + Weight row */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="grid gap-2">
                       <Label>Delivery</Label>
                       <Input
@@ -1085,6 +1088,10 @@ function StandardQuotationPage() {
                         onChange={(e) => updateItem(index, "delivery", e.target.value)}
                       />
                     </div>
+                  </div>
+
+                  {/* Remark + Weight */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="grid gap-2">
                       <Label>Remark</Label>
                       <Input

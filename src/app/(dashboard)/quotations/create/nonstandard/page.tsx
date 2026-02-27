@@ -516,9 +516,9 @@ function NonStandardQuotationPage() {
           <CardHeader>
             <CardTitle>Quotation Details</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Row 1: Customer, Buyer, Market Type, Quotation No, Rev No, Quotation Date */}
-            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+          <CardContent className="space-y-5">
+            {/* Row 1: Customer + Buyer (large dropdowns, 2 per row) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label>Customer *</Label>
                 <Select
@@ -566,7 +566,10 @@ function NonStandardQuotationPage() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
 
+            {/* Row 2: Market Type, Currency, Quotation No, Rev No (small fields, 4 per row) */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="grid gap-2">
                 <Label>Market Type</Label>
                 <Select
@@ -581,6 +584,26 @@ function NonStandardQuotationPage() {
                   <SelectContent>
                     <SelectItem value="DOMESTIC">Domestic</SelectItem>
                     <SelectItem value="EXPORT">Export</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Currency</Label>
+                <Select
+                  value={formData.currency}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, currency: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="INR">INR</SelectItem>
+                    <SelectItem value="USD">USD</SelectItem>
+                    <SelectItem value="EUR">EUR</SelectItem>
+                    <SelectItem value="AED">AED</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -602,7 +625,10 @@ function NonStandardQuotationPage() {
                   className="bg-muted"
                 />
               </div>
+            </div>
 
+            {/* Row 3: Dates (small fields, 4 per row) */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="grid gap-2">
                 <Label>Quotation Date</Label>
                 <Input
@@ -612,29 +638,6 @@ function NonStandardQuotationPage() {
                     setFormData({ ...formData, quotationDate: e.target.value })
                   }
                 />
-              </div>
-            </div>
-
-            {/* Row 2: Currency, Valid Until, Inquiry No, Inquiry Date */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="grid gap-2">
-                <Label>Currency</Label>
-                <Select
-                  value={formData.currency}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, currency: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="INR">INR</SelectItem>
-                    <SelectItem value="USD">USD</SelectItem>
-                    <SelectItem value="EUR">EUR</SelectItem>
-                    <SelectItem value="AED">AED</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
 
               <div className="grid gap-2">
@@ -667,7 +670,7 @@ function NonStandardQuotationPage() {
               </div>
             </div>
 
-            {/* Row 3: Deal Owner, Next Action Date, Kind Attention */}
+            {/* Row 4: Deal Owner, Next Action, Kind Attention (3 per row) */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="grid gap-2">
                 <Label>Deal Owner</Label>
@@ -802,18 +805,19 @@ function NonStandardQuotationPage() {
                 </div>
 
                 {useStructuredInput[index] ? (
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="grid gap-1">
-                        <Label className="text-xs">Material Code</Label>
+                  <div className="space-y-4">
+                    {/* Description row: Material Code + Short Description (2 cols) */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="grid gap-2">
+                        <Label className="text-sm">Material Code</Label>
                         <Input
                           value={item.materialCode}
                           onChange={(e) => updateItem(index, "materialCode", e.target.value)}
                           placeholder="e.g., 9715286"
                         />
                       </div>
-                      <div className="grid gap-1">
-                        <Label className="text-xs">Short Description</Label>
+                      <div className="grid gap-2 md:col-span-2">
+                        <Label className="text-sm">Short Description</Label>
                         <Input
                           value={item.itemDescription}
                           onChange={(e) => updateItem(index, "itemDescription", e.target.value)}
@@ -821,25 +825,26 @@ function NonStandardQuotationPage() {
                         />
                       </div>
                     </div>
-                    <div className="grid grid-cols-3 gap-3">
-                      <div className="grid gap-1">
-                        <Label className="text-xs">Size</Label>
+                    {/* Specs row: Size, End Type, Material (3 cols) */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="grid gap-2">
+                        <Label className="text-sm">Size</Label>
                         <Input
                           value={item.size}
                           onChange={(e) => updateItem(index, "size", e.target.value)}
                           placeholder='6" X SCH-40'
                         />
                       </div>
-                      <div className="grid gap-1">
-                        <Label className="text-xs">End Type</Label>
+                      <div className="grid gap-2">
+                        <Label className="text-sm">End Type</Label>
                         <Input
                           value={item.endType}
                           onChange={(e) => updateItem(index, "endType", e.target.value)}
                           placeholder="BEVELLED ENDS"
                         />
                       </div>
-                      <div className="grid gap-1">
-                        <Label className="text-xs">Material</Label>
+                      <div className="grid gap-2">
+                        <Label className="text-sm">Material</Label>
                         <Input
                           value={item.material}
                           onChange={(e) => updateItem(index, "material", e.target.value)}
@@ -847,31 +852,32 @@ function NonStandardQuotationPage() {
                         />
                       </div>
                     </div>
-                    <div className="grid grid-cols-3 gap-3">
-                      <div className="grid gap-1">
-                        <Label className="text-xs">Tag Number</Label>
+                    {/* Reference row: Tag, DWG, Item No (3 cols) */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="grid gap-2">
+                        <Label className="text-sm">Tag Number</Label>
                         <Input
                           value={item.tagNo}
                           onChange={(e) => updateItem(index, "tagNo", e.target.value)}
                         />
                       </div>
-                      <div className="grid gap-1">
-                        <Label className="text-xs">Drawing Ref (DWG)</Label>
+                      <div className="grid gap-2">
+                        <Label className="text-sm">Drawing Ref (DWG)</Label>
                         <Input
                           value={item.drawingRef}
                           onChange={(e) => updateItem(index, "drawingRef", e.target.value)}
                         />
                       </div>
-                      <div className="grid gap-1">
-                        <Label className="text-xs">Item No.</Label>
+                      <div className="grid gap-2">
+                        <Label className="text-sm">Item No.</Label>
                         <Input
                           value={item.itemNo}
                           onChange={(e) => updateItem(index, "itemNo", e.target.value)}
                         />
                       </div>
                     </div>
-                    <div className="grid gap-1">
-                      <Label className="text-xs">Certificate Required</Label>
+                    <div className="grid gap-2">
+                      <Label className="text-sm">Certificate Required</Label>
                       <Textarea
                         value={item.certificateReq}
                         onChange={(e) => updateItem(index, "certificateReq", e.target.value)}
@@ -894,9 +900,9 @@ function NonStandardQuotationPage() {
                 )}
 
                 {/* Qty / Rate / Amount / Delivery */}
-                <div className="grid grid-cols-4 gap-3">
-                  <div className="grid gap-1">
-                    <Label className="text-xs">Qty *</Label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="grid gap-2">
+                    <Label className="text-sm">Qty *</Label>
                     <Input
                       type="number"
                       step="0.001"
@@ -905,8 +911,8 @@ function NonStandardQuotationPage() {
                       required
                     />
                   </div>
-                  <div className="grid gap-1">
-                    <Label className="text-xs">Unit Rate ({formData.currency}) *</Label>
+                  <div className="grid gap-2">
+                    <Label className="text-sm">Unit Rate ({formData.currency}) *</Label>
                     <Input
                       type="number"
                       step="0.01"
@@ -915,12 +921,12 @@ function NonStandardQuotationPage() {
                       required
                     />
                   </div>
-                  <div className="grid gap-1">
-                    <Label className="text-xs">Amount ({formData.currency})</Label>
+                  <div className="grid gap-2">
+                    <Label className="text-sm">Amount ({formData.currency})</Label>
                     <Input value={item.amount} readOnly className="bg-muted font-semibold" />
                   </div>
-                  <div className="grid gap-1">
-                    <Label className="text-xs">Delivery</Label>
+                  <div className="grid gap-2">
+                    <Label className="text-sm">Delivery</Label>
                     <Input
                       value={item.delivery}
                       onChange={(e) => updateItem(index, "delivery", e.target.value)}
