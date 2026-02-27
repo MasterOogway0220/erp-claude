@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
         preparedBy: { select: { name: true } },
         dealOwner: { select: { name: true } },
         items: true,
-        salesOrders: { select: { id: true, orderNo: true } },
+        salesOrders: { select: { id: true, soNo: true } },
       },
       orderBy: [{ quotationNo: "desc" }, { version: "desc" }],
     });

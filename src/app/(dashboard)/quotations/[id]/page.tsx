@@ -633,7 +633,7 @@ export default function QuotationDetailPage() {
               <div className="grid grid-cols-2 gap-2">
                 <div className="text-sm text-muted-foreground">OC Created</div>
                 <div className="font-medium text-green-600">
-                  {quotation.salesOrders.map((so: any) => so.orderNo).join(", ")}
+                  {quotation.salesOrders.map((so: any) => so.soNo).join(", ")}
                 </div>
               </div>
             )}

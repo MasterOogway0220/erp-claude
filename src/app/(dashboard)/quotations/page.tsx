@@ -42,7 +42,7 @@ interface Quotation {
   nextActionDate: string | null;
   items: { amount: string }[];
   revisionTrigger: string | null;
-  salesOrders: { id: string; orderNo: string }[];
+  salesOrders: { id: string; soNo: string }[];
 }
 
 const statusColors: Record<string, string> = {
@@ -269,7 +269,7 @@ export default function QuotationsPage() {
                     {quotation.salesOrders?.length > 0 ? (
                       <div className="flex items-center gap-1 text-sm text-green-600">
                         <CheckCircle2 className="h-3.5 w-3.5" />
-                        {quotation.salesOrders[0].orderNo}
+                        {quotation.salesOrders[0].soNo}
                       </div>
                     ) : (
                       <span className="text-muted-foreground text-sm">—</span>
