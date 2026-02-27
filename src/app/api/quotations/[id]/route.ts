@@ -38,7 +38,7 @@ export async function GET(
         dealOwner: { select: { name: true } },
         items: { orderBy: { sNo: "asc" } },
         terms: { orderBy: { termNo: "asc" } },
-        salesOrders: { select: { id: true, orderNo: true, createdAt: true } },
+        salesOrders: { select: { id: true, soNo: true, createdAt: true } },
         parentQuotation: {
           select: {
             id: true,
