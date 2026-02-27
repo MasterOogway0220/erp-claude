@@ -130,7 +130,6 @@ export function generateStandardQuotationHtml(
         <td class="cell-center">${escapeHtml(item.additionalSpec)}</td>
         <td class="cell-center">${item.sizeNPS ? formatNumber(item.sizeNPS, 0) : escapeHtml(item.sizeLabel)}</td>
         <td class="cell-center">${item.od ? formatNumber(item.od, 1) : ""}</td>
-        <td class="cell-center">${escapeHtml(item.schedule) || ""}</td>
         <td class="cell-center">${item.wt ? formatNumber(item.wt, 2) : ""}</td>
         <td class="cell-center">${escapeHtml(item.length)}</td>
         <td class="cell-center">${escapeHtml(item.ends)}</td>
@@ -337,23 +336,22 @@ export function generateStandardQuotationHtml(
     padding: 0;
   }
 
-  /* Column widths - 16 columns (A through P) */
+  /* Column widths - 15 columns (Schedule removed) */
   col.col-sn    { width: 3%; }
-  col.col-prod1 { width: 5.5%; }
-  col.col-prod2 { width: 5.5%; }
-  col.col-mat   { width: 10%; }
-  col.col-spec  { width: 11%; }
+  col.col-prod1 { width: 6%; }
+  col.col-prod2 { width: 6%; }
+  col.col-mat   { width: 11%; }
+  col.col-spec  { width: 12%; }
   col.col-nps   { width: 5%; }
   col.col-od    { width: 5%; }
-  col.col-sch   { width: 5%; }
   col.col-wt    { width: 5%; }
   col.col-len   { width: 6%; }
   col.col-ends  { width: 4%; }
   col.col-qty   { width: 6%; }
   col.col-rate  { width: 7%; }
-  col.col-amt   { width: 8%; }
+  col.col-amt   { width: 9%; }
   col.col-del   { width: 8%; }
-  col.col-rmk   { width: 11%; }
+  col.col-rmk   { width: 7%; }
 </style>
 </head>
 <body>
@@ -366,7 +364,6 @@ export function generateStandardQuotationHtml(
     <col class="col-spec">
     <col class="col-nps">
     <col class="col-od">
-    <col class="col-sch">
     <col class="col-wt">
     <col class="col-len">
     <col class="col-ends">
@@ -382,15 +379,15 @@ export function generateStandardQuotationHtml(
     <td colspan="3" rowspan="2" class="logo-cell">
       ${company.companyLogoUrl ? `<img src="${company.companyLogoUrl}" alt="Logo">` : `<span style="font-size:16pt;font-weight:bold">${escapeHtml(company.companyName)}</span>`}
     </td>
-    <td colspan="13" class="company-name">${escapeHtml(company.companyName)}</td>
+    <td colspan="12" class="company-name">${escapeHtml(company.companyName)}</td>
   </tr>
-  <tr class="letterhead"><td colspan="13"></td></tr>
+  <tr class="letterhead"><td colspan="12"></td></tr>
 
   <!-- ZONE 2: Header info grid -->
   <!-- Row 6 -->
   <tr class="header-grid">
     <td class="hdr-label bt-med" colspan="2">Customer :</td>
-    <td class="hdr-value bt-med" colspan="5">${escapeHtml(quotation.customer.name)}</td>
+    <td class="hdr-value bt-med" colspan="4">${escapeHtml(quotation.customer.name)}</td>
     <td class="hdr-label bt-med" colspan="2">Inquiry No. :</td>
     <td class="hdr-value bt-med" colspan="3">${escapeHtml(quotation.inquiryNo)}</td>
     <td class="hdr-label-right bt-med" colspan="2">Quotation No. :</td>
@@ -399,7 +396,7 @@ export function generateStandardQuotationHtml(
   <!-- Row 7 -->
   <tr class="header-grid">
     <td class="hdr-label" colspan="2">Address :</td>
-    <td class="hdr-value" colspan="5">${escapeHtml(quotation.customer.addressLine1)}${quotation.customer.city ? `, ${escapeHtml(quotation.customer.city)}` : ""}</td>
+    <td class="hdr-value" colspan="4">${escapeHtml(quotation.customer.addressLine1)}${quotation.customer.city ? `, ${escapeHtml(quotation.customer.city)}` : ""}</td>
     <td class="hdr-label" colspan="2">Inquiry Date :</td>
     <td class="hdr-value" colspan="3">${formatDate(quotation.inquiryDate)}</td>
     <td class="hdr-label-right" colspan="2">Date :</td>
@@ -408,7 +405,7 @@ export function generateStandardQuotationHtml(
   <!-- Row 8 -->
   <tr class="header-grid">
     <td class="hdr-label" colspan="2">Country :</td>
-    <td class="hdr-value" colspan="5">${escapeHtml(quotation.customer.country)}</td>
+    <td class="hdr-value" colspan="4">${escapeHtml(quotation.customer.country)}</td>
     <td class="hdr-label" colspan="2"></td>
     <td class="hdr-value" colspan="3"></td>
     <td class="hdr-label-right" colspan="2">Valid upto :</td>
@@ -417,7 +414,7 @@ export function generateStandardQuotationHtml(
   <!-- Row 9 -->
   <tr class="header-grid">
     <td class="hdr-label" colspan="2">Attn. :</td>
-    <td class="hdr-value" colspan="5">${escapeHtml(quotation.buyer?.buyerName || quotation.customer.contactPerson)}</td>
+    <td class="hdr-value" colspan="4">${escapeHtml(quotation.buyer?.buyerName || quotation.customer.contactPerson)}</td>
     <td class="hdr-label" colspan="2">Designation :</td>
     <td class="hdr-value" colspan="3">${escapeHtml(quotation.buyer?.designation)}</td>
     <td class="hdr-label-right" colspan="2">Contact :</td>
@@ -426,7 +423,7 @@ export function generateStandardQuotationHtml(
   <!-- Row 10 -->
   <tr class="header-grid">
     <td class="hdr-label bb-med" colspan="2">Email :</td>
-    <td class="hdr-value bb-med" colspan="5">${escapeHtml(quotation.buyer?.email || quotation.customer.email)}</td>
+    <td class="hdr-value bb-med" colspan="4">${escapeHtml(quotation.buyer?.email || quotation.customer.email)}</td>
     <td class="hdr-label bb-med" colspan="2">Contact :</td>
     <td class="hdr-value bb-med" colspan="3">${escapeHtml(quotation.buyer?.mobile || quotation.buyer?.telephone || quotation.customer.phone)}</td>
     <td class="hdr-label-right bb-med" colspan="2">Email :</td>
@@ -435,7 +432,7 @@ export function generateStandardQuotationHtml(
 
   <!-- ZONE 3: Title -->
   <tr class="title-row">
-    <td colspan="16">${(quotation.version ?? 0) > 0 ? `Revised Quotation Sheet — Revision ${quotation.version}` : "Quotation Sheet"}</td>
+    <td colspan="15">${(quotation.version ?? 0) > 0 ? `Revised Quotation Sheet — Revision ${quotation.version}` : "Quotation Sheet"}</td>
   </tr>
 
   <!-- ZONE 4: Table header -->
@@ -446,7 +443,6 @@ export function generateStandardQuotationHtml(
     <th>Additional Spec.</th>
     <th>Size<br>(NPS)</th>
     <th>OD<br>(mm)</th>
-    <th>Schedule</th>
     <th>W.T.<br>(mm)</th>
     <th>Length<br>(Mtr.)</th>
     <th>Ends</th>
@@ -462,7 +458,7 @@ export function generateStandardQuotationHtml(
 
   <!-- ZONE 6: Total row -->
   <tr class="total-row">
-    <td colspan="11" class="bl-med" style="text-align:center">Total</td>
+    <td colspan="10" class="bl-med" style="text-align:center">Total</td>
     <td>${formatNumber(totalQty, 0)}</td>
     <td class="green-bg"></td>
     <td>${isUnquoted ? "" : formatNumber(totalAmount, 0)}</td>
@@ -472,7 +468,7 @@ export function generateStandardQuotationHtml(
 
   ${!isUnquoted ? `<!-- Amount in Words -->
   <tr>
-    <td colspan="16" class="bl-med br-med" style="font-size:10pt;padding:4px 6px;text-align:left;">
+    <td colspan="15" class="bl-med br-med" style="font-size:10pt;padding:4px 6px;text-align:left;">
       <strong>Amount in Words:</strong> ${escapeHtml(numberToWords(totalAmount, quotation.currency))}
     </td>
   </tr>` : ""}
