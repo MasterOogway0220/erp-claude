@@ -14,11 +14,11 @@ export default function DashboardLayout({
   return (
     <SessionProvider>
       <TooltipProvider delayDuration={0}>
-        <div className="flex h-screen overflow-hidden">
+        <div className="flex min-h-screen">
           <Sidebar />
-          <div className="flex flex-1 flex-col overflow-hidden">
+          <div className="flex flex-1 flex-col min-w-0">
             <TopBar />
-            <main className="flex-1 overflow-y-auto p-4 md:p-6">
+            <main className="flex-1 p-4 md:p-6">
               <div className="mb-4">
                 <Breadcrumbs />
               </div>

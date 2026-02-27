@@ -1203,7 +1203,7 @@ function NonStandardQuotationPage() {
                   }
                   const data = await res.json();
                   await queryClient.invalidateQueries({ queryKey: ["buyers", formData.customerId] });
-                  setFormData((prev) => ({ ...prev, buyerId: data.buyer.id }));
+                  setFormData((prev) => ({ ...prev, buyerId: data.id }));
                   setNewBuyerForm({ buyerName: "", designation: "", email: "", mobile: "" });
                   setShowAddBuyerModal(false);
                   toast.success("Client added successfully");
