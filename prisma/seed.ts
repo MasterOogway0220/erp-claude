@@ -1,9 +1,19 @@
 import { PrismaClient, PipeType, StockStatus, MTCType } from "@prisma/client";
+import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import bcrypt from "bcryptjs";
 import * as XLSX from "xlsx";
 import path from "path";
 
-const prisma = new PrismaClient();
+const url = new URL(process.env.DATABASE_URL!);
+const adapter = new PrismaMariaDb({
+  host: url.hostname,
+  port: url.port ? parseInt(url.port) : 3306,
+  user: decodeURIComponent(url.username),
+  password: decodeURIComponent(url.password),
+  database: url.pathname.slice(1),
+  connectionLimit: 5,
+});
+const prisma = new PrismaClient({ adapter });
 
 const DOCUMENTS_DIR = path.join(__dirname, "..", "documents");
 
