@@ -75,6 +75,8 @@ function NonStandardQuotationPage() {
     currency: "INR",
     validUpto: "",
     quotationDate: new Date().toISOString().split("T")[0],
+    inquiryNo: "",
+    inquiryDate: "",
   });
   const [items, setItems] = useState<NonStdItem[]>([emptyItem]);
   const [terms, setTerms] = useState<{
@@ -242,6 +244,8 @@ function NonStandardQuotationPage() {
         currency: q.currency || "INR",
         validUpto: q.validUpto ? new Date(q.validUpto).toISOString().split("T")[0] : "",
         quotationDate: q.quotationDate ? new Date(q.quotationDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+        inquiryNo: q.inquiryNo || "",
+        inquiryDate: q.inquiryDate ? new Date(q.inquiryDate).toISOString().split("T")[0] : "",
       });
       if (q.items?.length > 0) {
         setItems(q.items.map((item: any) => ({
@@ -364,6 +368,8 @@ function NonStandardQuotationPage() {
     createMutation.mutate({
       ...formData,
       quotationDate: formData.quotationDate || undefined,
+      inquiryNo: formData.inquiryNo || undefined,
+      inquiryDate: formData.inquiryDate || undefined,
       items: apiItems,
       terms,
     });
@@ -480,8 +486,8 @@ function NonStandardQuotationPage() {
               </div>
             </div>
 
-            {/* Row 2: Currency, Valid Until */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Row 2: Currency, Valid Until, Inquiry No, Inquiry Date */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="grid gap-2">
                 <Label>Currency</Label>
                 <Select
@@ -510,6 +516,24 @@ function NonStandardQuotationPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, validUpto: e.target.value })
                   }
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Inquiry No.</Label>
+                <Input
+                  value={formData.inquiryNo}
+                  onChange={(e) => setFormData({ ...formData, inquiryNo: e.target.value })}
+                  placeholder="Client inquiry ref."
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Inquiry Date</Label>
+                <Input
+                  type="date"
+                  value={formData.inquiryDate}
+                  onChange={(e) => setFormData({ ...formData, inquiryDate: e.target.value })}
                 />
               </div>
             </div>

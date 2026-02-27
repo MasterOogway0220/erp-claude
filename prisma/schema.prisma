@@ -495,6 +495,10 @@ model Quotation {
   revisionNotes         String?           @db.Text
   customerReference     String?
 
+  // Client inquiry reference
+  inquiryNo             String?
+  inquiryDate           DateTime?
+
   // Change tracking
   changeSnapshot        Json?
 

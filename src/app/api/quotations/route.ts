@@ -97,6 +97,8 @@ export async function POST(request: NextRequest) {
       items,
       terms,
       quotationDate,
+      inquiryNo,
+      inquiryDate,
       // New fields
       dealOwnerId,
       nextActionDate,
@@ -173,6 +175,8 @@ export async function POST(request: NextRequest) {
         ...(quotationDate ? { quotationDate: new Date(quotationDate) } : {}),
         validUpto: validUpto ? new Date(validUpto) : null,
         buyerId: buyerId || null,
+        inquiryNo: inquiryNo || null,
+        inquiryDate: inquiryDate ? new Date(inquiryDate) : null,
         paymentTermsId: paymentTermsId || null,
         deliveryTermsId: deliveryTermsId || null,
         deliveryPeriod: deliveryPeriod || null,

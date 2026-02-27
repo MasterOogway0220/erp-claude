@@ -108,7 +108,14 @@
       "Bash(./node_modules/.bin/prisma db:*)",
       "Bash(node_modules/.bin/prisma db:*)",
       "mcp__ide__getDiagnostics",
-      "Bash(xargs sed:*)"
+      "Bash(xargs sed:*)",
+      "WebFetch(domain:www.npmjs.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:www.prisma.io)",
+      "Bash(DATABASE_URL=\"mysql://erp_uttam:erp_Uttam12@145.79.212.111:3306/erp\" npm run:*)",
+      "Bash(DATABASE_URL=\"mysql://u150393620_erp_uttam:Uttam_erp12@srv2109.hstgr.io:3306/u150393620_erp\" npm run:*)",
+      "Bash(DATABASE_URL=\"mysql://u150393620_erp_uttam:Uttam_erp12@srv2109.hstgr.io:3306/u150393620_erp\" npx prisma:*)",
+      "Bash(DATABASE_URL=\"mysql://u150393620_erp_uttam:Uttam_erp12@srv2109.hstgr.io:3306/u150393620_erp\" npx tsx:*)"
     ]
   }
 }

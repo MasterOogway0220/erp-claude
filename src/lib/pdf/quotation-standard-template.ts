@@ -22,6 +22,8 @@ interface QuotationData {
   quotationDate: string | Date;
   validUpto?: string | Date | null;
   currency: string;
+  inquiryNo?: string | null;
+  inquiryDate?: string | Date | null;
   customer: {
     name: string;
     addressLine1?: string | null;
@@ -389,8 +391,8 @@ export function generateStandardQuotationHtml(
   <tr class="header-grid">
     <td class="hdr-label bt-med" colspan="2">Customer :</td>
     <td class="hdr-value bt-med" colspan="5">${escapeHtml(quotation.customer.name)}</td>
-    <td class="hdr-label bt-med" colspan="2"></td>
-    <td class="hdr-value bt-med" colspan="3"></td>
+    <td class="hdr-label bt-med" colspan="2">Inquiry No. :</td>
+    <td class="hdr-value bt-med" colspan="3">${escapeHtml(quotation.inquiryNo)}</td>
     <td class="hdr-label-right bt-med" colspan="2">Quotation No. :</td>
     <td class="hdr-value-right bt-med" colspan="2">${escapeHtml(quotation.quotationNo)}</td>
   </tr>
@@ -398,8 +400,8 @@ export function generateStandardQuotationHtml(
   <tr class="header-grid">
     <td class="hdr-label" colspan="2">Address :</td>
     <td class="hdr-value" colspan="5">${escapeHtml(quotation.customer.addressLine1)}${quotation.customer.city ? `, ${escapeHtml(quotation.customer.city)}` : ""}</td>
-    <td class="hdr-label" colspan="2"></td>
-    <td class="hdr-value" colspan="3"></td>
+    <td class="hdr-label" colspan="2">Inquiry Date :</td>
+    <td class="hdr-value" colspan="3">${formatDate(quotation.inquiryDate)}</td>
     <td class="hdr-label-right" colspan="2">Date :</td>
     <td class="hdr-value-right" colspan="2">${formatDate(quotation.quotationDate)}</td>
   </tr>
