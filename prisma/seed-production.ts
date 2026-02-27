@@ -146,7 +146,59 @@ async function seedProduction() {
       console.log(`Financial year ${fyLabel} already exists`);
     }
 
-    // 5. Summary
+    // 5. Warehouse Master
+    const warehouses = [
+      { code: 'WH-NM-01', name: 'Main Warehouse - Navi Mumbai', address: 'Plot No. 45, Navi Mumbai, Maharashtra - 400701' },
+      { code: 'WH-JA-01', name: 'Jebel Ali Warehouse', address: 'Jebel Ali Free Zone, Dubai, UAE' },
+    ];
+    let whCreated = 0;
+    for (const wh of warehouses) {
+      const existing = await prisma.warehouseMaster.findUnique({ where: { code: wh.code } });
+      if (!existing) {
+        await prisma.warehouseMaster.create({ data: wh });
+        whCreated++;
+      }
+    }
+    console.log(`✅ Warehouses: ${whCreated} created, ${warehouses.length - whCreated} existing`);
+
+    // 6. Transporter Master
+    const transporters = [
+      { name: 'V-Trans India Ltd', contactPerson: 'Mr. Verma', phone: '9876543210', vehicleTypes: 'Trailer, Flatbed' },
+      { name: 'TCI Freight', contactPerson: 'Mr. Singh', phone: '9876543211', vehicleTypes: 'Trailer, Container' },
+      { name: 'Gati Ltd', contactPerson: 'Mr. Gupta', phone: '9876543212', vehicleTypes: 'Trailer, Mini Truck' },
+      { name: 'Blue Dart Express', contactPerson: 'Mr. Shah', phone: '9876543213', vehicleTypes: 'Courier, Van' },
+      { name: 'DTDC Courier', contactPerson: 'Mr. Patel', phone: '9876543214', vehicleTypes: 'Courier' },
+    ];
+    let tpCreated = 0;
+    for (const tp of transporters) {
+      const existing = await prisma.transporterMaster.findFirst({ where: { name: tp.name } });
+      if (!existing) {
+        await prisma.transporterMaster.create({ data: tp });
+        tpCreated++;
+      }
+    }
+    console.log(`✅ Transporters: ${tpCreated} created, ${transporters.length - tpCreated} existing`);
+
+    // 7. Employee Master
+    const adminUser = await prisma.user.findUnique({ where: { email: 'admin@erp.com' } });
+    const employees = [
+      { employeeCode: 'EMP-001', name: 'System Administrator', department: 'Management', designation: 'Administrator', email: 'admin@erp.com', isActive: true, linkedUserId: adminUser?.id ?? undefined },
+      { employeeCode: 'EMP-002', name: 'Sales Manager', department: 'Sales', designation: 'Sales Manager', email: 'sales@npspiping.com', isActive: true },
+      { employeeCode: 'EMP-003', name: 'Purchase Manager', department: 'Purchase', designation: 'Purchase Manager', email: 'purchase@npspiping.com', isActive: true },
+      { employeeCode: 'EMP-004', name: 'QC Manager', department: 'Quality', designation: 'QC Manager', email: 'qc@npspiping.com', isActive: true },
+      { employeeCode: 'EMP-005', name: 'Accounts Manager', department: 'Accounts', designation: 'Accounts Manager', email: 'accounts@npspiping.com', isActive: true },
+    ];
+    let empCreated = 0;
+    for (const emp of employees) {
+      const existing = await prisma.employeeMaster.findUnique({ where: { employeeCode: emp.employeeCode } });
+      if (!existing) {
+        await prisma.employeeMaster.create({ data: emp });
+        empCreated++;
+      }
+    }
+    console.log(`✅ Employees: ${empCreated} created, ${employees.length - empCreated} existing`);
+
+    // 8. Summary
     console.log('\n✅ Production seed completed successfully!');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('📧 Admin Email:', adminEmail);
