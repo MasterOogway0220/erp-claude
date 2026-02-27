@@ -222,7 +222,6 @@ async function migrateCustomers(filePath: string) {
     throw error;
   } finally {
     await prisma.$disconnect();
-    await pool.end();
   }
 }
 
