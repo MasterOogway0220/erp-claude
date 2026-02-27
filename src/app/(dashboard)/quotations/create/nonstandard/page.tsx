@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense, useRef } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Plus, Trash2, ArrowLeft, Building2, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
@@ -104,6 +111,12 @@ function NonStandardQuotationPage() {
   const [rcmEnabled, setRcmEnabled] = useState(false);
   const [roundOff, setRoundOff] = useState(false);
   const [advanceToPay, setAdvanceToPay] = useState("");
+
+  // Add New Client modal state
+  const [showAddBuyerModal, setShowAddBuyerModal] = useState(false);
+  const [newBuyerForm, setNewBuyerForm] = useState({ buyerName: "", designation: "", email: "", mobile: "" });
+  const [addingBuyer, setAddingBuyer] = useState(false);
+  const queryClient = useQueryClient();
 
   // Track previous currency for conversion
   const prevCurrencyRef = useRef<string>(formData.currency);
@@ -529,18 +542,27 @@ function NonStandardQuotationPage() {
                 <Label>Buyer (Attn.)</Label>
                 <Select
                   value={formData.buyerId || "NONE"}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, buyerId: value === "NONE" ? "" : value })
-                  }
+                  onValueChange={(value) => {
+                    if (value === "__ADD_NEW__") {
+                      setShowAddBuyerModal(true);
+                      return;
+                    }
+                    setFormData({ ...formData, buyerId: value === "NONE" ? "" : value });
+                  }}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select buyer" />
+                    <SelectValue placeholder="Select buyer (optional)" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="NONE">No buyer selected</SelectItem>
                     {buyersData?.buyers?.map((b: any) => (
                       <SelectItem key={b.id} value={b.id}>{b.buyerName}</SelectItem>
                     ))}
+                    {formData.customerId && (
+                      <SelectItem value="__ADD_NEW__" className="text-primary font-medium">
+                        ➕ Add New Client
+                      </SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -1107,6 +1129,90 @@ function NonStandardQuotationPage() {
           </Button>
         </div>
       </form>
+
+      {/* Add New Client Modal */}
+      <Dialog open={showAddBuyerModal} onOpenChange={setShowAddBuyerModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Client (Buyer)</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label>Buyer Name *</Label>
+              <Input
+                value={newBuyerForm.buyerName}
+                onChange={(e) => setNewBuyerForm({ ...newBuyerForm, buyerName: e.target.value })}
+                placeholder="Enter buyer name"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label>Designation</Label>
+              <Input
+                value={newBuyerForm.designation}
+                onChange={(e) => setNewBuyerForm({ ...newBuyerForm, designation: e.target.value })}
+                placeholder="e.g. Purchase Manager"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label>Email</Label>
+              <Input
+                type="email"
+                value={newBuyerForm.email}
+                onChange={(e) => setNewBuyerForm({ ...newBuyerForm, email: e.target.value })}
+                placeholder="buyer@company.com"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label>Mobile</Label>
+              <Input
+                value={newBuyerForm.mobile}
+                onChange={(e) => setNewBuyerForm({ ...newBuyerForm, mobile: e.target.value })}
+                placeholder="+91 9876543210"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddBuyerModal(false)}>
+              Cancel
+            </Button>
+            <Button
+              disabled={!newBuyerForm.buyerName.trim() || addingBuyer}
+              onClick={async () => {
+                setAddingBuyer(true);
+                try {
+                  const res = await fetch("/api/masters/buyers", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      customerId: formData.customerId,
+                      buyerName: newBuyerForm.buyerName.trim(),
+                      designation: newBuyerForm.designation.trim() || undefined,
+                      email: newBuyerForm.email.trim() || undefined,
+                      mobile: newBuyerForm.mobile.trim() || undefined,
+                    }),
+                  });
+                  if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.error || "Failed to create buyer");
+                  }
+                  const data = await res.json();
+                  await queryClient.invalidateQueries({ queryKey: ["buyers", formData.customerId] });
+                  setFormData((prev) => ({ ...prev, buyerId: data.buyer.id }));
+                  setNewBuyerForm({ buyerName: "", designation: "", email: "", mobile: "" });
+                  setShowAddBuyerModal(false);
+                  toast.success("Client added successfully");
+                } catch (err: any) {
+                  toast.error(err.message || "Failed to add client");
+                } finally {
+                  setAddingBuyer(false);
+                }
+              }}
+            >
+              {addingBuyer ? "Adding..." : "Add Client"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
