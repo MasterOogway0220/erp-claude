@@ -3,6 +3,14 @@ import { checkAccess } from "@/lib/rbac";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 
+// On Vercel, only /tmp is writable at runtime.
+// Note: /tmp is ephemeral — files are lost between function invocations.
+// For persistent file storage, migrate to cloud storage (S3, Cloudinary, etc.)
+const UPLOAD_DIR =
+  process.env.NODE_ENV === "production"
+    ? "/tmp/uploads"
+    : path.join(process.cwd(), "uploads");
+
 export async function POST(request: NextRequest) {
   try {
     const { authorized, response } = await checkAccess("masters", "write");
@@ -21,13 +29,12 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    const uploadsDir = path.join(process.cwd(), "uploads");
-    await mkdir(uploadsDir, { recursive: true });
+    await mkdir(UPLOAD_DIR, { recursive: true });
 
     const timestamp = Date.now();
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
     const fileName = `${timestamp}_${safeName}`;
-    const filePath = path.join(uploadsDir, fileName);
+    const filePath = path.join(UPLOAD_DIR, fileName);
 
     await writeFile(filePath, buffer);
 

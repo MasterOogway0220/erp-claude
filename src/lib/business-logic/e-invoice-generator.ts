@@ -413,7 +413,8 @@ export async function saveEInvoiceJSON(
   const path = require('path');
 
   const fileName = `${eInvoice.DocDtls.No.replace(/\//g, '-')}_einvoice.json`;
-  const filePath = path.join(process.cwd(), 'public', 'invoices', 'e-invoice', fileName);
+  const baseDir = process.env.NODE_ENV === 'production' ? '/tmp' : path.join(process.cwd(), 'public');
+  const filePath = path.join(baseDir, 'invoices', 'e-invoice', fileName);
 
   // Ensure directory exists
   const dir = path.dirname(filePath);
