@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense, useMemo } from "react";
+import { useState, useEffect, Suspense, useMemo, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
@@ -128,6 +128,9 @@ function StandardQuotationPage() {
     isHeadingEditable: boolean;
   }[]>([]);
 
+  // Track previous currency for conversion
+  const prevCurrencyRef = useRef<string>(formData.currency);
+
   // Preview quotation number
   const { data: previewData } = useQuery({
     queryKey: ["quotation-preview-number"],
@@ -137,6 +140,16 @@ function StandardQuotationPage() {
       return res.json();
     },
     enabled: !editId,
+  });
+
+  // Fetch currencies with exchange rates
+  const { data: currenciesData } = useQuery({
+    queryKey: ["currencies"],
+    queryFn: async () => {
+      const res = await fetch("/api/masters/currencies");
+      if (!res.ok) throw new Error("Failed to fetch currencies");
+      return res.json();
+    },
   });
 
   // Fetch customers
@@ -260,6 +273,33 @@ function StandardQuotationPage() {
       setFormData((prev) => ({ ...prev, currency: selectedCustomer.defaultCurrency }));
     }
   }, [selectedCustomer?.defaultCurrency]);
+
+  // Convert item prices when currency changes
+  useEffect(() => {
+    const prev = prevCurrencyRef.current;
+    const next = formData.currency;
+    if (prev === next) return;
+    prevCurrencyRef.current = next;
+
+    const currencies: any[] = currenciesData?.currencies || [];
+    const prevRate = parseFloat(currencies.find((c: any) => c.code === prev)?.exchangeRate ?? "1") || 1;
+    const nextRate = parseFloat(currencies.find((c: any) => c.code === next)?.exchangeRate ?? "1") || 1;
+    if (prevRate === nextRate) return;
+
+    const hasRates = items.some((item) => parseFloat(item.unitRate) > 0);
+    if (!hasRates) return;
+
+    setItems((prevItems) =>
+      prevItems.map((item) => {
+        const oldRate = parseFloat(item.unitRate);
+        if (!oldRate) return item;
+        const newRate = parseFloat(((oldRate * prevRate) / nextRate).toFixed(4));
+        const qty = parseFloat(item.quantity) || 0;
+        const newAmount = parseFloat((newRate * qty).toFixed(2));
+        return { ...item, unitRate: String(newRate), amount: String(newAmount) };
+      })
+    );
+  }, [formData.currency]);
 
   // Auto-fill place of supply from customer state
   useEffect(() => {
@@ -1181,73 +1221,6 @@ function StandardQuotationPage() {
                 )}
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Offer Terms */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Offer Terms & Conditions</CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">
-                Check/uncheck to include on PDF. Edit values as needed.
-              </p>
-            </div>
-            <Button type="button" variant="outline" size="sm" onClick={addCustomTerm}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Offer Term
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {terms.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No terms loaded.</p>
-            ) : (
-              <div className="space-y-1">
-                {terms.map((term, index) => (
-                  <div
-                    key={index}
-                    className={`flex items-start gap-3 py-2 px-2 rounded-md ${
-                      !term.isIncluded ? "opacity-50" : ""
-                    }`}
-                  >
-                    <Checkbox
-                      checked={term.isIncluded}
-                      onCheckedChange={() => toggleTermIncluded(index)}
-                      className="mt-1"
-                    />
-                    <div className="flex-1 grid grid-cols-1 md:grid-cols-[180px_1fr] gap-2 items-start">
-                      {term.isHeadingEditable ? (
-                        <Input
-                          value={term.termName}
-                          onChange={(e) => updateTermName(index, e.target.value)}
-                          placeholder="Term name"
-                          className="h-8 text-sm font-medium"
-                        />
-                      ) : (
-                        <span className="font-medium text-sm pt-1">{term.termName}</span>
-                      )}
-                      <Input
-                        value={term.termValue}
-                        onChange={(e) => updateTermValue(index, e.target.value)}
-                        placeholder="Term value"
-                        className="h-8 text-sm"
-                      />
-                    </div>
-                    {term.isCustom && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 shrink-0"
-                        onClick={() => removeCustomTerm(index)}
-                      >
-                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                      </Button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
           </CardContent>
         </Card>
 
