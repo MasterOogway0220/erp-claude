@@ -31,8 +31,16 @@ import {
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Plus, Pencil, Trash2, Search, ThumbsUp, ThumbsDown, CheckCircle, Clock, XCircle } from "lucide-react";
 import { toast } from "sonner";
+import { useCurrentUser } from "@/hooks/use-current-user";
 
 const INDIAN_STATES = [
   "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
@@ -68,6 +76,9 @@ interface Vendor {
   bankName: string | null;
   vendorRating: number | null;
   approvalDate: string | null;
+  approvedById: string | null;
+  approvalRemarks: string | null;
+  approvedBy: { id: string; name: string } | null;
 }
 
 interface VendorFormData {
@@ -84,8 +95,6 @@ interface VendorFormData {
   gstNo: string;
   gstType: string;
   panNo: string;
-  approvedStatus: boolean;
-  approvalDate: string;
   productsSupplied: string;
   avgLeadTimeDays: string;
   performanceScore: string;
@@ -109,8 +118,6 @@ const emptyForm: VendorFormData = {
   gstNo: "",
   gstType: "",
   panNo: "",
-  approvedStatus: true,
-  approvalDate: "",
   productsSupplied: "",
   avgLeadTimeDays: "",
   performanceScore: "",
@@ -122,10 +129,17 @@ const emptyForm: VendorFormData = {
 
 export default function VendorsPage() {
   const queryClient = useQueryClient();
+  const { user } = useCurrentUser();
   const [search, setSearch] = useState("");
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
   const [formData, setFormData] = useState<VendorFormData>(emptyForm);
+  const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
+  const [approvalAction, setApprovalAction] = useState<"approve" | "reject">("approve");
+  const [approvalVendor, setApprovalVendor] = useState<Vendor | null>(null);
+  const [approvalRemarks, setApprovalRemarks] = useState("");
+
+  const canApprove = user?.role === "MANAGEMENT" || user?.role === "ADMIN";
 
   const { data, isLoading } = useQuery({
     queryKey: ["vendors", search],
@@ -194,6 +208,51 @@ export default function VendorsPage() {
     },
   });
 
+  const approvalMutation = useMutation({
+    mutationFn: async ({ id, action, remarks }: { id: string; action: string; remarks: string }) => {
+      const res = await fetch(`/api/masters/vendors/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, approvalRemarks: remarks }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || `Failed to ${action} vendor`);
+      }
+      return res.json();
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["vendors"] });
+      toast.success(variables.action === "approve" ? "Vendor approved" : "Vendor rejected");
+      setApprovalDialogOpen(false);
+      setApprovalRemarks("");
+      setApprovalVendor(null);
+    },
+    onError: (error: any) => {
+      toast.error(error.message);
+    },
+  });
+
+  const handleApprovalDialog = (vendor: Vendor, action: "approve" | "reject") => {
+    setApprovalVendor(vendor);
+    setApprovalAction(action);
+    setApprovalRemarks("");
+    setApprovalDialogOpen(true);
+  };
+
+  const handleApprovalSubmit = () => {
+    if (!approvalVendor) return;
+    if (approvalAction === "reject" && !approvalRemarks.trim()) {
+      toast.error("Remarks are required when rejecting");
+      return;
+    }
+    approvalMutation.mutate({
+      id: approvalVendor.id,
+      action: approvalAction,
+      remarks: approvalRemarks,
+    });
+  };
+
   const handleOpenSheet = (vendor?: Vendor) => {
     if (vendor) {
       setEditingVendor(vendor);
@@ -211,8 +270,6 @@ export default function VendorsPage() {
         gstNo: vendor.gstNo || "",
         gstType: vendor.gstType || "",
         panNo: (vendor as any).panNo || "",
-        approvedStatus: vendor.approvedStatus,
-        approvalDate: vendor.approvalDate ? vendor.approvalDate.split("T")[0] : "",
         productsSupplied: vendor.productsSupplied || "",
         avgLeadTimeDays: vendor.avgLeadTimeDays?.toString() || "",
         performanceScore: vendor.performanceScore?.toString() || "",
@@ -319,17 +376,57 @@ export default function VendorsPage() {
                     )}
                   </TableCell>
                   <TableCell>
-                    <div className="flex gap-1">
-                      <Badge variant={vendor.approvedStatus ? "default" : "secondary"}>
-                        {vendor.approvedStatus ? "Approved" : "Pending"}
-                      </Badge>
-                      {!vendor.isActive && (
-                        <Badge variant="destructive">Inactive</Badge>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex gap-1">
+                        {vendor.approvedStatus ? (
+                          <Badge className="bg-green-600">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Approved
+                          </Badge>
+                        ) : vendor.approvalRemarks && !vendor.approvedById ? (
+                          <Badge variant="destructive">
+                            <XCircle className="h-3 w-3 mr-1" />
+                            Rejected
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary">
+                            <Clock className="h-3 w-3 mr-1" />
+                            Pending
+                          </Badge>
+                        )}
+                        {!vendor.isActive && (
+                          <Badge variant="destructive">Inactive</Badge>
+                        )}
+                      </div>
+                      {vendor.approvedBy && vendor.approvedStatus && (
+                        <span className="text-xs text-muted-foreground">
+                          by {vendor.approvedBy.name}
+                        </span>
                       )}
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
+                    <div className="flex justify-end gap-1">
+                      {canApprove && !vendor.approvedStatus && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          title="Approve Vendor"
+                          onClick={() => handleApprovalDialog(vendor, "approve")}
+                        >
+                          <ThumbsUp className="h-4 w-4 text-green-600" />
+                        </Button>
+                      )}
+                      {canApprove && vendor.approvedStatus && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          title="Reject Vendor"
+                          onClick={() => handleApprovalDialog(vendor, "reject")}
+                        >
+                          <ThumbsDown className="h-4 w-4 text-orange-600" />
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="icon"
@@ -352,6 +449,53 @@ export default function VendorsPage() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Approval Dialog */}
+      <Dialog open={approvalDialogOpen} onOpenChange={setApprovalDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {approvalAction === "approve" ? "Approve" : "Reject"} Vendor
+            </DialogTitle>
+            <DialogDescription>
+              {approvalAction === "approve"
+                ? `Approve "${approvalVendor?.name}" as an authorized vendor.`
+                : `Reject "${approvalVendor?.name}". Please provide a reason.`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid gap-2">
+              <Label htmlFor="approvalRemarks">
+                Remarks {approvalAction === "reject" ? "*" : "(optional)"}
+              </Label>
+              <Textarea
+                id="approvalRemarks"
+                value={approvalRemarks}
+                onChange={(e) => setApprovalRemarks(e.target.value)}
+                placeholder={approvalAction === "approve" ? "Optional remarks..." : "Reason for rejection..."}
+                rows={3}
+              />
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => { setApprovalDialogOpen(false); setApprovalRemarks(""); }}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleApprovalSubmit}
+                disabled={approvalMutation.isPending || (approvalAction === "reject" && !approvalRemarks.trim())}
+                className={approvalAction === "approve" ? "bg-green-600 hover:bg-green-700" : ""}
+                variant={approvalAction === "reject" ? "destructive" : "default"}
+              >
+                {approvalAction === "approve" ? (
+                  <><ThumbsUp className="h-4 w-4 mr-2" />Approve</>
+                ) : (
+                  <><ThumbsDown className="h-4 w-4 mr-2" />Reject</>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Sheet-based Form (matching Customer Master design) */}
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
@@ -570,42 +714,42 @@ export default function VendorsPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label>Approval Status</Label>
-                    <div className="flex items-center gap-4 pt-2">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="approvedStatus"
-                          className="h-4 w-4 accent-primary"
-                          checked={formData.approvedStatus === true}
-                          onChange={() => setFormData({ ...formData, approvedStatus: true })}
-                        />
-                        <span className="text-sm">Approved</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="approvedStatus"
-                          className="h-4 w-4 accent-primary"
-                          checked={formData.approvedStatus === false}
-                          onChange={() => setFormData({ ...formData, approvedStatus: false })}
-                        />
-                        <span className="text-sm">Pending</span>
-                      </label>
+                {editingVendor && (
+                  <div className="grid grid-cols-2 gap-4 p-3 bg-muted/50 rounded-lg">
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Approval Status</Label>
+                      <div className="mt-1">
+                        {editingVendor.approvedStatus ? (
+                          <Badge className="bg-green-600">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Approved
+                          </Badge>
+                        ) : editingVendor.approvalRemarks && !editingVendor.approvedById ? (
+                          <Badge variant="destructive">Rejected</Badge>
+                        ) : (
+                          <Badge variant="secondary">Pending Approval</Badge>
+                        )}
+                      </div>
                     </div>
+                    {editingVendor.approvedBy && (
+                      <div>
+                        <Label className="text-muted-foreground text-xs">Approved By</Label>
+                        <div className="text-sm mt-1">{editingVendor.approvedBy.name}</div>
+                        {editingVendor.approvalDate && (
+                          <div className="text-xs text-muted-foreground">
+                            {new Date(editingVendor.approvalDate).toLocaleDateString()}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {editingVendor.approvalRemarks && (
+                      <div className="col-span-2">
+                        <Label className="text-muted-foreground text-xs">Remarks</Label>
+                        <div className="text-sm mt-1">{editingVendor.approvalRemarks}</div>
+                      </div>
+                    )}
                   </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="approvalDate">Approval Date</Label>
-                    <Input
-                      id="approvalDate"
-                      type="date"
-                      value={formData.approvalDate}
-                      onChange={(e) => setFormData({ ...formData, approvalDate: e.target.value })}
-                    />
-                  </div>
-                </div>
+                )}
               </div>
             </div>
 

@@ -31,7 +31,9 @@ import {
   ArrowLeft,
   Edit,
   FileText,
+  FileDown,
   AlertCircle,
+  AlertTriangle,
   Clock,
   CheckCircle,
   Send,
@@ -135,6 +137,8 @@ export default function PurchaseOrderDetailPage() {
     changeReason: "",
   });
   const [submitting, setSubmitting] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [varianceReport, setVarianceReport] = useState<any>(null);
 
   useEffect(() => {
     if (params.id) {
@@ -155,11 +159,50 @@ export default function PurchaseOrderDetailPage() {
         specialRequirements: data.purchaseOrder.specialRequirements || "",
         changeReason: "",
       });
+      // Fetch variance report if PO has a linked SO
+      if (data.purchaseOrder.salesOrder?.id) {
+        fetchVariance(id);
+      }
     } catch (error) {
       toast.error("Failed to load purchase order");
       router.push("/purchase");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchVariance = async (poId: string) => {
+    try {
+      const response = await fetch(`/api/purchase/orders/${poId}/variance`);
+      if (response.ok) {
+        const data = await response.json();
+        setVarianceReport(data);
+      }
+    } catch {
+      // Variance is non-critical — silently ignore errors
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!po) return;
+    setDownloadingPdf(true);
+    try {
+      const response = await fetch(`/api/purchase/orders/${po.id}/pdf`);
+      if (!response.ok) throw new Error("Failed to generate PDF");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${po.poNo.replace(/\//g, "-")}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success("PDF downloaded");
+    } catch {
+      toast.error("Failed to download PDF");
+    } finally {
+      setDownloadingPdf(false);
     }
   };
 
@@ -295,6 +338,10 @@ export default function PurchaseOrderDetailPage() {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
+          <Button variant="outline" onClick={handleDownloadPDF} disabled={downloadingPdf}>
+            <FileDown className="w-4 h-4 mr-2" />
+            {downloadingPdf ? "Generating..." : "Download PDF"}
+          </Button>
           {po.status !== "CLOSED" && po.status !== "CANCELLED" && (
             <Dialog open={amendDialogOpen} onOpenChange={setAmendDialogOpen}>
               <DialogTrigger asChild>
@@ -384,6 +431,73 @@ export default function PurchaseOrderDetailPage() {
                   Expected delivery was {format(new Date(po.deliveryDate!), "dd MMM yyyy")}.
                   Currently {daysOverdue} day(s) overdue.
                 </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Variance Alert */}
+      {varianceReport?.hasVariances && (
+        <Card className={varianceReport.requiresApproval ? "border-red-200 bg-red-50" : "border-orange-200 bg-orange-50"}>
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className={`w-5 h-5 mt-0.5 ${varianceReport.requiresApproval ? "text-red-600" : "text-orange-600"}`} />
+              <div className="flex-1">
+                <h3 className={`font-medium ${varianceReport.requiresApproval ? "text-red-900" : "text-orange-900"}`}>
+                  PO vs Quotation Variance Detected
+                  {varianceReport.requiresApproval && (
+                    <Badge variant="destructive" className="ml-2">Requires Management Approval</Badge>
+                  )}
+                </h3>
+                {varianceReport.totalVariancePercent !== undefined && Math.abs(varianceReport.totalVariancePercent) > 0.1 && (
+                  <p className={`text-sm mt-1 ${varianceReport.requiresApproval ? "text-red-700" : "text-orange-700"}`}>
+                    Total amount variance: {varianceReport.totalVarianceAmount?.toFixed(2)} ({varianceReport.totalVariancePercent?.toFixed(2)}%)
+                  </p>
+                )}
+                {varianceReport.warnings?.length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    {varianceReport.warnings.map((w: string, i: number) => (
+                      <p key={i} className="text-sm text-red-700">{w}</p>
+                    ))}
+                  </div>
+                )}
+                {varianceReport.items?.filter((v: any) => v.lineNo > 0).length > 0 && (
+                  <div className="mt-3">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="h-8">Line</TableHead>
+                          <TableHead className="h-8">Field</TableHead>
+                          <TableHead className="h-8">Quotation</TableHead>
+                          <TableHead className="h-8">PO</TableHead>
+                          <TableHead className="h-8">Variance</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {varianceReport.items
+                          .filter((v: any) => v.lineNo > 0)
+                          .map((v: any, i: number) => (
+                            <TableRow key={i}>
+                              <TableCell className="py-1">{v.lineNo}</TableCell>
+                              <TableCell className="py-1">{v.field}</TableCell>
+                              <TableCell className="py-1 font-mono text-xs">
+                                {typeof v.quotationValue === "number" ? Number(v.quotationValue).toFixed(2) : v.quotationValue}
+                              </TableCell>
+                              <TableCell className="py-1 font-mono text-xs">
+                                {typeof v.poValue === "number" ? Number(v.poValue).toFixed(2) : v.poValue}
+                              </TableCell>
+                              <TableCell className="py-1 font-mono text-xs">
+                                {typeof v.variance === "number"
+                                  ? `${Number(v.variance).toFixed(2)}${v.variancePercent ? ` (${v.variancePercent.toFixed(1)}%)` : ""}`
+                                  : v.variance}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>

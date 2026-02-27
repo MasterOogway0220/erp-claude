@@ -40,6 +40,85 @@ export async function PATCH(
     if (!authorized) return response!;
 
     const body = await request.json();
+    const { action } = body;
+
+    // Handle approval workflow actions
+    if (action === "approve" || action === "reject") {
+      const userRole = session.user.role;
+      if (userRole !== "MANAGEMENT" && userRole !== "ADMIN") {
+        return NextResponse.json(
+          { error: "Only MANAGEMENT or ADMIN can approve/reject vendors" },
+          { status: 403 }
+        );
+      }
+
+      const vendor = await prisma.vendorMaster.findUnique({
+        where: { id },
+        select: { name: true },
+      });
+      if (!vendor) {
+        return NextResponse.json({ error: "Vendor not found" }, { status: 404 });
+      }
+
+      if (action === "approve") {
+        const updated = await prisma.vendorMaster.update({
+          where: { id },
+          data: {
+            approvedStatus: true,
+            approvedById: session.user.id,
+            approvalDate: new Date(),
+            approvalRemarks: body.approvalRemarks || null,
+          },
+          include: {
+            approvedBy: { select: { id: true, name: true, email: true } },
+          },
+        });
+
+        createAuditLog({
+          userId: session.user.id,
+          action: "APPROVE",
+          tableName: "VendorMaster",
+          recordId: id,
+          fieldName: "approvedStatus",
+          oldValue: "false",
+          newValue: "true",
+        }).catch(console.error);
+
+        return NextResponse.json(updated);
+      }
+
+      // action === "reject"
+      if (!body.approvalRemarks?.trim()) {
+        return NextResponse.json(
+          { error: "Remarks are required when rejecting a vendor" },
+          { status: 400 }
+        );
+      }
+
+      const updated = await prisma.vendorMaster.update({
+        where: { id },
+        data: {
+          approvedStatus: false,
+          approvedById: null,
+          approvalDate: null,
+          approvalRemarks: body.approvalRemarks,
+        },
+      });
+
+      createAuditLog({
+        userId: session.user.id,
+        action: "REJECT",
+        tableName: "VendorMaster",
+        recordId: id,
+        fieldName: "approvedStatus",
+        oldValue: "true",
+        newValue: "false",
+      }).catch(console.error);
+
+      return NextResponse.json(updated);
+    }
+
+    // Standard field update
     const {
       name,
       addressLine1,
@@ -48,7 +127,6 @@ export async function PATCH(
       state,
       country,
       pincode,
-      approvedStatus,
       productsSupplied,
       avgLeadTimeDays,
       performanceScore,
@@ -61,7 +139,6 @@ export async function PATCH(
       bankIfsc,
       bankName,
       vendorRating,
-      approvalDate,
       isActive,
     } = body;
 
@@ -75,7 +152,6 @@ export async function PATCH(
         state: state ?? undefined,
         country: country ?? undefined,
         pincode: pincode ?? undefined,
-        approvedStatus: approvedStatus ?? undefined,
         productsSupplied: productsSupplied ?? undefined,
         avgLeadTimeDays: avgLeadTimeDays !== undefined ? (avgLeadTimeDays ? parseInt(avgLeadTimeDays) : null) : undefined,
         performanceScore: performanceScore !== undefined ? (performanceScore ? parseFloat(performanceScore) : null) : undefined,
@@ -88,7 +164,6 @@ export async function PATCH(
         bankIfsc: bankIfsc ?? undefined,
         bankName: bankName ?? undefined,
         vendorRating: vendorRating !== undefined ? (vendorRating ? parseFloat(vendorRating) : null) : undefined,
-        approvalDate: approvalDate !== undefined ? (approvalDate ? new Date(approvalDate) : null) : undefined,
         isActive: isActive ?? undefined,
       },
     });

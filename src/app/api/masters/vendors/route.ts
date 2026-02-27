@@ -26,6 +26,9 @@ export async function GET(request: NextRequest) {
     const vendors = await prisma.vendorMaster.findMany({
       where,
       orderBy: { name: "asc" },
+      include: {
+        approvedBy: { select: { id: true, name: true } },
+      },
     });
 
     return NextResponse.json({ vendors });
@@ -84,7 +87,7 @@ export async function POST(request: NextRequest) {
         state: state || null,
         country: country || "India",
         pincode: pincode || null,
-        approvedStatus: approvedStatus ?? true,
+        approvedStatus: false,
         productsSupplied: productsSupplied || null,
         avgLeadTimeDays: avgLeadTimeDays ? parseInt(avgLeadTimeDays) : null,
         performanceScore: performanceScore ? parseFloat(performanceScore) : null,
