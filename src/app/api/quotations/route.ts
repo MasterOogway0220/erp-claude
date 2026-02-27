@@ -144,6 +144,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Verify user exists in DB (guards against stale JWT after DB reset)
+    const userInDb = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { id: true },
+    });
+    const preparedById = userInDb ? session.user.id : null;
+
     // Generate quotation number using shared document numbering utility
     const quotationNo = await generateDocumentNumber("QUOTATION");
 
@@ -200,7 +207,7 @@ export async function POST(request: NextRequest) {
         taxAmount: taxAmount || null,
         grandTotal,
         amountInWords: computedAmountInWords,
-        preparedById: session.user.id,
+        preparedById,
         items: {
           create: items.map((item: any, index: number) => ({
             sNo: index + 1,

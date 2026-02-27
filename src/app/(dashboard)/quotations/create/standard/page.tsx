@@ -301,6 +301,14 @@ function StandardQuotationPage() {
     );
   }, [formData.currency]);
 
+  // Clear GST fields when currency is not INR (only INR supports GST)
+  useEffect(() => {
+    if (formData.currency !== "INR") {
+      setTaxRate("");
+      setRcmEnabled(false);
+    }
+  }, [formData.currency]);
+
   // Auto-fill place of supply from customer state
   useEffect(() => {
     if (selectedCustomer && !editId) {
@@ -560,6 +568,7 @@ function StandardQuotationPage() {
 
   const fmt = (n: number) => n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const curr = formData.currency;
+  const isINR = formData.currency === "INR";
 
   return (
     <div className="space-y-6 max-w-7xl">
@@ -831,44 +840,46 @@ function StandardQuotationPage() {
           </CardContent>
         </Card>
 
-        {/* Place of Supply */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-              <CardTitle className="text-base">Place of Supply</CardTitle>
-              <span className="text-xs text-muted-foreground">(Determines CGST+SGST vs IGST)</span>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="grid gap-2">
-                <Label>City</Label>
-                <Input
-                  value={formData.placeOfSupplyCity}
-                  onChange={(e) => setFormData({ ...formData, placeOfSupplyCity: e.target.value })}
-                  placeholder="e.g. Mumbai"
-                />
+        {/* Place of Supply — only relevant for GST (INR) */}
+        {isINR && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-base">Place of Supply</CardTitle>
+                <span className="text-xs text-muted-foreground">(Determines CGST+SGST vs IGST)</span>
               </div>
-              <div className="grid gap-2">
-                <Label>State</Label>
-                <Input
-                  value={formData.placeOfSupplyState}
-                  onChange={(e) => setFormData({ ...formData, placeOfSupplyState: e.target.value })}
-                  placeholder="e.g. Maharashtra"
-                />
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid gap-2">
+                  <Label>City</Label>
+                  <Input
+                    value={formData.placeOfSupplyCity}
+                    onChange={(e) => setFormData({ ...formData, placeOfSupplyCity: e.target.value })}
+                    placeholder="e.g. Mumbai"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>State</Label>
+                  <Input
+                    value={formData.placeOfSupplyState}
+                    onChange={(e) => setFormData({ ...formData, placeOfSupplyState: e.target.value })}
+                    placeholder="e.g. Maharashtra"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Country</Label>
+                  <Input
+                    value={formData.placeOfSupplyCountry}
+                    onChange={(e) => setFormData({ ...formData, placeOfSupplyCountry: e.target.value })}
+                    placeholder="India"
+                  />
+                </div>
               </div>
-              <div className="grid gap-2">
-                <Label>Country</Label>
-                <Input
-                  value={formData.placeOfSupplyCountry}
-                  onChange={(e) => setFormData({ ...formData, placeOfSupplyCountry: e.target.value })}
-                  placeholder="India"
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Line Items */}
         <Card>
@@ -1022,23 +1033,25 @@ function StandardQuotationPage() {
                         placeholder="e.g. 7304"
                       />
                     </div>
-                    <div className="grid gap-2">
-                      <Label>GST Rate (%)</Label>
-                      <Select
-                        value={item.taxRate || "NONE"}
-                        onValueChange={(value) => updateItem(index, "taxRate", value === "NONE" ? "" : value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select rate" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="NONE">—</SelectItem>
-                          {GST_RATES.map((r) => (
-                            <SelectItem key={r} value={r}>{r}%</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    {isINR && (
+                      <div className="grid gap-2">
+                        <Label>GST Rate (%)</Label>
+                        <Select
+                          value={item.taxRate || "NONE"}
+                          onValueChange={(value) => updateItem(index, "taxRate", value === "NONE" ? "" : value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select rate" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="NONE">—</SelectItem>
+                            {GST_RATES.map((r) => (
+                              <SelectItem key={r} value={r}>{r}%</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                   </div>
 
                   {/* Delivery + Remark + Weight row */}
@@ -1092,23 +1105,25 @@ function StandardQuotationPage() {
               {/* Left: Tax rate + discount controls */}
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label>Header GST Rate (%)</Label>
-                    <Select
-                      value={taxRate || "NONE"}
-                      onValueChange={(v) => setTaxRate(v === "NONE" ? "" : v)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select rate" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="NONE">0% / Exempt</SelectItem>
-                        {GST_RATES.map((r) => (
-                          <SelectItem key={r} value={r}>{r}%</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  {isINR && (
+                    <div className="grid gap-2">
+                      <Label>Header GST Rate (%)</Label>
+                      <Select
+                        value={taxRate || "NONE"}
+                        onValueChange={(v) => setTaxRate(v === "NONE" ? "" : v)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select rate" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="NONE">0% / Exempt</SelectItem>
+                          {GST_RATES.map((r) => (
+                            <SelectItem key={r} value={r}>{r}%</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                   <div className="grid gap-2">
                     <Label>Additional Discount (%)</Label>
                     <Input
@@ -1124,16 +1139,18 @@ function StandardQuotationPage() {
                 </div>
 
                 <div className="flex items-center gap-6">
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      id="rcm"
-                      checked={rcmEnabled}
-                      onCheckedChange={setRcmEnabled}
-                    />
-                    <Label htmlFor="rcm" className="cursor-pointer">
-                      RCM (Reverse Charge)
-                    </Label>
-                  </div>
+                  {isINR && (
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        id="rcm"
+                        checked={rcmEnabled}
+                        onCheckedChange={setRcmEnabled}
+                      />
+                      <Label htmlFor="rcm" className="cursor-pointer">
+                        RCM (Reverse Charge)
+                      </Label>
+                    </div>
+                  )}
                   <div className="flex items-center gap-2">
                     <Switch
                       id="roundoff"
@@ -1179,14 +1196,14 @@ function StandardQuotationPage() {
                   </>
                 )}
 
-                {parsedTaxRate > 0 && !rcmEnabled && (
+                {isINR && parsedTaxRate > 0 && !rcmEnabled && (
                   <div className="flex justify-between py-1">
                     <span className="text-muted-foreground">GST ({parsedTaxRate}%)</span>
                     <span>{curr} {fmt(taxAmount)}</span>
                   </div>
                 )}
 
-                {rcmEnabled && (
+                {isINR && rcmEnabled && (
                   <div className="flex justify-between py-1 text-amber-600">
                     <span>Tax (RCM — paid by buyer)</span>
                     <span>₹0.00</span>
