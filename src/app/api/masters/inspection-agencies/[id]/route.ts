@@ -61,17 +61,10 @@ export async function DELETE(
 
     const existing = await prisma.inspectionAgencyMaster.findUnique({
       where: { id },
-      select: { name: true, _count: { select: { inspections: true } } },
+      select: { name: true },
     });
     if (!existing) {
       return NextResponse.json({ error: "Inspection agency not found" }, { status: 404 });
-    }
-
-    if (existing._count.inspections > 0) {
-      return NextResponse.json(
-        { error: `Cannot delete "${existing.name}". It is linked to ${existing._count.inspections} inspections. Deactivate instead.` },
-        { status: 400 }
-      );
     }
 
     await prisma.inspectionAgencyMaster.delete({ where: { id } });
