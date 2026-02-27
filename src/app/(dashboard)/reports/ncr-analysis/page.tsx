@@ -14,8 +14,21 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AlertTriangle, CheckCircle, XCircle, FileWarning } from "lucide-react";
-import { format } from "date-fns";
-import Link from "next/link";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+} from "recharts";
 
 interface NCRByVendor {
   vendorId: string | null;
@@ -41,6 +54,8 @@ interface NCRAnalysisData {
   byType: NCRByType[];
   monthlyTrend: NCRMonthly[];
 }
+
+const PIE_COLORS = ["#ef4444", "#f97316", "#eab308", "#22c55e", "#3b82f6", "#8b5cf6", "#ec4899"];
 
 export default function NCRAnalysisPage() {
   const [data, setData] = useState<NCRAnalysisData | null>(null);
@@ -90,6 +105,11 @@ export default function NCRAnalysisPage() {
       </div>
     );
   }
+
+  const pieData = (data.byType || []).map((t) => ({
+    name: t.type.replace(/_/g, " "),
+    value: t.count,
+  }));
 
   return (
     <div className="space-y-6">
@@ -145,10 +165,105 @@ export default function NCRAnalysisPage() {
         </Card>
       </div>
 
+      {/* Monthly NCR Trend Chart */}
+      {data.monthlyTrend && data.monthlyTrend.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Monthly NCR Trend</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={data.monthlyTrend}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                <Tooltip />
+                <Line
+                  type="monotone"
+                  dataKey="count"
+                  name="NCRs"
+                  stroke="#ef4444"
+                  strokeWidth={2}
+                  dot={{ r: 5, fill: "#ef4444" }}
+                  activeDot={{ r: 7 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* NCR by Type - Pie Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>NCRs by Type</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {pieData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={100}
+                    dataKey="value"
+                    label={({ name, percent }) =>
+                      `${name} (${((percent ?? 0) * 100).toFixed(0)}%)`
+                    }
+                    labelLine={true}
+                  >
+                    {pieData.map((_, index) => (
+                      <Cell key={index} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="py-4 text-center text-muted-foreground">
+                No NCR type data available
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* NCR by Vendor - Bar Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>NCRs by Vendor (Top 10)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {data.byVendor && data.byVendor.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={data.byVendor} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12 }} />
+                  <YAxis
+                    type="category"
+                    dataKey="vendorName"
+                    width={120}
+                    tick={{ fontSize: 11 }}
+                  />
+                  <Tooltip />
+                  <Bar dataKey="count" name="NCRs" fill="#f97316" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="py-4 text-center text-muted-foreground">
+                No vendor NCR data available
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Tables */}
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>NCRs by Vendor</CardTitle>
+            <CardTitle>NCRs by Vendor (Detail)</CardTitle>
           </CardHeader>
           <CardContent>
             {data.byVendor && data.byVendor.length > 0 ? (
@@ -186,7 +301,7 @@ export default function NCRAnalysisPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>NCRs by Type</CardTitle>
+            <CardTitle>NCRs by Type (Detail)</CardTitle>
           </CardHeader>
           <CardContent>
             {data.byType && data.byType.length > 0 ? (
@@ -226,42 +341,6 @@ export default function NCRAnalysisPage() {
           </CardContent>
         </Card>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Monthly NCR Trend</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {data.monthlyTrend && data.monthlyTrend.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Month</TableHead>
-                  <TableHead className="text-right">NCR Count</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.monthlyTrend.map((row, index) => (
-                  <TableRow key={index}>
-                    <TableCell className="font-medium">{row.month}</TableCell>
-                    <TableCell className="text-right font-mono">
-                      {row.count > 0 ? (
-                        <Badge variant="destructive">{row.count}</Badge>
-                      ) : (
-                        <span className="text-muted-foreground">0</span>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <div className="py-4 text-center text-muted-foreground">
-              No monthly NCR data available
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }

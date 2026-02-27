@@ -19,6 +19,18 @@ import { IndianRupee, ShoppingCart, TrendingUp, Package, Search } from "lucide-r
 import { format } from "date-fns";
 import Link from "next/link";
 import { ExportButton } from "@/components/shared/export-button";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Line,
+  ComposedChart,
+  Legend,
+} from "recharts";
 
 interface SalesDashboard {
   totalRevenue: number;
@@ -47,11 +59,17 @@ const statusColors: Record<string, string> = {
   CLOSED: "bg-gray-500",
 };
 
+const formatINR = (value: number) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value);
+
 export default function SalesDashboardPage() {
   const [data, setData] = useState<SalesDashboard | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Default date range: current financial year (Apr 1 - Mar 31)
   const currentYear = new Date().getFullYear();
   const fyStart = new Date().getMonth() >= 3
     ? `${currentYear}-04-01`
@@ -165,11 +183,7 @@ export default function SalesDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {new Intl.NumberFormat("en-IN", {
-                style: "currency",
-                currency: "INR",
-                maximumFractionDigits: 0,
-              }).format(data.totalRevenue || 0)}
+              {formatINR(data.totalRevenue || 0)}
             </div>
           </CardContent>
         </Card>
@@ -206,9 +220,41 @@ export default function SalesDashboardPage() {
         </Card>
       </div>
 
+      {/* Monthly Sales Trend Chart */}
+      {data.monthlyTrend && data.monthlyTrend.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Monthly Sales Trend</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={350}>
+              <ComposedChart data={data.monthlyTrend}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                <YAxis
+                  yAxisId="left"
+                  tickFormatter={(v) => `${(v / 100000).toFixed(0)}L`}
+                  tick={{ fontSize: 12 }}
+                />
+                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} />
+                <Tooltip
+                  formatter={(value, name) =>
+                    name === "Amount" ? formatINR(Number(value)) : value
+                  }
+                />
+                <Legend />
+                <Bar yAxisId="left" dataKey="amount" name="Amount" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                <Line yAxisId="right" type="monotone" dataKey="orderCount" name="Orders" stroke="#f97316" strokeWidth={2} dot={{ r: 4 }} />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Monthly Sales Trend Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Monthly Sales Trend</CardTitle>
+          <CardTitle>Monthly Sales Data</CardTitle>
         </CardHeader>
         <CardContent>
           {data.monthlyTrend && data.monthlyTrend.length > 0 ? (
@@ -226,11 +272,7 @@ export default function SalesDashboardPage() {
                     <TableCell className="font-medium">{row.month}</TableCell>
                     <TableCell className="text-right">{row.orderCount}</TableCell>
                     <TableCell className="text-right font-mono">
-                      {new Intl.NumberFormat("en-IN", {
-                        style: "currency",
-                        currency: "INR",
-                        maximumFractionDigits: 0,
-                      }).format(row.amount)}
+                      {formatINR(row.amount)}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -278,11 +320,7 @@ export default function SalesDashboardPage() {
                       {order.customerName}
                     </TableCell>
                     <TableCell className="text-right font-mono">
-                      {new Intl.NumberFormat("en-IN", {
-                        style: "currency",
-                        currency: "INR",
-                        maximumFractionDigits: 0,
-                      }).format(order.totalAmount)}
+                      {formatINR(order.totalAmount)}
                     </TableCell>
                     <TableCell>
                       <Badge className={statusColors[order.status] || "bg-gray-500"}>

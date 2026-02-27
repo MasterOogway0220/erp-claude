@@ -139,6 +139,45 @@ export async function GET(request: NextRequest) {
         break;
       }
 
+      case "inventory-ageing": {
+        const ageingStocks = await prisma.inventoryStock.findMany({
+          where: { status: { in: ["ACCEPTED", "UNDER_INSPECTION", "HOLD"] } },
+          orderBy: { createdAt: "asc" },
+        });
+        const now = new Date();
+        data = ageingStocks.map((s) => {
+          const ageDays = Math.floor(
+            (now.getTime() - new Date(s.createdAt).getTime()) / (1000 * 60 * 60 * 24)
+          );
+          return {
+            heatNo: s.heatNo || "",
+            product: s.product || "",
+            specification: s.specification || "",
+            sizeLabel: s.sizeLabel || "",
+            quantityMtr: Number(s.quantityMtr).toFixed(3),
+            pieces: s.pieces,
+            status: s.status,
+            location: s.location || "",
+            receivedDate: s.createdAt.toISOString().split("T")[0],
+            ageDays,
+          };
+        });
+        columns = [
+          { key: "heatNo", header: "Heat No." },
+          { key: "product", header: "Product" },
+          { key: "specification", header: "Specification" },
+          { key: "sizeLabel", header: "Size" },
+          { key: "quantityMtr", header: "Qty (Mtr)" },
+          { key: "pieces", header: "Pieces" },
+          { key: "status", header: "Status" },
+          { key: "location", header: "Location" },
+          { key: "receivedDate", header: "Received Date" },
+          { key: "ageDays", header: "Age (Days)" },
+        ];
+        filename = "inventory-ageing-export";
+        break;
+      }
+
       case "ncr": {
         const ncrs = await prisma.nCR.findMany({
           where: dateFrom || dateTo ? { ncrDate: dateFilter } : undefined,

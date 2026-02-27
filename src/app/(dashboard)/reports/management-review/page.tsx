@@ -23,9 +23,13 @@ import {
   CheckCircle,
   Clock,
   Users,
+  Download,
+  Printer,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import Link from "next/link";
+import { toast } from "sonner";
 
 interface SalesMetrics {
   revenue: number;
@@ -135,6 +139,72 @@ export default function ManagementReviewPage() {
     );
   }
 
+  const handleExportCSV = () => {
+    if (!data) return;
+    const s = data.salesMetrics;
+    const inv = data.inventoryMetrics;
+    const q = data.qualityMetrics;
+    const d = data.dispatchMetrics;
+    const f = data.financialMetrics;
+
+    const rows = [
+      ["Management Review Report"],
+      [`Generated: ${format(new Date(), "dd MMM yyyy HH:mm")}`],
+      [],
+      ["SALES METRICS"],
+      ["Total Revenue", formatCurrency(Number(s.revenue))],
+      ["Open SO Count", String(s.openSOCount)],
+      ["Open SO Value", formatCurrency(s.openSOValue)],
+      ["Open PO Count", String(s.poCount)],
+      ["Open PO Value", formatCurrency(s.openPOValue)],
+      ["Total Orders", String(s.orderCount)],
+      ["Quotations", String(s.quotationCount)],
+      ["Conversion Rate", `${s.conversionRate.toFixed(1)}%`],
+      [],
+      ["INVENTORY METRICS"],
+      ["Total Stock", String(inv.totalStock)],
+      ["Accepted", String(inv.accepted)],
+      ["Under Inspection", String(inv.underInspection)],
+      ["Accepted Total (Mtr)", inv.acceptedTotalMtr.toFixed(1)],
+      ["Inventory Value", formatCurrency(inv.inventoryValue)],
+      [],
+      ["QUALITY METRICS"],
+      ["Total NCRs", String(q.totalNCRs)],
+      ["Open NCRs", String(q.openNCRs)],
+      ["Inspection Pass Rate", `${q.inspectionPassRate.toFixed(1)}%`],
+      [],
+      ["DISPATCH METRICS"],
+      ["Total Dispatches", String(d.totalDispatches)],
+      ["On-Time Delivery %", `${d.onTimeDeliveryPct.toFixed(1)}%`],
+      ["Today's Dispatches", String(d.todayDispatches)],
+      [],
+      ["FINANCIAL METRICS"],
+      ["Outstanding Receivables", formatCurrency(f.outstandingReceivables)],
+      ["Total Received", formatCurrency(f.totalReceived)],
+    ];
+
+    if (data.lowStockAlerts && data.lowStockAlerts.length > 0) {
+      rows.push([], ["LOW STOCK ALERTS"], ["Product", "Size", "Available Qty", "Pieces"]);
+      data.lowStockAlerts.forEach((a) => {
+        rows.push([a.product, a.sizeLabel, String(a.availableQty), String(a.pieces)]);
+      });
+    }
+
+    const csv = rows.map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
+    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `management-review-${format(new Date(), "yyyy-MM-dd")}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success("Management Review exported");
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
   const sales = data.salesMetrics || {
     revenue: 0,
     orderCount: 0,
@@ -181,7 +251,18 @@ export default function ManagementReviewPage() {
       <PageHeader
         title="Management Review"
         description="Combined KPIs across all departments"
-      />
+      >
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleExportCSV}>
+            <Download className="w-4 h-4 mr-2" />
+            Export CSV
+          </Button>
+          <Button variant="outline" size="sm" onClick={handlePrint}>
+            <Printer className="w-4 h-4 mr-2" />
+            Print
+          </Button>
+        </div>
+      </PageHeader>
 
       {/* Sales Section */}
       <div className="space-y-4">

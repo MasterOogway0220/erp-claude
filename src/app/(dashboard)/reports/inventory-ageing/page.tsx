@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/shared/page-header";
+import { ExportButton } from "@/components/shared/export-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -15,6 +16,16 @@ import {
 import { Clock, AlertTriangle, Package } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from "recharts";
 
 interface AgeingBucket {
   bucket: string;
@@ -43,6 +54,8 @@ interface InventoryAgeing {
   totalItems: number;
   avgAgeDays: number;
 }
+
+const BUCKET_COLORS = ["#22c55e", "#3b82f6", "#eab308", "#f97316", "#ef4444", "#991b1b"];
 
 export default function InventoryAgeingPage() {
   const [data, setData] = useState<InventoryAgeing | null>(null);
@@ -114,7 +127,9 @@ export default function InventoryAgeingPage() {
       <PageHeader
         title="Inventory Ageing"
         description="Ageing buckets, slow-moving items, and stock rotation analysis"
-      />
+      >
+        <ExportButton reportType="inventory-ageing" label="Export Ageing CSV" />
+      </PageHeader>
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
@@ -149,6 +164,34 @@ export default function InventoryAgeingPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Ageing Distribution Chart */}
+      {data.ageingBuckets && data.ageingBuckets.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Ageing Distribution</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={data.ageingBuckets}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="bucket" tick={{ fontSize: 12 }} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                <Tooltip
+                  formatter={(value) => {
+                    return String(value);
+                  }}
+                />
+                <Bar dataKey="count" name="Items" radius={[4, 4, 0, 0]}>
+                  {data.ageingBuckets.map((_, index) => (
+                    <Cell key={index} fill={BUCKET_COLORS[index % BUCKET_COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
