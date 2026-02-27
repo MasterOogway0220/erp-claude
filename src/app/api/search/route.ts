@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ results: [] });
     }
 
-    const searchFilter = { contains: q, mode: "insensitive" as const };
+    const searchFilter = { contains: q as const };
 
     const [
       quotations,

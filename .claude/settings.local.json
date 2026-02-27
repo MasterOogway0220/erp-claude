@@ -107,7 +107,8 @@
       "Bash(/opt/homebrew/opt/postgresql@14/bin/psql nps_erp:*)",
       "Bash(./node_modules/.bin/prisma db:*)",
       "Bash(node_modules/.bin/prisma db:*)",
-      "mcp__ide__getDiagnostics"
+      "mcp__ide__getDiagnostics",
+      "Bash(xargs sed:*)"
     ]
   }
 }

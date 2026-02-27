@@ -22,19 +22,19 @@ export async function GET(request: NextRequest) {
 
     if (search) {
       where.OR = [
-        { heatNo: { contains: search, mode: "insensitive" as const } },
-        { product: { contains: search, mode: "insensitive" as const } },
-        { sizeLabel: { contains: search, mode: "insensitive" as const } },
-        { specification: { contains: search, mode: "insensitive" as const } },
-        { location: { contains: search, mode: "insensitive" as const } },
+        { heatNo: { contains: search as const } },
+        { product: { contains: search as const } },
+        { sizeLabel: { contains: search as const } },
+        { specification: { contains: search as const } },
+        { location: { contains: search as const } },
       ];
     }
 
     if (status) where.status = status;
-    if (product) where.product = { contains: product, mode: "insensitive" as const };
-    if (sizeLabel) where.sizeLabel = { contains: sizeLabel, mode: "insensitive" as const };
-    if (heatNo) where.heatNo = { contains: heatNo, mode: "insensitive" as const };
-    if (location) where.location = { contains: location, mode: "insensitive" as const };
+    if (product) where.product = { contains: product as const };
+    if (sizeLabel) where.sizeLabel = { contains: sizeLabel as const };
+    if (heatNo) where.heatNo = { contains: heatNo as const };
+    if (location) where.location = { contains: location as const };
 
     const [stocks, total] = await Promise.all([
       prisma.inventoryStock.findMany({

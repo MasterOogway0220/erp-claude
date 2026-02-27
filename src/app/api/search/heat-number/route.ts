@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 
     // Find all inventory stock with this heat number
     const stocks = await prisma.inventoryStock.findMany({
-      where: { heatNo: { equals: heatNo, mode: "insensitive" } },
+      where: { heatNo: { equals: heatNo } },
       include: {
         grnItem: {
           include: {

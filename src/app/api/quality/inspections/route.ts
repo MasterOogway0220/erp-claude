@@ -17,9 +17,9 @@ export async function GET(request: NextRequest) {
 
     if (search) {
       where.OR = [
-        { inspectionNo: { contains: search, mode: "insensitive" as const } },
-        { inventoryStock: { heatNo: { contains: search, mode: "insensitive" as const } } },
-        { grnItem: { heatNo: { contains: search, mode: "insensitive" as const } } },
+        { inspectionNo: { contains: search as const } },
+        { inventoryStock: { heatNo: { contains: search as const } } },
+        { grnItem: { heatNo: { contains: search as const } } },
       ];
     }
 

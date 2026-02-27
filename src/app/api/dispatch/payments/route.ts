@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 
     if (search) {
       where.OR = [
-        { receiptNo: { contains: search, mode: "insensitive" as const } },
+        { receiptNo: { contains: search as const } },
       ];
     }
 

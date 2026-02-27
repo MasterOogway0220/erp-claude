@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
       where.pipeType = pipeType;
     }
     if (search) {
-      where.sizeLabel = { contains: search, mode: "insensitive" as const };
+      where.sizeLabel = { contains: search as const };
     }
 
     const pipeSizes = await prisma.pipeSizeMaster.findMany({

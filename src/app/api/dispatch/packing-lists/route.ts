@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 
     if (search) {
       where.OR = [
-        { plNo: { contains: search, mode: "insensitive" as const } },
+        { plNo: { contains: search as const } },
       ];
     }
 
