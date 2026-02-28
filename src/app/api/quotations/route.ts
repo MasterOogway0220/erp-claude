@@ -17,8 +17,13 @@ export async function GET(request: NextRequest) {
     const showAll = searchParams.get("showAll") === "true";
     const revision = searchParams.get("revision") || "";
     const conversionStatus = searchParams.get("conversionStatus") || ""; // "pending" | "converted"
+    const category = searchParams.get("category") || ""; // "STANDARD" | "NON_STANDARD"
 
     const where: any = {};
+
+    if (category) {
+      where.quotationCategory = category as QuotationCategory;
+    }
 
     if (search) {
       where.OR = [

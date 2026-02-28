@@ -33,6 +33,7 @@ interface Quotation {
   quotationDate: string;
   customer: { name: string };
   quotationType: string;
+  quotationCategory: string;
   currency: string;
   status: string;
   version: number;
@@ -70,18 +71,27 @@ export default function QuotationsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [conversionFilter, setConversionFilter] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [revisionFilter, setRevisionFilter] = useState<"all" | "original" | "revised">("all");
+
   const handleDownloadPDF = (id: string) => {
-    window.open(`/api/quotations/${id}/pdf?format=html`, "_blank");
+    const link = document.createElement("a");
+    link.href = `/api/quotations/${id}/pdf?format=html`;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const { data, isLoading } = useQuery({
-    queryKey: ["quotations", search, statusFilter, conversionFilter, revisionFilter],
+    queryKey: ["quotations", search, statusFilter, conversionFilter, categoryFilter, revisionFilter],
     queryFn: async () => {
       const params = new URLSearchParams({
         search,
         ...(statusFilter !== "all" && { status: statusFilter }),
         ...(conversionFilter !== "all" && { conversionStatus: conversionFilter }),
+        ...(categoryFilter !== "all" && { category: categoryFilter }),
         ...(revisionFilter !== "all" && { revision: revisionFilter }),
       });
       const res = await fetch(`/api/quotations?${params}`);
@@ -145,6 +155,17 @@ export default function QuotationsPage() {
               </SelectContent>
             </Select>
 
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="STANDARD">Standard</SelectItem>
+                <SelectItem value="NON_STANDARD">Non-Standard</SelectItem>
+              </SelectContent>
+            </Select>
+
             <Select value={conversionFilter} onValueChange={setConversionFilter}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Conversion" />
@@ -173,6 +194,7 @@ export default function QuotationsPage() {
               <TableHead>Date</TableHead>
               <TableHead>Customer</TableHead>
               <TableHead>Type</TableHead>
+              <TableHead>Category</TableHead>
               <TableHead>Items</TableHead>
               <TableHead>Amount</TableHead>
               <TableHead>Deal Owner</TableHead>
@@ -186,13 +208,13 @@ export default function QuotationsPage() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={12} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={13} className="text-center py-8 text-muted-foreground">
                   Loading quotations...
                 </TableCell>
               </TableRow>
             ) : data?.quotations?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={12} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={13} className="text-center py-8 text-muted-foreground">
                   No quotations found. Create your first quotation!
                 </TableCell>
               </TableRow>
@@ -221,6 +243,11 @@ export default function QuotationsPage() {
                   <TableCell>
                     <Badge variant="outline">
                       {typeLabels[quotation.quotationType]}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={quotation.quotationCategory === "NON_STANDARD" ? "secondary" : "outline"}>
+                      {quotation.quotationCategory === "NON_STANDARD" ? "Non-Std" : "Std"}
                     </Badge>
                   </TableCell>
                   <TableCell>{quotation.items.length}</TableCell>
