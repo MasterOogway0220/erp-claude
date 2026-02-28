@@ -450,7 +450,7 @@ async function seedOfferTermTemplates() {
     { termName: "Payment", termDefaultValue: "100% within 30 days after receipt of materials." },
     { termName: "Offer validity", termDefaultValue: "1 week; further subject to our acceptance." },
     { termName: "Freight", termDefaultValue: "Extra at actual / To your account" },
-    { termName: "TPI & Testing", termDefaultValue: "Inclusive" },
+    { termName: "TPI & Testing", termDefaultValue: "Inclusive (Testing as per HMEL Standard ITP: 9112-000-INP-614-008, REV. 01)" },
     { termName: "P & F charges", termDefaultValue: "NIL" },
     { termName: "Insurance", termDefaultValue: "To your account. Dispatch details will be shared immediately after dispatch." },
     { termName: "GST", termDefaultValue: "18% GST extra" },

@@ -247,9 +247,21 @@ function NonStandardQuotationPage() {
     setFormData((prev) => ({ ...prev, buyerId: "" }));
   }, [formData.customerId]);
 
-  // Set terms from templates (skip if in edit mode with terms already loaded)
+  // Track the quotationType that was last used to populate terms
+  const termsLoadedForType = useRef<string | null>(null);
+
+  // Set terms from templates when quotationType changes or on initial create
   useEffect(() => {
-    if (templatesData?.templates && !(editData?.quotation?.terms?.length > 0)) {
+    if (!templatesData?.templates) return;
+
+    // In edit mode, skip only the first load (saved terms will be set by the editData effect)
+    if (editData?.quotation?.terms?.length > 0 && termsLoadedForType.current === null) {
+      termsLoadedForType.current = formData.quotationType;
+      return;
+    }
+
+    // Reload terms when quotationType changes or on initial create
+    if (termsLoadedForType.current !== formData.quotationType || termsLoadedForType.current === null) {
       setTerms(
         templatesData.templates.map((t: any) => ({
           termName: t.termName,
@@ -259,8 +271,9 @@ function NonStandardQuotationPage() {
           isHeadingEditable: false,
         }))
       );
+      termsLoadedForType.current = formData.quotationType;
     }
-  }, [templatesData]);
+  }, [templatesData, formData.quotationType]);
 
   // Build description from structured fields
   const buildDescription = (item: NonStdItem): string => {
