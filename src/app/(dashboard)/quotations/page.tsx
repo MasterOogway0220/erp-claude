@@ -23,7 +23,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Search, Eye, Download, CalendarClock, CheckCircle2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Plus, Search, Eye, Download, FileText, FileX, CalendarClock, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
 
 
@@ -74,9 +80,9 @@ export default function QuotationsPage() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [revisionFilter, setRevisionFilter] = useState<"all" | "original" | "revised">("all");
 
-  const handleDownloadPDF = (id: string) => {
+  const handleDownloadPDF = (id: string, variant: "quoted" | "unquoted") => {
     const link = document.createElement("a");
-    link.href = `/api/quotations/${id}/pdf?format=html`;
+    link.href = `/api/quotations/${id}/pdf?format=html&variant=${variant}`;
     link.target = "_blank";
     link.rel = "noopener noreferrer";
     document.body.appendChild(link);
@@ -295,14 +301,23 @@ export default function QuotationsPage() {
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        title="Download PDF"
-                        onClick={() => handleDownloadPDF(quotation.id)}
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" title="Download PDF">
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleDownloadPDF(quotation.id, "quoted")}>
+                            <FileText className="h-4 w-4 mr-2" />
+                            Quoted
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDownloadPDF(quotation.id, "unquoted")}>
+                            <FileX className="h-4 w-4 mr-2" />
+                            Unquoted
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </TableCell>
                 </TableRow>
