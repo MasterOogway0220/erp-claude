@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkAccess } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 import { renderHtmlToPdf } from "@/lib/pdf/render-pdf";
+import { wrapHtmlForPrint } from "@/lib/pdf/print-wrapper";
 
 const COMPANY = {
   name: "NPS Piping Solutions",
@@ -503,6 +504,14 @@ export async function GET(
       </body>
       </html>
     `;
+
+    const { searchParams } = new URL(request.url);
+    const format = searchParams.get("format");
+    if (format === "html") {
+      return new NextResponse(wrapHtmlForPrint(fullHtml, false), {
+        headers: { "Content-Type": "text/html" },
+      });
+    }
 
     const pdfBuffer = await renderHtmlToPdf(fullHtml, false);
 

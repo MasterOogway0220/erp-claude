@@ -64,25 +64,8 @@ export default function StockIssueDetailPage({ params }: { params: Promise<{ id:
     }
   };
 
-  const handlePrintSlip = async () => {
-    try {
-      const res = await fetch(`/api/inventory/stock-issue/${id}/pdf`);
-      if (!res.ok) {
-        toast.error("Failed to generate Issue Slip");
-        return;
-      }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `Issue-Slip-${stockIssue?.issueNo?.replace(/\//g, "-") || id}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      toast.error("Failed to download Issue Slip");
-    }
+  const handlePrintSlip = () => {
+    window.open(`/api/inventory/stock-issue/${id}/pdf?format=html`, "_blank");
   };
 
   if (loading) {

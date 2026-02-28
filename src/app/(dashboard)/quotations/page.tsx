@@ -25,7 +25,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Search, Eye, Download, CalendarClock, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
-import { toast } from "sonner";
+
 
 interface Quotation {
   id: string;
@@ -71,32 +71,8 @@ export default function QuotationsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [conversionFilter, setConversionFilter] = useState<string>("all");
   const [revisionFilter, setRevisionFilter] = useState<"all" | "original" | "revised">("all");
-  const [downloadingId, setDownloadingId] = useState<string | null>(null);
-
-  const handleDownloadPDF = async (id: string) => {
-    try {
-      setDownloadingId(id);
-      const res = await fetch(`/api/quotations/${id}/pdf`);
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || "Failed to generate PDF");
-      }
-      const blob = await res.blob();
-      const disposition = res.headers.get("Content-Disposition");
-      const filenameMatch = disposition?.match(/filename="?([^"]+)"?/);
-      const filename = filenameMatch?.[1] || "quotation.pdf";
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(link.href);
-    } catch {
-      toast.error("Failed to download PDF");
-    } finally {
-      setDownloadingId(null);
-    }
+  const handleDownloadPDF = (id: string) => {
+    window.open(`/api/quotations/${id}/pdf?format=html`, "_blank");
   };
 
   const { data, isLoading } = useQuery({
@@ -296,10 +272,9 @@ export default function QuotationsPage() {
                         variant="ghost"
                         size="icon"
                         title="Download PDF"
-                        disabled={downloadingId === quotation.id}
                         onClick={() => handleDownloadPDF(quotation.id)}
                       >
-                        <Download className={`h-4 w-4 ${downloadingId === quotation.id ? "animate-pulse" : ""}`} />
+                        <Download className="h-4 w-4" />
                       </Button>
                     </div>
                   </TableCell>

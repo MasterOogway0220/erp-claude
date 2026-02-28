@@ -297,37 +297,9 @@ export default function QuotationDetailPage() {
     },
   });
 
-  const [isDownloading, setIsDownloading] = useState(false);
-
-  const handleDownloadPDF = async (variant?: string) => {
-    try {
-      setIsDownloading(true);
-      const url = variant
-        ? `/api/quotations/${params.id}/pdf?variant=${variant}`
-        : `/api/quotations/${params.id}/pdf`;
-      const res = await fetch(url);
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || "Failed to generate PDF");
-      }
-      const blob = await res.blob();
-      const disposition = res.headers.get("Content-Disposition");
-      const filenameMatch = disposition?.match(/filename="?([^"]+)"?/);
-      const filename = filenameMatch?.[1] || "quotation.pdf";
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(link.href);
-      toast.success("PDF downloaded successfully");
-    } catch (error: any) {
-      console.error("PDF download error:", error);
-      toast.error(error.message || "Failed to download PDF");
-    } finally {
-      setIsDownloading(false);
-    }
+  const handleDownloadPDF = (variant?: string) => {
+    const variantParam = variant ? `&variant=${variant}` : "";
+    window.open(`/api/quotations/${params.id}/pdf?format=html${variantParam}`, "_blank");
   };
 
   const handleOpenEmailDialog = () => {
@@ -474,9 +446,9 @@ export default function QuotationDetailPage() {
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" disabled={isDownloading}>
+                <Button variant="outline">
                   <Download className="h-4 w-4 mr-2" />
-                  {isDownloading ? "Generating..." : "Download PDF"}
+                  Download PDF
                   <ChevronDown className="h-4 w-4 ml-2" />
                 </Button>
               </DropdownMenuTrigger>

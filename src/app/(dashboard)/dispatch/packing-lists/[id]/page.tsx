@@ -26,8 +26,6 @@ export default function PackingListDetailPage() {
   const params = useParams();
   const [packingList, setPackingList] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [downloading, setDownloading] = useState(false);
-
   useEffect(() => {
     if (params.id) fetchPackingList(params.id as string);
   }, [params.id]);
@@ -46,29 +44,9 @@ export default function PackingListDetailPage() {
     }
   };
 
-  const downloadPdf = async () => {
+  const downloadPdf = () => {
     if (!packingList) return;
-    setDownloading(true);
-    try {
-      const response = await fetch(
-        `/api/dispatch/packing-lists/${packingList.id}/pdf`
-      );
-      if (!response.ok) throw new Error("Failed to generate PDF");
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${packingList.plNo.replace(/\//g, "-")}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      toast.success("PDF downloaded");
-    } catch (error) {
-      toast.error("Failed to download PDF");
-    } finally {
-      setDownloading(false);
-    }
+    window.open(`/api/dispatch/packing-lists/${packingList.id}/pdf?format=html`, "_blank");
   };
 
   if (loading) {
@@ -106,13 +84,9 @@ export default function PackingListDetailPage() {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
-          <Button
-            variant="outline"
-            onClick={downloadPdf}
-            disabled={downloading}
-          >
+          <Button variant="outline" onClick={downloadPdf}>
             <Download className="w-4 h-4 mr-2" />
-            {downloading ? "Generating..." : "Download PDF"}
+            Download PDF
           </Button>
           {!hasDN && (
             <Button

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkAccess } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 import { renderHtmlToPdf } from "@/lib/pdf/render-pdf";
+import { wrapHtmlForPrint } from "@/lib/pdf/print-wrapper";
 import { generateIssueSlipHtml } from "@/lib/pdf/issue-slip-template";
 
 const DEFAULT_COMPANY = {
@@ -47,6 +48,15 @@ export async function GET(
     const companyInfo = company || DEFAULT_COMPANY;
 
     const html = generateIssueSlipHtml(stockIssue as any, companyInfo as any);
+
+    const { searchParams } = new URL(request.url);
+    const format = searchParams.get("format");
+    if (format === "html") {
+      return new NextResponse(wrapHtmlForPrint(html, false), {
+        headers: { "Content-Type": "text/html" },
+      });
+    }
+
     const pdfBuffer = await renderHtmlToPdf(html, false);
     const filename = `Issue-Slip-${stockIssue.issueNo.replace(/\//g, "-")}.pdf`;
 

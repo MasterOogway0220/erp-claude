@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkAccess } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 import { renderHtmlToPdf } from "@/lib/pdf/render-pdf";
+import { wrapHtmlForPrint } from "@/lib/pdf/print-wrapper";
 import { generateStandardQuotationHtml } from "@/lib/pdf/quotation-standard-template";
 import { generateNonStandardQuotationHtml } from "@/lib/pdf/quotation-nonstandard-template";
 
@@ -70,6 +71,13 @@ export async function GET(
     } else {
       html = generateStandardQuotationHtml(quotation as any, companyInfo as any, pdfVariant);
       landscape = true;
+    }
+
+    const format = searchParams.get("format");
+    if (format === "html") {
+      return new NextResponse(wrapHtmlForPrint(html, landscape), {
+        headers: { "Content-Type": "text/html" },
+      });
     }
 
     const filenameSuffix = isUnquoted ? "-UNQUOTED" : "";

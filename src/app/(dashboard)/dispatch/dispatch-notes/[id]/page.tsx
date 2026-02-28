@@ -85,7 +85,7 @@ export default function DispatchNoteDetailPage() {
             variant="outline"
             onClick={() =>
               window.open(
-                `/api/dispatch/dispatch-notes/${dn.id}/bundle-pdf`,
+                `/api/dispatch/dispatch-notes/${dn.id}/bundle-pdf?format=html`,
                 "_blank"
               )
             }

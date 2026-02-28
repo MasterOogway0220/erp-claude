@@ -137,7 +137,6 @@ export default function PurchaseOrderDetailPage() {
     changeReason: "",
   });
   const [submitting, setSubmitting] = useState(false);
-  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [varianceReport, setVarianceReport] = useState<any>(null);
 
   useEffect(() => {
@@ -183,27 +182,9 @@ export default function PurchaseOrderDetailPage() {
     }
   };
 
-  const handleDownloadPDF = async () => {
+  const handleDownloadPDF = () => {
     if (!po) return;
-    setDownloadingPdf(true);
-    try {
-      const response = await fetch(`/api/purchase/orders/${po.id}/pdf`);
-      if (!response.ok) throw new Error("Failed to generate PDF");
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${po.poNo.replace(/\//g, "-")}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      toast.success("PDF downloaded");
-    } catch {
-      toast.error("Failed to download PDF");
-    } finally {
-      setDownloadingPdf(false);
-    }
+    window.open(`/api/purchase/orders/${po.id}/pdf?format=html`, "_blank");
   };
 
   const handleAmendPO = async () => {
@@ -338,9 +319,9 @@ export default function PurchaseOrderDetailPage() {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
-          <Button variant="outline" onClick={handleDownloadPDF} disabled={downloadingPdf}>
+          <Button variant="outline" onClick={handleDownloadPDF}>
             <FileDown className="w-4 h-4 mr-2" />
-            {downloadingPdf ? "Generating..." : "Download PDF"}
+            Download PDF
           </Button>
           {po.status !== "CLOSED" && po.status !== "CANCELLED" && (
             <Dialog open={amendDialogOpen} onOpenChange={setAmendDialogOpen}>

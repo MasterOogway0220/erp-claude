@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkAccess } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 import { renderHtmlToPdf } from "@/lib/pdf/render-pdf";
+import { wrapHtmlForPrint } from "@/lib/pdf/print-wrapper";
 import { generatePackingListHtml } from "@/lib/pdf/packing-list-template";
 
 const DEFAULT_COMPANY = {
@@ -54,6 +55,15 @@ export async function GET(
     const companyInfo = company || DEFAULT_COMPANY;
 
     const html = generatePackingListHtml(packingList as any, companyInfo as any);
+
+    const { searchParams } = new URL(request.url);
+    const format = searchParams.get("format");
+    if (format === "html") {
+      return new NextResponse(wrapHtmlForPrint(html, true), {
+        headers: { "Content-Type": "text/html" },
+      });
+    }
+
     const pdfBuffer = await renderHtmlToPdf(html, true);
 
     const filename = packingList.plNo.replace(/\//g, "-");

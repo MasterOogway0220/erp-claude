@@ -62,7 +62,6 @@ export default function InvoiceDetailPage() {
   const [invoice, setInvoice] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
-  const [downloading, setDownloading] = useState(false);
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailForm, setEmailForm] = useState({
@@ -125,29 +124,9 @@ export default function InvoiceDetailPage() {
     }
   };
 
-  const downloadPdf = async () => {
+  const downloadPdf = () => {
     if (!invoice) return;
-    setDownloading(true);
-    try {
-      const response = await fetch(
-        `/api/dispatch/invoices/${invoice.id}/pdf`
-      );
-      if (!response.ok) throw new Error("Failed to generate PDF");
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${invoice.invoiceNo.replace(/\//g, "-")}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      toast.success("PDF downloaded");
-    } catch (error) {
-      toast.error("Failed to download PDF");
-    } finally {
-      setDownloading(false);
-    }
+    window.open(`/api/dispatch/invoices/${invoice.id}/pdf?format=html`, "_blank");
   };
 
   const downloadEInvoice = async () => {
@@ -237,13 +216,9 @@ export default function InvoiceDetailPage() {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
-          <Button
-            variant="outline"
-            onClick={downloadPdf}
-            disabled={downloading}
-          >
+          <Button variant="outline" onClick={downloadPdf}>
             <Download className="w-4 h-4 mr-2" />
-            {downloading ? "Generating..." : "Download PDF"}
+            Download PDF
           </Button>
           <Button variant="outline" onClick={openEmailDialog}>
             <Mail className="w-4 h-4 mr-2" />
