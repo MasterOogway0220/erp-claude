@@ -1240,7 +1240,7 @@ function StandardQuotationPage() {
                 <Separator />
                 <div className="flex justify-between py-2">
                   <span className="font-bold text-base">Grand Total</span>
-                  <span className="font-bold text-base">{curr} {fmt(subtotal)}</span>
+                  <span className="font-bold text-base">{curr} {fmt(grandTotal)}</span>
                 </div>
               </div>
             </div>

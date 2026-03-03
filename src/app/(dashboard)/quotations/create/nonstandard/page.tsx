@@ -1103,7 +1103,7 @@ function NonStandardQuotationPage() {
               <div className="text-right">
                 <div className="text-sm text-muted-foreground">Grand Total</div>
                 <div className="text-2xl font-bold">
-                  {curr} {fmt(subtotal)}
+                  {curr} {fmt(grandTotal)}
                 </div>
               </div>
             </div>
@@ -1122,7 +1122,7 @@ function NonStandardQuotationPage() {
                 <Separator />
                 <div className="flex justify-between py-2">
                   <span className="font-bold text-base">Grand Total</span>
-                  <span className="font-bold text-base">{curr} {fmt(subtotal)}</span>
+                  <span className="font-bold text-base">{curr} {fmt(grandTotal)}</span>
                 </div>
               </div>
             </div>
