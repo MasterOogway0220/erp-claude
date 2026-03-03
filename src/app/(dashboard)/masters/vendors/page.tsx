@@ -659,11 +659,10 @@ export default function VendorsPage() {
                         <SelectValue placeholder="Select GST type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="REGISTERED">Registered</SelectItem>
+                        <SelectItem value="REGULAR">Regular</SelectItem>
                         <SelectItem value="UNREGISTERED">Unregistered</SelectItem>
                         <SelectItem value="COMPOSITION">Composition</SelectItem>
                         <SelectItem value="SEZ">SEZ</SelectItem>
-                        <SelectItem value="DEEMED_EXPORT">Deemed Export</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

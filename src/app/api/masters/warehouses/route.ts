@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
       where,
       include: {
         locations: {
-          select: { id: true, zone: true, rack: true, bay: true, shelf: true, locationType: true, isActive: true },
+          select: { id: true, zone: true, rack: true, bay: true, shelf: true, locationType: true, isActive: true, locationTag: true, capacity: true, preservationMethod: true, storageConditions: true },
           orderBy: { zone: "asc" },
         },
         _count: { select: { locations: true } },

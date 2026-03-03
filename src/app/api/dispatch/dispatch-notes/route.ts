@@ -18,8 +18,8 @@ export async function GET(request: NextRequest) {
       where.OR = [
         { dnNo: { contains: search } },
         { salesOrder: { soNo: { contains: search } } },
-        { salesOrder: { customer: { name: { contains: search, mode: "insensitive" } } } },
-        { packingList: { items: { some: { heatNo: { contains: search, mode: "insensitive" } } } } },
+        { salesOrder: { customer: { name: { contains: search } } } },
+        { packingList: { items: { some: { heatNo: { contains: search } } } } },
       ];
     }
 

@@ -150,7 +150,7 @@ export default function EmployeesPage() {
     try {
       const payload = {
         ...formData,
-        userId: formData.userId || null,
+        linkedUserId: formData.userId || null,
         department: formData.department || null,
         userRole: formData.userId && formData.userRole ? formData.userRole : undefined,
       };

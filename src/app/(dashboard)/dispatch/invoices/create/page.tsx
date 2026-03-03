@@ -145,7 +145,7 @@ function CreateInvoicePage() {
       setCustomer(null);
       setItems([]);
     }
-  }, [formData.dispatchNoteId]);
+  }, [formData.dispatchNoteId, dispatchNotes]);
 
   const fetchDispatchNotes = async () => {
     try {
@@ -382,8 +382,6 @@ function CreateInvoicePage() {
                     <SelectItem value="DOMESTIC">Domestic</SelectItem>
                     <SelectItem value="EXPORT">Export</SelectItem>
                     <SelectItem value="PROFORMA">Proforma</SelectItem>
-                    <SelectItem value="CREDIT_NOTE">Credit Note</SelectItem>
-                    <SelectItem value="DEBIT_NOTE">Debit Note</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

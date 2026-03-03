@@ -115,7 +115,18 @@
       "Bash(DATABASE_URL=\"mysql://erp_uttam:erp_Uttam12@145.79.212.111:3306/erp\" npm run:*)",
       "Bash(DATABASE_URL=\"mysql://u150393620_erp_uttam:Uttam_erp12@srv2109.hstgr.io:3306/u150393620_erp\" npm run:*)",
       "Bash(DATABASE_URL=\"mysql://u150393620_erp_uttam:Uttam_erp12@srv2109.hstgr.io:3306/u150393620_erp\" npx prisma:*)",
-      "Bash(DATABASE_URL=\"mysql://u150393620_erp_uttam:Uttam_erp12@srv2109.hstgr.io:3306/u150393620_erp\" npx tsx:*)"
+      "Bash(DATABASE_URL=\"mysql://u150393620_erp_uttam:Uttam_erp12@srv2109.hstgr.io:3306/u150393620_erp\" npx tsx:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(sed:*)",
+      "Bash(lsof:*)",
+      "Bash(gh api:*)",
+      "Bash(nc:*)",
+      "Bash(DATABASE_URL=\"mysql://u150393620_erp_uttam:Uttam_erp12@82.25.121.80:3306/u150393620_erp\" npx tsx:*)",
+      "Bash(tail:*)",
+      "Bash(export:*)",
+      "Bash(xargs basename:*)",
+      "Bash(git checkout:*)"
     ]
   }
 }

@@ -80,8 +80,8 @@ export async function POST(
       // Lock and check stock availability
       // Use raw query for row-level lock (SELECT ... FOR UPDATE)
       const stocks = await tx.$queryRaw<Array<{ id: string; quantityMtr: any; status: string; heatNo: string | null; product: string | null; sizeLabel: string | null }>>`
-        SELECT id, "quantityMtr", status, "heatNo", product, "sizeLabel"
-        FROM "InventoryStock"
+        SELECT id, quantityMtr, status, heatNo, product, sizeLabel
+        FROM InventoryStock
         WHERE id = ${inventoryStockId}
         FOR UPDATE
       `;

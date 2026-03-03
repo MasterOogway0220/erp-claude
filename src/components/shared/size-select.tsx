@@ -70,8 +70,7 @@ export function SizeSelect({
 
   return (
     <div className={className}>
-      {label && (
-        <div className="grid gap-2">
+      <div className="grid gap-2">
           <SmartCombobox
             options={sizes}
             value={value}
@@ -99,8 +98,7 @@ export function SizeSelect({
             placeholder={placeholder}
             disabled={disabled}
           />
-        </div>
-      )}
+      </div>
     </div>
   );
 }
