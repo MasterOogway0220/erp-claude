@@ -228,7 +228,7 @@ export default function ProductsPage() {
     },
     onSuccess: (newLength) => {
       queryClient.invalidateQueries({ queryKey: ["lengths"] });
-      setFormData({ ...formData, length: newLength.label });
+      setFormData((prev) => ({ ...prev, length: newLength.label }));
       setLengthSearch("");
       toast.success("Length added");
     },

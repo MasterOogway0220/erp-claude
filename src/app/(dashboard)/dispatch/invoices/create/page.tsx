@@ -57,7 +57,7 @@ interface WarehouseOption {
   state: string | null;
 }
 
-const COMPANY_STATE = "Maharashtra";
+const DEFAULT_COMPANY_STATE = "Maharashtra";
 
 export default function CreateInvoicePageWrapper() {
   return (
@@ -254,7 +254,9 @@ function CreateInvoicePage() {
   );
 
   const isExport = formData.invoiceType === "EXPORT";
-  const isIntraState = customer?.state === COMPANY_STATE;
+  const selectedWarehouse = warehouses.find((w) => w.id === formData.warehouseId);
+  const companyState = selectedWarehouse?.state || DEFAULT_COMPANY_STATE;
+  const isIntraState = customer?.state === companyState;
   const taxRate = items.length > 0 ? parseFloat(items[0].taxRate) || 0 : 0;
 
   let cgst = 0;
@@ -457,13 +459,13 @@ function CreateInvoicePage() {
                     <span>Export invoice - No GST applicable</span>
                   ) : isIntraState ? (
                     <span>
-                      Intra-state supply (same state: {COMPANY_STATE}) - CGST +
+                      Intra-state supply (same state: {companyState}) - CGST +
                       SGST applicable
                     </span>
                   ) : (
                     <span>
                       Inter-state supply ({customer.state || "N/A"} to{" "}
-                      {COMPANY_STATE}) - IGST applicable
+                      {companyState}) - IGST applicable
                     </span>
                   )}
                 </div>

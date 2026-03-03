@@ -218,8 +218,8 @@ function CreatePOPage() {
 
     // Auto-calculate amount
     if (field === "quantity" || field === "unitRate") {
-      const qty = field === "quantity" ? parseFloat(value) : updatedItems[index].quantity;
-      const rate = field === "unitRate" ? parseFloat(value) : updatedItems[index].unitRate;
+      const qty = field === "quantity" ? (parseFloat(value) || 0) : (updatedItems[index].quantity || 0);
+      const rate = field === "unitRate" ? (parseFloat(value) || 0) : (updatedItems[index].unitRate || 0);
       updatedItems[index].amount = qty * rate;
     }
 

@@ -81,6 +81,7 @@ function CreateDispatchNotePage() {
     warehouseId: "",
     vehicleNo: "",
     lrNo: "",
+    lrDate: "",
     transporterId: "",
     destination: "",
     ewayBillNo: "",
@@ -166,6 +167,7 @@ function CreateDispatchNotePage() {
           warehouseId: formData.warehouseId || null,
           vehicleNo: formData.vehicleNo || null,
           lrNo: formData.lrNo || null,
+          lrDate: formData.lrDate ? new Date(formData.lrDate).toISOString() : null,
           transporterId: formData.transporterId || null,
           destination: formData.destination || null,
           ewayBillNo: formData.ewayBillNo || null,
@@ -280,6 +282,16 @@ function CreateDispatchNotePage() {
                     setFormData({ ...formData, lrNo: e.target.value })
                   }
                   placeholder="Lorry Receipt number"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>LR Date</Label>
+                <Input
+                  type="date"
+                  value={formData.lrDate}
+                  onChange={(e) =>
+                    setFormData({ ...formData, lrDate: e.target.value })
+                  }
                 />
               </div>
               <div className="space-y-2">

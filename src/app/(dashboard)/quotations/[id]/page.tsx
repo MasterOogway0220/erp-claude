@@ -59,6 +59,7 @@ import {
   Pencil,
   Trash2,
   Activity,
+  ListChecks,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -892,6 +893,35 @@ export default function QuotationDetailPage() {
         </CardContent>
       </Card>
 
+
+      {/* Terms & Conditions */}
+      {quotation.terms && quotation.terms.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ListChecks className="h-5 w-5" />
+              Terms & Conditions ({quotation.terms.filter((t: any) => t.isIncluded).length} terms)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {quotation.terms
+                .filter((t: any) => t.isIncluded)
+                .map((term: any, index: number) => (
+                  <div key={term.id} className="flex gap-3 text-sm">
+                    <span className="font-semibold text-muted-foreground min-w-[24px]">
+                      {index + 1}.
+                    </span>
+                    <div>
+                      <span className="font-medium">{term.termName}:</span>{" "}
+                      <span className="text-muted-foreground">{term.termValue}</span>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Revision History */}
       {revisionChain.length > 1 && (

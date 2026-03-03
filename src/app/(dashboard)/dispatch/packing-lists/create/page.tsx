@@ -186,7 +186,7 @@ export default function CreatePackingListPage() {
           inventoryStockId: stock.id,
           heatNo: stock.heatNo || "",
           sizeLabel: stock.sizeLabel || "",
-          material: stock.material || "",
+          material: stock.specification || stock.material || "",
           product: stock.product || "",
           quantityMtr: String(Number(stock.quantityMtr)),
           pieces: String(stock.pieces || 0),
@@ -399,7 +399,7 @@ export default function CreatePackingListPage() {
                             {stock.heatNo || "---"}
                           </TableCell>
                           <TableCell>{stock.product || "---"}</TableCell>
-                          <TableCell>{stock.material || "---"}</TableCell>
+                          <TableCell>{stock.specification || stock.material || "---"}</TableCell>
                           <TableCell className="font-mono text-sm">
                             {stock.sizeLabel || "---"}
                           </TableCell>
