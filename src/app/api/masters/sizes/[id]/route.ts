@@ -13,22 +13,22 @@ export async function GET(
 
     const { id } = await params;
 
-    const pipeSize = await prisma.pipeSizeMaster.findUnique({
+    const size = await prisma.sizeMaster.findUnique({
       where: { id },
     });
 
-    if (!pipeSize) {
+    if (!size) {
       return NextResponse.json(
-        { error: "Pipe size not found" },
+        { error: "Size not found" },
         { status: 404 }
       );
     }
 
-    return NextResponse.json(pipeSize);
+    return NextResponse.json(size);
   } catch (error) {
-    console.error("Error fetching pipe size:", error);
+    console.error("Error fetching size:", error);
     return NextResponse.json(
-      { error: "Failed to fetch pipe size" },
+      { error: "Failed to fetch size" },
       { status: 500 }
     );
   }
@@ -45,7 +45,7 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
 
-    const pipeSize = await prisma.pipeSizeMaster.update({
+    const size = await prisma.sizeMaster.update({
       where: { id },
       data: {
         sizeLabel: body.sizeLabel ?? undefined,
@@ -59,17 +59,17 @@ export async function PATCH(
     });
 
     await createAuditLog({
-      tableName: "PipeSizeMaster",
+      tableName: "SizeMaster",
       recordId: id,
       action: "UPDATE",
       userId: session.user?.id,
     });
 
-    return NextResponse.json(pipeSize);
+    return NextResponse.json(size);
   } catch (error) {
-    console.error("Error updating pipe size:", error);
+    console.error("Error updating size:", error);
     return NextResponse.json(
-      { error: "Failed to update pipe size" },
+      { error: "Failed to update size" },
       { status: 500 }
     );
   }
@@ -85,7 +85,7 @@ export async function DELETE(
 
     const { id } = await params;
 
-    const pipeSize = await prisma.pipeSizeMaster.findUnique({
+    const size = await prisma.sizeMaster.findUnique({
       where: { id },
       select: {
         sizeLabel: true,
@@ -93,33 +93,33 @@ export async function DELETE(
       },
     });
 
-    if (!pipeSize) {
-      return NextResponse.json({ error: "Pipe size not found" }, { status: 404 });
+    if (!size) {
+      return NextResponse.json({ error: "Size not found" }, { status: 404 });
     }
 
-    if (pipeSize._count.quotationItems > 0) {
+    if (size._count.quotationItems > 0) {
       return NextResponse.json(
         {
-          error: `Cannot delete pipe size "${pipeSize.sizeLabel}". It is used in ${pipeSize._count.quotationItems} quotation item(s).`,
+          error: `Cannot delete size "${size.sizeLabel}". It is used in ${size._count.quotationItems} quotation item(s).`,
         },
         { status: 400 }
       );
     }
 
-    await prisma.pipeSizeMaster.delete({ where: { id } });
+    await prisma.sizeMaster.delete({ where: { id } });
 
     await createAuditLog({
-      tableName: "PipeSizeMaster",
+      tableName: "SizeMaster",
       recordId: id,
       action: "DELETE",
       userId: session.user?.id,
     });
 
-    return NextResponse.json({ message: "Pipe size deleted successfully" });
+    return NextResponse.json({ message: "Size deleted successfully" });
   } catch (error) {
-    console.error("Error deleting pipe size:", error);
+    console.error("Error deleting size:", error);
     return NextResponse.json(
-      { error: "Failed to delete pipe size" },
+      { error: "Failed to delete size" },
       { status: 500 }
     );
   }

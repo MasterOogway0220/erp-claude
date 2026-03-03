@@ -23,54 +23,125 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { SmartCombobox } from "@/components/shared/smart-combobox";
 import { Plus, Pencil, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
+
+const PRODUCT_CATEGORIES = [
+  { value: "PIPES", label: "Pipes" },
+  { value: "FITTINGS", label: "Fittings" },
+  { value: "FLANGES", label: "Flanges" },
+  { value: "VALVES", label: "Valves" },
+  { value: "NUT_BOLT", label: "Nut Bolt" },
+  { value: "GASKETS", label: "Gaskets" },
+];
+
+interface DimensionalStandard {
+  id: string;
+  name: string;
+  code: string;
+}
+
+interface LengthOption {
+  id: string;
+  label: string;
+}
 
 interface ProductSpec {
   id: string;
   product: string;
+  category: string | null;
+  specification: string | null;
+  grade: string | null;
   material: string | null;
   additionalSpec: string | null;
   ends: string | null;
   length: string | null;
+  dimensionalStandardId: string | null;
+  dimensionalStandard: DimensionalStandard | null;
 }
 
 interface ProductFormData {
   product: string;
+  category: string;
+  specification: string;
+  grade: string;
   material: string;
   additionalSpec: string;
   ends: string;
   length: string;
+  dimensionalStandardId: string;
 }
+
+const emptyForm: ProductFormData = {
+  product: "",
+  category: "",
+  specification: "",
+  grade: "",
+  material: "",
+  additionalSpec: "",
+  ends: "",
+  length: "",
+  dimensionalStandardId: "",
+};
 
 export default function ProductsPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
   const [page, setPage] = useState(1);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ProductSpec | null>(null);
-  const [formData, setFormData] = useState<ProductFormData>({
-    product: "",
-    material: "",
-    additionalSpec: "",
-    ends: "",
-    length: "",
-  });
+  const [formData, setFormData] = useState<ProductFormData>(emptyForm);
+  const [dimStdSearch, setDimStdSearch] = useState("");
+  const [lengthSearch, setLengthSearch] = useState("");
 
   // Fetch products
   const { data, isLoading } = useQuery({
-    queryKey: ["products", search, page],
+    queryKey: ["products", search, categoryFilter, page],
     queryFn: async () => {
       const params = new URLSearchParams({
         search,
         page: page.toString(),
         limit: "50",
       });
+      if (categoryFilter) params.set("category", categoryFilter);
       const res = await fetch(`/api/masters/products?${params}`);
       if (!res.ok) throw new Error("Failed to fetch products");
       return res.json();
     },
   });
+
+  // Fetch dimensional standards
+  const { data: dimStdData } = useQuery({
+    queryKey: ["dimensional-standards"],
+    queryFn: async () => {
+      const res = await fetch("/api/masters/dimensional-standards");
+      if (!res.ok) throw new Error("Failed to fetch dimensional standards");
+      return res.json();
+    },
+  });
+
+  // Fetch lengths
+  const { data: lengthsData } = useQuery({
+    queryKey: ["lengths"],
+    queryFn: async () => {
+      const res = await fetch("/api/masters/lengths");
+      if (!res.ok) throw new Error("Failed to fetch lengths");
+      return res.json();
+    },
+  });
+
+  const dimensionalStandards: DimensionalStandard[] = dimStdData?.dimensionalStandards || [];
+  const lengths: LengthOption[] = lengthsData?.lengths || [];
 
   // Create mutation
   const createMutation = useMutation({
@@ -80,7 +151,10 @@ export default function ProductsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      if (!res.ok) throw new Error("Failed to create product");
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to create product");
+      }
       return res.json();
     },
     onSuccess: () => {
@@ -88,8 +162,8 @@ export default function ProductsPage() {
       toast.success("Product specification created successfully");
       handleCloseDialog();
     },
-    onError: () => {
-      toast.error("Failed to create product specification");
+    onError: (err: Error) => {
+      toast.error(err.message);
     },
   });
 
@@ -101,7 +175,10 @@ export default function ProductsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      if (!res.ok) throw new Error("Failed to update product");
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to update product");
+      }
       return res.json();
     },
     onSuccess: () => {
@@ -109,8 +186,8 @@ export default function ProductsPage() {
       toast.success("Product specification updated successfully");
       handleCloseDialog();
     },
-    onError: () => {
-      toast.error("Failed to update product specification");
+    onError: (err: Error) => {
+      toast.error(err.message);
     },
   });
 
@@ -120,15 +197,43 @@ export default function ProductsPage() {
       const res = await fetch(`/api/masters/products/${id}`, {
         method: "DELETE",
       });
-      if (!res.ok) throw new Error("Failed to delete product");
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to delete product");
+      }
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success("Product specification deleted successfully");
     },
-    onError: () => {
-      toast.error("Failed to delete product specification");
+    onError: (err: Error) => {
+      toast.error(err.message);
+    },
+  });
+
+  // Add length inline
+  const addLengthMutation = useMutation({
+    mutationFn: async (label: string) => {
+      const res = await fetch("/api/masters/lengths", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ label }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to add length");
+      }
+      return res.json();
+    },
+    onSuccess: (newLength) => {
+      queryClient.invalidateQueries({ queryKey: ["lengths"] });
+      setFormData({ ...formData, length: newLength.label });
+      setLengthSearch("");
+      toast.success("Length added");
+    },
+    onError: (err: Error) => {
+      toast.error(err.message);
     },
   });
 
@@ -137,34 +242,31 @@ export default function ProductsPage() {
       setEditingProduct(product);
       setFormData({
         product: product.product,
+        category: product.category || "",
+        specification: product.specification || "",
+        grade: product.grade || "",
         material: product.material || "",
         additionalSpec: product.additionalSpec || "",
         ends: product.ends || "",
         length: product.length || "",
+        dimensionalStandardId: product.dimensionalStandardId || "",
       });
+      setDimStdSearch(product.dimensionalStandard?.name || "");
     } else {
       setEditingProduct(null);
-      setFormData({
-        product: "",
-        material: "",
-        additionalSpec: "",
-        ends: "",
-        length: "",
-      });
+      setFormData(emptyForm);
+      setDimStdSearch("");
     }
+    setLengthSearch("");
     setIsDialogOpen(true);
   };
 
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
     setEditingProduct(null);
-    setFormData({
-      product: "",
-      material: "",
-      additionalSpec: "",
-      ends: "",
-      length: "",
-    });
+    setFormData(emptyForm);
+    setDimStdSearch("");
+    setLengthSearch("");
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -182,25 +284,41 @@ export default function ProductsPage() {
     }
   };
 
+  const getCategoryLabel = (val: string | null) =>
+    PRODUCT_CATEGORIES.find((c) => c.value === val)?.label || val || "—";
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Product Specifications"
-        description="Manage product specification master data (234 records seeded)"
+        description="Manage product specification master data"
       />
 
-      {/* Search and Actions */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="relative flex-1 max-w-sm">
+      {/* Search, Filter, and Actions */}
+      <div className="flex items-center gap-4 flex-wrap">
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search by product, material, or spec..."
+            placeholder="Search by product, material, spec, grade..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             className="pl-10"
           />
         </div>
-        <Button onClick={() => handleOpenDialog()}>
+        <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v === "ALL" ? "" : v); setPage(1); }}>
+          <SelectTrigger className="w-[160px]">
+            <SelectValue placeholder="All Categories" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">All Categories</SelectItem>
+            {PRODUCT_CATEGORIES.map((c) => (
+              <SelectItem key={c.value} value={c.value}>
+                {c.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button onClick={() => handleOpenDialog()} className="ml-auto">
           <Plus className="h-4 w-4 mr-2" />
           Add Product Spec
         </Button>
@@ -211,8 +329,12 @@ export default function ProductsPage() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Category</TableHead>
               <TableHead>Product</TableHead>
+              <TableHead>Specification</TableHead>
+              <TableHead>Grade</TableHead>
               <TableHead>Material</TableHead>
+              <TableHead>Dim. Standard</TableHead>
               <TableHead>Additional Spec</TableHead>
               <TableHead>Ends</TableHead>
               <TableHead>Length</TableHead>
@@ -222,22 +344,34 @@ export default function ProductsPage() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                   Loading products...
                 </TableCell>
               </TableRow>
             ) : data?.products?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                   No products found
                 </TableCell>
               </TableRow>
             ) : (
               data?.products?.map((product: ProductSpec) => (
                 <TableRow key={product.id}>
+                  <TableCell>
+                    {product.category ? (
+                      <Badge variant="secondary" className="text-xs">
+                        {getCategoryLabel(product.category)}
+                      </Badge>
+                    ) : (
+                      "—"
+                    )}
+                  </TableCell>
                   <TableCell className="font-medium">{product.product}</TableCell>
-                  <TableCell>{product.material || "—"}</TableCell>
-                  <TableCell className="max-w-xs truncate">
+                  <TableCell>{product.specification || "—"}</TableCell>
+                  <TableCell>{product.grade || "—"}</TableCell>
+                  <TableCell className="max-w-[150px] truncate">{product.material || "—"}</TableCell>
+                  <TableCell>{product.dimensionalStandard?.name || "—"}</TableCell>
+                  <TableCell className="max-w-[120px] truncate">
                     {product.additionalSpec || "—"}
                   </TableCell>
                   <TableCell>{product.ends || "—"}</TableCell>
@@ -297,7 +431,7 @@ export default function ProductsPage() {
 
       {/* Create/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <form onSubmit={handleSubmit}>
             <DialogHeader>
               <DialogTitle>
@@ -309,6 +443,30 @@ export default function ProductsPage() {
             </DialogHeader>
 
             <div className="grid gap-4 py-4">
+              {/* Category */}
+              <div className="grid gap-2">
+                <Label htmlFor="category">Category</Label>
+                <Select
+                  value={formData.category || "NONE"}
+                  onValueChange={(v) =>
+                    setFormData({ ...formData, category: v === "NONE" ? "" : v })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NONE">— None —</SelectItem>
+                    {PRODUCT_CATEGORIES.map((c) => (
+                      <SelectItem key={c.value} value={c.value}>
+                        {c.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Product */}
               <div className="grid gap-2">
                 <Label htmlFor="product">Product *</Label>
                 <Input
@@ -322,6 +480,33 @@ export default function ProductsPage() {
                 />
               </div>
 
+              {/* Specification & Grade */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="specification">Specification</Label>
+                  <Input
+                    id="specification"
+                    value={formData.specification}
+                    onChange={(e) =>
+                      setFormData({ ...formData, specification: e.target.value })
+                    }
+                    placeholder="e.g., ASTM A106"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="grade">Grade</Label>
+                  <Input
+                    id="grade"
+                    value={formData.grade}
+                    onChange={(e) =>
+                      setFormData({ ...formData, grade: e.target.value })
+                    }
+                    placeholder="e.g., Gr. B"
+                  />
+                </div>
+              </div>
+
+              {/* Material */}
               <div className="grid gap-2">
                 <Label htmlFor="material">Material</Label>
                 <Textarea
@@ -335,6 +520,33 @@ export default function ProductsPage() {
                 />
               </div>
 
+              {/* Dimensional Standard */}
+              <div className="grid gap-2">
+                <Label>Dimensional Standard</Label>
+                <SmartCombobox
+                  options={dimensionalStandards}
+                  value={dimStdSearch}
+                  onSelect={(std) => {
+                    setFormData({ ...formData, dimensionalStandardId: std.id });
+                    setDimStdSearch(std.name);
+                  }}
+                  onChange={(text) => {
+                    setDimStdSearch(text);
+                    if (!text) setFormData({ ...formData, dimensionalStandardId: "" });
+                  }}
+                  displayFn={(std) => `${std.name} (${std.code})`}
+                  filterFn={(std, query) => {
+                    const q = query.toLowerCase();
+                    return (
+                      std.name.toLowerCase().includes(q) ||
+                      std.code.toLowerCase().includes(q)
+                    );
+                  }}
+                  placeholder="Search dimensional standard..."
+                />
+              </div>
+
+              {/* Additional Spec */}
               <div className="grid gap-2">
                 <Label htmlFor="additionalSpec">Additional Specification</Label>
                 <Input
@@ -347,6 +559,7 @@ export default function ProductsPage() {
                 />
               </div>
 
+              {/* Ends & Length */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="ends">Ends</Label>
@@ -361,15 +574,44 @@ export default function ProductsPage() {
                 </div>
 
                 <div className="grid gap-2">
-                  <Label htmlFor="length">Length</Label>
-                  <Input
-                    id="length"
-                    value={formData.length}
-                    onChange={(e) =>
-                      setFormData({ ...formData, length: e.target.value })
-                    }
-                    placeholder="e.g., 5.00-7.00 Mtr"
-                  />
+                  <Label>Length</Label>
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <SmartCombobox
+                        options={lengths}
+                        value={formData.length || lengthSearch}
+                        onSelect={(len) => {
+                          setFormData({ ...formData, length: len.label });
+                          setLengthSearch("");
+                        }}
+                        onChange={(text) => {
+                          setFormData({ ...formData, length: text });
+                          setLengthSearch(text);
+                        }}
+                        displayFn={(len) => len.label}
+                        filterFn={(len, query) =>
+                          len.label.toLowerCase().includes(query.toLowerCase())
+                        }
+                        placeholder="Search or type length..."
+                      />
+                    </div>
+                    {lengthSearch &&
+                      !lengths.some(
+                        (l) => l.label.toLowerCase() === lengthSearch.toLowerCase()
+                      ) && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="shrink-0"
+                          onClick={() => addLengthMutation.mutate(lengthSearch)}
+                          disabled={addLengthMutation.isPending}
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          Add
+                        </Button>
+                      )}
+                  </div>
                 </div>
               </div>
             </div>

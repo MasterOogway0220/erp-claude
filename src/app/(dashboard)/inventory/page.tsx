@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { DataTable, Column } from "@/components/shared/data-table";
@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -22,6 +24,8 @@ import {
   AlertTriangle,
   Package,
   Plus,
+  Filter,
+  X,
 } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
@@ -35,6 +39,23 @@ const stockStatusColors: Record<string, string> = {
   DISPATCHED: "bg-gray-500",
 };
 
+interface WarehouseOption {
+  id: string;
+  code: string;
+  name: string;
+  isSelfStock: boolean;
+  locations: {
+    id: string;
+    rack: string | null;
+    bay: string | null;
+  }[];
+}
+
+interface VendorOption {
+  id: string;
+  name: string;
+}
+
 export default function InventoryPage() {
   const router = useRouter();
   const [stocks, setStocks] = useState<any[]>([]);
@@ -42,18 +63,69 @@ export default function InventoryPage() {
   const [stockIssues, setStockIssues] = useState<any[]>([]);
   const [summary, setSummary] = useState<any>({});
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<string>("all");
 
+  // Filters
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [warehouseId, setWarehouseId] = useState<string>("all");
+  const [rack, setRack] = useState<string>("all");
+  const [bay, setBay] = useState<string>("all");
+  const [vendorId, setVendorId] = useState<string>("all");
+  const [selfStockFilter, setSelfStockFilter] = useState<string>("all"); // "all" | "true" | "false"
+
+  // Reference data
+  const [warehouses, setWarehouses] = useState<WarehouseOption[]>([]);
+  const [vendors, setVendors] = useState<VendorOption[]>([]);
+
+  // Fetch reference data on mount
+  useEffect(() => {
+    fetchWarehouses();
+    fetchVendors();
+  }, []);
+
+  // Fetch stock when filters change
   useEffect(() => {
     fetchStock();
+  }, [statusFilter, warehouseId, rack, bay, vendorId, selfStockFilter]);
+
+  // Fetch GRN and stock issues on mount
+  useEffect(() => {
     fetchGRNs();
     fetchStockIssues();
-  }, [statusFilter]);
+  }, []);
+
+  const fetchWarehouses = async () => {
+    try {
+      const res = await fetch("/api/masters/warehouses");
+      if (res.ok) {
+        const data = await res.json();
+        setWarehouses(data.warehouses || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch warehouses:", error);
+    }
+  };
+
+  const fetchVendors = async () => {
+    try {
+      const res = await fetch("/api/masters/vendors");
+      if (res.ok) {
+        const data = await res.json();
+        setVendors(data.vendors || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch vendors:", error);
+    }
+  };
 
   const fetchStock = async () => {
     try {
       const params = new URLSearchParams();
       if (statusFilter && statusFilter !== "all") params.append("status", statusFilter);
+      if (warehouseId && warehouseId !== "all") params.append("warehouseId", warehouseId);
+      if (rack && rack !== "all") params.append("rack", rack);
+      if (bay && bay !== "all") params.append("bay", bay);
+      if (vendorId && vendorId !== "all") params.append("vendorId", vendorId);
+      if (selfStockFilter !== "all") params.append("selfStock", selfStockFilter);
       const response = await fetch(`/api/inventory/stock?${params}`);
       if (response.ok) {
         const data = await response.json();
@@ -91,6 +163,54 @@ export default function InventoryPage() {
     }
   };
 
+  // Cascading location options
+  const selectedWarehouse = warehouses.find((w) => w.id === warehouseId);
+
+  const rackOptions = useMemo(() => {
+    if (!selectedWarehouse) return [];
+    const racks = new Set<string>();
+    selectedWarehouse.locations.forEach((loc) => {
+      if (loc.rack) racks.add(loc.rack);
+    });
+    return Array.from(racks).sort();
+  }, [selectedWarehouse]);
+
+  const bayOptions = useMemo(() => {
+    if (!selectedWarehouse || rack === "all") return [];
+    const bays = new Set<string>();
+    selectedWarehouse.locations.forEach((loc) => {
+      if (loc.rack === rack && loc.bay) bays.add(loc.bay);
+    });
+    return Array.from(bays).sort();
+  }, [selectedWarehouse, rack]);
+
+  // Reset dependent dropdowns
+  const handleWarehouseChange = (val: string) => {
+    setWarehouseId(val);
+    setRack("all");
+    setBay("all");
+  };
+
+  const handleRackChange = (val: string) => {
+    setRack(val);
+    setBay("all");
+  };
+
+  const hasActiveFilters =
+    warehouseId !== "all" ||
+    rack !== "all" ||
+    bay !== "all" ||
+    vendorId !== "all" ||
+    selfStockFilter !== "all";
+
+  const clearFilters = () => {
+    setWarehouseId("all");
+    setRack("all");
+    setBay("all");
+    setVendorId("all");
+    setSelfStockFilter("all");
+  };
+
   const stockColumns: Column<any>[] = [
     {
       key: "heatNo",
@@ -122,7 +242,50 @@ export default function InventoryPage() {
         </Badge>
       ),
     },
-    { key: "location", header: "Location" },
+    {
+      key: "warehouseLocation",
+      header: "Warehouse",
+      cell: (row) => {
+        const wl = row.warehouseLocation as any;
+        if (!wl?.warehouse) return <span className="text-muted-foreground">—</span>;
+        return (
+          <div className="text-xs">
+            <div className="font-medium">{wl.warehouse.code}</div>
+            {wl.warehouse.isSelfStock ? (
+              <Badge variant="outline" className="text-[10px] px-1 py-0">Self</Badge>
+            ) : (
+              <Badge variant="secondary" className="text-[10px] px-1 py-0">Vendor</Badge>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      key: "rackLocation",
+      header: "Rack / Bay",
+      cell: (row) => {
+        const wl = row.warehouseLocation as any;
+        if (!wl) return row.rackNo || row.location || "—";
+        const parts = [wl.rack, wl.bay, wl.shelf].filter(Boolean);
+        return parts.length > 0 ? (
+          <span className="font-mono text-xs">{parts.join(" / ")}</span>
+        ) : (
+          "—"
+        );
+      },
+    },
+    {
+      key: "vendor",
+      header: "Vendor",
+      cell: (row) => {
+        const vendor = (row.grnItem as any)?.grn?.vendor;
+        return vendor?.name ? (
+          <span className="text-xs">{vendor.name}</span>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        );
+      },
+    },
     {
       key: "grnItem",
       header: "GRN",
@@ -313,9 +476,12 @@ export default function InventoryPage() {
 
         <TabsContent value="stock">
           <Card>
-            <CardHeader>
+            <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle>Inventory Stock</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Filter className="h-4 w-4" />
+                  Inventory Stock
+                </CardTitle>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-48">
                     <SelectValue placeholder="Filter by status" />
@@ -330,6 +496,146 @@ export default function InventoryPage() {
                     <SelectItem value="DISPATCHED">Dispatched</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              {/* Location Mapping & Filters */}
+              <div className="mt-4 p-3 bg-muted/50 rounded-lg space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-muted-foreground">Location & Vendor Filters</span>
+                  {hasActiveFilters && (
+                    <Button variant="ghost" size="sm" onClick={clearFilters} className="h-7 text-xs">
+                      <X className="h-3 w-3 mr-1" />
+                      Clear filters
+                    </Button>
+                  )}
+                </div>
+
+                {/* Row 1: Warehouse → Rack → Rack Number (Bay) */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Warehouse</Label>
+                    <Select value={warehouseId} onValueChange={handleWarehouseChange}>
+                      <SelectTrigger className="h-9">
+                        <SelectValue placeholder="All Warehouses" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Warehouses</SelectItem>
+                        {warehouses.map((wh) => (
+                          <SelectItem key={wh.id} value={wh.id}>
+                            {wh.code} — {wh.name}
+                            {!wh.isSelfStock ? " (Third-Party)" : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Rack</Label>
+                    <Select
+                      value={rack}
+                      onValueChange={handleRackChange}
+                      disabled={warehouseId === "all"}
+                    >
+                      <SelectTrigger className="h-9">
+                        <SelectValue placeholder="All Racks" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Racks</SelectItem>
+                        {rackOptions.map((r) => (
+                          <SelectItem key={r} value={r}>
+                            {r}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Rack Number (Bay)</Label>
+                    <Select
+                      value={bay}
+                      onValueChange={setBay}
+                      disabled={rack === "all"}
+                    >
+                      <SelectTrigger className="h-9">
+                        <SelectValue placeholder="All Bays" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Bays</SelectItem>
+                        {bayOptions.map((b) => (
+                          <SelectItem key={b} value={b}>
+                            {b}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Row 2: Vendor + Self Stock toggle */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Vendor</Label>
+                    <Select value={vendorId} onValueChange={setVendorId}>
+                      <SelectTrigger className="h-9">
+                        <SelectValue placeholder="All Vendors" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Vendors</SelectItem>
+                        {vendors.map((v) => (
+                          <SelectItem key={v.id} value={v.id}>
+                            {v.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Stock Type</Label>
+                    <Select value={selfStockFilter} onValueChange={setSelfStockFilter}>
+                      <SelectTrigger className="h-9">
+                        <SelectValue placeholder="All Stock" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Stock</SelectItem>
+                        <SelectItem value="true">Self Stock Only</SelectItem>
+                        <SelectItem value="false">Vendor Stock Only</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {hasActiveFilters && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {warehouseId !== "all" && (
+                        <Badge variant="secondary" className="text-xs">
+                          {warehouses.find((w) => w.id === warehouseId)?.code}
+                        </Badge>
+                      )}
+                      {rack !== "all" && (
+                        <Badge variant="secondary" className="text-xs">
+                          Rack: {rack}
+                        </Badge>
+                      )}
+                      {bay !== "all" && (
+                        <Badge variant="secondary" className="text-xs">
+                          Bay: {bay}
+                        </Badge>
+                      )}
+                      {vendorId !== "all" && (
+                        <Badge variant="secondary" className="text-xs">
+                          {vendors.find((v) => v.id === vendorId)?.name}
+                        </Badge>
+                      )}
+                      {selfStockFilter !== "all" && (
+                        <Badge variant="secondary" className="text-xs">
+                          {selfStockFilter === "true" ? "Self Stock" : "Vendor Stock"}
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </CardHeader>
             <CardContent>

@@ -45,6 +45,8 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
 
+    const linkedUserId = body.linkedUserId ?? undefined;
+
     const employee = await prisma.employeeMaster.update({
       where: { id },
       data: {
@@ -54,10 +56,19 @@ export async function PATCH(
         email: body.email ?? undefined,
         mobile: body.mobile ?? undefined,
         telephone: body.telephone ?? undefined,
-        linkedUserId: body.linkedUserId ?? undefined,
+        linkedUserId,
         isActive: body.isActive ?? undefined,
       },
     });
+
+    // Update linked user's role if provided
+    const resolvedUserId = linkedUserId ?? employee.linkedUserId;
+    if (resolvedUserId && body.userRole) {
+      await prisma.user.update({
+        where: { id: resolvedUserId },
+        data: { role: body.userRole },
+      });
+    }
 
     await createAuditLog({
       tableName: "EmployeeMaster",

@@ -164,6 +164,18 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Auto-create a BuyerMaster when companyType is "BOTH" and contactPerson is provided
+    if (companyType === "BOTH" && contactPerson) {
+      await prisma.buyerMaster.create({
+        data: {
+          customerId: newCustomer.id,
+          buyerName: contactPerson,
+          email: contactPersonEmail || null,
+          mobile: contactPersonPhone || null,
+        },
+      });
+    }
+
     createAuditLog({
       userId: session.user.id,
       action: "CREATE",

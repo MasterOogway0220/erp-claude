@@ -3,6 +3,36 @@ import { prisma } from "@/lib/prisma";
 import { checkAccess } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const { authorized, response } = await checkAccess("masters", "read");
+    if (!authorized) return response!;
+
+    const product = await prisma.productSpecMaster.findUnique({
+      where: { id },
+      include: {
+        dimensionalStandard: true,
+      },
+    });
+
+    if (!product) {
+      return NextResponse.json({ error: "Product not found" }, { status: 404 });
+    }
+
+    return NextResponse.json(product);
+  } catch (error) {
+    console.error("Error fetching product:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch product" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -13,16 +43,20 @@ export async function PATCH(
     if (!authorized) return response!;
 
     const body = await request.json();
-    const { product, material, additionalSpec, ends, length } = body;
+    const { product, category, specification, grade, material, additionalSpec, ends, length, dimensionalStandardId } = body;
 
     const updated = await prisma.productSpecMaster.update({
       where: { id },
       data: {
         product,
-        material: material || null,
-        additionalSpec: additionalSpec || null,
-        ends: ends || null,
-        length: length || null,
+        category: category !== undefined ? (category || null) : undefined,
+        specification: specification !== undefined ? (specification || null) : undefined,
+        grade: grade !== undefined ? (grade || null) : undefined,
+        material: material !== undefined ? (material || null) : undefined,
+        additionalSpec: additionalSpec !== undefined ? (additionalSpec || null) : undefined,
+        ends: ends !== undefined ? (ends || null) : undefined,
+        length: length !== undefined ? (length || null) : undefined,
+        dimensionalStandardId: dimensionalStandardId !== undefined ? (dimensionalStandardId || null) : undefined,
       },
     });
 

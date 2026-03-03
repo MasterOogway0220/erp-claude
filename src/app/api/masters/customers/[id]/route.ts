@@ -107,6 +107,14 @@ export async function PATCH(
       }
     }
 
+    // Check if companyType is changing to "BOTH" so we can auto-create a buyer
+    const existingCustomer = companyType === "BOTH"
+      ? await prisma.customerMaster.findUnique({
+          where: { id },
+          select: { companyType: true, contactPerson: true, contactPersonEmail: true, contactPersonPhone: true },
+        })
+      : null;
+
     const updated = await prisma.customerMaster.update({
       where: { id },
       data: {
@@ -140,6 +148,28 @@ export async function PATCH(
         dispatchAddresses: true,
       },
     });
+
+    // Auto-create buyer when companyType changes TO "BOTH" and no buyers exist yet
+    if (
+      companyType === "BOTH" &&
+      existingCustomer &&
+      existingCustomer.companyType !== "BOTH"
+    ) {
+      const buyerCount = await prisma.buyerMaster.count({ where: { customerId: id } });
+      if (buyerCount === 0) {
+        const cp = contactPerson ?? existingCustomer.contactPerson;
+        if (cp) {
+          await prisma.buyerMaster.create({
+            data: {
+              customerId: id,
+              buyerName: cp,
+              email: (contactPersonEmail ?? existingCustomer.contactPersonEmail) || null,
+              mobile: (contactPersonPhone ?? existingCustomer.contactPersonPhone) || null,
+            },
+          });
+        }
+      }
+    }
 
     createAuditLog({
       userId: session.user.id,

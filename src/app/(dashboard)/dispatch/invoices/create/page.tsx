@@ -50,6 +50,13 @@ interface TaxRateOption {
   isActive: boolean;
 }
 
+interface WarehouseOption {
+  id: string;
+  code: string;
+  name: string;
+  state: string | null;
+}
+
 const COMPANY_STATE = "Maharashtra";
 
 export default function CreateInvoicePageWrapper() {
@@ -71,9 +78,11 @@ function CreateInvoicePage() {
   const [customer, setCustomer] = useState<any>(null);
   const [taxRates, setTaxRates] = useState<TaxRateOption[]>([]);
   const [defaultTaxRate, setDefaultTaxRate] = useState<string>("18");
+  const [warehouses, setWarehouses] = useState<WarehouseOption[]>([]);
 
   const [formData, setFormData] = useState({
     dispatchNoteId: preselectedDnId,
+    warehouseId: "",
     invoiceType: "DOMESTIC",
     dueDate: format(
       new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
@@ -87,7 +96,20 @@ function CreateInvoicePage() {
   useEffect(() => {
     fetchDispatchNotes();
     fetchTaxRates();
+    fetchWarehouses();
   }, []);
+
+  const fetchWarehouses = async () => {
+    try {
+      const response = await fetch("/api/masters/warehouses");
+      if (response.ok) {
+        const data = await response.json();
+        setWarehouses((data.warehouses || []).filter((w: any) => w.isActive));
+      }
+    } catch (error) {
+      console.error("Failed to fetch warehouses:", error);
+    }
+  };
 
   const fetchTaxRates = async () => {
     try {
@@ -281,6 +303,7 @@ function CreateInvoicePage() {
           dispatchNoteId: formData.dispatchNoteId,
           salesOrderId: selectedDN.salesOrder?.id,
           customerId: customer.id,
+          warehouseId: formData.warehouseId || null,
           invoiceType: formData.invoiceType,
           dueDate: formData.dueDate || null,
           eWayBillNo: formData.eWayBillNo || null,
@@ -385,6 +408,26 @@ function CreateInvoicePage() {
                   }
                   placeholder="Enter E-Way Bill number"
                 />
+              </div>
+              <div className="space-y-2">
+                <Label>Warehouse</Label>
+                <Select
+                  value={formData.warehouseId}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, warehouseId: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Warehouse" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {warehouses.map((wh) => (
+                      <SelectItem key={wh.id} value={wh.id}>
+                        {wh.code} - {wh.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 

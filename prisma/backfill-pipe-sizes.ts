@@ -67,7 +67,7 @@ function parseSizeLabel(sizeLabel: string): { nps: number | null; schedule: stri
 async function main() {
   console.log("Backfilling PipeSizeMaster nps + schedule from sizeLabel...\n");
 
-  const allSizes = await prisma.pipeSizeMaster.findMany();
+  const allSizes = await prisma.sizeMaster.findMany();
   console.log(`Found ${allSizes.length} pipe size records`);
 
   let updated = 0;
@@ -84,7 +84,7 @@ async function main() {
     }
 
     try {
-      await prisma.pipeSizeMaster.update({
+      await prisma.sizeMaster.update({
         where: { id: size.id },
         data: {
           nps: nps !== null ? nps : undefined,

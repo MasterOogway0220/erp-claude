@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     if (!authorized) return response!;
 
     const body = await request.json();
-    const { code, name, address, locations } = body;
+    const { code, name, gstNo, addressLine1, addressLine2, pincode, state, country, stockVisible, isSelfStock, locations } = body;
 
     if (!code || !name) {
       return NextResponse.json({ error: "Code and name are required" }, { status: 400 });
@@ -59,7 +59,14 @@ export async function POST(request: NextRequest) {
       data: {
         code,
         name,
-        address: address || null,
+        gstNo: gstNo || null,
+        addressLine1: addressLine1 || null,
+        addressLine2: addressLine2 || null,
+        pincode: pincode || null,
+        state: state || null,
+        country: country || "India",
+        stockVisible: stockVisible !== undefined ? stockVisible : true,
+        isSelfStock: isSelfStock !== undefined ? isSelfStock : true,
         locations: locations?.length ? {
           create: locations.map((loc: any) => ({
             zone: loc.zone || null,

@@ -20,13 +20,29 @@ export async function GET(request: NextRequest) {
       ];
     }
 
-    const employees = await prisma.employeeMaster.findMany({
+    const raw = await prisma.employeeMaster.findMany({
       where,
       include: {
         linkedUser: { select: { id: true, name: true, email: true } },
       },
       orderBy: { name: "asc" },
     });
+
+    const employees = raw.map((e) => ({
+      id: e.id,
+      code: e.employeeCode,
+      name: e.name,
+      department: e.department,
+      designation: e.designation,
+      email: e.email,
+      mobile: e.mobile,
+      telephone: e.telephone,
+      userId: e.linkedUserId,
+      user: e.linkedUser,
+      isActive: e.isActive,
+      createdAt: e.createdAt,
+      updatedAt: e.updatedAt,
+    }));
 
     return NextResponse.json({ employees });
   } catch (error) {
@@ -72,6 +88,14 @@ export async function POST(request: NextRequest) {
         linkedUser: { select: { id: true, name: true, email: true } },
       },
     });
+
+    // Update linked user's role if provided
+    if (body.linkedUserId && body.userRole) {
+      await prisma.user.update({
+        where: { id: body.linkedUserId },
+        data: { role: body.userRole },
+      });
+    }
 
     await createAuditLog({
       tableName: "EmployeeMaster",

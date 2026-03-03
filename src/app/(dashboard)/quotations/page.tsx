@@ -204,7 +204,7 @@ export default function QuotationsPage() {
               <TableHead>Items</TableHead>
               <TableHead>Amount</TableHead>
               <TableHead>Deal Owner</TableHead>
-              <TableHead>Next Action</TableHead>
+              <TableHead>Follow Up</TableHead>
               <TableHead>OC Created</TableHead>
               <TableHead>Prepared By</TableHead>
               <TableHead>Status</TableHead>

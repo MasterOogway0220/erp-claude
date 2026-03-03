@@ -17,11 +17,15 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { ProductMaterialSelect } from "@/components/shared/product-material-select";
-import { PipeSizeSelect } from "@/components/shared/pipe-size-select";
+import { SizeSelect } from "@/components/shared/size-select";
 import { Plus, Trash2, Save, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { PageLoading } from "@/components/shared/page-loading";
+import { FittingSelect } from "@/components/shared/fitting-select";
+import { FlangeSelect } from "@/components/shared/flange-select";
+
+type POItemCategory = "Pipe" | "Fitting" | "Flange";
 
 interface Vendor {
   id: string;
@@ -47,6 +51,7 @@ interface SalesOrder {
 }
 
 interface POItem {
+  itemCategory: POItemCategory;
   product: string;
   material: string;
   additionalSpec: string;
@@ -55,6 +60,10 @@ interface POItem {
   unitRate: number;
   amount: number;
   deliveryDate: string;
+  fittingId: string;
+  fittingLabel: string;
+  flangeId: string;
+  flangeLabel: string;
 }
 
 export default function CreatePOPageWrapper() {
@@ -85,8 +94,14 @@ function CreatePOPage() {
     currency: "INR",
   });
 
+  const defaultDeliveryDate = format(
+    new Date(Date.now() + 45 * 24 * 60 * 60 * 1000),
+    "yyyy-MM-dd"
+  );
+
   const [items, setItems] = useState<POItem[]>([
     {
+      itemCategory: "Pipe",
       product: "",
       material: "",
       additionalSpec: "",
@@ -94,10 +109,11 @@ function CreatePOPage() {
       quantity: 0,
       unitRate: 0,
       amount: 0,
-      deliveryDate: format(
-        new Date(Date.now() + 45 * 24 * 60 * 60 * 1000),
-        "yyyy-MM-dd"
-      ),
+      deliveryDate: defaultDeliveryDate,
+      fittingId: "",
+      fittingLabel: "",
+      flangeId: "",
+      flangeLabel: "",
     },
   ]);
 
@@ -153,6 +169,7 @@ function CreatePOPage() {
     const pr = prs.find((p) => p.id === prId);
     if (pr) {
       const prItems: POItem[] = pr.items.map((item) => ({
+        itemCategory: "Pipe" as POItemCategory,
         product: item.product,
         material: item.material,
         additionalSpec: item.additionalSpec,
@@ -161,6 +178,10 @@ function CreatePOPage() {
         unitRate: 0,
         amount: 0,
         deliveryDate: formData.deliveryDate,
+        fittingId: "",
+        fittingLabel: "",
+        flangeId: "",
+        flangeLabel: "",
       }));
       setItems(prItems);
     }
@@ -170,6 +191,7 @@ function CreatePOPage() {
     setItems([
       ...items,
       {
+        itemCategory: "Pipe",
         product: "",
         material: "",
         additionalSpec: "",
@@ -178,6 +200,10 @@ function CreatePOPage() {
         unitRate: 0,
         amount: 0,
         deliveryDate: formData.deliveryDate,
+        fittingId: "",
+        fittingLabel: "",
+        flangeId: "",
+        flangeLabel: "",
       },
     ]);
   };
@@ -402,6 +428,95 @@ function CreatePOPage() {
                     key={index}
                     className="grid grid-cols-1 md:grid-cols-12 gap-2 p-4 border rounded-lg"
                   >
+                    <div className="md:col-span-12 flex items-center gap-3 mb-1">
+                      <span className="text-xs font-semibold text-muted-foreground">Item #{index + 1}</span>
+                      <div className="flex rounded-md border overflow-hidden text-xs">
+                        {(["Pipe", "Fitting", "Flange"] as POItemCategory[]).map((cat) => (
+                          <button
+                            key={cat}
+                            type="button"
+                            className={`px-2.5 py-0.5 transition-colors ${
+                              item.itemCategory === cat
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted hover:bg-accent"
+                            }`}
+                            onClick={() => {
+                              const newItems = [...items];
+                              newItems[index] = {
+                                itemCategory: cat,
+                                product: "",
+                                material: "",
+                                additionalSpec: "",
+                                sizeLabel: "",
+                                quantity: item.quantity,
+                                unitRate: item.unitRate,
+                                amount: item.amount,
+                                deliveryDate: item.deliveryDate,
+                                fittingId: "",
+                                fittingLabel: "",
+                                flangeId: "",
+                                flangeLabel: "",
+                              };
+                              setItems(newItems);
+                            }}
+                          >
+                            {cat}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    {item.itemCategory === "Fitting" && (
+                      <div className="md:col-span-6">
+                        <Label className="text-xs">Select Fitting *</Label>
+                        <FittingSelect
+                          value={item.fittingLabel}
+                          onChange={(text) => {
+                            const newItems = [...items];
+                            newItems[index] = { ...newItems[index], fittingLabel: text, fittingId: "" };
+                            setItems(newItems);
+                          }}
+                          onSelect={(f) => {
+                            const newItems = [...items];
+                            newItems[index] = {
+                              ...newItems[index],
+                              fittingId: f.id,
+                              fittingLabel: `${f.type} ${f.size} ${f.schedule || ""} ${f.endType || ""} ${f.materialGrade}`.replace(/\s+/g, " ").trim(),
+                              product: f.type,
+                              material: f.materialGrade,
+                              sizeLabel: f.size,
+                              additionalSpec: [f.endType, f.rating, f.standard].filter(Boolean).join(", "),
+                            };
+                            setItems(newItems);
+                          }}
+                        />
+                      </div>
+                    )}
+                    {item.itemCategory === "Flange" && (
+                      <div className="md:col-span-6">
+                        <Label className="text-xs">Select Flange *</Label>
+                        <FlangeSelect
+                          value={item.flangeLabel}
+                          onChange={(text) => {
+                            const newItems = [...items];
+                            newItems[index] = { ...newItems[index], flangeLabel: text, flangeId: "" };
+                            setItems(newItems);
+                          }}
+                          onSelect={(f) => {
+                            const newItems = [...items];
+                            newItems[index] = {
+                              ...newItems[index],
+                              flangeId: f.id,
+                              flangeLabel: `${f.type} ${f.size} ${f.rating}# ${f.facing || ""} ${f.materialGrade}`.replace(/\s+/g, " ").trim(),
+                              product: f.type,
+                              material: f.materialGrade,
+                              sizeLabel: f.size,
+                              additionalSpec: [f.facing, f.rating + "#", f.standard].filter(Boolean).join(", "),
+                            };
+                            setItems(newItems);
+                          }}
+                        />
+                      </div>
+                    )}
                     <div className="md:col-span-4">
                       <ProductMaterialSelect
                         product={item.product}
@@ -417,7 +532,7 @@ function CreatePOPage() {
                     </div>
                     <div className="md:col-span-2">
                       <Label className="text-xs">Size</Label>
-                      <PipeSizeSelect
+                      <SizeSelect
                         value={item.sizeLabel}
                         onChange={(text) => updateItem(index, "sizeLabel", text)}
                         onSelect={(size) => {

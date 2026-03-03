@@ -44,6 +44,7 @@ interface User {
   id: string;
   name: string;
   email: string;
+  role: string;
 }
 
 interface EmployeeFormData {
@@ -54,10 +55,12 @@ interface EmployeeFormData {
   mobile: string;
   telephone: string;
   userId: string;
+  userRole: string;
   isActive: boolean;
 }
 
 const DEPARTMENTS = ["Purchase", "Sales", "Quality", "Warehouse", "Accounts"];
+const USER_ROLES = ["ADMIN", "SALES", "PURCHASE", "QC", "STORES", "ACCOUNTS", "MANAGEMENT"];
 
 const emptyForm: EmployeeFormData = {
   name: "",
@@ -67,6 +70,7 @@ const emptyForm: EmployeeFormData = {
   mobile: "",
   telephone: "",
   userId: "",
+  userRole: "",
   isActive: true,
 };
 
@@ -117,6 +121,8 @@ export default function EmployeesPage() {
 
   const handleOpenEdit = (employee: Employee) => {
     setEditingEmployee(employee);
+    // Find the linked user's current role
+    const linkedUser = users.find((u) => u.id === employee.userId);
     setFormData({
       name: employee.name,
       department: employee.department || "",
@@ -125,6 +131,7 @@ export default function EmployeesPage() {
       mobile: employee.mobile || "",
       telephone: employee.telephone || "",
       userId: employee.userId || "",
+      userRole: linkedUser?.role || "",
       isActive: employee.isActive,
     });
     setIsDialogOpen(true);
@@ -145,6 +152,7 @@ export default function EmployeesPage() {
         ...formData,
         userId: formData.userId || null,
         department: formData.department || null,
+        userRole: formData.userId && formData.userRole ? formData.userRole : undefined,
       };
 
       if (editingEmployee) {
@@ -407,31 +415,32 @@ export default function EmployeesPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                {/* Telephone */}
-                <div className="grid gap-2">
-                  <Label htmlFor="telephone">Telephone</Label>
-                  <Input
-                    id="telephone"
-                    value={formData.telephone}
-                    onChange={(e) =>
-                      setFormData({ ...formData, telephone: e.target.value })
-                    }
-                    placeholder="022-12345678"
-                  />
-                </div>
+              <div className="grid gap-2">
+                <Label htmlFor="telephone">Telephone</Label>
+                <Input
+                  id="telephone"
+                  value={formData.telephone}
+                  onChange={(e) =>
+                    setFormData({ ...formData, telephone: e.target.value })
+                  }
+                  placeholder="022-12345678"
+                />
+              </div>
 
+              <div className="grid grid-cols-2 gap-4">
                 {/* Linked User Account */}
                 <div className="grid gap-2">
                   <Label htmlFor="userId">Linked User Account</Label>
                   <Select
                     value={formData.userId}
-                    onValueChange={(value) =>
+                    onValueChange={(value) => {
+                      const selectedUser = users.find((u) => u.id === value);
                       setFormData({
                         ...formData,
                         userId: value === "__none__" ? "" : value,
-                      })
-                    }
+                        userRole: value === "__none__" ? "" : (selectedUser?.role || ""),
+                      });
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select user account" />
@@ -446,6 +455,30 @@ export default function EmployeesPage() {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* Role (visible when user is linked) */}
+                {formData.userId && (
+                  <div className="grid gap-2">
+                    <Label htmlFor="userRole">Role</Label>
+                    <Select
+                      value={formData.userRole}
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, userRole: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {USER_ROLES.map((role) => (
+                          <SelectItem key={role} value={role}>
+                            {role}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
 
               {/* Status Toggle */}

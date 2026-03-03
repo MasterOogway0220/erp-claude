@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { SmartCombobox } from "./smart-combobox";
-import { Label } from "@/components/ui/label";
 
-interface PipeSize {
+interface Size {
   id: string;
   sizeLabel: string;
   od: number;
@@ -13,7 +12,7 @@ interface PipeSize {
   pipeType: string;
 }
 
-interface PipeSizeSelectProps {
+interface SizeSelectProps {
   value: string;
   onChange: (text: string) => void;
   onSelect: (size: {
@@ -30,43 +29,43 @@ interface PipeSizeSelectProps {
 }
 
 // Module-level cache
-let cachedSizes: PipeSize[] | null = null;
-let fetchPromise: Promise<PipeSize[]> | null = null;
+let cachedSizes: Size[] | null = null;
+let fetchPromise: Promise<Size[]> | null = null;
 
-function fetchPipeSizes(): Promise<PipeSize[]> {
+function fetchSizes(): Promise<Size[]> {
   if (cachedSizes) return Promise.resolve(cachedSizes);
   if (fetchPromise) return fetchPromise;
 
-  fetchPromise = fetch("/api/masters/pipe-sizes")
+  fetchPromise = fetch("/api/masters/sizes")
     .then((res) => {
-      if (!res.ok) throw new Error("Failed to fetch pipe sizes");
+      if (!res.ok) throw new Error("Failed to fetch sizes");
       return res.json();
     })
     .then((data) => {
-      cachedSizes = data.pipeSizes || [];
+      cachedSizes = data.sizes || [];
       return cachedSizes!;
     })
     .catch(() => {
       fetchPromise = null;
-      return [] as PipeSize[];
+      return [] as Size[];
     });
 
   return fetchPromise;
 }
 
-export function PipeSizeSelect({
+export function SizeSelect({
   value,
   onChange,
   onSelect,
   label = "Size",
-  placeholder = "Search pipe size...",
+  placeholder = "Search size...",
   className,
   disabled,
-}: PipeSizeSelectProps) {
-  const [sizes, setSizes] = useState<PipeSize[]>(cachedSizes || []);
+}: SizeSelectProps) {
+  const [sizes, setSizes] = useState<Size[]>(cachedSizes || []);
 
   useEffect(() => {
-    fetchPipeSizes().then(setSizes);
+    fetchSizes().then(setSizes);
   }, []);
 
   return (

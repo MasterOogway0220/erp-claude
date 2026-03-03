@@ -11,9 +11,11 @@ export function wrapHtmlForPrint(html: string, landscape: boolean): string {
       @media print {
         @page {
           size: A4 ${orientation};
-          margin: 10mm;
+          margin: 0;
         }
         body {
+          margin: 0;
+          padding: 10mm;
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
         }

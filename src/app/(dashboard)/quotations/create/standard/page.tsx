@@ -31,8 +31,16 @@ import {
 import { Plus, Trash2, ArrowLeft, Building2, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
+import { FittingSelect } from "@/components/shared/fitting-select";
+import { FlangeSelect } from "@/components/shared/flange-select";
+import { calculateWeightPerMeter } from "@/lib/weight-calculation";
+
+type ItemCategory = "Pipe" | "Fitting" | "Flange";
 
 interface QuotationItem {
+  itemCategory: ItemCategory;
+  materialCodeId: string;
+  materialCodeLabel: string;
   product: string;
   material: string;
   additionalSpec: string;
@@ -53,9 +61,16 @@ interface QuotationItem {
   totalWeightMT: string;
   taxRate: string;
   hsnCode: string;
+  fittingId: string;
+  fittingLabel: string;
+  flangeId: string;
+  flangeLabel: string;
 }
 
 const emptyItem: QuotationItem = {
+  itemCategory: "Pipe",
+  materialCodeId: "",
+  materialCodeLabel: "",
   product: "",
   material: "",
   additionalSpec: "",
@@ -76,6 +91,10 @@ const emptyItem: QuotationItem = {
   totalWeightMT: "",
   taxRate: "",
   hsnCode: "",
+  fittingId: "",
+  fittingLabel: "",
+  flangeId: "",
+  flangeLabel: "",
 };
 
 const GST_RATES = ["0", "5", "12", "18", "28"];
@@ -139,6 +158,14 @@ function StandardQuotationPage() {
   const [showAddBuyerModal, setShowAddBuyerModal] = useState(false);
   const [newBuyerForm, setNewBuyerForm] = useState({ buyerName: "", designation: "", email: "", mobile: "" });
   const [addingBuyer, setAddingBuyer] = useState(false);
+
+  // Add New Customer modal state
+  const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
+  const [newCustomerForm, setNewCustomerForm] = useState({
+    name: "", companyType: "BUYER", contactPerson: "", contactPersonEmail: "", contactPersonPhone: "", gstNo: "", addressLine1: "", city: "", state: "",
+  });
+  const [addingCustomer, setAddingCustomer] = useState(false);
+
   const queryClient = useQueryClient();
 
   // Track previous currency for conversion
@@ -196,15 +223,27 @@ function StandardQuotationPage() {
     },
   });
 
-  // Fetch pipe sizes for Size dropdown
-  const { data: pipeSizesData } = useQuery({
-    queryKey: ["pipe-sizes"],
+  // Fetch sizes for Size dropdown
+  const { data: sizesData } = useQuery({
+    queryKey: ["sizes"],
     queryFn: async () => {
-      const res = await fetch("/api/masters/pipe-sizes");
-      if (!res.ok) throw new Error("Failed to fetch pipe sizes");
+      const res = await fetch("/api/masters/sizes");
+      if (!res.ok) throw new Error("Failed to fetch sizes");
       return res.json();
     },
   });
+
+  // Fetch material codes for autocomplete
+  const { data: materialCodesData } = useQuery({
+    queryKey: ["material-codes"],
+    queryFn: async () => {
+      const res = await fetch("/api/masters/material-codes");
+      if (!res.ok) throw new Error("Failed to fetch material codes");
+      return res.json();
+    },
+  });
+
+  const materialCodes = materialCodesData?.materialCodes || [];
 
   // Fetch offer term templates filtered by quotation type
   const { data: templatesData } = useQuery({
@@ -230,7 +269,7 @@ function StandardQuotationPage() {
 
   // Derive combined size options filtered by pipe type
   const getSizeOptionsForProduct = useMemo(() => {
-    const sizes = pipeSizesData?.pipeSizes || [];
+    const sizes = sizesData?.sizes || [];
 
     return (product: string) => {
       const pipeType = getPipeType(product);
@@ -254,14 +293,14 @@ function StandardQuotationPage() {
           weight: parseFloat(s.weight).toString(),
         }));
     };
-  }, [pipeSizesData]);
+  }, [sizesData]);
 
   const findPipeSizeById = useMemo(() => {
-    const sizes = pipeSizesData?.pipeSizes || [];
+    const sizes = sizesData?.sizes || [];
     const map = new Map<string, any>();
     sizes.forEach((s: any) => map.set(s.id, s));
     return (id: string) => map.get(id) || null;
-  }, [pipeSizesData]);
+  }, [sizesData]);
 
   const selectedCustomer = customersData?.customers?.find(
     (c: any) => c.id === formData.customerId
@@ -435,6 +474,9 @@ function StandardQuotationPage() {
       setAdvanceToPay(q.advanceToPay ? String(q.advanceToPay) : "");
       if (q.items?.length > 0) {
         setItems(q.items.map((item: any) => ({
+          itemCategory: item.fittingId ? "Fitting" as ItemCategory : item.flangeId ? "Flange" as ItemCategory : "Pipe" as ItemCategory,
+          materialCodeId: item.materialCodeId || "",
+          materialCodeLabel: item.materialCode?.code || "",
           product: item.product || "",
           material: item.material || "",
           additionalSpec: item.additionalSpec || "",
@@ -455,6 +497,10 @@ function StandardQuotationPage() {
           totalWeightMT: item.totalWeightMT ? String(item.totalWeightMT) : "",
           taxRate: item.taxRate ? String(item.taxRate) : "",
           hsnCode: item.hsnCode || "",
+          fittingId: item.fittingId || "",
+          fittingLabel: "",
+          flangeId: item.flangeId || "",
+          flangeLabel: "",
         })));
       }
       if (q.terms?.length > 0) {
@@ -521,9 +567,16 @@ function StandardQuotationPage() {
           newItems[index].sizeLabel = pipeSize.sizeLabel;
           newItems[index].nps = pipeSize.nps != null ? parseFloat(pipeSize.nps).toString() : "";
           newItems[index].schedule = pipeSize.schedule || "";
-          newItems[index].od = parseFloat(pipeSize.od).toString();
-          newItems[index].wt = parseFloat(pipeSize.wt).toString();
-          newItems[index].unitWeight = parseFloat(pipeSize.weight).toString();
+          const od = parseFloat(pipeSize.od);
+          const wt = parseFloat(pipeSize.wt);
+          newItems[index].od = od.toString();
+          newItems[index].wt = wt.toString();
+          // Calculate weight per meter using formula based on pipe type
+          const pt = getPipeType(newItems[index].product);
+          const calcWeight = pt ? calculateWeightPerMeter(od, wt, pt) : null;
+          newItems[index].unitWeight = calcWeight !== null
+            ? calcWeight.toString()
+            : parseFloat(pipeSize.weight).toString();
         }
       }
 
@@ -619,23 +672,34 @@ function StandardQuotationPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label>Customer *</Label>
-                <Select
-                  value={formData.customerId}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, customerId: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select customer" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {customersData?.customers?.map((customer: any) => (
-                      <SelectItem key={customer.id} value={customer.id}>
-                        {customer.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-2">
+                  <Select
+                    value={formData.customerId}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, customerId: value })
+                    }
+                  >
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select customer" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {customersData?.customers?.map((customer: any) => (
+                        <SelectItem key={customer.id} value={customer.id}>
+                          {customer.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="shrink-0"
+                    onClick={() => setShowAddCustomerModal(true)}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
 
               <div className="grid gap-2">
@@ -729,8 +793,8 @@ function StandardQuotationPage() {
               </div>
             </div>
 
-            {/* Row 3: Dates (small fields, 4 per row) */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {/* Row 3: Dates (small fields, 3 per row) */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div className="grid gap-2">
                 <Label>Quotation Date</Label>
                 <Input
@@ -738,17 +802,6 @@ function StandardQuotationPage() {
                   value={formData.quotationDate}
                   onChange={(e) =>
                     setFormData({ ...formData, quotationDate: e.target.value })
-                  }
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label>Valid Until</Label>
-                <Input
-                  type="date"
-                  value={formData.validUpto}
-                  onChange={(e) =>
-                    setFormData({ ...formData, validUpto: e.target.value })
                   }
                 />
               </div>
@@ -772,8 +825,8 @@ function StandardQuotationPage() {
               </div>
             </div>
 
-            {/* Row 4: Deal Owner, Next Action, Kind Attention (3 per row) */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Row 4: Deal Owner, Follow Up Date (2 per row) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label>Deal Owner</Label>
                 <Select
@@ -797,29 +850,13 @@ function StandardQuotationPage() {
               </div>
 
               <div className="grid gap-2">
-                <Label>Next Action Date</Label>
+                <Label>Follow Up Date</Label>
                 <Input
                   type="date"
                   value={formData.nextActionDate}
                   onChange={(e) =>
                     setFormData({ ...formData, nextActionDate: e.target.value })
                   }
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label>
-                  Kind Attention
-                  <span className="text-xs text-muted-foreground ml-2">
-                    ({(formData.kindAttention || "").length}/200)
-                  </span>
-                </Label>
-                <Input
-                  value={formData.kindAttention}
-                  onChange={(e) =>
-                    setFormData({ ...formData, kindAttention: e.target.value.slice(0, 200) })
-                  }
-                  placeholder="e.g. Mr. Rajesh Sharma, Purchase Manager"
                 />
               </div>
             </div>
@@ -878,47 +915,6 @@ function StandardQuotationPage() {
           </CardContent>
         </Card>
 
-        {/* Place of Supply — only relevant for GST (INR) */}
-        {isINR && (
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-muted-foreground" />
-                <CardTitle className="text-base">Place of Supply</CardTitle>
-                <span className="text-xs text-muted-foreground">(Determines CGST+SGST vs IGST)</span>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="grid gap-2">
-                  <Label>City</Label>
-                  <Input
-                    value={formData.placeOfSupplyCity}
-                    onChange={(e) => setFormData({ ...formData, placeOfSupplyCity: e.target.value })}
-                    placeholder="e.g. Mumbai"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label>State</Label>
-                  <Input
-                    value={formData.placeOfSupplyState}
-                    onChange={(e) => setFormData({ ...formData, placeOfSupplyState: e.target.value })}
-                    placeholder="e.g. Maharashtra"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Country</Label>
-                  <Input
-                    value={formData.placeOfSupplyCountry}
-                    onChange={(e) => setFormData({ ...formData, placeOfSupplyCountry: e.target.value })}
-                    placeholder="India"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
         {/* Line Items */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
@@ -941,12 +937,128 @@ function StandardQuotationPage() {
               return (
                 <div key={index} className="grid gap-4 p-4 border rounded-lg relative">
                   <div className="flex items-center justify-between">
-                    <span className="font-semibold text-sm">Item #{index + 1}</span>
+                    <div className="flex items-center gap-3">
+                      <span className="font-semibold text-sm">Item #{index + 1}</span>
+                      <div className="flex rounded-md border overflow-hidden text-xs">
+                        {(["Pipe", "Fitting", "Flange"] as ItemCategory[]).map((cat) => (
+                          <button
+                            key={cat}
+                            type="button"
+                            className={`px-3 py-1 transition-colors ${
+                              item.itemCategory === cat
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted hover:bg-accent"
+                            }`}
+                            onClick={() => {
+                              setItems((prev) => {
+                                const newItems = [...prev];
+                                newItems[index] = { ...emptyItem, itemCategory: cat, quantity: item.quantity, unitRate: item.unitRate, amount: item.amount, delivery: item.delivery, remark: item.remark, taxRate: item.taxRate, hsnCode: item.hsnCode };
+                                return newItems;
+                              });
+                            }}
+                          >
+                            {cat}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                     {items.length > 1 && (
                       <Button type="button" variant="ghost" size="icon" onClick={() => removeItem(index)}>
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     )}
+                  </div>
+
+                  {/* Fitting/Flange selector */}
+                  {item.itemCategory === "Fitting" && (
+                    <div className="grid gap-2">
+                      <Label>Select Fitting *</Label>
+                      <FittingSelect
+                        value={item.fittingLabel}
+                        onChange={(text) => {
+                          setItems((prev) => {
+                            const newItems = [...prev];
+                            newItems[index] = { ...newItems[index], fittingLabel: text, fittingId: "" };
+                            return newItems;
+                          });
+                        }}
+                        onSelect={(f) => {
+                          setItems((prev) => {
+                            const newItems = [...prev];
+                            newItems[index] = {
+                              ...newItems[index],
+                              fittingId: f.id,
+                              fittingLabel: `${f.type} ${f.size} ${f.schedule || ""} ${f.endType || ""} ${f.materialGrade}`.replace(/\s+/g, " ").trim(),
+                              product: f.type,
+                              material: f.materialGrade,
+                              sizeLabel: f.size,
+                              additionalSpec: [f.endType, f.rating, f.standard].filter(Boolean).join(", "),
+                            };
+                            return newItems;
+                          });
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {item.itemCategory === "Flange" && (
+                    <div className="grid gap-2">
+                      <Label>Select Flange *</Label>
+                      <FlangeSelect
+                        value={item.flangeLabel}
+                        onChange={(text) => {
+                          setItems((prev) => {
+                            const newItems = [...prev];
+                            newItems[index] = { ...newItems[index], flangeLabel: text, flangeId: "" };
+                            return newItems;
+                          });
+                        }}
+                        onSelect={(f) => {
+                          setItems((prev) => {
+                            const newItems = [...prev];
+                            newItems[index] = {
+                              ...newItems[index],
+                              flangeId: f.id,
+                              flangeLabel: `${f.type} ${f.size} ${f.rating}# ${f.facing || ""} ${f.materialGrade}`.replace(/\s+/g, " ").trim(),
+                              product: f.type,
+                              material: f.materialGrade,
+                              sizeLabel: f.size,
+                              additionalSpec: [f.facing, f.rating + "#", f.standard].filter(Boolean).join(", "),
+                            };
+                            return newItems;
+                          });
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Material Code */}
+                  <div className="grid gap-2">
+                    <Label>Material Code</Label>
+                    <SmartCombobox
+                      options={materialCodes}
+                      value={item.materialCodeLabel || ""}
+                      onSelect={(mc: any) => {
+                        setItems((prev) => {
+                          const newItems = [...prev];
+                          newItems[index] = { ...newItems[index], materialCodeId: mc.id, materialCodeLabel: mc.code };
+                          return newItems;
+                        });
+                      }}
+                      onChange={(text) => {
+                        setItems((prev) => {
+                          const newItems = [...prev];
+                          newItems[index] = { ...newItems[index], materialCodeLabel: text, materialCodeId: "" };
+                          return newItems;
+                        });
+                      }}
+                      displayFn={(mc: any) => `${mc.code}${mc.description ? ` — ${mc.description}` : ""}`}
+                      filterFn={(mc: any, query) =>
+                        mc.code.toLowerCase().includes(query.toLowerCase()) ||
+                        (mc.description || "").toLowerCase().includes(query.toLowerCase())
+                      }
+                      placeholder="Search material code..."
+                    />
                   </div>
 
                   <ProductMaterialSelect
@@ -1061,39 +1173,12 @@ function StandardQuotationPage() {
                     </div>
                   </div>
 
-                  {/* Amount, HSN, GST, Delivery */}
+                  {/* Amount + Delivery */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="grid gap-2">
                       <Label>Amount ({curr})</Label>
                       <Input value={item.amount} readOnly className="bg-muted font-semibold" />
                     </div>
-                    <div className="grid gap-2">
-                      <Label>HSN Code</Label>
-                      <Input
-                        value={item.hsnCode}
-                        onChange={(e) => updateItem(index, "hsnCode", e.target.value)}
-                        placeholder="e.g. 7304"
-                      />
-                    </div>
-                    {isINR && (
-                      <div className="grid gap-2">
-                        <Label>GST Rate (%)</Label>
-                        <Select
-                          value={item.taxRate || "NONE"}
-                          onValueChange={(value) => updateItem(index, "taxRate", value === "NONE" ? "" : value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select rate" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="NONE">—</SelectItem>
-                            {GST_RATES.map((r) => (
-                              <SelectItem key={r} value={r}>{r}%</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
                     <div className="grid gap-2">
                       <Label>Delivery</Label>
                       <Input
@@ -1137,147 +1222,26 @@ function StandardQuotationPage() {
           </CardContent>
         </Card>
 
-        {/* Financial Summary */}
+        {/* Summary */}
         <Card>
-          <CardHeader>
-            <CardTitle>Financial Summary</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Left: Tax rate + discount controls */}
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  {isINR && (
-                    <div className="grid gap-2">
-                      <Label>Header GST Rate (%)</Label>
-                      <Select
-                        value={taxRate || "NONE"}
-                        onValueChange={(v) => setTaxRate(v === "NONE" ? "" : v)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select rate" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="NONE">0% / Exempt</SelectItem>
-                          {GST_RATES.map((r) => (
-                            <SelectItem key={r} value={r}>{r}%</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                  <div className="grid gap-2">
-                    <Label>Additional Discount (%)</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      max="100"
-                      value={additionalDiscount}
-                      onChange={(e) => setAdditionalDiscount(e.target.value)}
-                      placeholder="0.00"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-6">
-                  {isINR && (
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        id="rcm"
-                        checked={rcmEnabled}
-                        onCheckedChange={setRcmEnabled}
-                      />
-                      <Label htmlFor="rcm" className="cursor-pointer">
-                        RCM (Reverse Charge)
-                      </Label>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      id="roundoff"
-                      checked={roundOff}
-                      onCheckedChange={setRoundOff}
-                    />
-                    <Label htmlFor="roundoff" className="cursor-pointer">
-                      Round-off
-                    </Label>
-                  </div>
-                </div>
-
-                <div className="grid gap-2">
-                  <Label>Advance to Pay ({curr})</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={advanceToPay}
-                    onChange={(e) => setAdvanceToPay(e.target.value)}
-                    placeholder="0.00"
-                  />
-                </div>
-              </div>
-
-              {/* Right: Calculation breakdown */}
-              <div className="space-y-2 text-sm">
+          <CardContent className="pt-6">
+            <div className="flex justify-end">
+              <div className="space-y-2 text-sm w-64">
                 <div className="flex justify-between py-1">
                   <span className="text-muted-foreground">Subtotal</span>
                   <span className="font-medium">{curr} {fmt(subtotal)}</span>
                 </div>
-
-                {discountAmount > 0 && (
-                  <>
-                    <div className="flex justify-between py-1 text-orange-600">
-                      <span>Discount ({parsedDiscount}%)</span>
-                      <span>− {curr} {fmt(discountAmount)}</span>
-                    </div>
-                    <div className="flex justify-between py-1">
-                      <span className="text-muted-foreground">After Discount</span>
-                      <span className="font-medium">{curr} {fmt(totalAfterDiscount)}</span>
-                    </div>
-                  </>
-                )}
-
-                {isINR && parsedTaxRate > 0 && !rcmEnabled && (
-                  <div className="flex justify-between py-1">
-                    <span className="text-muted-foreground">GST ({parsedTaxRate}%)</span>
-                    <span>{curr} {fmt(taxAmount)}</span>
-                  </div>
-                )}
-
-                {isINR && rcmEnabled && (
-                  <div className="flex justify-between py-1 text-amber-600">
-                    <span>Tax (RCM — paid by buyer)</span>
-                    <span>₹0.00</span>
-                  </div>
-                )}
-
-                {roundOff && (
-                  <div className="flex justify-between py-1 text-muted-foreground">
-                    <span>Round-off</span>
-                    <span>{roundOffAmount >= 0 ? "+" : ""}{curr} {fmt(roundOffAmount)}</span>
-                  </div>
-                )}
-
-                <Separator />
-                <div className="flex justify-between py-2">
-                  <span className="font-bold text-base">Grand Total</span>
-                  <span className="font-bold text-base">{curr} {fmt(grandTotal)}</span>
-                </div>
-
                 {totalWeight > 0 && (
                   <div className="flex justify-between py-1 text-muted-foreground">
                     <span>Total Weight</span>
                     <span>{totalWeight.toFixed(3)} MT</span>
                   </div>
                 )}
-
-                {parseFloat(advanceToPay) > 0 && (
-                  <div className="flex justify-between py-1 text-green-600">
-                    <span>Advance to Pay</span>
-                    <span>{curr} {fmt(parseFloat(advanceToPay))}</span>
-                  </div>
-                )}
+                <Separator />
+                <div className="flex justify-between py-2">
+                  <span className="font-bold text-base">Grand Total</span>
+                  <span className="font-bold text-base">{curr} {fmt(subtotal)}</span>
+                </div>
               </div>
             </div>
           </CardContent>
@@ -1373,6 +1337,150 @@ function StandardQuotationPage() {
               }}
             >
               {addingBuyer ? "Adding..." : "Add Client"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add New Customer Modal */}
+      <Dialog open={showAddCustomerModal} onOpenChange={setShowAddCustomerModal}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Add New Customer</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label>Customer Name *</Label>
+              <Input
+                value={newCustomerForm.name}
+                onChange={(e) => setNewCustomerForm({ ...newCustomerForm, name: e.target.value })}
+                placeholder="Enter customer/company name"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label>Company Type</Label>
+                <Select
+                  value={newCustomerForm.companyType}
+                  onValueChange={(value) => setNewCustomerForm({ ...newCustomerForm, companyType: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="BUYER">Buyer</SelectItem>
+                    <SelectItem value="SUPPLIER">Supplier</SelectItem>
+                    <SelectItem value="BOTH">Both</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label>GST No.</Label>
+                <Input
+                  value={newCustomerForm.gstNo}
+                  onChange={(e) => setNewCustomerForm({ ...newCustomerForm, gstNo: e.target.value.toUpperCase() })}
+                  placeholder="e.g. 27AAACR5055K1ZK"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label>Contact Person</Label>
+                <Input
+                  value={newCustomerForm.contactPerson}
+                  onChange={(e) => setNewCustomerForm({ ...newCustomerForm, contactPerson: e.target.value })}
+                  placeholder="Name"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Contact Email</Label>
+                <Input
+                  type="email"
+                  value={newCustomerForm.contactPersonEmail}
+                  onChange={(e) => setNewCustomerForm({ ...newCustomerForm, contactPersonEmail: e.target.value })}
+                  placeholder="email@company.com"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label>Contact Phone</Label>
+                <Input
+                  value={newCustomerForm.contactPersonPhone}
+                  onChange={(e) => setNewCustomerForm({ ...newCustomerForm, contactPersonPhone: e.target.value })}
+                  placeholder="+91 9876543210"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>City</Label>
+                <Input
+                  value={newCustomerForm.city}
+                  onChange={(e) => setNewCustomerForm({ ...newCustomerForm, city: e.target.value })}
+                  placeholder="e.g. Mumbai"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label>Address</Label>
+                <Input
+                  value={newCustomerForm.addressLine1}
+                  onChange={(e) => setNewCustomerForm({ ...newCustomerForm, addressLine1: e.target.value })}
+                  placeholder="Street address"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>State</Label>
+                <Input
+                  value={newCustomerForm.state}
+                  onChange={(e) => setNewCustomerForm({ ...newCustomerForm, state: e.target.value })}
+                  placeholder="e.g. Maharashtra"
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddCustomerModal(false)}>
+              Cancel
+            </Button>
+            <Button
+              disabled={!newCustomerForm.name.trim() || addingCustomer}
+              onClick={async () => {
+                setAddingCustomer(true);
+                try {
+                  const res = await fetch("/api/masters/customers", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      name: newCustomerForm.name.trim(),
+                      companyType: newCustomerForm.companyType,
+                      contactPerson: newCustomerForm.contactPerson.trim() || undefined,
+                      contactPersonEmail: newCustomerForm.contactPersonEmail.trim() || undefined,
+                      contactPersonPhone: newCustomerForm.contactPersonPhone.trim() || undefined,
+                      gstNo: newCustomerForm.gstNo.trim() || undefined,
+                      addressLine1: newCustomerForm.addressLine1.trim() || undefined,
+                      city: newCustomerForm.city.trim() || undefined,
+                      state: newCustomerForm.state.trim() || undefined,
+                    }),
+                  });
+                  if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.error || "Failed to create customer");
+                  }
+                  const data = await res.json();
+                  await queryClient.invalidateQueries({ queryKey: ["customers"] });
+                  setFormData((prev) => ({ ...prev, customerId: data.id }));
+                  setNewCustomerForm({ name: "", companyType: "BUYER", contactPerson: "", contactPersonEmail: "", contactPersonPhone: "", gstNo: "", addressLine1: "", city: "", state: "" });
+                  setShowAddCustomerModal(false);
+                  toast.success("Customer created successfully");
+                } catch (err: any) {
+                  toast.error(err.message || "Failed to create customer");
+                } finally {
+                  setAddingCustomer(false);
+                }
+              }}
+            >
+              {addingCustomer ? "Creating..." : "Create Customer"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -60,6 +60,8 @@ export async function POST(request: NextRequest) {
         website: body.website || null,
         companyLogoUrl: body.companyLogoUrl || null,
         fyStartMonth: body.fyStartMonth ?? 4,
+        fyStartDate: body.fyStartDate ? new Date(body.fyStartDate) : null,
+        fyEndDate: body.fyEndDate ? new Date(body.fyEndDate) : null,
       },
     });
 
@@ -121,6 +123,8 @@ export async function PATCH(request: NextRequest) {
         website: body.website ?? existing.website,
         companyLogoUrl: body.companyLogoUrl ?? existing.companyLogoUrl,
         fyStartMonth: body.fyStartMonth ?? existing.fyStartMonth,
+        fyStartDate: body.fyStartDate !== undefined ? (body.fyStartDate ? new Date(body.fyStartDate) : null) : existing.fyStartDate,
+        fyEndDate: body.fyEndDate !== undefined ? (body.fyEndDate ? new Date(body.fyEndDate) : null) : existing.fyEndDate,
       },
     });
 

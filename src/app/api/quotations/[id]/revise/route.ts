@@ -339,6 +339,8 @@ export async function POST(
               uom: item.uom,
               hsnCode: item.hsnCode,
               taxRate: item.taxRate,
+              fittingId: item.fittingId,
+              flangeId: item.flangeId,
             })),
           },
           // Copy terms

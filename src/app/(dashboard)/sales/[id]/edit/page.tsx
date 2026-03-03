@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ProductMaterialSelect } from "@/components/shared/product-material-select";
-import { PipeSizeSelect } from "@/components/shared/pipe-size-select";
+import { SizeSelect } from "@/components/shared/size-select";
 import { Plus, Trash2, Save, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -314,7 +314,7 @@ export default function EditSalesOrderPage() {
                   </div>
                   <div className="md:col-span-2">
                     <Label className="text-xs">Size</Label>
-                    <PipeSizeSelect
+                    <SizeSelect
                       value={item.sizeLabel}
                       onChange={(text) => updateItem(index, "sizeLabel", text)}
                       onSelect={(size) => {

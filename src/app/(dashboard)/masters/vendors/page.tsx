@@ -71,9 +71,13 @@ interface Vendor {
   isActive: boolean;
   gstNo: string | null;
   gstType: string | null;
+  pan: string | null;
   bankAccountNo: string | null;
   bankIfsc: string | null;
   bankName: string | null;
+  bankBranchName: string | null;
+  bankAccountType: string | null;
+  tanNo: string | null;
   vendorRating: number | null;
   approvalDate: string | null;
   approvedById: string | null;
@@ -102,6 +106,9 @@ interface VendorFormData {
   bankAccountNo: string;
   bankIfsc: string;
   bankName: string;
+  bankBranchName: string;
+  bankAccountType: string;
+  tanNo: string;
 }
 
 const emptyForm: VendorFormData = {
@@ -125,6 +132,9 @@ const emptyForm: VendorFormData = {
   bankAccountNo: "",
   bankIfsc: "",
   bankName: "",
+  bankBranchName: "",
+  bankAccountType: "",
+  tanNo: "",
 };
 
 export default function VendorsPage() {
@@ -269,7 +279,7 @@ export default function VendorsPage() {
         pincode: vendor.pincode || "",
         gstNo: vendor.gstNo || "",
         gstType: vendor.gstType || "",
-        panNo: (vendor as any).panNo || "",
+        panNo: vendor.pan || "",
         productsSupplied: vendor.productsSupplied || "",
         avgLeadTimeDays: vendor.avgLeadTimeDays?.toString() || "",
         performanceScore: vendor.performanceScore?.toString() || "",
@@ -277,6 +287,9 @@ export default function VendorsPage() {
         bankAccountNo: vendor.bankAccountNo || "",
         bankIfsc: vendor.bankIfsc || "",
         bankName: vendor.bankName || "",
+        bankBranchName: vendor.bankBranchName || "",
+        bankAccountType: vendor.bankAccountType || "",
+        tanNo: vendor.tanNo || "",
       });
     } else {
       setEditingVendor(null);
@@ -761,14 +774,25 @@ export default function VendorsPage() {
                 <h4 className="text-sm font-medium">Bank Details</h4>
               </div>
               <div className="space-y-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="bankName">Bank Name</Label>
-                  <Input
-                    id="bankName"
-                    value={formData.bankName}
-                    onChange={(e) => setFormData({ ...formData, bankName: e.target.value })}
-                    placeholder="e.g., State Bank of India"
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="bankName">Bank Name</Label>
+                    <Input
+                      id="bankName"
+                      value={formData.bankName}
+                      onChange={(e) => setFormData({ ...formData, bankName: e.target.value })}
+                      placeholder="e.g., State Bank of India"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="bankBranchName">Branch Name</Label>
+                    <Input
+                      id="bankBranchName"
+                      value={formData.bankBranchName}
+                      onChange={(e) => setFormData({ ...formData, bankBranchName: e.target.value })}
+                      placeholder="e.g., Andheri West"
+                    />
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
@@ -781,12 +805,40 @@ export default function VendorsPage() {
                     />
                   </div>
                   <div className="grid gap-2">
+                    <Label htmlFor="bankAccountType">Account Type</Label>
+                    <Select
+                      value={formData.bankAccountType}
+                      onValueChange={(value) => setFormData({ ...formData, bankAccountType: value })}
+                    >
+                      <SelectTrigger id="bankAccountType">
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="SAVING">Saving</SelectItem>
+                        <SelectItem value="CURRENT">Current</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
                     <Label htmlFor="bankIfsc">IFSC Code</Label>
                     <Input
                       id="bankIfsc"
                       value={formData.bankIfsc}
                       onChange={(e) => setFormData({ ...formData, bankIfsc: e.target.value.toUpperCase() })}
                       placeholder="SBIN0001234"
+                      className="font-mono"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="tanNo">TAN Number</Label>
+                    <Input
+                      id="tanNo"
+                      value={formData.tanNo}
+                      onChange={(e) => setFormData({ ...formData, tanNo: e.target.value.toUpperCase() })}
+                      placeholder="MUMX12345X"
+                      maxLength={10}
                       className="font-mono"
                     />
                   </div>

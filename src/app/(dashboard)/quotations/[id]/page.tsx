@@ -33,6 +33,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -140,6 +141,7 @@ export default function QuotationDetailPage() {
     lossCompetitor: "",
     lossNotes: "",
   });
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
 
   // Fetch quotation
   const { data, isLoading } = useQuery({
@@ -425,6 +427,17 @@ export default function QuotationDetailPage() {
         )}
         {quotation.status === "PENDING_APPROVAL" && (user?.role === "MANAGEMENT" || user?.role === "ADMIN") && (
           <>
+            <Button
+              variant="outline"
+              onClick={() =>
+                router.push(
+                  `/quotations/create/${quotation.quotationCategory === "NON_STANDARD" ? "nonstandard" : "standard"}?editId=${quotation.id}`
+                )
+              }
+            >
+              <Pencil className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
             <Button onClick={() => handleApprovalDialog("APPROVED")}>
               <Check className="h-4 w-4 mr-2" />
               Approve
@@ -618,11 +631,31 @@ export default function QuotationDetailPage() {
                 <div className="font-medium">{quotation.dealOwner.name}</div>
               </div>
             )}
-            {quotation.nextActionDate && (
-              <div className="grid grid-cols-2 gap-2">
-                <div className="text-sm text-muted-foreground">Next Action Date</div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="text-sm text-muted-foreground">Payment Terms</div>
+              <div className="font-medium">
+                {quotation.paymentTerms ? (
+                  <Badge variant="outline">{quotation.paymentTerms.name}</Badge>
+                ) : (
+                  <span className="text-muted-foreground">Not set</span>
+                )}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="text-sm text-muted-foreground">Follow Up Date</div>
+              {quotation.nextActionDate ? (
                 <div className={`font-medium ${new Date(quotation.nextActionDate) < new Date() ? "text-destructive" : ""}`}>
                   {format(new Date(quotation.nextActionDate), "dd MMM yyyy")}
+                </div>
+              ) : (
+                <span className="text-muted-foreground">Not set</span>
+              )}
+            </div>
+            {quotation.deliveryTerms && (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="text-sm text-muted-foreground">Delivery Terms</div>
+                <div className="font-medium">
+                  <Badge variant="outline">{quotation.deliveryTerms.name}</Badge>
                 </div>
               </div>
             )}
@@ -766,6 +799,21 @@ export default function QuotationDetailPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={
+                        quotation.items.length > 0 &&
+                        selectedItems.size === quotation.items.length
+                      }
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedItems(new Set(quotation.items.map((i: any) => i.id)));
+                        } else {
+                          setSelectedItems(new Set());
+                        }
+                      }}
+                    />
+                  </TableHead>
                   <TableHead>S/N</TableHead>
                   <TableHead>Product</TableHead>
                   <TableHead>Material</TableHead>
@@ -781,7 +829,21 @@ export default function QuotationDetailPage() {
               </TableHeader>
               <TableBody>
                 {quotation.items.map((item: any) => (
-                  <TableRow key={item.id}>
+                  <TableRow key={item.id} className={selectedItems.has(item.id) ? "bg-muted/50" : ""}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedItems.has(item.id)}
+                        onCheckedChange={(checked) => {
+                          const next = new Set(selectedItems);
+                          if (checked) {
+                            next.add(item.id);
+                          } else {
+                            next.delete(item.id);
+                          }
+                          setSelectedItems(next);
+                        }}
+                      />
+                    </TableCell>
                     <TableCell>{item.sNo}</TableCell>
                     <TableCell className="font-medium">{item.product || "---"}</TableCell>
                     <TableCell className="max-w-xs truncate">
@@ -808,6 +870,7 @@ export default function QuotationDetailPage() {
                   </TableRow>
                 ))}
                 <TableRow className="font-bold">
+                  <TableCell />
                   <TableCell colSpan={9} className="text-right">
                     Total:
                   </TableCell>
@@ -821,6 +884,11 @@ export default function QuotationDetailPage() {
               </TableBody>
             </Table>
           </div>
+          {selectedItems.size > 0 && (
+            <div className="mt-2 text-sm text-muted-foreground">
+              {selectedItems.size} of {quotation.items.length} item(s) selected
+            </div>
+          )}
         </CardContent>
       </Card>
 

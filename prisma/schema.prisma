@@ -204,6 +204,15 @@ enum EmailLogStatus {
   FAILED
 }
 
+enum ProductCategory {
+  PIPES
+  FITTINGS
+  FLANGES
+  VALVES
+  NUT_BOLT
+  GASKETS
+}
+
 // ==================== USER & AUTH ====================
 
 model User {
@@ -313,6 +322,9 @@ model VendorMaster {
   bankAccountNo    String?
   bankIfsc         String?
   bankName         String?
+  bankBranchName   String?
+  bankAccountType  String?
+  tanNo            String?
   vendorRating     Decimal? @db.Decimal(3, 1)
   approvalDate     DateTime?
   approvedById     String?
@@ -331,17 +343,26 @@ model VendorMaster {
 }
 
 model ProductSpecMaster {
-  id             String   @id @default(cuid())
-  product        String
-  material       String?
-  additionalSpec String?
-  ends           String?
-  length         String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id                    String                    @id @default(cuid())
+  product               String
+  category              ProductCategory?
+  specification         String?
+  grade                 String?
+  material              String?
+  additionalSpec        String?
+  ends                  String?
+  length                String?
+  dimensionalStandardId String?
+  createdAt             DateTime                  @default(now())
+  updatedAt             DateTime                  @updatedAt
+
+  dimensionalStandard   DimensionalStandardMaster? @relation(fields: [dimensionalStandardId], references: [id])
+
+  @@index([category])
+  @@index([dimensionalStandardId])
 }
 
-model PipeSizeMaster {
+model SizeMaster {
   id        String   @id @default(cuid())
   sizeLabel String
   od        Decimal  @db.Decimal(10, 3)
@@ -356,6 +377,7 @@ model PipeSizeMaster {
   // Relations
   quotationItems QuotationItem[]
 
+  @@map("PipeSizeMaster")
   @@index([pipeType])
   @@index([sizeLabel])
   @@index([nps])
@@ -369,6 +391,13 @@ model TestingMaster {
   isMandatory   Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+}
+
+model LengthMaster {
+  id        String   @id @default(cuid())
+  label     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model TaxMaster {
@@ -463,6 +492,8 @@ model DimensionalStandardMaster {
   code      String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  products  ProductSpecMaster[]
 }
 
 model TransporterMaster {
@@ -646,13 +677,20 @@ model QuotationItem {
   hsnCode           String?
   taxRate           Decimal? @db.Decimal(5, 2)
 
+  fittingId     String?
+  flangeId      String?
+
   // Relations
   quotation    Quotation          @relation(fields: [quotationId], references: [id], onDelete: Cascade)
-  pipeSize     PipeSizeMaster?    @relation(fields: [sizeId], references: [id])
+  pipeSize     SizeMaster?        @relation(fields: [sizeId], references: [id])
   materialCode MaterialCodeMaster? @relation(fields: [materialCodeId], references: [id])
+  fitting      FittingMaster?     @relation(fields: [fittingId], references: [id])
+  flange       FlangeMaster?      @relation(fields: [flangeId], references: [id])
 
   @@index([quotationId])
   @@index([materialCodeId])
+  @@index([fittingId])
+  @@index([flangeId])
 }
 
 model QuotationTerm {
@@ -699,6 +737,8 @@ model CompanyMaster {
   website          String?
   companyLogoUrl   String?
   fyStartMonth     Int      @default(4)
+  fyStartDate      DateTime?
+  fyEndDate        DateTime?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 }
@@ -822,6 +862,58 @@ model MaterialCodeMaster {
   quotationItems QuotationItem[]
 }
 
+// ==================== FITTING MASTER ====================
+
+model FittingMaster {
+  id            String   @id @default(cuid())
+  type          String   // Elbow, Tee, Reducer, Cap, Coupling, Union, etc.
+  size          String   // NPS e.g. 1/2", 2", 4"
+  schedule      String?  // 40, 80, 160, XXS
+  materialGrade String   // ASTM A234 WPB, ASTM A403 WP304, etc.
+  standard      String?  // ASME B16.9, ASME B16.11, MSS SP75
+  endType       String?  // BW, SW, Threaded
+  rating        String?  // 2000#, 3000#, 6000# (for SW/Threaded)
+  description   String?  @db.Text
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  quotationItems  QuotationItem[]
+  poItems         POItem[]
+  salesOrderItems SalesOrderItem[]
+
+  @@index([type])
+  @@index([size])
+  @@index([type, size, schedule])
+}
+
+// ==================== FLANGE MASTER ====================
+
+model FlangeMaster {
+  id            String   @id @default(cuid())
+  type          String   // Weld Neck, Slip On, Blind, Socket Weld, Lap Joint, Threaded
+  size          String   // NPS
+  rating        String   // 150, 300, 600, 900, 1500, 2500
+  materialGrade String
+  standard      String?  // ASME B16.5, ASME B16.47
+  facing        String?  // RF, FF, RTJ
+  schedule      String?
+  description   String?  @db.Text
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  quotationItems  QuotationItem[]
+  poItems         POItem[]
+  salesOrderItems SalesOrderItem[]
+
+  @@index([type])
+  @@index([size])
+  @@index([type, size, rating])
+}
+
 // ==================== OFFER TERM TEMPLATE ====================
 
 model OfferTermTemplate {
@@ -833,6 +925,22 @@ model OfferTermTemplate {
   isActive         Boolean  @default(true)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+}
+
+// ==================== TECHNICAL EXCHANGE DETAIL ====================
+
+model TechnicalExchangeDetail {
+  id           String   @id @default(cuid())
+  category     String   // Quality, Testing, Documentation, Packaging, Marking, Inspection
+  paramName    String
+  defaultValue String?
+  isMandatory  Boolean  @default(false)
+  sortOrder    Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([category])
 }
 
 // ==================== SALES ORDER ====================
@@ -890,12 +998,18 @@ model SalesOrderItem {
   heatNo            String?
   qtyDispatched     Decimal   @default(0) @db.Decimal(10, 3)
   itemStatus        String    @default("OPEN")
+  fittingId         String?
+  flangeId          String?
 
   // Relations
   salesOrder        SalesOrder        @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
   stockReservations StockReservation[]
+  fitting           FittingMaster?    @relation(fields: [fittingId], references: [id])
+  flange            FlangeMaster?     @relation(fields: [flangeId], references: [id])
 
   @@index([salesOrderId])
+  @@index([fittingId])
+  @@index([flangeId])
 }
 
 model StockReservation {
@@ -1013,11 +1127,17 @@ model POItem {
   unitRate       Decimal   @db.Decimal(12, 2)
   amount         Decimal   @db.Decimal(14, 2)
   deliveryDate   DateTime?
+  fittingId      String?
+  flangeId       String?
 
   // Relations
-  purchaseOrder PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Cascade)
+  purchaseOrder PurchaseOrder  @relation(fields: [poId], references: [id], onDelete: Cascade)
+  fitting       FittingMaster? @relation(fields: [fittingId], references: [id])
+  flange        FlangeMaster?  @relation(fields: [flangeId], references: [id])
 
   @@index([poId])
+  @@index([fittingId])
+  @@index([flangeId])
 }
 
 // ==================== INVENTORY & GRN ====================
@@ -1254,16 +1374,26 @@ model LabLetter {
 // ==================== WAREHOUSE ====================
 
 model WarehouseMaster {
-  id        String   @id @default(cuid())
-  code      String   @unique
-  name      String
-  address   String?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(cuid())
+  code         String   @unique
+  name         String
+  gstNo        String?
+  addressLine1 String?
+  addressLine2 String?
+  pincode      String?
+  state        String?
+  country      String   @default("India")
+  stockVisible Boolean  @default(true)
+  isSelfStock  Boolean  @default(true)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   // Relations
-  locations WarehouseLocation[]
+  locations     WarehouseLocation[]
+  dispatchNotes DispatchNote[]
+  invoices      Invoice[]
+  packingLists  PackingList[]
 }
 
 model WarehouseLocation {
@@ -1362,12 +1492,14 @@ model PackingList {
   plNo         String   @unique
   plDate       DateTime @default(now())
   salesOrderId String
+  warehouseId  String?
   remarks      String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   // Relations
-  salesOrder    SalesOrder      @relation(fields: [salesOrderId], references: [id])
+  salesOrder    SalesOrder       @relation(fields: [salesOrderId], references: [id])
+  warehouse     WarehouseMaster? @relation(fields: [warehouseId], references: [id])
   items         PackingListItem[]
   dispatchNotes DispatchNote[]
 
@@ -1402,6 +1534,7 @@ model DispatchNote {
   dispatchDate  DateTime @default(now())
   packingListId String
   salesOrderId  String
+  warehouseId   String?
   vehicleNo     String?
   lrNo          String?
   lrDate              DateTime?
@@ -1415,6 +1548,7 @@ model DispatchNote {
   // Relations
   packingList PackingList        @relation(fields: [packingListId], references: [id])
   salesOrder  SalesOrder         @relation(fields: [salesOrderId], references: [id])
+  warehouse   WarehouseMaster?   @relation(fields: [warehouseId], references: [id])
   transporter TransporterMaster? @relation(fields: [transporterId], references: [id])
   invoices    Invoice[]
 
@@ -1429,6 +1563,7 @@ model Invoice {
   dispatchNoteId    String?
   salesOrderId      String
   customerId        String
+  warehouseId       String?
   originalInvoiceId String?
   subtotal          Decimal       @db.Decimal(14, 2)
   cgst              Decimal       @default(0) @db.Decimal(14, 2)
@@ -1451,6 +1586,7 @@ model Invoice {
   dispatchNote    DispatchNote?    @relation(fields: [dispatchNoteId], references: [id])
   salesOrder      SalesOrder       @relation(fields: [salesOrderId], references: [id])
   customer        CustomerMaster   @relation(fields: [customerId], references: [id])
+  warehouse       WarehouseMaster? @relation(fields: [warehouseId], references: [id])
   originalInvoice Invoice?         @relation("CreditDebitNoteLink", fields: [originalInvoiceId], references: [id])
   linkedNotes     Invoice[]        @relation("CreditDebitNoteLink")
   items           InvoiceItem[]

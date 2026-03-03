@@ -17,7 +17,8 @@ const labelMap: Record<string, string> = {
   admin: "Admin",
   // Masters sub-pages
   products: "Product Specifications",
-  "pipe-sizes": "Pipe Sizes",
+  sizes: "Sizes",
+  lengths: "Lengths",
   customers: "Customers",
   vendors: "Vendors",
   buyers: "Buyers",

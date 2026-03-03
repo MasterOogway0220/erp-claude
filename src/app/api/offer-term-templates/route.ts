@@ -78,6 +78,41 @@ export async function POST(request: NextRequest) {
   }
 }
 
+export async function DELETE(request: NextRequest) {
+  try {
+    const { authorized, session, response } = await checkAccess("masters", "write");
+    if (!authorized) return response!;
+
+    const { id } = await request.json();
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "Template ID is required" },
+        { status: 400 }
+      );
+    }
+
+    await prisma.offerTermTemplate.delete({
+      where: { id },
+    });
+
+    await createAuditLog({
+      tableName: "OfferTermTemplate",
+      recordId: id,
+      action: "DELETE",
+      userId: session.user?.id,
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting offer term template:", error);
+    return NextResponse.json(
+      { error: "Failed to delete offer term template" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function PATCH(request: NextRequest) {
   try {
     const { authorized, session, response } = await checkAccess("masters", "write");

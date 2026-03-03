@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Save, Building2, MapPin, FileText } from "lucide-react";
+import { Save, Building2, MapPin, FileText, Pencil, Upload, X, Image } from "lucide-react";
 import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
 
@@ -43,6 +43,8 @@ interface CompanyData {
   website: string;
   companyLogoUrl: string;
   fyStartMonth: number;
+  fyStartDate: string;
+  fyEndDate: string;
 }
 
 const COMPANY_TYPES = [
@@ -93,13 +95,23 @@ const defaultCompany: CompanyData = {
   website: "",
   companyLogoUrl: "",
   fyStartMonth: 4,
+  fyStartDate: "",
+  fyEndDate: "",
 };
+
+function toDateInput(val: string | null | undefined): string {
+  if (!val) return "";
+  return val.slice(0, 10);
+}
 
 export default function CompanyMasterPage() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState<CompanyData>(defaultCompany);
   const [isExisting, setIsExisting] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchCompany();
@@ -137,8 +149,14 @@ export default function CompanyMasterPage() {
             website: data.company.website || "",
             companyLogoUrl: data.company.companyLogoUrl || "",
             fyStartMonth: data.company.fyStartMonth ?? 4,
+            fyStartDate: toDateInput(data.company.fyStartDate),
+            fyEndDate: toDateInput(data.company.fyEndDate),
           });
           setIsExisting(true);
+          setEditMode(false);
+        } else {
+          // No company yet — go straight into edit mode for initial setup
+          setEditMode(true);
         }
       }
     } catch (error) {
@@ -150,6 +168,40 @@ export default function CompanyMasterPage() {
 
   const updateField = (field: keyof CompanyData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Logo must be less than 2 MB");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      if (!res.ok) throw new Error("Upload failed");
+      const data = await res.json();
+      updateField("companyLogoUrl", data.filePath);
+      toast.success("Logo uploaded");
+    } catch {
+      toast.error("Failed to upload logo");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleRemoveLogo = () => {
+    updateField("companyLogoUrl", "");
   };
 
   const handleSave = async () => {
@@ -173,6 +225,7 @@ export default function CompanyMasterPage() {
 
       toast.success("Company details saved successfully");
       setIsExisting(true);
+      setEditMode(false);
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -180,9 +233,16 @@ export default function CompanyMasterPage() {
     }
   };
 
+  const handleCancel = () => {
+    setEditMode(false);
+    fetchCompany();
+  };
+
   if (loading) {
     return <PageLoading />;
   }
+
+  const disabled = !editMode;
 
   return (
     <div className="space-y-6">
@@ -190,10 +250,24 @@ export default function CompanyMasterPage() {
         title="Company Master"
         description="Manage your company details used in quotations, invoices and documents"
       >
-        <Button onClick={handleSave} disabled={saving}>
-          <Save className="w-4 h-4 mr-2" />
-          {saving ? "Saving..." : "Save"}
-        </Button>
+        {editMode ? (
+          <div className="flex gap-2">
+            {isExisting && (
+              <Button variant="outline" onClick={handleCancel}>
+                Cancel
+              </Button>
+            )}
+            <Button onClick={handleSave} disabled={saving}>
+              <Save className="w-4 h-4 mr-2" />
+              {saving ? "Saving..." : "Save"}
+            </Button>
+          </div>
+        ) : (
+          <Button variant="outline" onClick={() => setEditMode(true)}>
+            <Pencil className="w-4 h-4 mr-2" />
+            Edit
+          </Button>
+        )}
       </PageHeader>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -211,6 +285,7 @@ export default function CompanyMasterPage() {
                 value={formData.companyName}
                 onChange={(e) => updateField("companyName", e.target.value)}
                 placeholder="Enter company name"
+                disabled={disabled}
               />
             </div>
             <div className="space-y-2">
@@ -218,6 +293,7 @@ export default function CompanyMasterPage() {
               <Select
                 value={formData.companyType}
                 onValueChange={(v) => updateField("companyType", v)}
+                disabled={disabled}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select type" />
@@ -236,6 +312,7 @@ export default function CompanyMasterPage() {
                   type="email"
                   value={formData.email}
                   onChange={(e) => updateField("email", e.target.value)}
+                  disabled={disabled}
                 />
               </div>
               <div className="space-y-2">
@@ -243,6 +320,7 @@ export default function CompanyMasterPage() {
                 <Input
                   value={formData.telephoneNo}
                   onChange={(e) => updateField("telephoneNo", e.target.value)}
+                  disabled={disabled}
                 />
               </div>
             </div>
@@ -252,21 +330,80 @@ export default function CompanyMasterPage() {
                 value={formData.website}
                 onChange={(e) => updateField("website", e.target.value)}
                 placeholder="https://..."
+                disabled={disabled}
               />
             </div>
+
+            {/* Logo Upload */}
             <div className="space-y-2">
-              <Label>Company Logo URL</Label>
-              <Input
-                value={formData.companyLogoUrl}
-                onChange={(e) => updateField("companyLogoUrl", e.target.value)}
-                placeholder="URL to company logo"
+              <Label>Company Logo</Label>
+              {formData.companyLogoUrl ? (
+                <div className="flex items-center gap-4">
+                  <div className="border rounded-md p-2 bg-muted/30">
+                    <img
+                      src={formData.companyLogoUrl}
+                      alt="Company Logo"
+                      className="h-16 max-w-[200px] object-contain"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = "none";
+                      }}
+                    />
+                  </div>
+                  {editMode && (
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploading}
+                      >
+                        <Upload className="w-4 h-4 mr-1" />
+                        Change
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleRemoveLogo}
+                      >
+                        <X className="w-4 h-4 mr-1" />
+                        Remove
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ) : editMode ? (
+                <div
+                  className="border-2 border-dashed rounded-md p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Image className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
+                    {uploading ? "Uploading..." : "Click to upload logo (max 2 MB)"}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground py-2">No logo uploaded</p>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleLogoUpload}
               />
             </div>
+
+            <Separator />
+
+            {/* Financial Year */}
             <div className="space-y-2">
               <Label>Financial Year Start Month</Label>
               <Select
                 value={formData.fyStartMonth.toString()}
                 onValueChange={(v) => updateField("fyStartMonth", parseInt(v))}
+                disabled={disabled}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -279,6 +416,26 @@ export default function CompanyMasterPage() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>FY Start Date</Label>
+                <Input
+                  type="date"
+                  value={formData.fyStartDate}
+                  onChange={(e) => updateField("fyStartDate", e.target.value)}
+                  disabled={disabled}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>FY End Date</Label>
+                <Input
+                  type="date"
+                  value={formData.fyEndDate}
+                  onChange={(e) => updateField("fyEndDate", e.target.value)}
+                  disabled={disabled}
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -298,6 +455,7 @@ export default function CompanyMasterPage() {
                   value={formData.panNo}
                   onChange={(e) => updateField("panNo", e.target.value)}
                   placeholder="ABCDE1234F"
+                  disabled={disabled}
                 />
               </div>
               <div className="space-y-2">
@@ -305,6 +463,7 @@ export default function CompanyMasterPage() {
                 <Input
                   value={formData.tanNo}
                   onChange={(e) => updateField("tanNo", e.target.value)}
+                  disabled={disabled}
                 />
               </div>
             </div>
@@ -314,6 +473,7 @@ export default function CompanyMasterPage() {
                 value={formData.gstNo}
                 onChange={(e) => updateField("gstNo", e.target.value)}
                 placeholder="15-character GST number"
+                disabled={disabled}
               />
             </div>
             <div className="space-y-2">
@@ -321,6 +481,7 @@ export default function CompanyMasterPage() {
               <Input
                 value={formData.cinNo}
                 onChange={(e) => updateField("cinNo", e.target.value)}
+                disabled={disabled}
               />
             </div>
           </CardContent>
@@ -339,6 +500,7 @@ export default function CompanyMasterPage() {
               <Input
                 value={formData.regAddressLine1}
                 onChange={(e) => updateField("regAddressLine1", e.target.value)}
+                disabled={disabled}
               />
             </div>
             <div className="space-y-2">
@@ -346,6 +508,7 @@ export default function CompanyMasterPage() {
               <Input
                 value={formData.regAddressLine2}
                 onChange={(e) => updateField("regAddressLine2", e.target.value)}
+                disabled={disabled}
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -354,6 +517,7 @@ export default function CompanyMasterPage() {
                 <Input
                   value={formData.regCity}
                   onChange={(e) => updateField("regCity", e.target.value)}
+                  disabled={disabled}
                 />
               </div>
               <div className="space-y-2">
@@ -361,6 +525,7 @@ export default function CompanyMasterPage() {
                 <Input
                   value={formData.regPincode}
                   onChange={(e) => updateField("regPincode", e.target.value)}
+                  disabled={disabled}
                 />
               </div>
             </div>
@@ -370,6 +535,7 @@ export default function CompanyMasterPage() {
                 <Input
                   value={formData.regState}
                   onChange={(e) => updateField("regState", e.target.value)}
+                  disabled={disabled}
                 />
               </div>
               <div className="space-y-2">
@@ -377,6 +543,7 @@ export default function CompanyMasterPage() {
                 <Input
                   value={formData.regCountry}
                   onChange={(e) => updateField("regCountry", e.target.value)}
+                  disabled={disabled}
                 />
               </div>
             </div>
@@ -396,6 +563,7 @@ export default function CompanyMasterPage() {
               <Input
                 value={formData.whAddressLine1}
                 onChange={(e) => updateField("whAddressLine1", e.target.value)}
+                disabled={disabled}
               />
             </div>
             <div className="space-y-2">
@@ -403,6 +571,7 @@ export default function CompanyMasterPage() {
               <Input
                 value={formData.whAddressLine2}
                 onChange={(e) => updateField("whAddressLine2", e.target.value)}
+                disabled={disabled}
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -411,6 +580,7 @@ export default function CompanyMasterPage() {
                 <Input
                   value={formData.whCity}
                   onChange={(e) => updateField("whCity", e.target.value)}
+                  disabled={disabled}
                 />
               </div>
               <div className="space-y-2">
@@ -418,6 +588,7 @@ export default function CompanyMasterPage() {
                 <Input
                   value={formData.whPincode}
                   onChange={(e) => updateField("whPincode", e.target.value)}
+                  disabled={disabled}
                 />
               </div>
             </div>
@@ -427,6 +598,7 @@ export default function CompanyMasterPage() {
                 <Input
                   value={formData.whState}
                   onChange={(e) => updateField("whState", e.target.value)}
+                  disabled={disabled}
                 />
               </div>
               <div className="space-y-2">
@@ -434,6 +606,7 @@ export default function CompanyMasterPage() {
                 <Input
                   value={formData.whCountry}
                   onChange={(e) => updateField("whCountry", e.target.value)}
+                  disabled={disabled}
                 />
               </div>
             </div>

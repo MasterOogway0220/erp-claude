@@ -301,7 +301,10 @@ export async function PUT(
       return NextResponse.json({ error: "Quotation not found" }, { status: 404 });
     }
 
-    if (existing.status !== "DRAFT") {
+    const userRole = session.user?.role;
+    const isAdminOrMgmt = userRole === "ADMIN" || userRole === "MANAGEMENT";
+
+    if (existing.status !== "DRAFT" && !(isAdminOrMgmt && existing.status === "PENDING_APPROVAL")) {
       return NextResponse.json(
         { error: "Only DRAFT quotations can be edited. Use revision for approved/sent quotations." },
         { status: 400 }
@@ -436,6 +439,8 @@ export async function PUT(
               tubeLength: item.tubeLength || null,
               tubeCount: item.tubeCount ? parseInt(item.tubeCount) : null,
               componentPosition: item.componentPosition || null,
+              fittingId: item.fittingId || null,
+              flangeId: item.flangeId || null,
             })),
           },
           terms: {

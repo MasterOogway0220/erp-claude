@@ -51,6 +51,12 @@ interface Transporter {
   phone: string;
 }
 
+interface WarehouseOption {
+  id: string;
+  code: string;
+  name: string;
+}
+
 export default function CreateDispatchNotePageWrapper() {
   return (
     <Suspense fallback={<PageLoading />}>
@@ -67,10 +73,12 @@ function CreateDispatchNotePage() {
   const [loading, setLoading] = useState(false);
   const [packingLists, setPackingLists] = useState<PackingList[]>([]);
   const [transporters, setTransporters] = useState<Transporter[]>([]);
+  const [warehouses, setWarehouses] = useState<WarehouseOption[]>([]);
   const [selectedPL, setSelectedPL] = useState<PackingList | null>(null);
 
   const [formData, setFormData] = useState({
     packingListId: preselectedPlId,
+    warehouseId: "",
     vehicleNo: "",
     lrNo: "",
     transporterId: "",
@@ -82,6 +90,7 @@ function CreateDispatchNotePage() {
   useEffect(() => {
     fetchPackingLists();
     fetchTransporters();
+    fetchWarehouses();
   }, []);
 
   useEffect(() => {
@@ -106,6 +115,18 @@ function CreateDispatchNotePage() {
       }
     } catch (error) {
       console.error("Failed to fetch packing lists:", error);
+    }
+  };
+
+  const fetchWarehouses = async () => {
+    try {
+      const response = await fetch("/api/masters/warehouses");
+      if (response.ok) {
+        const data = await response.json();
+        setWarehouses((data.warehouses || []).filter((w: any) => w.isActive));
+      }
+    } catch (error) {
+      console.error("Failed to fetch warehouses:", error);
     }
   };
 
@@ -142,6 +163,7 @@ function CreateDispatchNotePage() {
         body: JSON.stringify({
           packingListId: formData.packingListId,
           salesOrderId: selectedPL.salesOrder?.id,
+          warehouseId: formData.warehouseId || null,
           vehicleNo: formData.vehicleNo || null,
           lrNo: formData.lrNo || null,
           transporterId: formData.transporterId || null,
@@ -214,6 +236,29 @@ function CreateDispatchNotePage() {
                   />
                 </div>
               )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Warehouse</Label>
+                <Select
+                  value={formData.warehouseId}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, warehouseId: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Warehouse" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {warehouses.map((wh) => (
+                      <SelectItem key={wh.id} value={wh.id}>
+                        {wh.code} - {wh.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div className="grid grid-cols-3 gap-4">

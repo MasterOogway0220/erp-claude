@@ -30,12 +30,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Calculator } from "lucide-react";
 import { toast } from "sonner";
+import { calculateWeightPerMeter } from "@/lib/weight-calculation";
 
 type PipeType = "CS_AS" | "SS_DS";
 
-interface PipeSize {
+interface SizeEntry {
   id: string;
   sizeLabel: string;
   od: number;
@@ -44,7 +45,7 @@ interface PipeSize {
   pipeType: PipeType;
 }
 
-interface PipeSizeFormData {
+interface SizeFormData {
   sizeLabel: string;
   od: string;
   wt: string;
@@ -52,13 +53,13 @@ interface PipeSizeFormData {
   pipeType: PipeType;
 }
 
-export default function PipeSizesPage() {
+export default function SizesPage() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<PipeType>("CS_AS");
   const [search, setSearch] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingSize, setEditingSize] = useState<PipeSize | null>(null);
-  const [formData, setFormData] = useState<PipeSizeFormData>({
+  const [editingSize, setEditingSize] = useState<SizeEntry | null>(null);
+  const [formData, setFormData] = useState<SizeFormData>({
     sizeLabel: "",
     od: "",
     wt: "",
@@ -66,81 +67,94 @@ export default function PipeSizesPage() {
     pipeType: "CS_AS",
   });
 
-  // Fetch pipe sizes
+  // Fetch sizes
   const { data, isLoading } = useQuery({
-    queryKey: ["pipeSizes", activeTab, search],
+    queryKey: ["sizes", activeTab, search],
     queryFn: async () => {
       const params = new URLSearchParams({
         pipeType: activeTab,
         search,
       });
-      const res = await fetch(`/api/masters/pipe-sizes?${params}`);
-      if (!res.ok) throw new Error("Failed to fetch pipe sizes");
+      const res = await fetch(`/api/masters/sizes?${params}`);
+      if (!res.ok) throw new Error("Failed to fetch sizes");
       return res.json();
     },
   });
 
   // Create mutation
   const createMutation = useMutation({
-    mutationFn: async (data: PipeSizeFormData) => {
-      const res = await fetch("/api/masters/pipe-sizes", {
+    mutationFn: async (data: SizeFormData) => {
+      const res = await fetch("/api/masters/sizes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      if (!res.ok) throw new Error("Failed to create pipe size");
+      if (!res.ok) throw new Error("Failed to create size");
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["pipeSizes"] });
-      toast.success("Pipe size created successfully");
+      queryClient.invalidateQueries({ queryKey: ["sizes"] });
+      toast.success("Size created successfully");
       handleCloseDialog();
     },
     onError: () => {
-      toast.error("Failed to create pipe size");
+      toast.error("Failed to create size");
     },
   });
 
   // Update mutation
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: PipeSizeFormData }) => {
-      const res = await fetch(`/api/masters/pipe-sizes/${id}`, {
+    mutationFn: async ({ id, data }: { id: string; data: SizeFormData }) => {
+      const res = await fetch(`/api/masters/sizes/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      if (!res.ok) throw new Error("Failed to update pipe size");
+      if (!res.ok) throw new Error("Failed to update size");
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["pipeSizes"] });
-      toast.success("Pipe size updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["sizes"] });
+      toast.success("Size updated successfully");
       handleCloseDialog();
     },
     onError: () => {
-      toast.error("Failed to update pipe size");
+      toast.error("Failed to update size");
     },
   });
 
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/masters/pipe-sizes/${id}`, {
+      const res = await fetch(`/api/masters/sizes/${id}`, {
         method: "DELETE",
       });
-      if (!res.ok) throw new Error("Failed to delete pipe size");
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to delete size");
+      }
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["pipeSizes"] });
-      toast.success("Pipe size deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ["sizes"] });
+      toast.success("Size deleted successfully");
     },
-    onError: () => {
-      toast.error("Failed to delete pipe size");
+    onError: (err: Error) => {
+      toast.error(err.message);
     },
   });
 
-  const handleOpenDialog = (size?: PipeSize) => {
+  const autoCalcWeight = (od: string, wt: string, pipeType: PipeType) => {
+    const odVal = parseFloat(od);
+    const wtVal = parseFloat(wt);
+    if (odVal && wtVal) {
+      const w = calculateWeightPerMeter(odVal, wtVal, pipeType);
+      if (w !== null) return w.toString();
+    }
+    return "";
+  };
+
+  const handleOpenDialog = (size?: SizeEntry) => {
     if (size) {
       setEditingSize(size);
       setFormData({
@@ -178,7 +192,7 @@ export default function PipeSizesPage() {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this pipe size?")) {
+    if (confirm("Are you sure you want to delete this size?")) {
       deleteMutation.mutate(id);
     }
   };
@@ -186,8 +200,8 @@ export default function PipeSizesPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Pipe Size Master"
-        description="Manage pipe size specifications (271 total: 191 CS/AS + 80 SS/DS)"
+        title="Size Master"
+        description="Manage size specifications (271 total: 191 CS/AS + 80 SS/DS)"
       />
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as PipeType)}>
@@ -198,7 +212,7 @@ export default function PipeSizesPage() {
           </TabsList>
           <Button onClick={() => handleOpenDialog()}>
             <Plus className="h-4 w-4 mr-2" />
-            Add Pipe Size
+            Add Size
           </Button>
         </div>
 
@@ -206,7 +220,7 @@ export default function PipeSizesPage() {
           <div className="relative max-w-sm">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search by size..."
+              placeholder="Search by size, OD, WT, weight..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-10"
@@ -216,7 +230,7 @@ export default function PipeSizesPage() {
 
         <TabsContent value="CS_AS" className="space-y-4">
           <SizeTable
-            sizes={data?.pipeSizes || []}
+            sizes={data?.sizes || []}
             isLoading={isLoading}
             onEdit={handleOpenDialog}
             onDelete={handleDelete}
@@ -225,7 +239,7 @@ export default function PipeSizesPage() {
 
         <TabsContent value="SS_DS" className="space-y-4">
           <SizeTable
-            sizes={data?.pipeSizes || []}
+            sizes={data?.sizes || []}
             isLoading={isLoading}
             onEdit={handleOpenDialog}
             onDelete={handleDelete}
@@ -239,10 +253,10 @@ export default function PipeSizesPage() {
           <form onSubmit={handleSubmit}>
             <DialogHeader>
               <DialogTitle>
-                {editingSize ? "Edit" : "Add"} Pipe Size
+                {editingSize ? "Edit" : "Add"} Size
               </DialogTitle>
               <DialogDescription>
-                {editingSize ? "Update" : "Create"} a pipe size specification
+                {editingSize ? "Update" : "Create"} a size specification
               </DialogDescription>
             </DialogHeader>
 
@@ -260,6 +274,25 @@ export default function PipeSizesPage() {
                 />
               </div>
 
+              <div className="grid gap-2">
+                <Label htmlFor="pipeType">Pipe Type *</Label>
+                <Select
+                  value={formData.pipeType}
+                  onValueChange={(value: PipeType) => {
+                    const weight = autoCalcWeight(formData.od, formData.wt, value);
+                    setFormData({ ...formData, pipeType: value, weight: weight || formData.weight });
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="CS_AS">CS & AS Pipes</SelectItem>
+                    <SelectItem value="SS_DS">SS & DS Pipes</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="grid grid-cols-3 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="od">OD (mm) *</Label>
@@ -268,9 +301,11 @@ export default function PipeSizesPage() {
                     type="number"
                     step="0.001"
                     value={formData.od}
-                    onChange={(e) =>
-                      setFormData({ ...formData, od: e.target.value })
-                    }
+                    onChange={(e) => {
+                      const od = e.target.value;
+                      const weight = autoCalcWeight(od, formData.wt, formData.pipeType);
+                      setFormData({ ...formData, od, weight: weight || formData.weight });
+                    }}
                     placeholder="21.3"
                     required
                   />
@@ -283,16 +318,21 @@ export default function PipeSizesPage() {
                     type="number"
                     step="0.001"
                     value={formData.wt}
-                    onChange={(e) =>
-                      setFormData({ ...formData, wt: e.target.value })
-                    }
+                    onChange={(e) => {
+                      const wt = e.target.value;
+                      const weight = autoCalcWeight(formData.od, wt, formData.pipeType);
+                      setFormData({ ...formData, wt, weight: weight || formData.weight });
+                    }}
                     placeholder="2.77"
                     required
                   />
                 </div>
 
                 <div className="grid gap-2">
-                  <Label htmlFor="weight">Weight (kg/m) *</Label>
+                  <Label htmlFor="weight" className="flex items-center gap-1.5">
+                    Weight (Kg/Meter) *
+                    <Calculator className="h-3 w-3 text-muted-foreground" />
+                  </Label>
                   <Input
                     id="weight"
                     type="number"
@@ -304,25 +344,10 @@ export default function PipeSizesPage() {
                     placeholder="1.266"
                     required
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Auto-calculated from OD & WT. Editable for override.
+                  </p>
                 </div>
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="pipeType">Pipe Type *</Label>
-                <Select
-                  value={formData.pipeType}
-                  onValueChange={(value: PipeType) =>
-                    setFormData({ ...formData, pipeType: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="CS_AS">CS & AS Pipes</SelectItem>
-                    <SelectItem value="SS_DS">SS & DS Pipes</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
             </div>
 
@@ -354,9 +379,9 @@ function SizeTable({
   onEdit,
   onDelete,
 }: {
-  sizes: PipeSize[];
+  sizes: SizeEntry[];
   isLoading: boolean;
-  onEdit: (size: PipeSize) => void;
+  onEdit: (size: SizeEntry) => void;
   onDelete: (id: string) => void;
 }) {
   return (
@@ -375,13 +400,13 @@ function SizeTable({
           {isLoading ? (
             <TableRow>
               <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                Loading pipe sizes...
+                Loading sizes...
               </TableCell>
             </TableRow>
           ) : sizes.length === 0 ? (
             <TableRow>
               <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                No pipe sizes found
+                No sizes found
               </TableCell>
             </TableRow>
           ) : (

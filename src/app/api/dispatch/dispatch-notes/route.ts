@@ -84,6 +84,7 @@ export async function POST(request: NextRequest) {
     const {
       packingListId,
       salesOrderId,
+      warehouseId,
       vehicleNo,
       lrNo,
       lrDate,
@@ -162,6 +163,7 @@ export async function POST(request: NextRequest) {
           dnNo,
           packingListId,
           salesOrderId,
+          warehouseId: warehouseId || null,
           vehicleNo: vehicleNo || null,
           lrNo: lrNo || null,
           lrDate: lrDate ? new Date(lrDate) : null,

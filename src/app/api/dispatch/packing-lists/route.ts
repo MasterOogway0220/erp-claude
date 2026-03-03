@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     if (!authorized) return response!;
 
     const body = await request.json();
-    const { salesOrderId, remarks, items } = body;
+    const { salesOrderId, warehouseId, remarks, items } = body;
 
     if (!salesOrderId) {
       return NextResponse.json(
@@ -135,6 +135,7 @@ export async function POST(request: NextRequest) {
       data: {
         plNo,
         salesOrderId,
+        warehouseId: warehouseId || null,
         remarks: remarks || null,
         items: {
           create: items.map((item: any) => ({

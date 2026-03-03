@@ -45,15 +45,23 @@ export async function PATCH(
     if (!authorized) return response!;
 
     const body = await request.json();
-    const { name, address, isActive } = body;
+    const { name, gstNo, addressLine1, addressLine2, pincode, state, country, stockVisible, isSelfStock, isActive } = body;
+
+    const data: any = {};
+    if (name !== undefined) data.name = name;
+    if (gstNo !== undefined) data.gstNo = gstNo || null;
+    if (addressLine1 !== undefined) data.addressLine1 = addressLine1 || null;
+    if (addressLine2 !== undefined) data.addressLine2 = addressLine2 || null;
+    if (pincode !== undefined) data.pincode = pincode || null;
+    if (state !== undefined) data.state = state || null;
+    if (country !== undefined) data.country = country || "India";
+    if (stockVisible !== undefined) data.stockVisible = stockVisible;
+    if (isSelfStock !== undefined) data.isSelfStock = isSelfStock;
+    if (isActive !== undefined) data.isActive = isActive;
 
     const warehouse = await prisma.warehouseMaster.update({
       where: { id },
-      data: {
-        name: name || undefined,
-        address: address !== undefined ? address : undefined,
-        isActive: isActive !== undefined ? isActive : undefined,
-      },
+      data,
       include: { locations: true },
     });
 

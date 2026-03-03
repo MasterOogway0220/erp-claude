@@ -14,7 +14,17 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Pencil, ToggleLeft, ToggleRight } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Plus, Pencil, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
 import { toast } from "sonner";
 
 interface OfferTerm {
@@ -48,6 +58,7 @@ export default function OfferTermsPage() {
   const [editingItem, setEditingItem] = useState<OfferTerm | null>(null);
   const [formData, setFormData] = useState<FormData>(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [deletingItem, setDeletingItem] = useState<OfferTerm | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -148,6 +159,22 @@ export default function OfferTermsPage() {
     }
   };
 
+  const handleDelete = async (item: OfferTerm) => {
+    try {
+      const res = await fetch("/api/offer-term-templates", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: item.id }),
+      });
+      if (!res.ok) throw new Error("Failed to delete");
+      toast.success("Term deleted");
+      setDeletingItem(null);
+      fetchData();
+    } catch {
+      toast.error("Failed to delete term");
+    }
+  };
+
   const domesticCount = terms.filter((t) => t.quotationType === "DOMESTIC").length;
   const exportCount = terms.filter((t) => t.quotationType === "EXPORT").length;
 
@@ -212,10 +239,10 @@ export default function OfferTermsPage() {
         ) : (
           <>
             <TabsContent value="DOMESTIC">
-              <TermTable terms={filteredTerms} onEdit={handleOpenEdit} onToggle={handleToggleActive} />
+              <TermTable terms={filteredTerms} onEdit={handleOpenEdit} onToggle={handleToggleActive} onDelete={setDeletingItem} />
             </TabsContent>
             <TabsContent value="EXPORT">
-              <TermTable terms={filteredTerms} onEdit={handleOpenEdit} onToggle={handleToggleActive} />
+              <TermTable terms={filteredTerms} onEdit={handleOpenEdit} onToggle={handleToggleActive} onDelete={setDeletingItem} />
             </TabsContent>
           </>
         )}
@@ -293,6 +320,26 @@ export default function OfferTermsPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deletingItem} onOpenChange={(open) => !open && setDeletingItem(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Offer Term</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete &quot;{deletingItem?.termName}&quot;? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deletingItem && handleDelete(deletingItem)}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -301,10 +348,12 @@ function TermTable({
   terms,
   onEdit,
   onToggle,
+  onDelete,
 }: {
   terms: OfferTerm[];
   onEdit: (t: OfferTerm) => void;
   onToggle: (t: OfferTerm) => void;
+  onDelete: (t: OfferTerm) => void;
 }) {
   if (terms.length === 0) {
     return (
@@ -358,6 +407,14 @@ function TermTable({
                     ) : (
                       <ToggleLeft className="h-4 w-4 text-muted-foreground" />
                     )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onDelete(term)}
+                    title="Delete"
+                  >
+                    <Trash2 className="h-4 w-4 text-red-500" />
                   </Button>
                 </div>
               </td>

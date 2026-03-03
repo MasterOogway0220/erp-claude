@@ -10,19 +10,26 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
+    const category = searchParams.get("category") || "";
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "50");
     const skip = (page - 1) * limit;
 
-    const where = search
-      ? {
-          OR: [
-            { product: { contains: search } },
-            { material: { contains: search } },
-            { additionalSpec: { contains: search } },
-          ],
-        }
-      : {};
+    const where: any = {};
+
+    if (category) {
+      where.category = category;
+    }
+
+    if (search) {
+      where.OR = [
+        { product: { contains: search } },
+        { material: { contains: search } },
+        { additionalSpec: { contains: search } },
+        { specification: { contains: search } },
+        { grade: { contains: search } },
+      ];
+    }
 
     const [products, total] = await Promise.all([
       prisma.productSpecMaster.findMany({
@@ -30,6 +37,9 @@ export async function GET(request: NextRequest) {
         skip,
         take: limit,
         orderBy: { product: "asc" },
+        include: {
+          dimensionalStandard: true,
+        },
       }),
       prisma.productSpecMaster.count({ where }),
     ]);
@@ -58,7 +68,7 @@ export async function POST(request: NextRequest) {
     if (!authorized) return response!;
 
     const body = await request.json();
-    const { product, material, additionalSpec, ends, length } = body;
+    const { product, category, specification, grade, material, additionalSpec, ends, length, dimensionalStandardId } = body;
 
     if (!product) {
       return NextResponse.json(
@@ -70,10 +80,14 @@ export async function POST(request: NextRequest) {
     const newProduct = await prisma.productSpecMaster.create({
       data: {
         product,
+        category: category || null,
+        specification: specification || null,
+        grade: grade || null,
         material: material || null,
         additionalSpec: additionalSpec || null,
         ends: ends || null,
         length: length || null,
+        dimensionalStandardId: dimensionalStandardId || null,
       },
     });
 

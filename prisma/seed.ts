@@ -81,7 +81,7 @@ async function seedPipeSizes() {
   const csRows = readExcel("PIPES SIZE MASTER CS & AS PIPES.xlsx");
   for (const row of csRows) {
     const r = row as Record<string, unknown>;
-    await prisma.pipeSizeMaster.create({
+    await prisma.sizeMaster.create({
       data: {
         sizeLabel: getVal(r, "Size"),
         od: getNum(r, "OD (mm)", "OD\r\n(mm)", "OD (mm)"),
@@ -97,7 +97,7 @@ async function seedPipeSizes() {
   const ssRows = readExcel("PIPES SIZE MASTER SS & DS PIPES.xlsx");
   for (const row of ssRows) {
     const r = row as Record<string, unknown>;
-    await prisma.pipeSizeMaster.create({
+    await prisma.sizeMaster.create({
       data: {
         sizeLabel: getVal(r, "Size"),
         od: getNum(r, "OD (mm)", "OD\r\n(mm)", "OD (mm)"),
@@ -251,6 +251,24 @@ async function seedDimensionalStandards() {
     await prisma.dimensionalStandardMaster.create({ data: s });
   }
   console.log(`  Inserted ${standards.length} dimensional standards`);
+}
+
+async function seedLengthMaster() {
+  console.log("Seeding Length Master...");
+  const lengths = [
+    "Random",
+    "5.00-7.00 Mtr",
+    "5.80 Mtr Fixed",
+    "6.00 Mtr Fixed",
+    "6.00-7.00 Mtr",
+    "6.10 Mtr Fixed",
+    "As Per Drg.",
+    "Cut Length",
+  ];
+  for (const label of lengths) {
+    await prisma.lengthMaster.create({ data: { label } });
+  }
+  console.log(`  Inserted ${lengths.length} length entries`);
 }
 
 async function seedVendors() {
@@ -538,11 +556,12 @@ async function main() {
   await prisma.employeeMaster.deleteMany();
   // Existing tables
   await prisma.testingMaster.deleteMany();
-  await prisma.pipeSizeMaster.deleteMany();
+  await prisma.sizeMaster.deleteMany();
   await prisma.productSpecMaster.deleteMany();
   await prisma.warehouseLocation.deleteMany();
   await prisma.warehouseMaster.deleteMany();
   await prisma.transporterMaster.deleteMany();
+  await prisma.lengthMaster.deleteMany();
   await prisma.dimensionalStandardMaster.deleteMany();
   await prisma.certificationTypeMaster.deleteMany();
   await prisma.inspectionAgencyMaster.deleteMany();
@@ -571,6 +590,7 @@ async function main() {
   await seedInspectionAgencies();
   await seedCertificationTypes();
   await seedDimensionalStandards();
+  await seedLengthMaster();
   await seedVendors();
   await seedCustomers();
   await seedDocumentSequences();

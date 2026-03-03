@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { DataTable, Column } from "@/components/shared/data-table";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -18,29 +17,70 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Warehouse, MapPin } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Plus, Warehouse, MapPin, Pencil } from "lucide-react";
 import { toast } from "sonner";
+
+const INDIAN_STATES = [
+  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
+  "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
+  "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram",
+  "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu",
+  "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal",
+  "Andaman and Nicobar Islands", "Chandigarh", "Dadra and Nagar Haveli and Daman and Diu",
+  "Delhi", "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry",
+];
+
+interface WarehouseForm {
+  code: string;
+  name: string;
+  gstNo: string;
+  addressLine1: string;
+  addressLine2: string;
+  pincode: string;
+  state: string;
+  country: string;
+  stockVisible: boolean;
+  isSelfStock: boolean;
+  isActive: boolean;
+}
+
+const defaultForm: WarehouseForm = {
+  code: "",
+  name: "",
+  gstNo: "",
+  addressLine1: "",
+  addressLine2: "",
+  pincode: "",
+  state: "",
+  country: "India",
+  stockVisible: true,
+  isSelfStock: true,
+  isActive: true,
+};
 
 export default function WarehousesPage() {
   const [warehouses, setWarehouses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCreate, setShowCreate] = useState(false);
-  const [selectedWarehouse, setSelectedWarehouse] = useState<any>(null);
-  const [showLocDialog, setShowLocDialog] = useState(false);
-
-  // Create form
-  const [code, setCode] = useState("");
-  const [name, setName] = useState("");
-  const [address, setAddress] = useState("");
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState<WarehouseForm>(defaultForm);
   const [submitting, setSubmitting] = useState(false);
 
-  // Location form
+  // Location dialog state
+  const [selectedWarehouse, setSelectedWarehouse] = useState<any>(null);
+  const [showLocDialog, setShowLocDialog] = useState(false);
   const [locZone, setLocZone] = useState("");
   const [locRack, setLocRack] = useState("");
   const [locBay, setLocBay] = useState("");
@@ -68,31 +108,67 @@ export default function WarehousesPage() {
     }
   };
 
-  const handleCreate = async () => {
-    if (!code || !name) {
+  const openCreate = () => {
+    setEditingId(null);
+    setForm(defaultForm);
+    setSheetOpen(true);
+  };
+
+  const openEdit = (wh: any) => {
+    setEditingId(wh.id);
+    setForm({
+      code: wh.code || "",
+      name: wh.name || "",
+      gstNo: wh.gstNo || "",
+      addressLine1: wh.addressLine1 || "",
+      addressLine2: wh.addressLine2 || "",
+      pincode: wh.pincode || "",
+      state: wh.state || "",
+      country: wh.country || "India",
+      stockVisible: wh.stockVisible ?? true,
+      isSelfStock: wh.isSelfStock ?? true,
+      isActive: wh.isActive ?? true,
+    });
+    setSheetOpen(true);
+  };
+
+  const handleSubmit = async () => {
+    if (!form.code || !form.name) {
       toast.error("Code and name are required");
       return;
     }
+
     setSubmitting(true);
     try {
-      const res = await fetch("/api/masters/warehouses", {
-        method: "POST",
+      const url = editingId
+        ? `/api/masters/warehouses/${editingId}`
+        : "/api/masters/warehouses";
+      const method = editingId ? "PATCH" : "POST";
+
+      const payload: any = { ...form };
+      if (editingId) {
+        delete payload.code; // Code can't be changed
+      }
+
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, name, address }),
+        body: JSON.stringify(payload),
       });
+
       if (!res.ok) {
         const err = await res.json();
-        toast.error(err.error || "Failed to create warehouse");
+        toast.error(err.error || `Failed to ${editingId ? "update" : "create"} warehouse`);
         return;
       }
-      toast.success("Warehouse created");
-      setShowCreate(false);
-      setCode("");
-      setName("");
-      setAddress("");
+
+      toast.success(`Warehouse ${editingId ? "updated" : "created"} successfully`);
+      setSheetOpen(false);
+      setForm(defaultForm);
+      setEditingId(null);
       fetchWarehouses();
     } catch (error) {
-      toast.error("Failed to create warehouse");
+      toast.error(`Failed to ${editingId ? "update" : "create"} warehouse`);
     } finally {
       setSubmitting(false);
     }
@@ -147,17 +223,40 @@ export default function WarehousesPage() {
     },
     { key: "name", header: "Name" },
     {
-      key: "address",
-      header: "Address",
-      cell: (row) => (row.address as string) || "\u2014",
+      key: "gstNo",
+      header: "GST No",
+      cell: (row) => row.gstNo ? <span className="font-mono text-xs">{row.gstNo as string}</span> : <span className="text-muted-foreground">{"\u2014"}</span>,
+    },
+    {
+      key: "state",
+      header: "State",
+      cell: (row) => (row.state as string) || "\u2014",
     },
     {
       key: "_count",
       header: "Locations",
       cell: (row) => {
         const count = (row._count as any)?.locations || 0;
-        return <Badge variant="outline">{count} location(s)</Badge>;
+        return <Badge variant="outline">{count}</Badge>;
       },
+    },
+    {
+      key: "stockVisible",
+      header: "Stock Visible",
+      cell: (row) => (
+        <Badge variant={row.stockVisible ? "default" : "secondary"}>
+          {row.stockVisible ? "Yes" : "No"}
+        </Badge>
+      ),
+    },
+    {
+      key: "isSelfStock",
+      header: "Self Stock",
+      cell: (row) => (
+        <Badge variant={row.isSelfStock ? "default" : "secondary"}>
+          {row.isSelfStock ? "Own" : "Third-Party"}
+        </Badge>
+      ),
     },
     {
       key: "isActive",
@@ -172,18 +271,30 @@ export default function WarehousesPage() {
       key: "actions",
       header: "Actions",
       cell: (row) => (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={(e) => {
-            e.stopPropagation();
-            setSelectedWarehouse(row);
-            setShowLocDialog(true);
-          }}
-        >
-          <MapPin className="w-3 h-3 mr-1" />
-          Add Location
-        </Button>
+        <div className="flex gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              openEdit(row);
+            }}
+          >
+            <Pencil className="w-3 h-3" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedWarehouse(row);
+              setShowLocDialog(true);
+            }}
+          >
+            <MapPin className="w-3 h-3 mr-1" />
+            Location
+          </Button>
+        </div>
       ),
     },
   ];
@@ -194,36 +305,10 @@ export default function WarehousesPage() {
         title="Warehouse Master"
         description="Manage warehouses and storage locations"
       >
-        <Dialog open={showCreate} onOpenChange={setShowCreate}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              New Warehouse
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create Warehouse</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Code *</Label>
-                <Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="e.g. WH-NM" />
-              </div>
-              <div className="space-y-2">
-                <Label>Name *</Label>
-                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Navi Mumbai Warehouse" />
-              </div>
-              <div className="space-y-2">
-                <Label>Address</Label>
-                <Textarea value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Warehouse address..." rows={2} />
-              </div>
-              <Button onClick={handleCreate} disabled={submitting} className="w-full">
-                {submitting ? "Creating..." : "Create Warehouse"}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={openCreate}>
+          <Plus className="w-4 h-4 mr-2" />
+          New Warehouse
+        </Button>
       </PageHeader>
 
       <Card>
@@ -291,6 +376,137 @@ export default function WarehousesPage() {
           </CardContent>
         </Card>
       ))}
+
+      {/* Create / Edit Warehouse Sheet */}
+      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+        <SheetContent className="sm:max-w-lg overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>{editingId ? "Edit Warehouse" : "Create Warehouse"}</SheetTitle>
+          </SheetHeader>
+          <div className="space-y-4 mt-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Code *</Label>
+                <Input
+                  value={form.code}
+                  onChange={(e) => setForm({ ...form, code: e.target.value })}
+                  placeholder="e.g. WH-NM"
+                  disabled={!!editingId}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Name *</Label>
+                <Input
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  placeholder="e.g. Navi Mumbai Warehouse"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>GST Number</Label>
+              <Input
+                value={form.gstNo}
+                onChange={(e) => setForm({ ...form, gstNo: e.target.value.toUpperCase() })}
+                placeholder="e.g. 27AABCN1234A1Z5"
+                maxLength={15}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Address Line 1</Label>
+              <Input
+                value={form.addressLine1}
+                onChange={(e) => setForm({ ...form, addressLine1: e.target.value })}
+                placeholder="Street address"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Address Line 2</Label>
+              <Input
+                value={form.addressLine2}
+                onChange={(e) => setForm({ ...form, addressLine2: e.target.value })}
+                placeholder="Area, landmark (optional)"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Pincode</Label>
+                <Input
+                  value={form.pincode}
+                  onChange={(e) => setForm({ ...form, pincode: e.target.value })}
+                  placeholder="e.g. 400001"
+                  maxLength={6}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>State</Label>
+                <Select value={form.state} onValueChange={(v) => setForm({ ...form, state: v })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select state" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {INDIAN_STATES.map((s) => (
+                      <SelectItem key={s} value={s}>{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Country</Label>
+              <Input
+                value={form.country}
+                onChange={(e) => setForm({ ...form, country: e.target.value })}
+                placeholder="India"
+              />
+            </div>
+
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div>
+                <Label className="text-sm font-medium">Stock Visible</Label>
+                <p className="text-xs text-muted-foreground">Show stock from this warehouse in listings</p>
+              </div>
+              <Switch
+                checked={form.stockVisible}
+                onCheckedChange={(v) => setForm({ ...form, stockVisible: v })}
+              />
+            </div>
+
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div>
+                <Label className="text-sm font-medium">Self Stock</Label>
+                <p className="text-xs text-muted-foreground">Own warehouse vs third-party storage</p>
+              </div>
+              <Switch
+                checked={form.isSelfStock}
+                onCheckedChange={(v) => setForm({ ...form, isSelfStock: v })}
+              />
+            </div>
+
+            {editingId && (
+              <div className="flex items-center justify-between rounded-lg border p-3">
+                <div>
+                  <Label className="text-sm font-medium">Active</Label>
+                  <p className="text-xs text-muted-foreground">Enable or disable this warehouse</p>
+                </div>
+                <Switch
+                  checked={form.isActive}
+                  onCheckedChange={(v) => setForm({ ...form, isActive: v })}
+                />
+              </div>
+            )}
+
+            <Button onClick={handleSubmit} disabled={submitting} className="w-full">
+              {submitting ? (editingId ? "Updating..." : "Creating...") : (editingId ? "Update Warehouse" : "Create Warehouse")}
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Add Location Dialog */}
       <Dialog open={showLocDialog} onOpenChange={setShowLocDialog}>

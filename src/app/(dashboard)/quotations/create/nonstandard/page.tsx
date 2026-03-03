@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SmartCombobox } from "@/components/shared/smart-combobox";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
@@ -29,8 +30,15 @@ import {
 import { Plus, Trash2, ArrowLeft, Building2, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
+import { FittingSelect } from "@/components/shared/fitting-select";
+import { FlangeSelect } from "@/components/shared/flange-select";
+
+type NonStdItemCategory = "Item" | "Fitting" | "Flange";
 
 interface NonStdItem {
+  itemCategory: NonStdItemCategory;
+  materialCodeId: string;
+  materialCodeLabel: string;
   itemDescription: string;
   materialCode: string;
   size: string;
@@ -44,11 +52,18 @@ interface NonStdItem {
   unitRate: string;
   amount: string;
   delivery: string;
+  fittingId: string;
+  fittingLabel: string;
+  flangeId: string;
+  flangeLabel: string;
 }
 
 const GST_RATES = ["0", "5", "12", "18", "28"];
 
 const emptyItem: NonStdItem = {
+  itemCategory: "Item",
+  materialCodeId: "",
+  materialCodeLabel: "",
   itemDescription: "",
   materialCode: "",
   size: "",
@@ -62,6 +77,10 @@ const emptyItem: NonStdItem = {
   unitRate: "",
   amount: "0.00",
   delivery: "8-10 Weeks, Ex-works",
+  fittingId: "",
+  fittingLabel: "",
+  flangeId: "",
+  flangeLabel: "",
 };
 
 
@@ -116,6 +135,14 @@ function NonStandardQuotationPage() {
   const [showAddBuyerModal, setShowAddBuyerModal] = useState(false);
   const [newBuyerForm, setNewBuyerForm] = useState({ buyerName: "", designation: "", email: "", mobile: "" });
   const [addingBuyer, setAddingBuyer] = useState(false);
+
+  // Add New Customer modal state
+  const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
+  const [newCustomerForm, setNewCustomerForm] = useState({
+    name: "", companyType: "BUYER", contactPerson: "", contactPersonEmail: "", contactPersonPhone: "", gstNo: "", addressLine1: "", city: "", state: "",
+  });
+  const [addingCustomer, setAddingCustomer] = useState(false);
+
   const queryClient = useQueryClient();
 
   // Track previous currency for conversion
@@ -172,6 +199,18 @@ function NonStandardQuotationPage() {
       return res.json();
     },
   });
+
+  // Fetch material codes for autocomplete
+  const { data: materialCodesData } = useQuery({
+    queryKey: ["material-codes"],
+    queryFn: async () => {
+      const res = await fetch("/api/masters/material-codes");
+      if (!res.ok) throw new Error("Failed to fetch material codes");
+      return res.json();
+    },
+  });
+
+  const materialCodes = materialCodesData?.materialCodes || [];
 
   // Fetch offer term templates filtered by quotation type
   const { data: templatesData } = useQuery({
@@ -361,6 +400,9 @@ function NonStandardQuotationPage() {
       setAdvanceToPay(q.advanceToPay ? String(q.advanceToPay) : "");
       if (q.items?.length > 0) {
         setItems(q.items.map((item: any) => ({
+          itemCategory: item.fittingId ? "Fitting" as NonStdItemCategory : item.flangeId ? "Flange" as NonStdItemCategory : "Item" as NonStdItemCategory,
+          materialCodeId: item.materialCodeId || "",
+          materialCodeLabel: item.materialCode?.code || "",
           itemDescription: item.itemDescription || "",
           materialCode: item.material || "",
           size: item.sizeLabel || "",
@@ -374,6 +416,10 @@ function NonStandardQuotationPage() {
           unitRate: String(item.unitRate),
           amount: String(item.amount),
           delivery: item.delivery || "",
+          fittingId: item.fittingId || "",
+          fittingLabel: "",
+          flangeId: item.flangeId || "",
+          flangeLabel: "",
         })));
       }
       if (q.terms?.length > 0) {
@@ -425,7 +471,7 @@ function NonStandardQuotationPage() {
   const updateItem = (index: number, field: keyof NonStdItem, value: string) => {
     setItems((prev) => {
       const newItems = prev.map((item, i) => (i === index ? { ...item } : item));
-      newItems[index][field] = value;
+      (newItems[index] as any)[field] = value;
 
       if (field === "quantity" || field === "unitRate") {
         const qty = parseFloat(newItems[index].quantity) || 0;
@@ -454,6 +500,7 @@ function NonStandardQuotationPage() {
         ? buildDescription(item)
         : item.itemDescription;
       return {
+        materialCodeId: item.materialCodeId || undefined,
         product: "Non-Standard Item",
         material: item.material || "",
         additionalSpec: "",
@@ -474,6 +521,8 @@ function NonStandardQuotationPage() {
         drawingRef: item.drawingRef || "",
         itemDescription: description,
         certificateReq: item.certificateReq || "",
+        fittingId: item.fittingId || "",
+        flangeId: item.flangeId || "",
       };
     });
 
@@ -534,21 +583,32 @@ function NonStandardQuotationPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label>Customer *</Label>
-                <Select
-                  value={formData.customerId}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, customerId: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select customer" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {customersData?.customers?.map((c: any) => (
-                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-2">
+                  <Select
+                    value={formData.customerId}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, customerId: value })
+                    }
+                  >
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select customer" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {customersData?.customers?.map((c: any) => (
+                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="shrink-0"
+                    onClick={() => setShowAddCustomerModal(true)}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
 
               <div className="grid gap-2">
@@ -640,8 +700,8 @@ function NonStandardQuotationPage() {
               </div>
             </div>
 
-            {/* Row 3: Dates (small fields, 4 per row) */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {/* Row 3: Dates (small fields, 3 per row) */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div className="grid gap-2">
                 <Label>Quotation Date</Label>
                 <Input
@@ -649,17 +709,6 @@ function NonStandardQuotationPage() {
                   value={formData.quotationDate}
                   onChange={(e) =>
                     setFormData({ ...formData, quotationDate: e.target.value })
-                  }
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label>Valid Until</Label>
-                <Input
-                  type="date"
-                  value={formData.validUpto}
-                  onChange={(e) =>
-                    setFormData({ ...formData, validUpto: e.target.value })
                   }
                 />
               </div>
@@ -683,8 +732,8 @@ function NonStandardQuotationPage() {
               </div>
             </div>
 
-            {/* Row 4: Deal Owner, Next Action, Kind Attention (3 per row) */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Row 4: Deal Owner, Follow Up Date (2 per row) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label>Deal Owner</Label>
                 <Select
@@ -706,25 +755,13 @@ function NonStandardQuotationPage() {
               </div>
 
               <div className="grid gap-2">
-                <Label>Next Action Date</Label>
+                <Label>Follow Up Date</Label>
                 <Input
                   type="date"
                   value={formData.nextActionDate}
                   onChange={(e) =>
                     setFormData({ ...formData, nextActionDate: e.target.value })
                   }
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label>Kind Attention</Label>
-                <Input
-                  value={formData.kindAttention}
-                  onChange={(e) =>
-                    setFormData({ ...formData, kindAttention: e.target.value.slice(0, 200) })
-                  }
-                  placeholder="Attention to (max 200 chars)"
-                  maxLength={200}
                 />
               </div>
             </div>
@@ -774,8 +811,30 @@ function NonStandardQuotationPage() {
             {items.map((item, index) => (
               <div key={index} className="p-4 border rounded-lg space-y-4">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 flex-wrap">
                     <span className="font-semibold text-sm">Item #{index + 1}</span>
+                    <div className="flex rounded-md border overflow-hidden text-xs">
+                      {(["Item", "Fitting", "Flange"] as NonStdItemCategory[]).map((cat) => (
+                        <button
+                          key={cat}
+                          type="button"
+                          className={`px-3 py-1 transition-colors ${
+                            item.itemCategory === cat
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted hover:bg-accent"
+                          }`}
+                          onClick={() => {
+                            setItems((prev) => {
+                              const newItems = [...prev];
+                              newItems[index] = { ...emptyItem, itemCategory: cat, quantity: item.quantity, unitRate: item.unitRate, amount: item.amount, delivery: item.delivery };
+                              return newItems;
+                            });
+                          }}
+                        >
+                          {cat}
+                        </button>
+                      ))}
+                    </div>
                     <div className="flex gap-2">
                       <Button
                         type="button"
@@ -817,18 +876,104 @@ function NonStandardQuotationPage() {
                   )}
                 </div>
 
+                {/* Fitting/Flange selector */}
+                {item.itemCategory === "Fitting" && (
+                  <div className="grid gap-2">
+                    <Label className="text-sm">Select Fitting *</Label>
+                    <FittingSelect
+                      value={item.fittingLabel}
+                      onChange={(text) => {
+                        setItems((prev) => {
+                          const newItems = [...prev];
+                          newItems[index] = { ...newItems[index], fittingLabel: text, fittingId: "" };
+                          return newItems;
+                        });
+                      }}
+                      onSelect={(f) => {
+                        setItems((prev) => {
+                          const newItems = [...prev];
+                          const desc = `${f.type} ${f.size} ${f.schedule || ""} ${f.endType || ""} ${f.materialGrade} ${f.standard || ""}`.replace(/\s+/g, " ").trim();
+                          newItems[index] = {
+                            ...newItems[index],
+                            fittingId: f.id,
+                            fittingLabel: desc,
+                            itemDescription: desc,
+                            material: f.materialGrade,
+                            size: f.size,
+                            endType: f.endType || "",
+                          };
+                          return newItems;
+                        });
+                      }}
+                    />
+                  </div>
+                )}
+
+                {item.itemCategory === "Flange" && (
+                  <div className="grid gap-2">
+                    <Label className="text-sm">Select Flange *</Label>
+                    <FlangeSelect
+                      value={item.flangeLabel}
+                      onChange={(text) => {
+                        setItems((prev) => {
+                          const newItems = [...prev];
+                          newItems[index] = { ...newItems[index], flangeLabel: text, flangeId: "" };
+                          return newItems;
+                        });
+                      }}
+                      onSelect={(f) => {
+                        setItems((prev) => {
+                          const newItems = [...prev];
+                          const desc = `${f.type} ${f.size} ${f.rating}# ${f.facing || ""} ${f.materialGrade} ${f.standard || ""}`.replace(/\s+/g, " ").trim();
+                          newItems[index] = {
+                            ...newItems[index],
+                            flangeId: f.id,
+                            flangeLabel: desc,
+                            itemDescription: desc,
+                            material: f.materialGrade,
+                            size: f.size,
+                            endType: f.facing || "",
+                          };
+                          return newItems;
+                        });
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Material Code autocomplete (shared across both modes) */}
+                <div className="grid gap-2">
+                  <Label className="text-sm">Material Code</Label>
+                  <SmartCombobox
+                    options={materialCodes}
+                    value={item.materialCodeLabel || ""}
+                    onSelect={(mc: any) => {
+                      setItems((prev) => {
+                        const newItems = [...prev];
+                        newItems[index] = { ...newItems[index], materialCodeId: mc.id, materialCodeLabel: mc.code, materialCode: mc.code };
+                        return newItems;
+                      });
+                    }}
+                    onChange={(text) => {
+                      setItems((prev) => {
+                        const newItems = [...prev];
+                        newItems[index] = { ...newItems[index], materialCodeLabel: text, materialCodeId: "", materialCode: text };
+                        return newItems;
+                      });
+                    }}
+                    displayFn={(mc: any) => `${mc.code}${mc.description ? ` — ${mc.description}` : ""}`}
+                    filterFn={(mc: any, query) =>
+                      mc.code.toLowerCase().includes(query.toLowerCase()) ||
+                      (mc.description || "").toLowerCase().includes(query.toLowerCase())
+                    }
+                    placeholder="Search material code..."
+                  />
+                </div>
+
                 {useStructuredInput[index] ? (
                   <div className="space-y-4">
-                    {/* Description row: Material Code + Short Description (2 cols) */}
+                    {/* Description row: Short Description */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="grid gap-2">
-                        <Label className="text-sm">Material Code</Label>
-                        <Input
-                          value={item.materialCode}
-                          onChange={(e) => updateItem(index, "materialCode", e.target.value)}
-                          placeholder="e.g., 9715286"
-                        />
-                      </div>
                       <div className="grid gap-2 md:col-span-2">
                         <Label className="text-sm">Short Description</Label>
                         <Input
@@ -958,180 +1103,26 @@ function NonStandardQuotationPage() {
               <div className="text-right">
                 <div className="text-sm text-muted-foreground">Grand Total</div>
                 <div className="text-2xl font-bold">
-                  {curr} {fmt(grandTotal)}
+                  {curr} {fmt(subtotal)}
                 </div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Place of Supply — only relevant for GST (INR) */}
-        {isINR && (
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-muted-foreground" />
-                <CardTitle className="text-base">Place of Supply</CardTitle>
-                <span className="text-xs text-muted-foreground">(Determines CGST+SGST vs IGST)</span>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="grid gap-2">
-                  <Label>City</Label>
-                  <Input
-                    value={formData.placeOfSupplyCity}
-                    onChange={(e) => setFormData({ ...formData, placeOfSupplyCity: e.target.value })}
-                    placeholder="e.g. Mumbai"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label>State</Label>
-                  <Input
-                    value={formData.placeOfSupplyState}
-                    onChange={(e) => setFormData({ ...formData, placeOfSupplyState: e.target.value })}
-                    placeholder="e.g. Maharashtra"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Country</Label>
-                  <Input
-                    value={formData.placeOfSupplyCountry}
-                    onChange={(e) => setFormData({ ...formData, placeOfSupplyCountry: e.target.value })}
-                    placeholder="India"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Financial Summary */}
+        {/* Summary */}
         <Card>
-          <CardHeader>
-            <CardTitle>Financial Summary</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Left: controls */}
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  {isINR && (
-                    <div className="grid gap-2">
-                      <Label>Header GST Rate (%)</Label>
-                      <Select
-                        value={taxRate || "NONE"}
-                        onValueChange={(v) => setTaxRate(v === "NONE" ? "" : v)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select rate" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="NONE">0% / Exempt</SelectItem>
-                          {GST_RATES.map((r) => (
-                            <SelectItem key={r} value={r}>{r}%</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                  <div className="grid gap-2">
-                    <Label>Additional Discount (%)</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      max="100"
-                      value={additionalDiscount}
-                      onChange={(e) => setAdditionalDiscount(e.target.value)}
-                      placeholder="0.00"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-6">
-                  {isINR && (
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        id="rcm-ns"
-                        checked={rcmEnabled}
-                        onCheckedChange={setRcmEnabled}
-                      />
-                      <Label htmlFor="rcm-ns" className="cursor-pointer">
-                        RCM (Reverse Charge)
-                      </Label>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      id="roundoff-ns"
-                      checked={roundOff}
-                      onCheckedChange={setRoundOff}
-                    />
-                    <Label htmlFor="roundoff-ns" className="cursor-pointer">
-                      Round-off
-                    </Label>
-                  </div>
-                </div>
-
-                <div className="grid gap-2">
-                  <Label>Advance to Pay ({curr})</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={advanceToPay}
-                    onChange={(e) => setAdvanceToPay(e.target.value)}
-                    placeholder="0.00"
-                  />
-                </div>
-              </div>
-
-              {/* Right: breakdown */}
-              <div className="space-y-2 text-sm">
+          <CardContent className="pt-6">
+            <div className="flex justify-end">
+              <div className="space-y-2 text-sm w-64">
                 <div className="flex justify-between py-1">
                   <span className="text-muted-foreground">Subtotal</span>
                   <span className="font-medium">{curr} {fmt(subtotal)}</span>
                 </div>
-
-                {discountAmount > 0 && (
-                  <>
-                    <div className="flex justify-between py-1 text-orange-600">
-                      <span>Discount ({parsedDiscount}%)</span>
-                      <span>− {curr} {fmt(discountAmount)}</span>
-                    </div>
-                    <div className="flex justify-between py-1">
-                      <span className="text-muted-foreground">After Discount</span>
-                      <span className="font-medium">{curr} {fmt(totalAfterDiscount)}</span>
-                    </div>
-                  </>
-                )}
-
-                {isINR && parsedTaxRate > 0 && !rcmEnabled && (
-                  <div className="flex justify-between py-1">
-                    <span className="text-muted-foreground">GST ({parsedTaxRate}%)</span>
-                    <span>{curr} {fmt(taxAmount)}</span>
-                  </div>
-                )}
-
-                {isINR && rcmEnabled && (
-                  <div className="flex justify-between py-1 text-amber-600">
-                    <span>Tax (RCM — paid by buyer)</span>
-                    <span>₹0.00</span>
-                  </div>
-                )}
-
-                {roundOff && (
-                  <div className="flex justify-between py-1 text-muted-foreground">
-                    <span>Round-off</span>
-                    <span>{roundOffAmount >= 0 ? "+" : ""}{curr} {fmt(roundOffAmount)}</span>
-                  </div>
-                )}
-
                 <Separator />
                 <div className="flex justify-between py-2">
                   <span className="font-bold text-base">Grand Total</span>
-                  <span className="font-bold text-base">{curr} {fmt(grandTotal)}</span>
+                  <span className="font-bold text-base">{curr} {fmt(subtotal)}</span>
                 </div>
               </div>
             </div>
@@ -1228,6 +1219,150 @@ function NonStandardQuotationPage() {
               }}
             >
               {addingBuyer ? "Adding..." : "Add Client"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add New Customer Modal */}
+      <Dialog open={showAddCustomerModal} onOpenChange={setShowAddCustomerModal}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Add New Customer</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label>Customer Name *</Label>
+              <Input
+                value={newCustomerForm.name}
+                onChange={(e) => setNewCustomerForm({ ...newCustomerForm, name: e.target.value })}
+                placeholder="Enter customer/company name"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label>Company Type</Label>
+                <Select
+                  value={newCustomerForm.companyType}
+                  onValueChange={(value) => setNewCustomerForm({ ...newCustomerForm, companyType: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="BUYER">Buyer</SelectItem>
+                    <SelectItem value="SUPPLIER">Supplier</SelectItem>
+                    <SelectItem value="BOTH">Both</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label>GST No.</Label>
+                <Input
+                  value={newCustomerForm.gstNo}
+                  onChange={(e) => setNewCustomerForm({ ...newCustomerForm, gstNo: e.target.value.toUpperCase() })}
+                  placeholder="e.g. 27AAACR5055K1ZK"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label>Contact Person</Label>
+                <Input
+                  value={newCustomerForm.contactPerson}
+                  onChange={(e) => setNewCustomerForm({ ...newCustomerForm, contactPerson: e.target.value })}
+                  placeholder="Name"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Contact Email</Label>
+                <Input
+                  type="email"
+                  value={newCustomerForm.contactPersonEmail}
+                  onChange={(e) => setNewCustomerForm({ ...newCustomerForm, contactPersonEmail: e.target.value })}
+                  placeholder="email@company.com"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label>Contact Phone</Label>
+                <Input
+                  value={newCustomerForm.contactPersonPhone}
+                  onChange={(e) => setNewCustomerForm({ ...newCustomerForm, contactPersonPhone: e.target.value })}
+                  placeholder="+91 9876543210"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>City</Label>
+                <Input
+                  value={newCustomerForm.city}
+                  onChange={(e) => setNewCustomerForm({ ...newCustomerForm, city: e.target.value })}
+                  placeholder="e.g. Mumbai"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label>Address</Label>
+                <Input
+                  value={newCustomerForm.addressLine1}
+                  onChange={(e) => setNewCustomerForm({ ...newCustomerForm, addressLine1: e.target.value })}
+                  placeholder="Street address"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>State</Label>
+                <Input
+                  value={newCustomerForm.state}
+                  onChange={(e) => setNewCustomerForm({ ...newCustomerForm, state: e.target.value })}
+                  placeholder="e.g. Maharashtra"
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddCustomerModal(false)}>
+              Cancel
+            </Button>
+            <Button
+              disabled={!newCustomerForm.name.trim() || addingCustomer}
+              onClick={async () => {
+                setAddingCustomer(true);
+                try {
+                  const res = await fetch("/api/masters/customers", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      name: newCustomerForm.name.trim(),
+                      companyType: newCustomerForm.companyType,
+                      contactPerson: newCustomerForm.contactPerson.trim() || undefined,
+                      contactPersonEmail: newCustomerForm.contactPersonEmail.trim() || undefined,
+                      contactPersonPhone: newCustomerForm.contactPersonPhone.trim() || undefined,
+                      gstNo: newCustomerForm.gstNo.trim() || undefined,
+                      addressLine1: newCustomerForm.addressLine1.trim() || undefined,
+                      city: newCustomerForm.city.trim() || undefined,
+                      state: newCustomerForm.state.trim() || undefined,
+                    }),
+                  });
+                  if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.error || "Failed to create customer");
+                  }
+                  const data = await res.json();
+                  await queryClient.invalidateQueries({ queryKey: ["customers"] });
+                  setFormData((prev) => ({ ...prev, customerId: data.id }));
+                  setNewCustomerForm({ name: "", companyType: "BUYER", contactPerson: "", contactPersonEmail: "", contactPersonPhone: "", gstNo: "", addressLine1: "", city: "", state: "" });
+                  setShowAddCustomerModal(false);
+                  toast.success("Customer created successfully");
+                } catch (err: any) {
+                  toast.error(err.message || "Failed to create customer");
+                } finally {
+                  setAddingCustomer(false);
+                }
+              }}
+            >
+              {addingCustomer ? "Creating..." : "Create Customer"}
             </Button>
           </DialogFooter>
         </DialogContent>

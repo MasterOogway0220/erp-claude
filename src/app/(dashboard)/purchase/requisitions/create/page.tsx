@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { ProductMaterialSelect } from "@/components/shared/product-material-select";
-import { PipeSizeSelect } from "@/components/shared/pipe-size-select";
+import { SizeSelect } from "@/components/shared/size-select";
 import { Plus, Trash2, Save, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -308,7 +308,7 @@ function CreatePRPage() {
                     </div>
                     <div className="md:col-span-2">
                       <Label className="text-xs">Size</Label>
-                      <PipeSizeSelect
+                      <SizeSelect
                         value={item.sizeLabel}
                         onChange={(text) => updateItem(index, "sizeLabel", text)}
                         onSelect={(size) => {

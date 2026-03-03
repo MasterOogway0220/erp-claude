@@ -132,6 +132,8 @@ export async function POST(request: NextRequest) {
             unitRate: parseFloat(item.unitRate),
             amount: parseFloat(item.amount),
             deliveryDate: item.deliveryDate ? new Date(item.deliveryDate) : null,
+            fittingId: item.fittingId || null,
+            flangeId: item.flangeId || null,
           })),
         },
       },

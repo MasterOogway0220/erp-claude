@@ -256,6 +256,9 @@ export async function POST(request: NextRequest) {
             tubeLength: item.tubeLength || null,
             tubeCount: item.tubeCount ? parseInt(item.tubeCount) : null,
             componentPosition: item.componentPosition || null,
+            // Fitting/Flange references
+            fittingId: item.fittingId || null,
+            flangeId: item.flangeId || null,
           })),
         },
         terms: {
