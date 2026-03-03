@@ -38,7 +38,13 @@ export async function GET(
       where: { id },
       include: {
         customer: true,
-        quotation: true,
+        quotation: {
+          include: {
+            items: {
+              orderBy: { sNo: "asc" },
+            },
+          },
+        },
         items: {
           orderBy: { sNo: "asc" },
           include: {
