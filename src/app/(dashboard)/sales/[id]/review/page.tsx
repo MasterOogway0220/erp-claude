@@ -145,9 +145,10 @@ export default function CustomerPOReviewPage() {
 
   // Build comparison data
   const comparisonData: ComparisonRow[] = [];
-  if (salesOrder.quotation) {
+  const quotationItems = salesOrder.quotation?.items || [];
+  if (salesOrder.quotation && quotationItems.length > 0) {
     salesOrder.items.forEach((poItem, index) => {
-      const quotItem = salesOrder.quotation!.items.find(
+      const quotItem = quotationItems.find(
         (q) => q.sNo === poItem.sNo
       );
 
@@ -262,7 +263,7 @@ export default function CustomerPOReviewPage() {
                 </div>
                 <div>
                   <div className="text-sm text-muted-foreground">Items</div>
-                  <div>{salesOrder.quotation.items.length} item(s)</div>
+                  <div>{(salesOrder.quotation.items || []).length} item(s)</div>
                 </div>
               </div>
             ) : (
