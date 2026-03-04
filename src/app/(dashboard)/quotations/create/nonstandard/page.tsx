@@ -580,7 +580,7 @@ function NonStandardQuotationPage() {
           </CardHeader>
           <CardContent className="space-y-5">
             {/* Row 1: Customer | Buyer | Market Type | Currency | Quotation No | Rev No | Inquiry No */}
-            <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(17, minmax(0, 1fr))" }}>
+            <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(18, minmax(0, 1fr))" }}>
               <div className="grid gap-2 col-span-3">
                 <Label>Customer *</Label>
                 <div className="flex gap-2">
@@ -611,7 +611,7 @@ function NonStandardQuotationPage() {
                 </div>
               </div>
 
-              <div className="grid gap-2 col-span-3">
+              <div className="grid gap-2 col-span-2">
                 <Label>Buyer (Attn.)</Label>
                 <Select
                   value={formData.buyerId || "NONE"}
@@ -640,7 +640,7 @@ function NonStandardQuotationPage() {
                 </Select>
               </div>
 
-              <div className="grid gap-2">
+              <div className="grid gap-2 col-span-2">
                 <Label>Market Type</Label>
                 <Select
                   value={formData.quotationType}
@@ -658,7 +658,7 @@ function NonStandardQuotationPage() {
                 </Select>
               </div>
 
-              <div className="grid gap-2">
+              <div className="grid gap-2 col-span-2">
                 <Label>Currency</Label>
                 <Select
                   value={formData.currency}
