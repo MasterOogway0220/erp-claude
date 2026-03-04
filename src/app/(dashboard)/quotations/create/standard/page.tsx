@@ -668,8 +668,8 @@ function StandardQuotationPage() {
             <CardTitle>Quotation Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
-            {/* Row 1: Customer | Buyer | Market Type | Currency */}
-            <div className="grid grid-cols-4 gap-4">
+            {/* Row 1: Customer | Buyer | Market Type | Currency | Quotation No | Rev No | Deal Owner | Inquiry No */}
+            <div className="grid grid-cols-8 gap-4">
               <div className="grid gap-2">
                 <Label>Customer *</Label>
                 <div className="flex gap-2">
@@ -770,10 +770,7 @@ function StandardQuotationPage() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
 
-            {/* Row 2: Quotation No | Rev No | Deal Owner | Inquiry No */}
-            <div className="grid grid-cols-4 gap-4">
               <div className="grid gap-2">
                 <Label>Quotation No.</Label>
                 <Input
@@ -1029,52 +1026,54 @@ function StandardQuotationPage() {
                     </div>
                   )}
 
-                  {/* Material Code */}
-                  <div className="grid gap-2">
-                    <Label>Material Code</Label>
-                    <SmartCombobox
-                      options={materialCodes}
-                      value={item.materialCodeLabel || ""}
-                      onSelect={(mc: any) => {
-                        setItems((prev) => {
-                          const newItems = [...prev];
-                          newItems[index] = { ...newItems[index], materialCodeId: mc.id, materialCodeLabel: mc.code };
-                          return newItems;
-                        });
+                  {/* Row 1: Material Code | Product | Material | Additional Specs */}
+                  <div className="grid grid-cols-4 gap-4">
+                    <div className="grid gap-2">
+                      <Label>Material Code</Label>
+                      <SmartCombobox
+                        options={materialCodes}
+                        value={item.materialCodeLabel || ""}
+                        onSelect={(mc: any) => {
+                          setItems((prev) => {
+                            const newItems = [...prev];
+                            newItems[index] = { ...newItems[index], materialCodeId: mc.id, materialCodeLabel: mc.code };
+                            return newItems;
+                          });
+                        }}
+                        onChange={(text) => {
+                          setItems((prev) => {
+                            const newItems = [...prev];
+                            newItems[index] = { ...newItems[index], materialCodeLabel: text, materialCodeId: "" };
+                            return newItems;
+                          });
+                        }}
+                        displayFn={(mc: any) => `${mc.code}${mc.description ? ` — ${mc.description}` : ""}`}
+                        filterFn={(mc: any, query) =>
+                          mc.code.toLowerCase().includes(query.toLowerCase()) ||
+                          (mc.description || "").toLowerCase().includes(query.toLowerCase())
+                        }
+                        placeholder="Search material code..."
+                      />
+                    </div>
+                    <ProductMaterialSelect
+                      className="col-span-3"
+                      product={item.product}
+                      material={item.material}
+                      additionalSpec={item.additionalSpec}
+                      onProductChange={(val) => updateItem(index, "product", val)}
+                      onMaterialChange={(val) => updateItem(index, "material", val)}
+                      onAdditionalSpecChange={(val) => updateItem(index, "additionalSpec", val)}
+                      showAdditionalSpec
+                      onAutoFill={(fields) => {
+                        if (fields.ends) updateItem(index, "ends", fields.ends);
+                        if (fields.length) updateItem(index, "length", fields.length);
                       }}
-                      onChange={(text) => {
-                        setItems((prev) => {
-                          const newItems = [...prev];
-                          newItems[index] = { ...newItems[index], materialCodeLabel: text, materialCodeId: "" };
-                          return newItems;
-                        });
-                      }}
-                      displayFn={(mc: any) => `${mc.code}${mc.description ? ` — ${mc.description}` : ""}`}
-                      filterFn={(mc: any, query) =>
-                        mc.code.toLowerCase().includes(query.toLowerCase()) ||
-                        (mc.description || "").toLowerCase().includes(query.toLowerCase())
-                      }
-                      placeholder="Search material code..."
                     />
                   </div>
 
-                  <ProductMaterialSelect
-                    product={item.product}
-                    material={item.material}
-                    additionalSpec={item.additionalSpec}
-                    onProductChange={(val) => updateItem(index, "product", val)}
-                    onMaterialChange={(val) => updateItem(index, "material", val)}
-                    onAdditionalSpecChange={(val) => updateItem(index, "additionalSpec", val)}
-                    showAdditionalSpec
-                    onAutoFill={(fields) => {
-                      if (fields.ends) updateItem(index, "ends", fields.ends);
-                      if (fields.length) updateItem(index, "length", fields.length);
-                    }}
-                  />
-
-                  {/* Size + Dimensions */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="grid gap-2 md:col-span-2">
+                  {/* Row 2: Size | OD | WT | Length | Ends */}
+                  <div className="grid grid-cols-6 gap-4">
+                    <div className="grid gap-2 col-span-2">
                       <Label>Size (NPS x Sch) *</Label>
                       <SmartCombobox
                         options={sizeOptions}
@@ -1119,10 +1118,6 @@ function StandardQuotationPage() {
                         className={item.sizeId ? "bg-muted" : ""}
                       />
                     </div>
-                  </div>
-
-                  {/* Length, Ends, Qty, Rate */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="grid gap-2">
                       <Label>Length</Label>
                       <Input
@@ -1148,6 +1143,10 @@ function StandardQuotationPage() {
                         </SelectContent>
                       </Select>
                     </div>
+                  </div>
+
+                  {/* Row 3: Qty | Unit Rate | Unit Weight | Total Weight */}
+                  <div className="grid grid-cols-4 gap-4">
                     <div className="grid gap-2">
                       <Label>Qty (Mtr) *</Label>
                       <Input
@@ -1168,32 +1167,6 @@ function StandardQuotationPage() {
                         required
                       />
                     </div>
-                  </div>
-
-                  {/* Amount + Delivery */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="grid gap-2">
-                      <Label>Amount ({curr})</Label>
-                      <Input value={item.amount} readOnly className="bg-muted font-semibold" />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>Delivery</Label>
-                      <Input
-                        value={item.delivery}
-                        onChange={(e) => updateItem(index, "delivery", e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Remark + Weight */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="grid gap-2">
-                      <Label>Remark</Label>
-                      <Input
-                        value={item.remark}
-                        onChange={(e) => updateItem(index, "remark", e.target.value)}
-                      />
-                    </div>
                     <div className="grid gap-2">
                       <Label className="text-xs text-muted-foreground">Unit Wt (kg/m)</Label>
                       <Input
@@ -1211,6 +1184,21 @@ function StandardQuotationPage() {
                         className="bg-muted text-sm"
                         placeholder="Auto"
                       />
+                    </div>
+                  </div>
+
+                  {/* Row 4: Remark | Total Amount */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label>Remark</Label>
+                      <Input
+                        value={item.remark}
+                        onChange={(e) => updateItem(index, "remark", e.target.value)}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Total Amount ({curr})</Label>
+                      <Input value={item.amount} readOnly className="bg-muted font-semibold" />
                     </div>
                   </div>
                 </div>

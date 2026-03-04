@@ -579,8 +579,8 @@ function NonStandardQuotationPage() {
             <CardTitle>Quotation Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
-            {/* Row 1: Customer | Buyer | Market Type | Currency */}
-            <div className="grid grid-cols-4 gap-4">
+            {/* Row 1: Customer | Buyer | Market Type | Currency | Quotation No | Rev No | Deal Owner | Inquiry No */}
+            <div className="grid grid-cols-8 gap-4">
               <div className="grid gap-2">
                 <Label>Customer *</Label>
                 <div className="flex gap-2">
@@ -677,10 +677,7 @@ function NonStandardQuotationPage() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
 
-            {/* Row 2: Quotation No | Rev No | Deal Owner | Inquiry No */}
-            <div className="grid grid-cols-4 gap-4">
               <div className="grid gap-2">
                 <Label>Quotation No.</Label>
                 <Input
@@ -1054,8 +1051,8 @@ function NonStandardQuotationPage() {
                   </div>
                 )}
 
-                {/* Qty / Rate / Amount / Delivery */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {/* Qty / Rate / Total Amount */}
+                <div className="grid grid-cols-3 gap-4">
                   <div className="grid gap-2">
                     <Label className="text-sm">Qty *</Label>
                     <Input
@@ -1077,15 +1074,8 @@ function NonStandardQuotationPage() {
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label className="text-sm">Amount ({formData.currency})</Label>
+                    <Label className="text-sm">Total Amount ({formData.currency})</Label>
                     <Input value={item.amount} readOnly className="bg-muted font-semibold" />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label className="text-sm">Delivery</Label>
-                    <Input
-                      value={item.delivery}
-                      onChange={(e) => updateItem(index, "delivery", e.target.value)}
-                    />
                   </div>
                 </div>
               </div>
