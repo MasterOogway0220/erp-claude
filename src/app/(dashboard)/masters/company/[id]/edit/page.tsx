@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { PageLoading } from "@/components/shared/page-loading";
@@ -26,6 +26,7 @@ import {
   Upload,
   X,
   Image,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -95,6 +96,7 @@ export default function CompanyEditPage() {
   const [formData, setFormData] = useState<CompanyFormData | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [fetchingPincode, setFetchingPincode] = useState<"reg" | "wh" | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -150,6 +152,31 @@ export default function CompanyEditPage() {
   const updateField = (field: keyof CompanyFormData, value: any) => {
     setFormData((prev) => (prev ? { ...prev, [field]: value } : prev));
   };
+
+  const handlePincodeChange = useCallback(async (prefix: "reg" | "wh", value: string) => {
+    setFormData((prev) => prev ? { ...prev, [`${prefix}Pincode`]: value } : prev);
+    if (value.length !== 6 || !/^\d{6}$/.test(value)) return;
+    setFetchingPincode(prefix);
+    try {
+      const res = await fetch(`https://api.postalpincode.in/pincode/${value}`);
+      const data = await res.json();
+      if (data?.[0]?.Status === "Success" && data[0].PostOffice?.length > 0) {
+        const po = data[0].PostOffice[0];
+        setFormData((prev) => prev ? {
+          ...prev,
+          [`${prefix}City`]: po.District || prev[`${prefix}City` as keyof CompanyFormData],
+          [`${prefix}State`]: po.State || prev[`${prefix}State` as keyof CompanyFormData],
+          [`${prefix}Country`]: po.Country || "India",
+        } : prev);
+      } else {
+        toast.error("Pincode not found");
+      }
+    } catch {
+      toast.error("Failed to fetch address");
+    } finally {
+      setFetchingPincode(null);
+    }
+  }, []);
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -382,7 +409,13 @@ export default function CompanyEditPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5"><Label>City</Label><Input value={formData.regCity} onChange={(e) => updateField("regCity", e.target.value)} placeholder="Mumbai" /></div>
-              <div className="space-y-1.5"><Label>Pincode</Label><Input value={formData.regPincode} onChange={(e) => updateField("regPincode", e.target.value)} placeholder="400001" /></div>
+              <div className="space-y-1.5">
+                <Label>Pincode</Label>
+                <div className="relative">
+                  <Input value={formData.regPincode} onChange={(e) => handlePincodeChange("reg", e.target.value)} placeholder="400001" maxLength={6} />
+                  {fetchingPincode === "reg" && <Loader2 className="w-4 h-4 animate-spin absolute right-2.5 top-2.5 text-muted-foreground" />}
+                </div>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5"><Label>State</Label><Input value={formData.regState} onChange={(e) => updateField("regState", e.target.value)} placeholder="Maharashtra" /></div>
@@ -409,7 +442,13 @@ export default function CompanyEditPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5"><Label>City</Label><Input value={formData.whCity} onChange={(e) => updateField("whCity", e.target.value)} placeholder="Mumbai" /></div>
-              <div className="space-y-1.5"><Label>Pincode</Label><Input value={formData.whPincode} onChange={(e) => updateField("whPincode", e.target.value)} placeholder="400001" /></div>
+              <div className="space-y-1.5">
+                <Label>Pincode</Label>
+                <div className="relative">
+                  <Input value={formData.whPincode} onChange={(e) => handlePincodeChange("wh", e.target.value)} placeholder="400001" maxLength={6} />
+                  {fetchingPincode === "wh" && <Loader2 className="w-4 h-4 animate-spin absolute right-2.5 top-2.5 text-muted-foreground" />}
+                </div>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5"><Label>State</Label><Input value={formData.whState} onChange={(e) => updateField("whState", e.target.value)} placeholder="Maharashtra" /></div>
