@@ -77,8 +77,6 @@ const navSections: NavSection[] = [
           { title: "Company", href: "/masters/company", roles: ["SUPER_ADMIN"] },
           { title: "Employees", href: "/masters/employees" },
           { title: "Customers", href: "/masters/customers" },
-          { title: "Buyers", href: "/masters/buyers" },
-          { title: "Vendors", href: "/masters/vendors" },
           { title: "Warehouses", href: "/masters/warehouses" },
           { title: "Product Specifications", href: "/masters/products" },
           { title: "Sizes", href: "/masters/sizes" },
