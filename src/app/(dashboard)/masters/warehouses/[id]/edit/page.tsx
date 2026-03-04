@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { PageLoading } from "@/components/shared/page-loading";
@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, Plus, Trash2, Loader2, MapPin } from "lucide-react";
 import { toast } from "sonner";
 
 const INDIAN_STATES = [
@@ -30,15 +30,27 @@ const INDIAN_STATES = [
   "Delhi", "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry",
 ];
 
-interface WarehouseEditForm {
-  code: string;
-  name: string;
+interface AddressEntry {
+  id?: string;
+  label: string;
   gstNo: string;
   addressLine1: string;
   addressLine2: string;
+  city: string;
   pincode: string;
   state: string;
   country: string;
+  fetchingPincode?: boolean;
+}
+
+const emptyAddress = (): AddressEntry => ({
+  label: "", gstNo: "", addressLine1: "", addressLine2: "",
+  city: "", pincode: "", state: "", country: "India",
+});
+
+interface WarehouseEditForm {
+  code: string;
+  name: string;
   stockVisible: boolean;
   isSelfStock: boolean;
   isActive: boolean;
@@ -51,28 +63,20 @@ export default function WarehouseEditPage() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [fetchingGstin, setFetchingGstin] = useState(false);
   const [warehouseLabel, setWarehouseLabel] = useState("");
   const [form, setForm] = useState<WarehouseEditForm>({
-    code: "",
-    name: "",
-    gstNo: "",
-    addressLine1: "",
-    addressLine2: "",
-    pincode: "",
-    state: "",
-    country: "India",
-    stockVisible: true,
-    isSelfStock: true,
-    isActive: true,
+    code: "", name: "", stockVisible: true, isSelfStock: true, isActive: true,
   });
+  const [addresses, setAddresses] = useState<AddressEntry[]>([emptyAddress()]);
 
   useEffect(() => {
     const fetchWarehouse = async () => {
       try {
-        const res = await fetch("/api/masters/warehouses");
-        if (!res.ok) throw new Error("Failed to fetch warehouses");
+        const res = await fetch(`/api/masters/warehouses/${id}`);
+        if (!res.ok) throw new Error("Failed to fetch warehouse");
         const data = await res.json();
-        const wh = (data.warehouses as any[]).find((w: any) => w.id === id);
+        const wh = data.warehouse;
 
         if (!wh) {
           toast.error("Warehouse not found");
@@ -84,16 +88,37 @@ export default function WarehouseEditPage() {
         setForm({
           code: wh.code ?? "",
           name: wh.name ?? "",
-          gstNo: wh.gstNo ?? "",
-          addressLine1: wh.addressLine1 ?? "",
-          addressLine2: wh.addressLine2 ?? "",
-          pincode: wh.pincode ?? "",
-          state: wh.state ?? "",
-          country: wh.country ?? "India",
           stockVisible: wh.stockVisible ?? true,
           isSelfStock: wh.isSelfStock ?? true,
           isActive: wh.isActive ?? true,
         });
+
+        // Load existing addresses, or fall back to legacy fields
+        if (wh.addresses?.length) {
+          setAddresses(wh.addresses.map((a: any) => ({
+            id: a.id,
+            label: a.label ?? "",
+            gstNo: a.gstNo ?? "",
+            addressLine1: a.addressLine1 ?? "",
+            addressLine2: a.addressLine2 ?? "",
+            city: a.city ?? "",
+            pincode: a.pincode ?? "",
+            state: a.state ?? "",
+            country: a.country ?? "India",
+          })));
+        } else {
+          // Migrate legacy single address
+          setAddresses([{
+            label: "",
+            gstNo: wh.gstNo ?? "",
+            addressLine1: wh.addressLine1 ?? "",
+            addressLine2: wh.addressLine2 ?? "",
+            city: "",
+            pincode: wh.pincode ?? "",
+            state: wh.state ?? "",
+            country: wh.country ?? "India",
+          }]);
+        }
       } catch {
         toast.error("Failed to load warehouse");
         router.push("/masters/warehouses");
@@ -105,10 +130,62 @@ export default function WarehouseEditPage() {
     fetchWarehouse();
   }, [id, router]);
 
-  const update = <K extends keyof WarehouseEditForm>(
-    field: K,
-    value: WarehouseEditForm[K]
-  ) => setForm((prev) => ({ ...prev, [field]: value }));
+  const updateForm = <K extends keyof WarehouseEditForm>(field: K, value: WarehouseEditForm[K]) =>
+    setForm((prev) => ({ ...prev, [field]: value }));
+
+  const updateAddress = (idx: number, field: keyof AddressEntry, value: string) =>
+    setAddresses((prev) => prev.map((a, i) => i === idx ? { ...a, [field]: value } : a));
+
+  const addAddress = () => setAddresses((prev) => [...prev, emptyAddress()]);
+
+  const removeAddress = (idx: number) =>
+    setAddresses((prev) => prev.filter((_, i) => i !== idx));
+
+  const handlePincodeChange = useCallback(async (idx: number, value: string) => {
+    updateAddress(idx, "pincode", value);
+    if (value.length !== 6 || !/^\d{6}$/.test(value)) return;
+    setAddresses((prev) => prev.map((a, i) => i === idx ? { ...a, fetchingPincode: true } : a));
+    try {
+      const res = await fetch(`https://api.postalpincode.in/pincode/${value}`);
+      const data = await res.json();
+      if (data?.[0]?.Status === "Success") {
+        const post = data[0].PostOffice?.[0];
+        if (post) {
+          setAddresses((prev) => prev.map((a, i) => i === idx ? {
+            ...a,
+            city: a.city || post.District || "",
+            state: a.state || post.State || "",
+            country: "India",
+            fetchingPincode: false,
+          } : a));
+        }
+      }
+    } catch { /* silent */ } finally {
+      setAddresses((prev) => prev.map((a, i) => i === idx ? { ...a, fetchingPincode: false } : a));
+    }
+  }, []);
+
+  const handleGstinChange = useCallback(async (value: string) => {
+    updateAddress(0, "gstNo", value);
+    if (value.length !== 15) return;
+    setFetchingGstin(true);
+    try {
+      const res = await fetch(`/api/gst/search?gstin=${value}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setAddresses((prev) => prev.map((a, i) => i === 0 ? {
+        ...a,
+        addressLine1: a.addressLine1 || data.regAddressLine1 || "",
+        city: a.city || data.regCity || "",
+        state: a.state || data.state || "",
+        pincode: a.pincode || data.regPincode || "",
+        country: data.country || "India",
+      } : a));
+      if (!form.name && data.companyName) updateForm("name", data.companyName);
+    } catch { /* silent */ } finally {
+      setFetchingGstin(false);
+    }
+  }, [form.name]);
 
   const handleSave = async () => {
     if (!form.name.trim()) {
@@ -117,20 +194,15 @@ export default function WarehouseEditPage() {
     }
     setSaving(true);
     try {
-      // Exclude code from PATCH payload — it cannot be changed
-      const { code: _code, ...payload } = form;
-
       const res = await fetch(`/api/masters/warehouses/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...payload,
-          gstNo: payload.gstNo || null,
-          addressLine1: payload.addressLine1 || null,
-          addressLine2: payload.addressLine2 || null,
-          pincode: payload.pincode || null,
-          state: payload.state || null,
-          country: payload.country || "India",
+          name: form.name.trim(),
+          stockVisible: form.stockVisible,
+          isSelfStock: form.isSelfStock,
+          isActive: form.isActive,
+          addresses: addresses.filter((a) => a.addressLine1 || a.gstNo || a.city || a.pincode),
         }),
       });
       if (!res.ok) {
@@ -152,8 +224,7 @@ export default function WarehouseEditPage() {
     <div className="space-y-6">
       <PageHeader title="Edit Warehouse" description={warehouseLabel}>
         <Button variant="outline" onClick={() => router.push("/masters/warehouses")}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
+          <ArrowLeft className="h-4 w-4 mr-2" />Back
         </Button>
         <Button onClick={handleSave} disabled={saving}>
           <Save className="h-4 w-4 mr-2" />
@@ -161,172 +232,192 @@ export default function WarehouseEditPage() {
         </Button>
       </PageHeader>
 
-      <div className="space-y-6 max-w-3xl">
-        {/* Card 1: Warehouse Details */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Warehouse Details</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="code">Code</Label>
-                <Input
-                  id="code"
-                  value={form.code}
-                  disabled
-                  className="bg-muted font-mono"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Warehouse code cannot be changed
-                </p>
+      <div className="grid grid-cols-3 gap-6">
+        {/* Left col (2/3): Warehouse identity + addresses */}
+        <div className="col-span-2 space-y-6">
+          {/* Warehouse Details */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Warehouse Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label>Code</Label>
+                  <Input value={form.code} disabled className="bg-muted font-mono" />
+                  <p className="text-xs text-muted-foreground">Warehouse code cannot be changed</p>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Name *</Label>
+                  <Input
+                    value={form.name}
+                    onChange={(e) => updateForm("name", e.target.value)}
+                    placeholder="e.g., Navi Mumbai Warehouse"
+                  />
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="name">Name *</Label>
-                <Input
-                  id="name"
-                  value={form.name}
-                  onChange={(e) => update("name", e.target.value)}
-                  placeholder="e.g., Navi Mumbai Warehouse"
-                />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="gstNo">GST No</Label>
-              <Input
-                id="gstNo"
-                value={form.gstNo}
-                onChange={(e) => update("gstNo", e.target.value.toUpperCase())}
-                placeholder="e.g., 27AABCN1234A1Z5"
-                maxLength={15}
-                className="font-mono"
-              />
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        {/* Card 2: Address */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Address</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="addressLine1">Address Line 1</Label>
-              <Input
-                id="addressLine1"
-                value={form.addressLine1}
-                onChange={(e) => update("addressLine1", e.target.value)}
-                placeholder="Street address"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="addressLine2">Address Line 2</Label>
-              <Input
-                id="addressLine2"
-                value={form.addressLine2}
-                onChange={(e) => update("addressLine2", e.target.value)}
-                placeholder="Area, landmark (optional)"
-              />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="pincode">Pincode</Label>
-                <Input
-                  id="pincode"
-                  value={form.pincode}
-                  onChange={(e) => update("pincode", e.target.value)}
-                  placeholder="400001"
-                  maxLength={6}
-                />
+          {/* Addresses */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">Locations / Addresses</CardTitle>
+                <Button type="button" variant="outline" size="sm" onClick={addAddress}>
+                  <Plus className="h-4 w-4 mr-1" />Add Location
+                </Button>
               </div>
-              <div className="space-y-1.5">
-                <Label>State</Label>
-                <Select
-                  value={form.state || "NONE"}
-                  onValueChange={(v) => update("state", v === "NONE" ? "" : v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select state" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="NONE">Select state</SelectItem>
-                    {INDIAN_STATES.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {s}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="country">Country</Label>
-                <Input
-                  id="country"
-                  value={form.country}
-                  onChange={(e) => update("country", e.target.value)}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {addresses.map((addr, idx) => (
+                <div key={idx} className="space-y-4 rounded-lg border p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm font-medium">
+                      <MapPin className="h-4 w-4 text-muted-foreground" />
+                      {idx === 0 ? "Primary Location" : `Location ${idx + 1}`}
+                    </div>
+                    {idx > 0 && (
+                      <Button type="button" variant="ghost" size="icon" onClick={() => removeAddress(idx)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    )}
+                  </div>
 
-        {/* Card 3: Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Settings</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <Label className="text-sm font-medium">Stock Visible to all users</Label>
-                <p className="text-xs text-muted-foreground">
-                  Show stock from this warehouse to all users in listings
-                </p>
-              </div>
-              <Switch
-                checked={form.stockVisible}
-                onCheckedChange={(v) => update("stockVisible", v)}
-              />
-            </div>
-            <div className="flex items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <Label className="text-sm font-medium">Self-owned Stock</Label>
-                <p className="text-xs text-muted-foreground">
-                  This is company-owned stock vs third-party storage
-                </p>
-              </div>
-              <Switch
-                checked={form.isSelfStock}
-                onCheckedChange={(v) => update("isSelfStock", v)}
-              />
-            </div>
-            <div className="flex items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <Label className="text-sm font-medium">Active</Label>
-                <p className="text-xs text-muted-foreground">
-                  Enable or disable this warehouse
-                </p>
-              </div>
-              <Switch
-                checked={form.isActive}
-                onCheckedChange={(v) => update("isActive", v)}
-              />
-            </div>
-          </CardContent>
-        </Card>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label>Location Label</Label>
+                      <Input
+                        value={addr.label}
+                        onChange={(e) => updateAddress(idx, "label", e.target.value)}
+                        placeholder="e.g., Main Gate, Loading Bay"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>GST No {idx === 0 && <span className="text-xs text-muted-foreground ml-1">(auto-fills address)</span>}</Label>
+                      <div className="relative">
+                        <Input
+                          value={addr.gstNo}
+                          onChange={(e) => idx === 0 ? handleGstinChange(e.target.value.toUpperCase()) : updateAddress(idx, "gstNo", e.target.value.toUpperCase())}
+                          placeholder="27AABCN1234A1Z5"
+                          maxLength={15}
+                          className="font-mono pr-8"
+                        />
+                        {idx === 0 && fetchingGstin && (
+                          <Loader2 className="absolute right-2 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />
+                        )}
+                      </div>
+                    </div>
+                  </div>
 
-        <Separator />
+                  <div className="space-y-1.5">
+                    <Label>Address Line 1</Label>
+                    <Input
+                      value={addr.addressLine1}
+                      onChange={(e) => updateAddress(idx, "addressLine1", e.target.value)}
+                      placeholder="Street address, building"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Address Line 2</Label>
+                    <Input
+                      value={addr.addressLine2}
+                      onChange={(e) => updateAddress(idx, "addressLine2", e.target.value)}
+                      placeholder="Area, landmark (optional)"
+                    />
+                  </div>
 
-        <div className="flex justify-end gap-3 pb-8">
-          <Button variant="outline" onClick={() => router.push("/masters/warehouses")}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave} disabled={saving}>
-            <Save className="h-4 w-4 mr-2" />
-            {saving ? "Saving..." : "Save Changes"}
-          </Button>
+                  <div className="grid grid-cols-4 gap-4">
+                    <div className="space-y-1.5">
+                      <Label>Pincode <span className="text-xs text-muted-foreground">(auto-fills)</span></Label>
+                      <div className="relative">
+                        <Input
+                          value={addr.pincode}
+                          onChange={(e) => handlePincodeChange(idx, e.target.value)}
+                          placeholder="400001"
+                          maxLength={6}
+                          className="pr-8"
+                        />
+                        {addr.fetchingPincode && (
+                          <Loader2 className="absolute right-2 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />
+                        )}
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>City</Label>
+                      <Input
+                        value={addr.city}
+                        onChange={(e) => updateAddress(idx, "city", e.target.value)}
+                        placeholder="City"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>State</Label>
+                      <Select
+                        value={addr.state || "NONE"}
+                        onValueChange={(v) => updateAddress(idx, "state", v === "NONE" ? "" : v)}
+                      >
+                        <SelectTrigger><SelectValue placeholder="State" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="NONE">Select state</SelectItem>
+                          {INDIAN_STATES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Country</Label>
+                      <Input
+                        value={addr.country}
+                        onChange={(e) => updateAddress(idx, "country", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
         </div>
+
+        {/* Right col (1/3): Settings */}
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Settings</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between rounded-lg border p-4">
+                <div className="space-y-0.5">
+                  <Label className="text-sm font-medium">Stock Visible</Label>
+                  <p className="text-xs text-muted-foreground">Show stock to all users</p>
+                </div>
+                <Switch checked={form.stockVisible} onCheckedChange={(v) => updateForm("stockVisible", v)} />
+              </div>
+              <div className="flex items-center justify-between rounded-lg border p-4">
+                <div className="space-y-0.5">
+                  <Label className="text-sm font-medium">Self-owned Stock</Label>
+                  <p className="text-xs text-muted-foreground">Company-owned vs third-party</p>
+                </div>
+                <Switch checked={form.isSelfStock} onCheckedChange={(v) => updateForm("isSelfStock", v)} />
+              </div>
+              <div className="flex items-center justify-between rounded-lg border p-4">
+                <div className="space-y-0.5">
+                  <Label className="text-sm font-medium">Active</Label>
+                  <p className="text-xs text-muted-foreground">Enable or disable this warehouse</p>
+                </div>
+                <Switch checked={form.isActive} onCheckedChange={(v) => updateForm("isActive", v)} />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      <Separator />
+      <div className="flex justify-end gap-3 pb-8">
+        <Button variant="outline" onClick={() => router.push("/masters/warehouses")}>Cancel</Button>
+        <Button onClick={handleSave} disabled={saving}>
+          <Save className="h-4 w-4 mr-2" />
+          {saving ? "Saving..." : "Save Changes"}
+        </Button>
       </div>
     </div>
   );

@@ -15,6 +15,7 @@ export async function GET(
     const warehouse = await prisma.warehouseMaster.findUnique({
       where: { id },
       include: {
+        addresses: { orderBy: { isDefault: "desc" } },
         locations: {
           orderBy: { zone: "asc" },
           include: {
@@ -45,7 +46,7 @@ export async function PATCH(
     if (!authorized) return response!;
 
     const body = await request.json();
-    const { name, gstNo, addressLine1, addressLine2, pincode, state, country, stockVisible, isSelfStock, isActive } = body;
+    const { name, gstNo, addressLine1, addressLine2, pincode, state, country, stockVisible, isSelfStock, isActive, addresses } = body;
 
     const data: any = {};
     if (name !== undefined) data.name = name;
@@ -59,10 +60,45 @@ export async function PATCH(
     if (isSelfStock !== undefined) data.isSelfStock = isSelfStock;
     if (isActive !== undefined) data.isActive = isActive;
 
+    // Sync primary address backward-compat fields from first address
+    if (addresses !== undefined && addresses.length > 0) {
+      const primary = addresses[0];
+      data.gstNo = primary.gstNo || null;
+      data.addressLine1 = primary.addressLine1 || null;
+      data.addressLine2 = primary.addressLine2 || null;
+      data.pincode = primary.pincode || null;
+      data.state = primary.state || null;
+      data.country = primary.country || "India";
+    }
+
+    // Update addresses: delete existing and recreate
+    if (addresses !== undefined) {
+      await prisma.warehouseAddress.deleteMany({ where: { warehouseId: id } });
+      if (addresses.length > 0) {
+        await prisma.warehouseAddress.createMany({
+          data: addresses.map((addr: any, idx: number) => ({
+            warehouseId: id,
+            label: addr.label || null,
+            addressLine1: addr.addressLine1 || null,
+            addressLine2: addr.addressLine2 || null,
+            city: addr.city || null,
+            pincode: addr.pincode || null,
+            state: addr.state || null,
+            country: addr.country || "India",
+            gstNo: addr.gstNo || null,
+            isDefault: idx === 0,
+          })),
+        });
+      }
+    }
+
     const warehouse = await prisma.warehouseMaster.update({
       where: { id },
       data,
-      include: { locations: true },
+      include: {
+        addresses: { orderBy: { isDefault: "desc" } },
+        locations: true,
+      },
     });
 
     await createAuditLog({

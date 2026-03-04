@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
     const warehouses = await prisma.warehouseMaster.findMany({
       where,
       include: {
+        addresses: { orderBy: { isDefault: "desc" } },
         locations: {
           select: { id: true, zone: true, rack: true, bay: true, shelf: true, locationType: true, isActive: true, locationTag: true, capacity: true, preservationMethod: true, storageConditions: true },
           orderBy: { zone: "asc" },
@@ -44,7 +45,7 @@ export async function POST(request: NextRequest) {
     if (!authorized) return response!;
 
     const body = await request.json();
-    const { code, name, gstNo, addressLine1, addressLine2, pincode, state, country, stockVisible, isSelfStock, locations } = body;
+    const { code, name, gstNo, addressLine1, addressLine2, pincode, state, country, stockVisible, isSelfStock, addresses } = body;
 
     if (!code || !name) {
       return NextResponse.json({ error: "Code and name are required" }, { status: 400 });
@@ -55,30 +56,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Warehouse code already exists" }, { status: 400 });
     }
 
+    // Use first address fields as primary for backward-compat fields
+    const primaryAddr = addresses?.[0];
+
     const warehouse = await prisma.warehouseMaster.create({
       data: {
         code,
         name,
-        gstNo: gstNo || null,
-        addressLine1: addressLine1 || null,
-        addressLine2: addressLine2 || null,
-        pincode: pincode || null,
-        state: state || null,
-        country: country || "India",
+        gstNo: (primaryAddr?.gstNo || gstNo) || null,
+        addressLine1: (primaryAddr?.addressLine1 || addressLine1) || null,
+        addressLine2: (primaryAddr?.addressLine2 || addressLine2) || null,
+        pincode: (primaryAddr?.pincode || pincode) || null,
+        state: (primaryAddr?.state || state) || null,
+        country: (primaryAddr?.country || country) || "India",
         stockVisible: stockVisible !== undefined ? stockVisible : true,
         isSelfStock: isSelfStock !== undefined ? isSelfStock : true,
-        locations: locations?.length ? {
-          create: locations.map((loc: any) => ({
-            zone: loc.zone || null,
-            rack: loc.rack || null,
-            bay: loc.bay || null,
-            shelf: loc.shelf || null,
-            locationType: loc.locationType || "GENERAL",
-            capacity: loc.capacity || null,
+        addresses: addresses?.length ? {
+          create: addresses.map((addr: any, idx: number) => ({
+            label: addr.label || null,
+            addressLine1: addr.addressLine1 || null,
+            addressLine2: addr.addressLine2 || null,
+            city: addr.city || null,
+            pincode: addr.pincode || null,
+            state: addr.state || null,
+            country: addr.country || "India",
+            gstNo: addr.gstNo || null,
+            isDefault: idx === 0,
           })),
         } : undefined,
       },
-      include: { locations: true },
+      include: { addresses: true, locations: true },
     });
 
     await createAuditLog({ tableName: "WAREHOUSE", recordId: warehouse.id, action: "CREATE", userId: session!.user.id });
