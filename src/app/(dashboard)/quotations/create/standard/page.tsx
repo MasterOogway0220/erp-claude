@@ -668,9 +668,9 @@ function StandardQuotationPage() {
             <CardTitle>Quotation Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
-            {/* Row 1: Customer | Buyer | Market Type | Currency | Quotation No | Rev No | Deal Owner | Inquiry No */}
-            <div className="grid grid-cols-10 gap-4">
-              <div className="grid gap-2 col-span-2">
+            {/* Row 1: Customer | Buyer | Market Type | Currency | Quotation No | Rev No | Inquiry No */}
+            <div className="grid grid-cols-7 gap-4">
+              <div className="grid gap-2">
                 <Label>Customer *</Label>
                 <div className="flex gap-2">
                   <Select
@@ -702,7 +702,7 @@ function StandardQuotationPage() {
                 </div>
               </div>
 
-              <div className="grid gap-2 col-span-2">
+              <div className="grid gap-2">
                 <Label>Buyer (Attn.)</Label>
                 <Select
                   value={formData.buyerId || "NONE"}
@@ -790,28 +790,6 @@ function StandardQuotationPage() {
               </div>
 
               <div className="grid gap-2">
-                <Label>Deal Owner</Label>
-                <Select
-                  value={formData.dealOwnerId || "NONE"}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, dealOwnerId: value === "NONE" ? "" : value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Assign owner" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="NONE">Unassigned</SelectItem>
-                    {usersData?.users?.map((user: any) => (
-                      <SelectItem key={user.id} value={user.id}>
-                        {user.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid gap-2">
                 <Label>Inquiry No.</Label>
                 <Input
                   value={formData.inquiryNo}
@@ -821,8 +799,8 @@ function StandardQuotationPage() {
               </div>
             </div>
 
-            {/* Row 3: Quotation Date | Inquiry Date | Follow Up Date */}
-            <div className="grid grid-cols-3 gap-4">
+            {/* Row 2: Quotation Date | Inquiry Date | Follow Up Date | Deal Owner */}
+            <div className="grid grid-cols-4 gap-4">
               <div className="grid gap-2">
                 <Label>Quotation Date</Label>
                 <Input
@@ -852,6 +830,28 @@ function StandardQuotationPage() {
                     setFormData({ ...formData, nextActionDate: e.target.value })
                   }
                 />
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Deal Owner</Label>
+                <Select
+                  value={formData.dealOwnerId || "NONE"}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, dealOwnerId: value === "NONE" ? "" : value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Assign owner" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NONE">Unassigned</SelectItem>
+                    {usersData?.users?.map((user: any) => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
