@@ -36,7 +36,7 @@ export async function GET(
       where: { id },
       include: {
         customer: true,
-        preparedBy: { select: { name: true, email: true } },
+        preparedBy: { select: { name: true, email: true, phone: true } },
         buyer: true,
         items: {
           orderBy: { sNo: "asc" },
@@ -67,11 +67,10 @@ export async function GET(
 
     if (isNonStandard) {
       html = generateNonStandardQuotationHtml(quotation as any, companyInfo as any, pdfVariant);
-      landscape = false;
     } else {
       html = generateStandardQuotationHtml(quotation as any, companyInfo as any, pdfVariant);
-      landscape = true;
     }
+    landscape = false;
 
     const format = searchParams.get("format");
     if (format === "html") {

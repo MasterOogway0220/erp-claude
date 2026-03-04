@@ -45,7 +45,7 @@ export async function POST(
       where: { id },
       include: {
         customer: true,
-        preparedBy: { select: { name: true, email: true } },
+        preparedBy: { select: { name: true, email: true, phone: true } },
         buyer: true,
         items: {
           orderBy: { sNo: "asc" },
@@ -73,7 +73,7 @@ export async function POST(
     const baseName = quotation.quotationNo.replace(/\//g, "-");
 
     try {
-      const landscape = !isNonStandard;
+      const landscape = false;
       const generateHtml = isNonStandard
         ? generateNonStandardQuotationHtml
         : generateStandardQuotationHtml;

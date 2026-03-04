@@ -1,5 +1,5 @@
-// Standard Quotation PDF Template — Landscape A4, 16-column table
-// Matches PIPES_QUOTATION_FORMAT > RFQ sheet exactly
+// Standard Quotation PDF Template — Portrait A4, same design as Non-Standard
+// Item descriptions are built from structured fields (product, material, size, OD, WT, etc.)
 
 import { numberToWords } from "../amount-in-words";
 
@@ -36,7 +36,7 @@ interface QuotationData {
     email?: string | null;
     phone?: string | null;
   };
-  preparedBy?: { name?: string; email?: string } | null;
+  preparedBy?: { name?: string; email?: string; phone?: string } | null;
   buyer?: {
     buyerName?: string | null;
     designation?: string | null;
@@ -85,6 +85,33 @@ function formatNumber(val: any, decimals: number = 2): string {
   return num.toFixed(decimals);
 }
 
+function buildItemDescription(item: any): string {
+  const lines: string[] = [];
+
+  if (item.materialCode?.code) {
+    lines.push(`MATERIAL CODE: ${item.materialCode.code}`);
+  } else if (item.materialCodeLabel) {
+    lines.push(`MATERIAL CODE: ${item.materialCodeLabel}`);
+  }
+
+  const descParts = [item.product, item.material, item.additionalSpec].filter(Boolean);
+  if (descParts.length > 0) lines.push(descParts.join(" "));
+
+  if (item.sizeLabel) lines.push(`SIZE: ${item.sizeLabel}`);
+  if (item.od || item.wt) {
+    const dims = [
+      item.od ? `OD: ${formatNumber(item.od, 2)} mm` : null,
+      item.wt ? `W.T.: ${formatNumber(item.wt, 2)} mm` : null,
+    ].filter(Boolean).join(", ");
+    if (dims) lines.push(dims);
+  }
+  if (item.length) lines.push(`LENGTH: ${item.length} Mtrs`);
+  if (item.ends) lines.push(`ENDS: ${item.ends}`);
+  if (item.remark) lines.push(`REMARK: ${item.remark}`);
+
+  return lines.map((l) => escapeHtml(l)).join("<br>");
+}
+
 export function generateStandardQuotationHtml(
   quotation: QuotationData,
   company: CompanyInfo,
@@ -114,7 +141,7 @@ export function generateStandardQuotationHtml(
     .join(", ");
 
   const footerContact = [
-    company.telephoneNo ? `Tel. ${company.telephoneNo}` : null,
+    company.telephoneNo ? `Phone: ${company.telephoneNo}` : null,
     company.email ? `Email: ${company.email}` : null,
     company.website ? `Web: ${company.website}` : null,
   ]
@@ -123,41 +150,37 @@ export function generateStandardQuotationHtml(
 
   const itemRows = quotation.items
     .map((item: any) => {
+      const desc = buildItemDescription(item);
       return `<tr class="data-row">
-        <td class="cell-center bl-med">${item.sNo}</td>
-        <td class="cell-center" colspan="2">${escapeHtml(item.product)}</td>
-        <td class="cell-center">${escapeHtml(item.material)}</td>
-        <td class="cell-center">${escapeHtml(item.additionalSpec)}</td>
-        <td class="cell-center">${item.sizeNPS ? formatNumber(item.sizeNPS, 0) : escapeHtml(item.sizeLabel)}</td>
-        <td class="cell-center">${item.od ? formatNumber(item.od, 1) : ""}</td>
-        <td class="cell-center">${item.wt ? formatNumber(item.wt, 2) : ""}</td>
-        <td class="cell-center">${escapeHtml(item.length)}</td>
-        <td class="cell-center">${escapeHtml(item.ends)}</td>
-        <td class="cell-center">${formatNumber(item.quantity, 0)}</td>
-        <td class="cell-center green-bg">${isUnquoted ? "QUOTED" : formatNumber(item.unitRate, 2)}</td>
-        <td class="cell-center">${isUnquoted ? "QUOTED" : formatNumber(item.amount, 0)}</td>
-        <td class="cell-center">${escapeHtml(item.delivery)}</td>
-        <td class="cell-center br-med">${escapeHtml(item.remark) || escapeHtml(item.materialCode?.code)}</td>
+        <td class="cell-center cell-top">${item.sNo}</td>
+        <td class="cell-left cell-top cell-wrap" colspan="4">${desc}</td>
+        <td class="cell-center cell-top">${formatNumber(item.quantity, 0)}</td>
+        <td class="cell-right cell-top">${isUnquoted ? '<span class="quoted-bold">QUOTED</span>' : formatNumber(item.unitRate, 2)}</td>
+        <td class="cell-right cell-top">${isUnquoted ? '<span class="quoted-normal">QUOTED</span>' : formatNumber(item.amount, 0)}</td>
+        <td class="cell-center cell-top cell-wrap">${escapeHtml(item.delivery)}</td>
       </tr>`;
     })
     .join("\n");
 
-  const termItems = includedTerms
-    .map((term: any, index: number) => {
-      return `<div class="term-item">
-        <span class="term-num">${index + 1}</span>
-        <span class="term-name">${escapeHtml(term.termName)}</span>
-        <span class="term-value">: ${escapeHtml(term.termValue)}</span>
-      </div>`;
+  const currencyTerm = `<tr class="term-row">
+    <td class="term-name" colspan="3">Currency</td>
+    <td class="term-value" colspan="6">: ${escapeHtml(quotation.currency)} (${quotation.currency === "USD" ? "$" : quotation.currency === "EUR" ? "€" : quotation.currency})</td>
+  </tr>`;
+
+  const termRows = includedTerms
+    .map((term: any) => {
+      return `<tr class="term-row">
+        <td class="term-name" colspan="3">${escapeHtml(term.termName)}</td>
+        <td class="term-value" colspan="6">: ${escapeHtml(term.termValue)}</td>
+      </tr>`;
     })
     .join("\n");
 
-  const noteItems = exportNotes
+  const noteRows = exportNotes
     .map((note, index) => {
-      return `<div class="note-item">
-        <span class="note-num">${index + 1})</span>
-        <span class="note-text">${escapeHtml(note)}</span>
-      </div>`;
+      return `<tr class="note-row">
+        <td class="note-text" colspan="9">${index + 1}) ${escapeHtml(note)}</td>
+      </tr>`;
     })
     .join("\n");
 
@@ -167,8 +190,8 @@ export function generateStandardQuotationHtml(
 <meta charset="utf-8">
 <style>
   @page {
-    size: A4 landscape;
-    margin: 5mm;
+    size: A4 portrait;
+    margin: 10mm 8mm;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -181,323 +204,306 @@ export function generateStandardQuotationHtml(
   table { border-collapse: collapse; width: 100%; }
   td, th { padding: 1px 3px; vertical-align: middle; }
 
-  /* Border utilities */
-  .bt-med { border-top: 2px solid #000; }
-  .bb-med { border-bottom: 2px solid #000; }
-  .bl-med { border-left: 2px solid #000; }
-  .br-med { border-right: 2px solid #000; }
-  .bt-thin { border-top: 1px solid #000; }
-  .bb-thin { border-bottom: 1px solid #000; }
-  .bl-thin { border-left: 1px solid #000; }
-  .br-thin { border-right: 1px solid #000; }
-  .b-med { border: 2px solid #000; }
+  /* Hair borders */
+  .hair { border: 0.5px solid #999; }
+  .hair-all td { border: 0.5px solid #999; }
+  .thin { border: 1px solid #000; }
+  .thin-top { border-top: 1px solid #000; }
+  .thin-bottom { border-bottom: 1px solid #000; }
 
-  /* ZONE 1: Letterhead */
-  .letterhead { height: 40px; }
-  .letterhead td { vertical-align: middle; }
-  .logo-cell { width: 150px; }
-  .logo-cell img { max-width: 140px; max-height: 36px; object-fit: contain; }
-  .company-name {
-    font-size: 16pt;
+  /* ZONE 1: Type label */
+  .type-label {
+    font-size: 20pt;
     font-weight: bold;
     text-align: center;
+    border: 1px solid #000;
+    padding: 6px 12px;
+    vertical-align: middle;
   }
 
-  /* ZONE 2: Header info grid */
-  .header-grid td { height: 17pt; font-size: 10pt; vertical-align: middle; }
-  .hdr-label { text-align: right; padding-right: 4px; font-weight: normal; color: #333; }
-  .hdr-value { text-align: left; padding-left: 4px; font-weight: normal; }
-  .hdr-value-right { text-align: left; padding-left: 4px; color: #444; }
-  .hdr-label-right { text-align: right; padding-right: 4px; color: #444; }
-
-  /* ZONE 3: Title */
-  .title-row td {
-    font-size: 11pt;
-    font-weight: bold;
-    text-align: center;
-    height: 18pt;
-    border: 2px solid #000;
+  /* ZONE 2: Info block */
+  .info-grid td {
+    height: 13.5pt;
+    font-size: 10pt;
+    border: 0.5px solid #999;
+    padding: 1px 4px;
   }
+  .info-label { font-weight: bold; }
+  .info-value { font-weight: normal; }
+  .info-customer-name { font-weight: bold; font-size: 10pt; }
+  .info-small { font-size: 9pt; }
+
+  /* Quotation number block */
+  .qtn-block td {
+    border: 0.5px solid #999;
+    font-size: 10pt;
+    height: 13.5pt;
+    padding: 1px 4px;
+  }
+
+  /* ZONE 3: Intro line */
+  .intro-row td { font-size: 10pt; padding: 8px 0 6px 0; }
 
   /* ZONE 4: Table header */
   .table-header th {
     font-size: 10pt;
+    font-weight: normal;
+    text-align: center;
+    height: 15pt;
+    background-color: #D9D9D9 !important;
+    border: 0.5px solid #999;
+    padding: 2px 3px;
+  }
+  .table-header-sub th {
+    font-size: 10pt;
     font-weight: bold;
     text-align: center;
-    height: 30pt;
-    border-top: 2px solid #000;
+    height: 15pt;
+    background-color: #D9D9D9 !important;
+    border: 0.5px solid #999;
+    padding: 2px 3px;
+  }
+
+  /* Data rows */
+  .data-row td {
+    font-size: 10pt;
+    border: 0.5px solid #999;
+    padding: 3px 4px;
+    line-height: 1.35;
+  }
+  .cell-center { text-align: center; }
+  .cell-left { text-align: left; }
+  .cell-right { text-align: right; }
+  .cell-top { vertical-align: top; }
+  .cell-wrap { white-space: normal; word-wrap: break-word; }
+  .quoted-bold { font-weight: bold; }
+  .quoted-normal { font-weight: normal; }
+
+  /* Total row */
+  .grand-total td {
+    font-size: 10pt;
+    font-weight: bold;
+    text-align: center;
+    border: 0.5px solid #999;
+    padding: 3px 4px;
+    height: 18pt;
+  }
+
+  /* ZONE 6: Offer terms */
+  .terms-header td {
+    font-size: 10pt;
+    font-weight: bold;
+    text-align: left;
+    padding-top: 10px;
+    padding-bottom: 3px;
+  }
+  .term-row td { font-size: 10pt; height: 13.5pt; padding: 0 4px; }
+  .term-name { font-weight: bold; text-align: left; }
+  .term-value { font-weight: normal; text-align: left; }
+
+  /* ZONE 7: Notes */
+  .notes-header td {
+    font-size: 10pt;
+    font-weight: bold;
+    text-align: left;
+    padding-top: 10px;
+    padding-bottom: 3px;
+  }
+  .note-row td { font-size: 9pt; height: 13.5pt; padding: 0 4px; text-align: left; }
+
+  /* ZONE 8: Footer */
+  .footer-disclaimer td {
+    font-size: 8pt;
+    height: 14pt;
+    border-top: 1px solid #000;
+    border-bottom: 1px solid #000;
+    padding: 2px 4px;
+  }
+  .footer-disclaimer .left {
+    text-align: left;
+    border-left: 1px solid #000;
+  }
+  .footer-disclaimer .right {
+    text-align: right;
+    border-right: 1px solid #000;
+  }
+  .footer-appreciation td {
+    font-size: 8pt;
+    text-align: center;
+    height: 16pt;
+    border-top: 1px solid #000;
     border-bottom: 1px solid #000;
     border-left: 1px solid #000;
     border-right: 1px solid #000;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-    white-space: normal;
-    padding: 2px 2px;
-    line-height: 1.2;
+    padding-top: 3px;
   }
-  .table-header th:first-child { border-left: 2px solid #000; }
-  .table-header th:last-child { border-right: 2px solid #000; }
-
-  /* Green highlight for Unit Rate column */
-  .green-bg { background-color: #92D050 !important; }
-
-  /* ZONE 5: Data rows */
-  .data-row td {
-    font-size: 10pt;
+  .footer-address td {
+    font-size: 9pt;
     text-align: center;
-    height: 18pt;
     border: 1px solid #000;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    padding: 1px 3px;
-  }
-  .cell-center { text-align: center; }
-
-  /* ZONE 6: Total row */
-  .total-row td {
-    font-size: 11pt;
-    font-weight: bold;
-    text-align: center;
-    height: 20pt;
-    border-top: 1px solid #000;
-    border-bottom: 2px solid #000;
-    border-left: 1px solid #000;
-    border-right: 1px solid #000;
-  }
-  .total-row td:first-child { border-left: 2px solid #000; }
-  .total-row td:last-child { border-right: 2px solid #000; }
-
-  /* ZONE 7-9: Terms + Notes + Footer — single block, avoid page-break splitting */
-  .terms-notes-footer {
-    break-inside: avoid;
-    page-break-inside: avoid;
-    margin-top: 2px;
-  }
-  .terms-section {
-    border-top: 2px solid #000;
-    border-left: 2px solid #000;
-    padding: 2px 6px;
-  }
-  .terms-title {
-    font-size: 8.5pt;
-    font-weight: bold;
-    margin-bottom: 0;
-  }
-  .term-item {
-    font-size: 8.5pt;
-    line-height: 1.25;
-    display: flex;
-    gap: 3px;
-  }
-  .term-num { min-width: 18px; text-align: center; }
-  .term-name { font-weight: bold; white-space: nowrap; }
-  .term-value { font-weight: normal; }
-
-  .notes-section {
-    margin-top: 1px;
-    padding: 0 6px;
-  }
-  .notes-title {
-    font-size: 8.5pt;
-    font-weight: bold;
-    margin-bottom: 0;
-    border-left: 2px solid #000;
-    padding-left: 6px;
-  }
-  .note-item {
-    font-size: 7.5pt;
-    line-height: 1.25;
-    display: flex;
-    gap: 2px;
-    padding-left: 6px;
-  }
-  .note-num { min-width: 18px; text-align: right; padding-right: 2px; flex-shrink: 0; }
-  .note-text { text-align: left; }
-
-  .footer-section {
-    margin-top: 2px;
-  }
-  .footer-disclaimer {
-    font-size: 6.5pt;
-    color: #666;
-    display: flex;
-    justify-content: space-between;
-    padding: 0;
-  }
-  .footer-appreciation {
-    font-size: 7.5pt;
-    text-align: center;
-    padding: 1px 0;
-  }
-  .footer-address {
-    font-size: 8pt;
-    text-align: center;
-    padding: 0;
+    padding: 4px;
+    line-height: 1.3;
+    white-space: normal;
   }
 
-  /* Column widths - 15 columns (Schedule removed) */
-  col.col-sn    { width: 3%; }
-  col.col-prod1 { width: 6%; }
-  col.col-prod2 { width: 6%; }
-  col.col-mat   { width: 11%; }
-  col.col-spec  { width: 12%; }
-  col.col-nps   { width: 5%; }
-  col.col-od    { width: 5%; }
-  col.col-wt    { width: 5%; }
-  col.col-len   { width: 6%; }
-  col.col-ends  { width: 4%; }
-  col.col-qty   { width: 6%; }
-  col.col-rate  { width: 7%; }
-  col.col-amt   { width: 9%; }
-  col.col-del   { width: 8%; }
-  col.col-rmk   { width: 7%; }
+  /* Column widths — 9 columns */
+  col.col-sr     { width: 5%; }
+  col.col-desc1  { width: 16%; }
+  col.col-desc2  { width: 17%; }
+  col.col-desc3  { width: 12%; }
+  col.col-desc4  { width: 12%; }
+  col.col-qty    { width: 8%; }
+  col.col-rate   { width: 11%; }
+  col.col-total  { width: 12%; }
+  col.col-deliv  { width: 13%; }
+
+  .keep-together { page-break-inside: avoid; }
 </style>
 </head>
 <body>
 <table>
   <colgroup>
-    <col class="col-sn">
-    <col class="col-prod1">
-    <col class="col-prod2">
-    <col class="col-mat">
-    <col class="col-spec">
-    <col class="col-nps">
-    <col class="col-od">
-    <col class="col-wt">
-    <col class="col-len">
-    <col class="col-ends">
+    <col class="col-sr">
+    <col class="col-desc1">
+    <col class="col-desc2">
+    <col class="col-desc3">
+    <col class="col-desc4">
     <col class="col-qty">
     <col class="col-rate">
-    <col class="col-amt">
-    <col class="col-del">
-    <col class="col-rmk">
+    <col class="col-total">
+    <col class="col-deliv">
   </colgroup>
 
-  <!-- ZONE 1: Letterhead -->
-  <tr class="letterhead">
-    <td colspan="3" rowspan="2" class="logo-cell">
-      ${company.companyLogoUrl ? `<img src="${company.companyLogoUrl}" alt="Logo">` : `<span style="font-size:16pt;font-weight:bold">${escapeHtml(company.companyName)}</span>`}
+  <!-- ZONE 1: Logo + Type label -->
+  <tr>
+    <td colspan="6" rowspan="2" style="vertical-align:middle;padding:4px;">
+      ${company.companyLogoUrl ? `<img src="${company.companyLogoUrl}" alt="Logo" style="max-width:200px;max-height:50px;object-fit:contain;">` : `<span style="font-size:16pt;font-weight:bold">${escapeHtml(company.companyName)}</span>`}
     </td>
-    <td colspan="12" class="company-name">${escapeHtml(company.companyName)}</td>
+    <td colspan="3" rowspan="2" class="type-label">${quotation.version && quotation.version > 0 ? `REVISED QUOTATION<br><span style="font-size:10pt">Revision ${quotation.version}</span>` : "QUOTATION"}</td>
   </tr>
-  <tr class="letterhead"><td colspan="12"></td></tr>
+  <tr></tr>
+  <tr><td colspan="9" style="height:4px;"></td></tr>
 
-  <!-- ZONE 2: Header info grid -->
-  <!-- Row 6 -->
-  <tr class="header-grid">
-    <td class="hdr-label bt-med" colspan="2">Customer :</td>
-    <td class="hdr-value bt-med" colspan="4">${escapeHtml(quotation.customer.name)}</td>
-    <td class="hdr-label bt-med" colspan="2">Inquiry No. :</td>
-    <td class="hdr-value bt-med" colspan="3">${escapeHtml(quotation.inquiryNo)}</td>
-    <td class="hdr-label-right bt-med" colspan="2">Quotation No. :</td>
-    <td class="hdr-value-right bt-med" colspan="2">${escapeHtml(quotation.quotationNo)}</td>
+  <!-- Quotation Number block -->
+  <tr class="qtn-block">
+    <td colspan="6"></td>
+    <td class="info-label">Quotation Number:</td>
+    <td class="info-value" colspan="2">${escapeHtml(quotation.quotationNo)}</td>
   </tr>
-  <!-- Row 7 -->
-  <tr class="header-grid">
-    <td class="hdr-label" colspan="2">Address :</td>
-    <td class="hdr-value" colspan="4">${escapeHtml(quotation.customer.addressLine1)}${quotation.customer.city ? `, ${escapeHtml(quotation.customer.city)}` : ""}</td>
-    <td class="hdr-label" colspan="2">Inquiry Date :</td>
-    <td class="hdr-value" colspan="3">${formatDate(quotation.inquiryDate)}</td>
-    <td class="hdr-label-right" colspan="2">Date :</td>
-    <td class="hdr-value-right" colspan="2">${formatDate(quotation.quotationDate)}</td>
+  <tr class="qtn-block">
+    <td colspan="6"></td>
+    <td class="info-label">Dated:</td>
+    <td class="info-value" colspan="2">${formatDate(quotation.quotationDate)}</td>
   </tr>
-  <!-- Row 8 -->
-  <tr class="header-grid">
-    <td class="hdr-label" colspan="2">Country :</td>
-    <td class="hdr-value" colspan="4">${escapeHtml(quotation.customer.country)}</td>
-    <td class="hdr-label" colspan="2"></td>
-    <td class="hdr-value" colspan="3"></td>
-    <td class="hdr-label-right" colspan="2">Valid upto :</td>
-    <td class="hdr-value-right" colspan="2">${formatDate(quotation.validUpto)}</td>
+  ${quotation.inquiryNo ? `<tr class="qtn-block">
+    <td colspan="6"></td>
+    <td class="info-label">Client Inquiry No.:</td>
+    <td class="info-value" colspan="2">${escapeHtml(quotation.inquiryNo)}</td>
+  </tr>` : ""}
+  ${quotation.inquiryDate ? `<tr class="qtn-block">
+    <td colspan="6"></td>
+    <td class="info-label">Inquiry Date:</td>
+    <td class="info-value" colspan="2">${formatDate(quotation.inquiryDate)}</td>
+  </tr>` : ""}
+  <tr><td colspan="9" style="height:4px;"></td></tr>
+
+  <!-- ZONE 2: Customer / Buyer / Prepared By info grid -->
+  <tr class="info-grid">
+    <td class="info-label" colspan="2">Customer:</td>
+    <td class="info-label" colspan="2">Attention:</td>
+    <td class="info-value" colspan="5">Prepared by: ${escapeHtml(quotation.preparedBy?.name)}</td>
   </tr>
-  <!-- Row 9 -->
-  <tr class="header-grid">
-    <td class="hdr-label" colspan="2">Attn. :</td>
-    <td class="hdr-value" colspan="4">${escapeHtml(quotation.buyer?.buyerName || quotation.customer.contactPerson)}</td>
-    <td class="hdr-label" colspan="2">Designation :</td>
-    <td class="hdr-value" colspan="3">${escapeHtml(quotation.buyer?.designation)}</td>
-    <td class="hdr-label-right" colspan="2">Contact :</td>
-    <td class="hdr-value-right" colspan="2">${escapeHtml(quotation.preparedBy?.name)}</td>
+  <tr class="info-grid">
+    <td class="info-customer-name" colspan="2">M/s. ${escapeHtml(quotation.customer.name)}</td>
+    <td class="info-value" colspan="2">${escapeHtml(quotation.buyer?.buyerName || quotation.customer.contactPerson)}</td>
+    <td class="info-value" colspan="5">Direct Line: ${escapeHtml(quotation.preparedBy?.phone) || ""}</td>
   </tr>
-  <!-- Row 10 -->
-  <tr class="header-grid">
-    <td class="hdr-label bb-med" colspan="2">Email :</td>
-    <td class="hdr-value bb-med" colspan="4">${escapeHtml(quotation.buyer?.email || quotation.customer.email)}</td>
-    <td class="hdr-label bb-med" colspan="2">Contact :</td>
-    <td class="hdr-value bb-med" colspan="3">${escapeHtml(quotation.buyer?.mobile || quotation.buyer?.telephone || quotation.customer.phone)}</td>
-    <td class="hdr-label-right bb-med" colspan="2">Email :</td>
-    <td class="hdr-value-right bb-med" colspan="2">${escapeHtml(quotation.preparedBy?.email)}</td>
+  <tr class="info-grid">
+    <td class="info-value" colspan="2">${escapeHtml(quotation.customer.addressLine1)}</td>
+    <td class="info-value" colspan="2">${escapeHtml(quotation.buyer?.designation)}</td>
+    <td class="info-value" colspan="5"></td>
+  </tr>
+  <tr class="info-grid">
+    <td class="info-value" colspan="2">${[quotation.customer.city, quotation.customer.state, quotation.customer.pincode].filter(Boolean).join(", ")}</td>
+    <td class="info-value" colspan="2">${escapeHtml(quotation.buyer?.email || quotation.customer.email)}</td>
+    <td class="info-small" colspan="5"></td>
+  </tr>
+  <tr class="info-grid">
+    <td class="info-value" colspan="2">${escapeHtml(quotation.customer.country)}</td>
+    <td class="info-value" colspan="2">${escapeHtml(quotation.buyer?.mobile || quotation.buyer?.telephone || quotation.customer.phone)}</td>
+    <td class="info-small" colspan="5">Dated: ${formatDate(quotation.quotationDate)}</td>
   </tr>
 
-  <!-- ZONE 3: Title -->
-  <tr class="title-row">
-    <td colspan="15">${(quotation.version ?? 0) > 0 ? `Revised Quotation Sheet — Revision ${quotation.version}` : "Quotation Sheet"}</td>
+  <!-- ZONE 3: Intro line -->
+  <tr class="intro-row">
+    <td colspan="9">In response to your inquiry, we are pleased to quote as follows:</td>
   </tr>
 
-  <!-- ZONE 4: Table header -->
+  <!-- ZONE 4: Item table header -->
   <tr class="table-header">
-    <th style="border-left:2px solid #000">S/N</th>
-    <th colspan="2">Product</th>
-    <th>Material</th>
-    <th>Additional Spec.</th>
-    <th>Size<br>(NPS)</th>
-    <th>OD<br>(mm)</th>
-    <th>W.T.<br>(mm)</th>
-    <th>Length<br>(Mtr.)</th>
-    <th>Ends</th>
-    <th>Qty<br>(Mtr.)</th>
-    <th class="green-bg">Unit Rate<br>${escapeHtml(quotation.currency)}/Mtr</th>
-    <th>Amount<br>(${escapeHtml(quotation.currency)}.)</th>
-    <th>Delivery<br>(Ex-works)</th>
-    <th style="border-right:2px solid #000">Remark/<br>Material Code</th>
+    <th>Sr.</th>
+    <th colspan="4">Item Description</th>
+    <th>Qty</th>
+    <th>Unit rate</th>
+    <th>Total</th>
+    <th>Delivery</th>
+  </tr>
+  <tr class="table-header-sub">
+    <th>no.</th>
+    <th colspan="4"></th>
+    <th>MTR</th>
+    <th>${escapeHtml(quotation.currency)}</th>
+    <th>${escapeHtml(quotation.currency)}</th>
+    <th>Ex-Works</th>
   </tr>
 
   <!-- ZONE 5: Data rows -->
   ${itemRows}
 
-  <!-- ZONE 6: Total row -->
-  <tr class="total-row">
-    <td colspan="10" class="bl-med" style="text-align:center">Total</td>
+  <!-- Grand Total row -->
+  <tr class="grand-total">
+    <td colspan="5">Grand Total</td>
     <td>${formatNumber(totalQty, 0)}</td>
-    <td class="green-bg"></td>
+    <td></td>
     <td>${isUnquoted ? "" : formatNumber(totalAmount, 0)}</td>
     <td></td>
-    <td class="br-med"></td>
   </tr>
 
   ${!isUnquoted ? `<!-- Amount in Words -->
   <tr>
-    <td colspan="15" class="bl-med br-med" style="font-size:10pt;padding:4px 6px;text-align:left;">
+    <td colspan="9" style="font-size:10pt;padding:4px 6px;text-align:left;border:0.5px solid #999;">
       <strong>Amount in Words:</strong> ${escapeHtml(numberToWords(totalAmount, quotation.currency))}
     </td>
   </tr>` : ""}
+
+  <!-- ZONE 6: Offer Terms -->
+  <tr class="terms-header">
+    <td colspan="9">OFFER TERMS:</td>
+  </tr>
+  ${currencyTerm}
+  ${termRows}
+
+  <!-- ZONE 7: Notes -->
+  <tr class="notes-header">
+    <td colspan="9">NOTES:</td>
+  </tr>
+  ${noteRows}
+
+  <!-- Spacer -->
+  <tr><td colspan="9" style="height:8px;"></td></tr>
+
+  <!-- ZONE 8: Footer -->
+  <tr class="footer-disclaimer">
+    <td colspan="5" class="left">This is a computer generated document hence not signed.</td>
+    <td colspan="4" class="right">FORMAT: QTN-Rev.2, Dated: 19/12/2012</td>
+  </tr>
+  <tr class="footer-appreciation">
+    <td colspan="9">YOUR ORDER WILL BE GREATLY APPRECIATED AND WILL RECEIVE OUR PROMPT AND CAREFUL ATTENTION.</td>
+  </tr>
+  <tr class="footer-address">
+    <td colspan="9">Regd. Address: ${escapeHtml(footerAddress)}.<br>${escapeHtml(footerContact)}</td>
+  </tr>
 </table>
-
-<!-- ZONE 7-9: Terms + Notes + Footer — one block, never split -->
-<div class="terms-notes-footer">
-  <div class="terms-section">
-    <div class="terms-title">OFFER TERMS:</div>
-    ${termItems}
-  </div>
-
-  <div class="notes-section">
-    <div class="notes-title">NOTES:</div>
-    ${noteItems}
-  </div>
-
-  ${(quotation.version ?? 0) > 0 ? `<div style="font-size:8pt;text-align:center;font-weight:bold;padding:3px;color:#c00;">This quotation supersedes all previous revisions.</div>` : ""}
-
-  <div class="footer-section">
-    <div class="footer-disclaimer">
-      <span>This is a computer generated document hence not signed.</span>
-      <span>FORMAT: QTN-Rev.2, Dated: 19/12/2012</span>
-    </div>
-    <div class="footer-appreciation">YOUR ORDER WILL BE GREATLY APPRECIATED AND WILL RECEIVE OUR PROMPT AND CAREFUL ATTENTION.</div>
-    <div class="footer-address">Regd. Address: ${escapeHtml(footerAddress)}. ${escapeHtml(footerContact)}</div>
-  </div>
-</div>
-
 </body>
 </html>`;
 }
