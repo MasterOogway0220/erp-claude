@@ -56,9 +56,11 @@ function StatusRadio({ value, onChange }: { value: boolean; onChange: (v: boolea
 
 // ─── Summary Cards ────────────────────────────────────────────────────────────
 
+const COLS: Record<number, string> = { 1: "grid-cols-1", 2: "grid-cols-2", 3: "grid-cols-3", 4: "grid-cols-4" };
+
 function SummaryCards({ items }: { items: { label: string; value: number; color?: string }[] }) {
   return (
-    <div className={`grid gap-4 md:grid-cols-${items.length}`}>
+    <div className={`grid gap-4 ${COLS[items.length] ?? "grid-cols-3"}`}>
       {items.map((item) => (
         <Card key={item.label}>
           <CardHeader className="pb-2">
@@ -145,14 +147,14 @@ function PaymentTermsTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <SummaryCards items={[
-          { label: "Total", value: items.length },
-          { label: "Active", value: items.filter(i => i.isActive).length, color: "text-green-600" },
-          { label: "Inactive", value: items.filter(i => !i.isActive).length, color: "text-muted-foreground" },
-        ]} />
-        <Button onClick={openCreate} className="ml-4 shrink-0"><Plus className="h-4 w-4 mr-2" />Add Payment Term</Button>
+      <div className="flex justify-end">
+        <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Add Payment Term</Button>
       </div>
+      <SummaryCards items={[
+        { label: "Total", value: items.length },
+        { label: "Active", value: items.filter(i => i.isActive).length, color: "text-green-600" },
+        { label: "Inactive", value: items.filter(i => !i.isActive).length, color: "text-muted-foreground" },
+      ]} />
 
       {loading ? <div className="rounded-lg border p-8 text-center text-muted-foreground">Loading...</div>
         : <DataTable columns={columns} data={items} searchKey="name" searchPlaceholder="Search payment terms..." pageSize={15} />}
@@ -263,14 +265,14 @@ function DeliveryTermsTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <SummaryCards items={[
-          { label: "Total", value: items.length },
-          { label: "Active", value: items.filter(i => i.isActive).length, color: "text-green-600" },
-          { label: "Inactive", value: items.filter(i => !i.isActive).length, color: "text-muted-foreground" },
-        ]} />
-        <Button onClick={openCreate} className="ml-4 shrink-0"><Plus className="h-4 w-4 mr-2" />Add Delivery Term</Button>
+      <div className="flex justify-end">
+        <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Add Delivery Term</Button>
       </div>
+      <SummaryCards items={[
+        { label: "Total", value: items.length },
+        { label: "Active", value: items.filter(i => i.isActive).length, color: "text-green-600" },
+        { label: "Inactive", value: items.filter(i => !i.isActive).length, color: "text-muted-foreground" },
+      ]} />
 
       {loading ? <div className="rounded-lg border p-8 text-center text-muted-foreground">Loading...</div>
         : <DataTable columns={columns} data={items} searchKey="name" searchPlaceholder="Search delivery terms..." pageSize={15} />}
@@ -382,15 +384,15 @@ function TaxRatesTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <SummaryCards items={[
-          { label: "Total", value: items.length },
-          { label: "Active", value: items.filter(i => i.isActive).length, color: "text-green-600" },
-          { label: "GST Rates", value: items.filter(i => ["CGST","SGST","IGST","GST"].includes(i.taxType || "")).length, color: "text-blue-600" },
-          { label: "Zero Rated", value: items.filter(i => i.taxType === "ZERO_RATED").length, color: "text-muted-foreground" },
-        ]} />
-        <Button onClick={openCreate} className="ml-4 shrink-0"><Plus className="h-4 w-4 mr-2" />Add Tax Rate</Button>
+      <div className="flex justify-end">
+        <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Add Tax Rate</Button>
       </div>
+      <SummaryCards items={[
+        { label: "Total", value: items.length },
+        { label: "Active", value: items.filter(i => i.isActive).length, color: "text-green-600" },
+        { label: "GST Rates", value: items.filter(i => ["CGST","SGST","IGST","GST"].includes(i.taxType || "")).length, color: "text-blue-600" },
+        { label: "Zero Rated", value: items.filter(i => i.taxType === "ZERO_RATED").length, color: "text-muted-foreground" },
+      ]} />
 
       {loading ? <div className="rounded-lg border p-8 text-center text-muted-foreground">Loading...</div>
         : <DataTable columns={columns} data={items} searchKey="name" searchPlaceholder="Search tax rates..." pageSize={15} />}
@@ -505,15 +507,15 @@ function InspectionAgenciesTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <SummaryCards items={[
-          { label: "Total", value: items.length },
-          { label: "Active", value: items.filter(i => i.isActive).length, color: "text-green-600" },
-          { label: "Approved", value: items.filter(i => i.approvedStatus).length, color: "text-blue-600" },
-          { label: "Inactive", value: items.filter(i => !i.isActive).length, color: "text-muted-foreground" },
-        ]} />
-        <Button onClick={openCreate} className="ml-4 shrink-0"><Plus className="h-4 w-4 mr-2" />Add Agency</Button>
+      <div className="flex justify-end">
+        <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Add Agency</Button>
       </div>
+      <SummaryCards items={[
+        { label: "Total", value: items.length },
+        { label: "Active", value: items.filter(i => i.isActive).length, color: "text-green-600" },
+        { label: "Approved", value: items.filter(i => i.approvedStatus).length, color: "text-blue-600" },
+        { label: "Inactive", value: items.filter(i => !i.isActive).length, color: "text-muted-foreground" },
+      ]} />
 
       {loading ? <div className="rounded-lg border p-8 text-center text-muted-foreground">Loading...</div>
         : <DataTable columns={columns} data={items} searchKey="name" searchPlaceholder="Search agencies..." pageSize={15} />}
