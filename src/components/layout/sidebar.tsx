@@ -72,9 +72,9 @@ const navSections: NavSection[] = [
         title: "Masters",
         icon: <Database className="h-5 w-5" />,
         iconColorClass: "text-slate-500",
-        roles: ["ADMIN", "SALES", "PURCHASE"],
+        roles: ["SUPER_ADMIN", "SALES", "PURCHASE"],
         children: [
-          { title: "Company", href: "/masters/company", roles: ["ADMIN"] },
+          { title: "Company", href: "/masters/company", roles: ["SUPER_ADMIN"] },
           { title: "Employees", href: "/masters/employees" },
           { title: "Customers", href: "/masters/customers" },
           { title: "Buyers", href: "/masters/buyers" },
@@ -89,7 +89,7 @@ const navSections: NavSection[] = [
           { title: "Material Codes", href: "/masters/material-codes" },
           { title: "Testing Types", href: "/masters/testing" },
           { title: "Terms & Conditions", href: "/masters/terms-conditions" },
-          { title: "Financial Years", href: "/masters/financial-years", roles: ["ADMIN"] },
+          { title: "Financial Years", href: "/masters/financial-years", roles: ["SUPER_ADMIN"] },
           { title: "Offer Terms", href: "/masters/offer-terms" },
           { title: "Technical Exchange", href: "/masters/technical-exchange" },
           { title: "Other Masters", href: "/masters/other" },
@@ -104,7 +104,7 @@ const navSections: NavSection[] = [
         title: "Quotations",
         icon: <FileText className="h-5 w-5" />,
         iconColorClass: "text-indigo-500",
-        roles: ["SALES", "MANAGEMENT", "ADMIN"],
+        roles: ["SALES", "MANAGEMENT", "SUPER_ADMIN"],
         children: [
           { title: "Quotation List", href: "/quotations" },
           { title: "Create Quotation", href: "/quotations/create" },
@@ -114,7 +114,7 @@ const navSections: NavSection[] = [
         title: "Sales",
         icon: <ShoppingCart className="h-5 w-5" />,
         iconColorClass: "text-emerald-500",
-        roles: ["SALES", "MANAGEMENT", "ADMIN"],
+        roles: ["SALES", "MANAGEMENT", "SUPER_ADMIN"],
         children: [
           { title: "Sales Orders", href: "/sales" },
           { title: "Customer PO Review", href: "/sales" },
@@ -124,7 +124,7 @@ const navSections: NavSection[] = [
         title: "Purchase",
         icon: <Package className="h-5 w-5" />,
         iconColorClass: "text-orange-500",
-        roles: ["PURCHASE", "MANAGEMENT", "ADMIN"],
+        roles: ["PURCHASE", "MANAGEMENT", "SUPER_ADMIN"],
         children: [
           { title: "Purchase Requisitions", href: "/purchase" },
           { title: "Purchase Orders", href: "/purchase/orders/create" },
@@ -135,7 +135,7 @@ const navSections: NavSection[] = [
         title: "Inventory",
         icon: <Warehouse className="h-5 w-5" />,
         iconColorClass: "text-cyan-500",
-        roles: ["STORES", "MANAGEMENT", "ADMIN"],
+        roles: ["STORES", "MANAGEMENT", "SUPER_ADMIN"],
         children: [
           { title: "Stock View", href: "/inventory" },
           { title: "New GRN", href: "/inventory/grn/create" },
@@ -146,7 +146,7 @@ const navSections: NavSection[] = [
         title: "Quality",
         icon: <ClipboardCheck className="h-5 w-5" />,
         iconColorClass: "text-violet-500",
-        roles: ["QC", "MANAGEMENT", "ADMIN"],
+        roles: ["QC", "MANAGEMENT", "SUPER_ADMIN"],
         children: [
           { title: "Inspections", href: "/quality" },
           { title: "New Inspection", href: "/quality/inspections/create" },
@@ -160,7 +160,7 @@ const navSections: NavSection[] = [
         title: "Dispatch & Finance",
         icon: <Truck className="h-5 w-5" />,
         iconColorClass: "text-rose-500",
-        roles: ["STORES", "ACCOUNTS", "MANAGEMENT", "ADMIN"],
+        roles: ["STORES", "ACCOUNTS", "MANAGEMENT", "SUPER_ADMIN"],
         children: [
           { title: "Packing Lists", href: "/dispatch" },
           { title: "Dispatch Notes", href: "/dispatch?tab=dispatch-notes" },
@@ -180,7 +180,7 @@ const navSections: NavSection[] = [
         title: "Reports",
         icon: <BarChart3 className="h-5 w-5" />,
         iconColorClass: "text-teal-500",
-        roles: ["MANAGEMENT", "ADMIN"],
+        roles: ["MANAGEMENT", "SUPER_ADMIN"],
         children: [
           { title: "All Reports", href: "/reports" },
           { title: "Sales Dashboard", href: "/reports/sales" },
@@ -199,7 +199,7 @@ const navSections: NavSection[] = [
         title: "Admin",
         icon: <Settings className="h-5 w-5" />,
         iconColorClass: "text-gray-500",
-        roles: ["ADMIN"],
+        roles: ["SUPER_ADMIN"],
         children: [
           { title: "User Management", href: "/admin" },
           { title: "Traceability", href: "/admin/traceability" },

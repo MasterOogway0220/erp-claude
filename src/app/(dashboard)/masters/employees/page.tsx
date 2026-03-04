@@ -60,7 +60,7 @@ interface EmployeeFormData {
 }
 
 const DEPARTMENTS = ["Purchase", "Sales", "Quality", "Warehouse", "Accounts"];
-const USER_ROLES = ["ADMIN", "SALES", "PURCHASE", "QC", "STORES", "ACCOUNTS", "MANAGEMENT"];
+const USER_ROLES = ["SUPER_ADMIN", "SALES", "PURCHASE", "QC", "STORES", "ACCOUNTS", "MANAGEMENT"];
 
 const emptyForm: EmployeeFormData = {
   name: "",

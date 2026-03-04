@@ -159,11 +159,11 @@ export async function PATCH(
           { status: 400 }
         );
       }
-      // Role check: only MANAGEMENT or ADMIN can approve
+      // Role check: only MANAGEMENT or SUPER_ADMIN can approve
       const userRole = session.user.role;
-      if (userRole !== "MANAGEMENT" && userRole !== "ADMIN") {
+      if (userRole !== "MANAGEMENT" && userRole !== "SUPER_ADMIN") {
         return NextResponse.json(
-          { error: "Only MANAGEMENT or ADMIN can approve POs" },
+          { error: "Only MANAGEMENT or SUPER_ADMIN can approve POs" },
           { status: 403 }
         );
       }
@@ -180,9 +180,9 @@ export async function PATCH(
         );
       }
       const userRole = session.user.role;
-      if (userRole !== "MANAGEMENT" && userRole !== "ADMIN") {
+      if (userRole !== "MANAGEMENT" && userRole !== "SUPER_ADMIN") {
         return NextResponse.json(
-          { error: "Only MANAGEMENT or ADMIN can reject POs" },
+          { error: "Only MANAGEMENT or SUPER_ADMIN can reject POs" },
           { status: 403 }
         );
       }
@@ -226,9 +226,9 @@ export async function PATCH(
         if (existing.status === "PENDING_APPROVAL" && status === "OPEN") {
           // Approval via direct status - enforce role check
           const userRole = session.user.role;
-          if (userRole !== "MANAGEMENT" && userRole !== "ADMIN") {
+          if (userRole !== "MANAGEMENT" && userRole !== "SUPER_ADMIN") {
             return NextResponse.json(
-              { error: "Only MANAGEMENT or ADMIN can approve POs" },
+              { error: "Only MANAGEMENT or SUPER_ADMIN can approve POs" },
               { status: 403 }
             );
           }
@@ -239,9 +239,9 @@ export async function PATCH(
         } else if (existing.status === "PENDING_APPROVAL" && status === "DRAFT") {
           // Rejection via direct status - enforce role check
           const userRole = session.user.role;
-          if (userRole !== "MANAGEMENT" && userRole !== "ADMIN") {
+          if (userRole !== "MANAGEMENT" && userRole !== "SUPER_ADMIN") {
             return NextResponse.json(
-              { error: "Only MANAGEMENT or ADMIN can reject POs" },
+              { error: "Only MANAGEMENT or SUPER_ADMIN can reject POs" },
               { status: 403 }
             );
           }

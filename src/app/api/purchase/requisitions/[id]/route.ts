@@ -94,13 +94,13 @@ export async function PATCH(
       );
     }
 
-    // Role check: Only MANAGEMENT and ADMIN can approve/reject
+    // Role check: Only MANAGEMENT and SUPER_ADMIN can approve/reject
     if (status === "APPROVED" || status === "REJECTED") {
       const user = await prisma.user.findUnique({
         where: { id: session.user.id },
         select: { role: true },
       });
-      if (user?.role !== "MANAGEMENT" && user?.role !== "ADMIN") {
+      if (user?.role !== "MANAGEMENT" && user?.role !== "SUPER_ADMIN") {
         return NextResponse.json(
           { error: "Only Management or Admin can approve/reject purchase requisitions" },
           { status: 403 }

@@ -176,11 +176,11 @@ export async function PATCH(
             { status: 400 }
           );
         }
-        // Role check: only MANAGEMENT or ADMIN can verify
+        // Role check: only MANAGEMENT or SUPER_ADMIN can verify
         const userRole = session.user.role;
-        if (userRole !== "MANAGEMENT" && userRole !== "ADMIN") {
+        if (userRole !== "MANAGEMENT" && userRole !== "SUPER_ADMIN") {
           return NextResponse.json(
-            { error: "Only MANAGEMENT or ADMIN can verify NCRs" },
+            { error: "Only MANAGEMENT or SUPER_ADMIN can verify NCRs" },
             { status: 403 }
           );
         }

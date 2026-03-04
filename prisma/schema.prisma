@@ -11,7 +11,7 @@ datasource db {
 // ==================== ENUMS ====================
 
 enum UserRole {
-  ADMIN
+  SUPER_ADMIN
   SALES
   PURCHASE
   QC

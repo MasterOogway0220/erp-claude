@@ -45,9 +45,9 @@ export async function PATCH(
     // Handle approval workflow actions
     if (action === "approve" || action === "reject") {
       const userRole = session.user.role;
-      if (userRole !== "MANAGEMENT" && userRole !== "ADMIN") {
+      if (userRole !== "MANAGEMENT" && userRole !== "SUPER_ADMIN") {
         return NextResponse.json(
-          { error: "Only MANAGEMENT or ADMIN can approve/reject vendors" },
+          { error: "Only MANAGEMENT or SUPER_ADMIN can approve/reject vendors" },
           { status: 403 }
         );
       }

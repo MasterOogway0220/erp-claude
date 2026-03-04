@@ -426,7 +426,7 @@ export default function QuotationDetailPage() {
             </Button>
           </>
         )}
-        {quotation.status === "PENDING_APPROVAL" && (user?.role === "MANAGEMENT" || user?.role === "ADMIN") && (
+        {quotation.status === "PENDING_APPROVAL" && (user?.role === "MANAGEMENT" || user?.role === "SUPER_ADMIN") && (
           <>
             <Button
               variant="outline"
@@ -1012,8 +1012,8 @@ export default function QuotationDetailPage() {
         </Card>
       )}
 
-      {/* Internal Costing Analysis - MANAGEMENT and ADMIN only */}
-      {(user?.role === "MANAGEMENT" || user?.role === "ADMIN") &&
+      {/* Internal Costing Analysis - MANAGEMENT and SUPER_ADMIN only */}
+      {(user?.role === "MANAGEMENT" || user?.role === "SUPER_ADMIN") &&
         quotation.items.some(
           (item: any) =>
             item.materialCost || item.logisticsCost || item.inspectionCost || item.otherCosts

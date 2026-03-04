@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
   if (!existingAdmin) {
     const passwordHash = await bcrypt.hash(adminPassword, 10);
     await prisma.user.create({
-      data: { email: adminEmail, name: "System Administrator", passwordHash, role: "ADMIN", isActive: true },
+      data: { email: adminEmail, name: "System Administrator", passwordHash, role: "SUPER_ADMIN", isActive: true },
     });
     results.push("Admin user created");
   } else {

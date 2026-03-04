@@ -127,7 +127,7 @@ export async function PATCH(
       }
     }
 
-    // Only MANAGEMENT or ADMIN can approve/reject quotations
+    // Only MANAGEMENT or SUPER_ADMIN can approve/reject quotations
     if (status === "APPROVED" || status === "REJECTED") {
       const { authorized: canApprove, response: approveResponse } = await checkAccess("quotation", "approve");
       if (!canApprove) return approveResponse!;
@@ -302,7 +302,7 @@ export async function PUT(
     }
 
     const userRole = session.user?.role;
-    const isAdminOrMgmt = userRole === "ADMIN" || userRole === "MANAGEMENT";
+    const isAdminOrMgmt = userRole === "SUPER_ADMIN" || userRole === "MANAGEMENT";
 
     if (existing.status !== "DRAFT" && !(isAdminOrMgmt && existing.status === "PENDING_APPROVAL")) {
       return NextResponse.json(
