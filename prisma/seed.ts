@@ -310,7 +310,7 @@ async function seedAdminUser() {
       email: "admin@erp.com",
       name: "System Admin",
       passwordHash,
-      role: "ADMIN",
+      role: "SUPER_ADMIN",
       isActive: true,
     },
   });

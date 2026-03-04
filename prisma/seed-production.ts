@@ -44,7 +44,7 @@ async function seedProduction() {
           name: 'System Administrator',
           email: adminEmail,
           passwordHash: hashedPassword,
-          role: 'ADMIN',
+          role: 'SUPER_ADMIN',
           isActive: true,
         },
       });
