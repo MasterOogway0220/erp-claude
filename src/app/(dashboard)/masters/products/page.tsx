@@ -1,10 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DataTable, Column } from "@/components/shared/data-table";
+import { SmartCombobox } from "@/components/shared/smart-combobox";
 import {
   Table,
   TableBody,
@@ -21,8 +28,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -30,10 +35,70 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { SmartCombobox } from "@/components/shared/smart-combobox";
 import { Plus, Pencil, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
+
+// ─── Top-level tabs ──────────────────────────────────────────────────────────
+type MainTab = "pipes" | "sizes" | "lengths" | "fittings" | "flanges" | "units" | "material-codes";
+
+export default function ProductMasterPage() {
+  const [activeTab, setActiveTab] = useState<MainTab>("pipes");
+
+  const tabLabel: Record<MainTab, string> = {
+    pipes: "Product Specifications",
+    sizes: "Size Master",
+    lengths: "Length Master",
+    fittings: "Fitting Master",
+    flanges: "Flange Master",
+    units: "Unit Master (UOM)",
+    "material-codes": "Material Code Master",
+  };
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Product Master"
+        description={tabLabel[activeTab]}
+      />
+
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as MainTab)}>
+        <TabsList className="flex-wrap h-auto">
+          <TabsTrigger value="pipes">Pipes</TabsTrigger>
+          <TabsTrigger value="sizes">Sizes</TabsTrigger>
+          <TabsTrigger value="lengths">Lengths</TabsTrigger>
+          <TabsTrigger value="fittings">Fittings</TabsTrigger>
+          <TabsTrigger value="flanges">Flanges</TabsTrigger>
+          <TabsTrigger value="units">Units (UOM)</TabsTrigger>
+          <TabsTrigger value="material-codes">Material Codes</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="pipes" className="mt-4">
+          <PipesPanel />
+        </TabsContent>
+        <TabsContent value="sizes" className="mt-4">
+          <SizesPanel />
+        </TabsContent>
+        <TabsContent value="lengths" className="mt-4">
+          <LengthsPanel />
+        </TabsContent>
+        <TabsContent value="fittings" className="mt-4">
+          <FittingsPanel />
+        </TabsContent>
+        <TabsContent value="flanges" className="mt-4">
+          <FlangesPanel />
+        </TabsContent>
+        <TabsContent value="units" className="mt-4">
+          <UnitsPanel />
+        </TabsContent>
+        <TabsContent value="material-codes" className="mt-4">
+          <MaterialCodesPanel />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+// ─── PIPES (Product Specifications) ─────────────────────────────────────────
 
 const PRODUCT_CATEGORIES = [
   { value: "PIPES", label: "Pipes" },
@@ -43,17 +108,6 @@ const PRODUCT_CATEGORIES = [
   { value: "NUT_BOLT", label: "Nut Bolt" },
   { value: "GASKETS", label: "Gaskets" },
 ];
-
-interface DimensionalStandard {
-  id: string;
-  name: string;
-  code: string;
-}
-
-interface LengthOption {
-  id: string;
-  label: string;
-}
 
 interface ProductSpec {
   id: string;
@@ -66,7 +120,7 @@ interface ProductSpec {
   ends: string | null;
   length: string | null;
   dimensionalStandardId: string | null;
-  dimensionalStandard: DimensionalStandard | null;
+  dimensionalStandard: { id: string; name: string; code: string } | null;
 }
 
 interface ProductFormData {
@@ -81,38 +135,26 @@ interface ProductFormData {
   dimensionalStandardId: string;
 }
 
-const emptyForm: ProductFormData = {
-  product: "",
-  category: "",
-  specification: "",
-  grade: "",
-  material: "",
-  additionalSpec: "",
-  ends: "",
-  length: "",
-  dimensionalStandardId: "",
+const emptyProductForm: ProductFormData = {
+  product: "", category: "", specification: "", grade: "",
+  material: "", additionalSpec: "", ends: "", length: "", dimensionalStandardId: "",
 };
 
-export default function ProductsPage() {
+function PipesPanel() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [page, setPage] = useState(1);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ProductSpec | null>(null);
-  const [formData, setFormData] = useState<ProductFormData>(emptyForm);
+  const [formData, setFormData] = useState<ProductFormData>(emptyProductForm);
   const [dimStdSearch, setDimStdSearch] = useState("");
   const [lengthSearch, setLengthSearch] = useState("");
 
-  // Fetch products
   const { data, isLoading } = useQuery({
     queryKey: ["products", search, categoryFilter, page],
     queryFn: async () => {
-      const params = new URLSearchParams({
-        search,
-        page: page.toString(),
-        limit: "50",
-      });
+      const params = new URLSearchParams({ search, page: page.toString(), limit: "50" });
       if (categoryFilter) params.set("category", categoryFilter);
       const res = await fetch(`/api/masters/products?${params}`);
       if (!res.ok) throw new Error("Failed to fetch products");
@@ -120,7 +162,6 @@ export default function ProductsPage() {
     },
   });
 
-  // Fetch dimensional standards
   const { data: dimStdData } = useQuery({
     queryKey: ["dimensional-standards"],
     queryFn: async () => {
@@ -130,7 +171,6 @@ export default function ProductsPage() {
     },
   });
 
-  // Fetch lengths
   const { data: lengthsData } = useQuery({
     queryKey: ["lengths"],
     queryFn: async () => {
@@ -140,90 +180,52 @@ export default function ProductsPage() {
     },
   });
 
-  const dimensionalStandards: DimensionalStandard[] = dimStdData?.dimensionalStandards || [];
-  const lengths: LengthOption[] = lengthsData?.lengths || [];
+  const dimensionalStandards = dimStdData?.dimensionalStandards || [];
+  const lengths = lengthsData?.lengths || [];
 
-  // Create mutation
   const createMutation = useMutation({
     mutationFn: async (data: ProductFormData) => {
       const res = await fetch("/api/masters/products", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Failed to create product");
-      }
+      if (!res.ok) { const err = await res.json(); throw new Error(err.error || "Failed to create"); }
       return res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      toast.success("Product specification created successfully");
-      handleCloseDialog();
-    },
-    onError: (err: Error) => {
-      toast.error(err.message);
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["products"] }); toast.success("Product specification created"); closeDialog(); },
+    onError: (err: Error) => toast.error(err.message),
   });
 
-  // Update mutation
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: ProductFormData }) => {
       const res = await fetch(`/api/masters/products/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        method: "PATCH", headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Failed to update product");
-      }
+      if (!res.ok) { const err = await res.json(); throw new Error(err.error || "Failed to update"); }
       return res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      toast.success("Product specification updated successfully");
-      handleCloseDialog();
-    },
-    onError: (err: Error) => {
-      toast.error(err.message);
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["products"] }); toast.success("Product specification updated"); closeDialog(); },
+    onError: (err: Error) => toast.error(err.message),
   });
 
-  // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/masters/products/${id}`, {
-        method: "DELETE",
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Failed to delete product");
-      }
+      const res = await fetch(`/api/masters/products/${id}`, { method: "DELETE" });
+      if (!res.ok) { const err = await res.json(); throw new Error(err.error || "Failed to delete"); }
       return res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      toast.success("Product specification deleted successfully");
-    },
-    onError: (err: Error) => {
-      toast.error(err.message);
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["products"] }); toast.success("Product specification deleted"); },
+    onError: (err: Error) => toast.error(err.message),
   });
 
-  // Add length inline
   const addLengthMutation = useMutation({
     mutationFn: async (label: string) => {
       const res = await fetch("/api/masters/lengths", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ label }),
       });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Failed to add length");
-      }
+      if (!res.ok) { const err = await res.json(); throw new Error(err.error || "Failed to add length"); }
       return res.json();
     },
     onSuccess: (newLength) => {
@@ -232,69 +234,48 @@ export default function ProductsPage() {
       setLengthSearch("");
       toast.success("Length added");
     },
-    onError: (err: Error) => {
-      toast.error(err.message);
-    },
+    onError: (err: Error) => toast.error(err.message),
   });
 
-  const handleOpenDialog = (product?: ProductSpec) => {
+  const openDialog = (product?: ProductSpec) => {
     if (product) {
       setEditingProduct(product);
       setFormData({
-        product: product.product,
-        category: product.category || "",
-        specification: product.specification || "",
-        grade: product.grade || "",
-        material: product.material || "",
-        additionalSpec: product.additionalSpec || "",
-        ends: product.ends || "",
-        length: product.length || "",
+        product: product.product, category: product.category || "",
+        specification: product.specification || "", grade: product.grade || "",
+        material: product.material || "", additionalSpec: product.additionalSpec || "",
+        ends: product.ends || "", length: product.length || "",
         dimensionalStandardId: product.dimensionalStandardId || "",
       });
       setDimStdSearch(product.dimensionalStandard?.name || "");
     } else {
       setEditingProduct(null);
-      setFormData(emptyForm);
+      setFormData(emptyProductForm);
       setDimStdSearch("");
     }
     setLengthSearch("");
     setIsDialogOpen(true);
   };
 
-  const handleCloseDialog = () => {
+  const closeDialog = () => {
     setIsDialogOpen(false);
     setEditingProduct(null);
-    setFormData(emptyForm);
+    setFormData(emptyProductForm);
     setDimStdSearch("");
     setLengthSearch("");
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingProduct) {
-      updateMutation.mutate({ id: editingProduct.id, data: formData });
-    } else {
-      createMutation.mutate(formData);
-    }
-  };
-
-  const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this product specification?")) {
-      deleteMutation.mutate(id);
-    }
+    if (editingProduct) updateMutation.mutate({ id: editingProduct.id, data: formData });
+    else createMutation.mutate(formData);
   };
 
   const getCategoryLabel = (val: string | null) =>
     PRODUCT_CATEGORIES.find((c) => c.value === val)?.label || val || "—";
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Product Specifications"
-        description="Manage product specification master data"
-      />
-
-      {/* Search, Filter, and Actions */}
+    <div className="space-y-4">
       <div className="flex items-center gap-4 flex-wrap">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -305,26 +286,23 @@ export default function ProductsPage() {
             className="pl-10"
           />
         </div>
-        <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v === "ALL" ? "" : v); setPage(1); }}>
+        <Select value={categoryFilter || "ALL"} onValueChange={(v) => { setCategoryFilter(v === "ALL" ? "" : v); setPage(1); }}>
           <SelectTrigger className="w-[160px]">
             <SelectValue placeholder="All Categories" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="ALL">All Categories</SelectItem>
             {PRODUCT_CATEGORIES.map((c) => (
-              <SelectItem key={c.value} value={c.value}>
-                {c.label}
-              </SelectItem>
+              <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
             ))}
           </SelectContent>
         </Select>
-        <Button onClick={() => handleOpenDialog()} className="ml-auto">
+        <Button onClick={() => openDialog()} className="ml-auto">
           <Plus className="h-4 w-4 mr-2" />
           Add Product Spec
         </Button>
       </div>
 
-      {/* Data Table */}
       <div className="rounded-lg border bg-card">
         <Table>
           <TableHeader>
@@ -343,53 +321,27 @@ export default function ProductsPage() {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
-                  Loading products...
-                </TableCell>
-              </TableRow>
+              <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">Loading products...</TableCell></TableRow>
             ) : data?.products?.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
-                  No products found
-                </TableCell>
-              </TableRow>
+              <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">No products found</TableCell></TableRow>
             ) : (
-              data?.products?.map((product: ProductSpec) => (
-                <TableRow key={product.id}>
+              data?.products?.map((p: ProductSpec) => (
+                <TableRow key={p.id}>
                   <TableCell>
-                    {product.category ? (
-                      <Badge variant="secondary" className="text-xs">
-                        {getCategoryLabel(product.category)}
-                      </Badge>
-                    ) : (
-                      "—"
-                    )}
+                    {p.category ? <Badge variant="secondary" className="text-xs">{getCategoryLabel(p.category)}</Badge> : "—"}
                   </TableCell>
-                  <TableCell className="font-medium">{product.product}</TableCell>
-                  <TableCell>{product.specification || "—"}</TableCell>
-                  <TableCell>{product.grade || "—"}</TableCell>
-                  <TableCell className="max-w-[150px] truncate">{product.material || "—"}</TableCell>
-                  <TableCell>{product.dimensionalStandard?.name || "—"}</TableCell>
-                  <TableCell className="max-w-[120px] truncate">
-                    {product.additionalSpec || "—"}
-                  </TableCell>
-                  <TableCell>{product.ends || "—"}</TableCell>
-                  <TableCell>{product.length || "—"}</TableCell>
+                  <TableCell className="font-medium">{p.product}</TableCell>
+                  <TableCell>{p.specification || "—"}</TableCell>
+                  <TableCell>{p.grade || "—"}</TableCell>
+                  <TableCell className="max-w-[150px] truncate">{p.material || "—"}</TableCell>
+                  <TableCell>{p.dimensionalStandard?.name || "—"}</TableCell>
+                  <TableCell className="max-w-[120px] truncate">{p.additionalSpec || "—"}</TableCell>
+                  <TableCell>{p.ends || "—"}</TableCell>
+                  <TableCell>{p.length || "—"}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleOpenDialog(product)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(product.id)}
-                      >
+                      <Button variant="ghost" size="icon" onClick={() => openDialog(p)}><Pencil className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => { if (confirm("Delete this product specification?")) deleteMutation.mutate(p.id); }}>
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>
@@ -399,180 +351,76 @@ export default function ProductsPage() {
             )}
           </TableBody>
         </Table>
-
-        {/* Pagination */}
         {data?.pagination && (
           <div className="flex items-center justify-between border-t px-4 py-3">
             <div className="text-sm text-muted-foreground">
-              Showing {Math.min((page - 1) * 50 + 1, data.pagination.total)} to{" "}
-              {Math.min(page * 50, data.pagination.total)} of {data.pagination.total} products
+              Showing {Math.min((page - 1) * 50 + 1, data.pagination.total)} to {Math.min(page * 50, data.pagination.total)} of {data.pagination.total} products
             </div>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-              >
-                Previous
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => p + 1)}
-                disabled={page >= data.pagination.pages}
-              >
-                Next
-              </Button>
+              <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>Previous</Button>
+              <Button variant="outline" size="sm" onClick={() => setPage((p) => p + 1)} disabled={page >= data.pagination.pages}>Next</Button>
             </div>
           </div>
         )}
       </div>
 
-      {/* Create/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <form onSubmit={handleSubmit}>
             <DialogHeader>
-              <DialogTitle>
-                {editingProduct ? "Edit" : "Add"} Product Specification
-              </DialogTitle>
-              <DialogDescription>
-                {editingProduct ? "Update" : "Create"} a product specification entry
-              </DialogDescription>
+              <DialogTitle>{editingProduct ? "Edit" : "Add"} Product Specification</DialogTitle>
+              <DialogDescription>{editingProduct ? "Update" : "Create"} a product specification entry</DialogDescription>
             </DialogHeader>
-
             <div className="grid gap-4 py-4">
-              {/* Category */}
               <div className="grid gap-2">
-                <Label htmlFor="category">Category</Label>
-                <Select
-                  value={formData.category || "NONE"}
-                  onValueChange={(v) =>
-                    setFormData({ ...formData, category: v === "NONE" ? "" : v })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
+                <Label>Category</Label>
+                <Select value={formData.category || "NONE"} onValueChange={(v) => setFormData({ ...formData, category: v === "NONE" ? "" : v })}>
+                  <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="NONE">— None —</SelectItem>
-                    {PRODUCT_CATEGORIES.map((c) => (
-                      <SelectItem key={c.value} value={c.value}>
-                        {c.label}
-                      </SelectItem>
-                    ))}
+                    {PRODUCT_CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
-
-              {/* Product */}
               <div className="grid gap-2">
-                <Label htmlFor="product">Product *</Label>
-                <Input
-                  id="product"
-                  value={formData.product}
-                  onChange={(e) =>
-                    setFormData({ ...formData, product: e.target.value })
-                  }
-                  placeholder="e.g., C.S. SEAMLESS PIPE"
-                  required
-                />
+                <Label>Product *</Label>
+                <Input value={formData.product} onChange={(e) => setFormData({ ...formData, product: e.target.value })} placeholder="e.g., C.S. SEAMLESS PIPE" required />
               </div>
-
-              {/* Specification & Grade */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="specification">Specification</Label>
-                  <Input
-                    id="specification"
-                    value={formData.specification}
-                    onChange={(e) =>
-                      setFormData({ ...formData, specification: e.target.value })
-                    }
-                    placeholder="e.g., ASTM A106"
-                  />
+                  <Label>Specification</Label>
+                  <Input value={formData.specification} onChange={(e) => setFormData({ ...formData, specification: e.target.value })} placeholder="e.g., ASTM A106" />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="grade">Grade</Label>
-                  <Input
-                    id="grade"
-                    value={formData.grade}
-                    onChange={(e) =>
-                      setFormData({ ...formData, grade: e.target.value })
-                    }
-                    placeholder="e.g., Gr. B"
-                  />
+                  <Label>Grade</Label>
+                  <Input value={formData.grade} onChange={(e) => setFormData({ ...formData, grade: e.target.value })} placeholder="e.g., Gr. B" />
                 </div>
               </div>
-
-              {/* Material */}
               <div className="grid gap-2">
-                <Label htmlFor="material">Material</Label>
-                <Textarea
-                  id="material"
-                  value={formData.material}
-                  onChange={(e) =>
-                    setFormData({ ...formData, material: e.target.value })
-                  }
-                  placeholder="e.g., ASTM A106/A53/API 5L GR. B"
-                  rows={2}
-                />
+                <Label>Material</Label>
+                <Textarea value={formData.material} onChange={(e) => setFormData({ ...formData, material: e.target.value })} placeholder="e.g., ASTM A106/A53/API 5L GR. B" rows={2} />
               </div>
-
-              {/* Dimensional Standard */}
               <div className="grid gap-2">
                 <Label>Dimensional Standard</Label>
                 <SmartCombobox
                   options={dimensionalStandards}
                   value={dimStdSearch}
-                  onSelect={(std) => {
-                    setFormData({ ...formData, dimensionalStandardId: std.id });
-                    setDimStdSearch(std.name);
-                  }}
-                  onChange={(text) => {
-                    setDimStdSearch(text);
-                    if (!text) setFormData({ ...formData, dimensionalStandardId: "" });
-                  }}
+                  onSelect={(std) => { setFormData({ ...formData, dimensionalStandardId: std.id }); setDimStdSearch(std.name); }}
+                  onChange={(text) => { setDimStdSearch(text); if (!text) setFormData({ ...formData, dimensionalStandardId: "" }); }}
                   displayFn={(std) => `${std.name} (${std.code})`}
-                  filterFn={(std, query) => {
-                    const q = query.toLowerCase();
-                    return (
-                      std.name.toLowerCase().includes(q) ||
-                      std.code.toLowerCase().includes(q)
-                    );
-                  }}
+                  filterFn={(std, query) => { const q = query.toLowerCase(); return std.name.toLowerCase().includes(q) || std.code.toLowerCase().includes(q); }}
                   placeholder="Search dimensional standard..."
                 />
               </div>
-
-              {/* Additional Spec */}
               <div className="grid gap-2">
-                <Label htmlFor="additionalSpec">Additional Specification</Label>
-                <Input
-                  id="additionalSpec"
-                  value={formData.additionalSpec}
-                  onChange={(e) =>
-                    setFormData({ ...formData, additionalSpec: e.target.value })
-                  }
-                  placeholder="e.g., NACE MR0175, HIC, IBR"
-                />
+                <Label>Additional Specification</Label>
+                <Input value={formData.additionalSpec} onChange={(e) => setFormData({ ...formData, additionalSpec: e.target.value })} placeholder="e.g., NACE MR0175, HIC, IBR" />
               </div>
-
-              {/* Ends & Length */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="ends">Ends</Label>
-                  <Input
-                    id="ends"
-                    value={formData.ends}
-                    onChange={(e) =>
-                      setFormData({ ...formData, ends: e.target.value })
-                    }
-                    placeholder="BE, PE, NPTM, BSPT"
-                  />
+                  <Label>Ends</Label>
+                  <Input value={formData.ends} onChange={(e) => setFormData({ ...formData, ends: e.target.value })} placeholder="BE, PE, NPTM, BSPT" />
                 </div>
-
                 <div className="grid gap-2">
                   <Label>Length</Label>
                   <div className="flex gap-2">
@@ -580,61 +428,663 @@ export default function ProductsPage() {
                       <SmartCombobox
                         options={lengths}
                         value={formData.length || lengthSearch}
-                        onSelect={(len) => {
-                          setFormData({ ...formData, length: len.label });
-                          setLengthSearch("");
-                        }}
-                        onChange={(text) => {
-                          setFormData({ ...formData, length: text });
-                          setLengthSearch(text);
-                        }}
+                        onSelect={(len) => { setFormData({ ...formData, length: len.label }); setLengthSearch(""); }}
+                        onChange={(text) => { setFormData({ ...formData, length: text }); setLengthSearch(text); }}
                         displayFn={(len) => len.label}
-                        filterFn={(len, query) =>
-                          len.label.toLowerCase().includes(query.toLowerCase())
-                        }
+                        filterFn={(len, query) => len.label.toLowerCase().includes(query.toLowerCase())}
                         placeholder="Search or type length..."
                       />
                     </div>
-                    {lengthSearch &&
-                      !lengths.some(
-                        (l) => l.label.toLowerCase() === lengthSearch.toLowerCase()
-                      ) && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="shrink-0"
-                          onClick={() => addLengthMutation.mutate(lengthSearch)}
-                          disabled={addLengthMutation.isPending}
-                        >
-                          <Plus className="h-3 w-3 mr-1" />
-                          Add
-                        </Button>
-                      )}
+                    {lengthSearch && !lengths.some((l: any) => l.label.toLowerCase() === lengthSearch.toLowerCase()) && (
+                      <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={() => addLengthMutation.mutate(lengthSearch)} disabled={addLengthMutation.isPending}>
+                        <Plus className="h-3 w-3 mr-1" />Add
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
-
             <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleCloseDialog}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={createMutation.isPending || updateMutation.isPending}
-              >
-                {createMutation.isPending || updateMutation.isPending
-                  ? "Saving..."
-                  : editingProduct
-                  ? "Update"
-                  : "Create"}
+              <Button type="button" variant="outline" onClick={closeDialog}>Cancel</Button>
+              <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
+                {createMutation.isPending || updateMutation.isPending ? "Saving..." : editingProduct ? "Update" : "Create"}
               </Button>
             </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+// ─── SIZES ───────────────────────────────────────────────────────────────────
+
+type PipeType = "CS_AS" | "SS_DS";
+
+interface SizeEntry {
+  id: string;
+  sizeLabel: string;
+  od: number;
+  wt: number;
+  weight: number;
+  pipeType: PipeType;
+}
+
+function SizesPanel() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const [sizeTab, setSizeTab] = useState<PipeType>("CS_AS");
+  const [search, setSearch] = useState("");
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["sizes", sizeTab, search],
+    queryFn: async () => {
+      const params = new URLSearchParams({ pipeType: sizeTab, search });
+      const res = await fetch(`/api/masters/sizes?${params}`);
+      if (!res.ok) throw new Error("Failed to fetch sizes");
+      return res.json();
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/masters/sizes/${id}`, { method: "DELETE" });
+      if (!res.ok) { const err = await res.json(); throw new Error(err.error || "Failed to delete size"); }
+      return res.json();
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["sizes"] }); toast.success("Size deleted"); },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  return (
+    <div className="space-y-4">
+      <Tabs value={sizeTab} onValueChange={(v) => setSizeTab(v as PipeType)}>
+        <div className="flex items-center justify-between">
+          <TabsList>
+            <TabsTrigger value="CS_AS">CS &amp; AS Pipes</TabsTrigger>
+            <TabsTrigger value="SS_DS">SS &amp; DS Pipes</TabsTrigger>
+          </TabsList>
+          <Button onClick={() => router.push("/masters/sizes/create")}>
+            <Plus className="h-4 w-4 mr-2" />Add Size
+          </Button>
+        </div>
+
+        <div className="my-4 relative max-w-sm">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Search by size, OD, WT, weight..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
+        </div>
+
+        {(["CS_AS", "SS_DS"] as PipeType[]).map((tab) => (
+          <TabsContent key={tab} value={tab}>
+            <div className="rounded-lg border bg-card">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Size</TableHead>
+                    <TableHead className="text-right">OD (mm)</TableHead>
+                    <TableHead className="text-right">WT (mm)</TableHead>
+                    <TableHead className="text-right">Weight (kg/m)</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Loading sizes...</TableCell></TableRow>
+                  ) : (data?.sizes || []).length === 0 ? (
+                    <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No sizes found</TableCell></TableRow>
+                  ) : (
+                    (data?.sizes || []).map((s: SizeEntry) => (
+                      <TableRow key={s.id}>
+                        <TableCell className="font-medium">{s.sizeLabel}</TableCell>
+                        <TableCell className="text-right">{s.od}</TableCell>
+                        <TableCell className="text-right">{s.wt}</TableCell>
+                        <TableCell className="text-right">{s.weight}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button variant="ghost" size="icon" onClick={() => router.push(`/masters/sizes/${s.id}/edit`)}><Pencil className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" onClick={() => { if (confirm("Delete this size?")) deleteMutation.mutate(s.id); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+        ))}
+      </Tabs>
+    </div>
+  );
+}
+
+// ─── LENGTHS ─────────────────────────────────────────────────────────────────
+
+interface LengthEntry {
+  id: string;
+  label: string;
+}
+
+function LengthsPanel() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const [search, setSearch] = useState("");
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["lengths", search],
+    queryFn: async () => {
+      const params = new URLSearchParams({ search });
+      const res = await fetch(`/api/masters/lengths?${params}`);
+      if (!res.ok) throw new Error("Failed to fetch lengths");
+      return res.json();
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/masters/lengths/${id}`, { method: "DELETE" });
+      if (!res.ok) { const err = await res.json(); throw new Error(err.error || "Failed to delete length"); }
+      return res.json();
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["lengths"] }); toast.success("Length deleted"); },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const lengths: LengthEntry[] = data?.lengths || [];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-4">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Search lengths..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
+        </div>
+        <Button onClick={() => router.push("/masters/lengths/create")}>
+          <Plus className="h-4 w-4 mr-2" />Add Length
+        </Button>
+      </div>
+      <div className="rounded-lg border bg-card">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Label</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow><TableCell colSpan={2} className="text-center py-8 text-muted-foreground">Loading lengths...</TableCell></TableRow>
+            ) : lengths.length === 0 ? (
+              <TableRow><TableCell colSpan={2} className="text-center py-8 text-muted-foreground">No lengths found</TableCell></TableRow>
+            ) : (
+              lengths.map((l) => (
+                <TableRow key={l.id}>
+                  <TableCell className="font-medium">{l.label}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button variant="ghost" size="icon" onClick={() => router.push(`/masters/lengths/${l.id}/edit`)}><Pencil className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => { if (confirm("Delete this length?")) deleteMutation.mutate(l.id); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+}
+
+// ─── FITTINGS ────────────────────────────────────────────────────────────────
+
+const FITTING_TABS = ["All", "Elbow", "Tee", "Reducer", "Cap", "Others"] as const;
+
+interface Fitting {
+  id: string;
+  type: string;
+  size: string;
+  schedule: string | null;
+  materialGrade: string;
+  standard: string | null;
+  endType: string | null;
+  rating: string | null;
+}
+
+function FittingsPanel() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const [fittingTab, setFittingTab] = useState("All");
+  const [search, setSearch] = useState("");
+
+  const typeFilter = fittingTab === "All" || fittingTab === "Others" ? undefined : fittingTab;
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["fittings", fittingTab, search],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (typeFilter) params.set("type", typeFilter);
+      if (search) params.set("search", search);
+      const res = await fetch(`/api/masters/fittings?${params}`);
+      if (!res.ok) throw new Error("Failed to fetch fittings");
+      return res.json();
+    },
+  });
+
+  const fittings: Fitting[] = (data?.fittings || []).filter((f: Fitting) =>
+    fittingTab === "Others" ? !["Elbow", "Tee", "Reducer", "Cap"].includes(f.type) : true
+  );
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/masters/fittings/${id}`, { method: "DELETE" });
+      if (!res.ok) { const err = await res.json(); throw new Error(err.error || "Failed to delete fitting"); }
+      return res.json();
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["fittings"] }); toast.success("Fitting deleted"); },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  return (
+    <div className="space-y-4">
+      <Tabs value={fittingTab} onValueChange={setFittingTab}>
+        <div className="flex items-center justify-between">
+          <TabsList>
+            {FITTING_TABS.map((t) => <TabsTrigger key={t} value={t}>{t}</TabsTrigger>)}
+          </TabsList>
+          <Button onClick={() => router.push("/masters/fittings/create")}>
+            <Plus className="h-4 w-4 mr-2" />Add Fitting
+          </Button>
+        </div>
+
+        <div className="my-4 relative max-w-sm">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Search by type, size, material, standard..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
+        </div>
+
+        {FITTING_TABS.map((tab) => (
+          <TabsContent key={tab} value={tab}>
+            <div className="rounded-lg border bg-card">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Size</TableHead>
+                    <TableHead>Sch</TableHead>
+                    <TableHead>End Type</TableHead>
+                    <TableHead>Rating</TableHead>
+                    <TableHead>Material Grade</TableHead>
+                    <TableHead>Standard</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Loading fittings...</TableCell></TableRow>
+                  ) : fittings.length === 0 ? (
+                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No fittings found</TableCell></TableRow>
+                  ) : (
+                    fittings.map((f) => (
+                      <TableRow key={f.id}>
+                        <TableCell className="font-medium">{f.type}</TableCell>
+                        <TableCell>{f.size}</TableCell>
+                        <TableCell>{f.schedule || "-"}</TableCell>
+                        <TableCell>{f.endType || "-"}</TableCell>
+                        <TableCell>{f.rating || "-"}</TableCell>
+                        <TableCell>{f.materialGrade}</TableCell>
+                        <TableCell>{f.standard || "-"}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button variant="ghost" size="icon" onClick={() => router.push(`/masters/fittings/${f.id}/edit`)}><Pencil className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" onClick={() => { if (confirm("Delete this fitting?")) deleteMutation.mutate(f.id); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+        ))}
+      </Tabs>
+    </div>
+  );
+}
+
+// ─── FLANGES ─────────────────────────────────────────────────────────────────
+
+const FLANGE_TABS = ["All", "Weld Neck", "Slip On", "Blind", "Socket Weld", "Others"] as const;
+
+interface Flange {
+  id: string;
+  type: string;
+  size: string;
+  rating: string;
+  materialGrade: string;
+  standard: string | null;
+  facing: string | null;
+}
+
+function FlangesPanel() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const [flangeTab, setFlangeTab] = useState("All");
+  const [search, setSearch] = useState("");
+
+  const typeFilter = flangeTab === "All" || flangeTab === "Others" ? undefined : flangeTab;
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["flanges", flangeTab, search],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (typeFilter) params.set("type", typeFilter);
+      if (search) params.set("search", search);
+      const res = await fetch(`/api/masters/flanges?${params}`);
+      if (!res.ok) throw new Error("Failed to fetch flanges");
+      return res.json();
+    },
+  });
+
+  const flanges: Flange[] = (data?.flanges || []).filter((f: Flange) =>
+    flangeTab === "Others" ? !["Weld Neck", "Slip On", "Blind", "Socket Weld"].includes(f.type) : true
+  );
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/masters/flanges/${id}`, { method: "DELETE" });
+      if (!res.ok) { const err = await res.json(); throw new Error(err.error || "Failed to delete flange"); }
+      return res.json();
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["flanges"] }); toast.success("Flange deleted"); },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  return (
+    <div className="space-y-4">
+      <Tabs value={flangeTab} onValueChange={setFlangeTab}>
+        <div className="flex items-center justify-between">
+          <TabsList>
+            {FLANGE_TABS.map((t) => <TabsTrigger key={t} value={t}>{t}</TabsTrigger>)}
+          </TabsList>
+          <Button onClick={() => router.push("/masters/flanges/create")}>
+            <Plus className="h-4 w-4 mr-2" />Add Flange
+          </Button>
+        </div>
+
+        <div className="my-4 relative max-w-sm">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Search by type, size, rating, material..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
+        </div>
+
+        {FLANGE_TABS.map((tab) => (
+          <TabsContent key={tab} value={tab}>
+            <div className="rounded-lg border bg-card">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Size</TableHead>
+                    <TableHead>Rating</TableHead>
+                    <TableHead>Facing</TableHead>
+                    <TableHead>Material Grade</TableHead>
+                    <TableHead>Standard</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Loading flanges...</TableCell></TableRow>
+                  ) : flanges.length === 0 ? (
+                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No flanges found</TableCell></TableRow>
+                  ) : (
+                    flanges.map((f) => (
+                      <TableRow key={f.id}>
+                        <TableCell className="font-medium">{f.type}</TableCell>
+                        <TableCell>{f.size}</TableCell>
+                        <TableCell>{f.rating}#</TableCell>
+                        <TableCell>{f.facing || "-"}</TableCell>
+                        <TableCell>{f.materialGrade}</TableCell>
+                        <TableCell>{f.standard || "-"}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button variant="ghost" size="icon" onClick={() => router.push(`/masters/flanges/${f.id}/edit`)}><Pencil className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" onClick={() => { if (confirm("Delete this flange?")) deleteMutation.mutate(f.id); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+        ))}
+      </Tabs>
+    </div>
+  );
+}
+
+// ─── UNITS ───────────────────────────────────────────────────────────────────
+
+interface Unit {
+  id: string;
+  code: string;
+  name: string;
+  isActive: boolean;
+}
+
+function UnitsPanel() {
+  const router = useRouter();
+  const [units, setUnits] = useState<Unit[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchUnits = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/masters/units");
+      if (!res.ok) throw new Error("Failed to fetch units");
+      const data = await res.json();
+      setUnits(data.units || []);
+    } catch {
+      toast.error("Failed to load units");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchUnits(); }, [fetchUnits]);
+
+  const columns: Column<Unit>[] = [
+    { key: "code", header: "Code", sortable: true, cell: (row) => <span className="font-medium">{row.code}</span> },
+    { key: "name", header: "Name", sortable: true },
+    { key: "isActive", header: "Status", cell: (row) => <Badge variant={row.isActive ? "default" : "secondary"}>{row.isActive ? "Active" : "Inactive"}</Badge> },
+    { key: "actions", header: "Actions", cell: (row) => (
+      <Button variant="ghost" size="icon" onClick={() => router.push(`/masters/units/${row.id}/edit`)}><Pencil className="h-4 w-4" /></Button>
+    )},
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <Button onClick={() => router.push("/masters/units/create")}>
+          <Plus className="h-4 w-4 mr-2" />Add Unit
+        </Button>
+      </div>
+      {loading ? (
+        <div className="rounded-lg border p-8 text-center text-muted-foreground">Loading units...</div>
+      ) : (
+        <DataTable<Unit> columns={columns} data={units} searchKey="code" searchPlaceholder="Search by code..." pageSize={15} />
+      )}
+      <div className="rounded-lg border bg-muted/50 p-4">
+        <h3 className="font-semibold mb-2">Pre-seeded Units</h3>
+        <div className="flex flex-wrap gap-2">
+          {[
+            { code: "Kg", name: "Kilogram" }, { code: "Pcs", name: "Pieces" }, { code: "Nos", name: "Numbers" },
+            { code: "Mtr", name: "Meter" }, { code: "Ft", name: "Feet" }, { code: "MM", name: "Millimeter" },
+            { code: "In", name: "Inch" }, { code: "MT", name: "Metric Ton" }, { code: "Set", name: "Set" },
+            { code: "Lot", name: "Lot" }, { code: "Bundle", name: "Bundle" },
+          ].map((u) => (
+            <Badge key={u.code} variant="outline">{u.code} - {u.name}</Badge>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── MATERIAL CODES ──────────────────────────────────────────────────────────
+
+interface MaterialCode {
+  id: string;
+  code: string;
+  description: string | null;
+  productType: string | null;
+  materialGrade: string | null;
+  size: string | null;
+  schedule: string | null;
+  timesQuoted: number;
+  timesOrdered: number;
+}
+
+interface MaterialCodeForm {
+  code: string;
+  description: string;
+  productType: string;
+  materialGrade: string;
+  size: string;
+  schedule: string;
+}
+
+const emptyMCForm: MaterialCodeForm = { code: "", description: "", productType: "", materialGrade: "", size: "", schedule: "" };
+
+function MaterialCodesPanel() {
+  const [materialCodes, setMaterialCodes] = useState<MaterialCode[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<MaterialCode | null>(null);
+  const [formData, setFormData] = useState<MaterialCodeForm>(emptyMCForm);
+  const [saving, setSaving] = useState(false);
+
+  const fetchMaterialCodes = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/masters/material-codes");
+      if (!res.ok) throw new Error("Failed to fetch material codes");
+      const data = await res.json();
+      setMaterialCodes(data.materialCodes || []);
+    } catch {
+      toast.error("Failed to load material codes");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchMaterialCodes(); }, [fetchMaterialCodes]);
+
+  const openCreate = () => { setEditingItem(null); setFormData(emptyMCForm); setIsDialogOpen(true); };
+  const openEdit = (item: MaterialCode) => {
+    setEditingItem(item);
+    setFormData({
+      code: item.code, description: item.description || "", productType: item.productType || "",
+      materialGrade: item.materialGrade || "", size: item.size || "", schedule: item.schedule || "",
+    });
+    setIsDialogOpen(true);
+  };
+  const closeDialog = () => { setIsDialogOpen(false); setEditingItem(null); setFormData(emptyMCForm); };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.code.trim()) { toast.error("Code is required"); return; }
+    setSaving(true);
+    try {
+      if (editingItem) {
+        const res = await fetch(`/api/masters/material-codes/${editingItem.id}`, {
+          method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(formData),
+        });
+        if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || "Failed to update"); }
+        toast.success("Material code updated");
+      } else {
+        const res = await fetch("/api/masters/material-codes", {
+          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(formData),
+        });
+        if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || "Failed to create"); }
+        toast.success("Material code created");
+      }
+      closeDialog();
+      fetchMaterialCodes();
+    } catch (error: any) {
+      toast.error(error.message || "Something went wrong");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const columns: Column<MaterialCode>[] = [
+    { key: "code", header: "Code", sortable: true, cell: (row) => <span className="font-mono text-sm font-medium">{row.code}</span> },
+    { key: "description", header: "Description", cell: (row) => row.description || "—" },
+    { key: "productType", header: "Product Type", sortable: true, cell: (row) => row.productType || "—" },
+    { key: "materialGrade", header: "Material Grade", sortable: true, cell: (row) => row.materialGrade || "—" },
+    { key: "size", header: "Size", cell: (row) => row.size || "—" },
+    { key: "schedule", header: "Schedule", cell: (row) => row.schedule || "—" },
+    { key: "timesQuoted", header: "Times Quoted", sortable: true, cell: (row) => <span className="text-muted-foreground">{row.timesQuoted ?? 0}</span> },
+    { key: "timesOrdered", header: "Times Ordered", sortable: true, cell: (row) => <span className="text-muted-foreground">{row.timesOrdered ?? 0}</span> },
+    { key: "actions", header: "Actions", cell: (row) => <Button variant="ghost" size="icon" onClick={() => openEdit(row)}><Pencil className="h-4 w-4" /></Button> },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <Button onClick={openCreate}>
+          <Plus className="h-4 w-4 mr-2" />Add Material Code
+        </Button>
+      </div>
+      {loading ? (
+        <div className="rounded-lg border p-8 text-center text-muted-foreground">Loading material codes...</div>
+      ) : (
+        <DataTable columns={columns} data={materialCodes} searchKey="code" searchPlaceholder="Search by code..." pageSize={20} />
+      )}
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <form onSubmit={handleSubmit}>
+            <DialogHeader>
+              <DialogTitle>{editingItem ? "Edit" : "Add"} Material Code</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label>Code *</Label>
+                <Input value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} placeholder="e.g., MC-PIPE-CS-001" required />
+              </div>
+              <div className="grid gap-2">
+                <Label>Description</Label>
+                <Input value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="e.g., Carbon Steel Seamless Pipe" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label>Product Type</Label>
+                  <Input value={formData.productType} onChange={(e) => setFormData({ ...formData, productType: e.target.value })} placeholder="e.g., Seamless Pipe" />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Material Grade</Label>
+                  <Input value={formData.materialGrade} onChange={(e) => setFormData({ ...formData, materialGrade: e.target.value })} placeholder="e.g., ASTM A106 Gr. B" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label>Size</Label>
+                  <Input value={formData.size} onChange={(e) => setFormData({ ...formData, size: e.target.value })} placeholder='e.g., 2" NB' />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Schedule</Label>
+                  <Input value={formData.schedule} onChange={(e) => setFormData({ ...formData, schedule: e.target.value })} placeholder="e.g., SCH 40" />
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={closeDialog}>Cancel</Button>
+              <Button type="submit" disabled={saving}>{saving ? "Saving..." : editingItem ? "Update" : "Create"}</Button>
+            </div>
           </form>
         </DialogContent>
       </Dialog>
