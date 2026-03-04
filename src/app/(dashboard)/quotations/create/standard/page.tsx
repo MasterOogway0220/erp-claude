@@ -946,7 +946,7 @@ function StandardQuotationPage() {
                             onClick={() => {
                               setItems((prev) => {
                                 const newItems = [...prev];
-                                newItems[index] = { ...emptyItem, itemCategory: cat, quantity: item.quantity, unitRate: item.unitRate, amount: item.amount, delivery: item.delivery, remark: item.remark, taxRate: item.taxRate, hsnCode: item.hsnCode };
+                                newItems[index] = { ...item, itemCategory: cat };
                                 return newItems;
                               });
                             }}
@@ -962,69 +962,6 @@ function StandardQuotationPage() {
                       </Button>
                     )}
                   </div>
-
-                  {/* Fitting/Flange selector */}
-                  {item.itemCategory === "Fitting" && (
-                    <div className="grid gap-2">
-                      <Label>Select Fitting *</Label>
-                      <FittingSelect
-                        value={item.fittingLabel}
-                        onChange={(text) => {
-                          setItems((prev) => {
-                            const newItems = [...prev];
-                            newItems[index] = { ...newItems[index], fittingLabel: text, fittingId: "" };
-                            return newItems;
-                          });
-                        }}
-                        onSelect={(f) => {
-                          setItems((prev) => {
-                            const newItems = [...prev];
-                            newItems[index] = {
-                              ...newItems[index],
-                              fittingId: f.id,
-                              fittingLabel: `${f.type} ${f.size} ${f.schedule || ""} ${f.endType || ""} ${f.materialGrade}`.replace(/\s+/g, " ").trim(),
-                              product: f.type,
-                              material: f.materialGrade,
-                              sizeLabel: f.size,
-                              additionalSpec: [f.endType, f.rating, f.standard].filter(Boolean).join(", "),
-                            };
-                            return newItems;
-                          });
-                        }}
-                      />
-                    </div>
-                  )}
-
-                  {item.itemCategory === "Flange" && (
-                    <div className="grid gap-2">
-                      <Label>Select Flange *</Label>
-                      <FlangeSelect
-                        value={item.flangeLabel}
-                        onChange={(text) => {
-                          setItems((prev) => {
-                            const newItems = [...prev];
-                            newItems[index] = { ...newItems[index], flangeLabel: text, flangeId: "" };
-                            return newItems;
-                          });
-                        }}
-                        onSelect={(f) => {
-                          setItems((prev) => {
-                            const newItems = [...prev];
-                            newItems[index] = {
-                              ...newItems[index],
-                              flangeId: f.id,
-                              flangeLabel: `${f.type} ${f.size} ${f.rating}# ${f.facing || ""} ${f.materialGrade}`.replace(/\s+/g, " ").trim(),
-                              product: f.type,
-                              material: f.materialGrade,
-                              sizeLabel: f.size,
-                              additionalSpec: [f.facing, f.rating + "#", f.standard].filter(Boolean).join(", "),
-                            };
-                            return newItems;
-                          });
-                        }}
-                      />
-                    </div>
-                  )}
 
                   {/* Row 1: Material Code | Product | Material | Additional Specs | Size */}
                   <div className="grid grid-cols-5 gap-4">
@@ -1094,55 +1031,117 @@ function StandardQuotationPage() {
 
                   {/* Row 2: OD | WT | Length | Ends | Qty | Unit Rate | Unit Wt | Total Wt */}
                   <div className="grid grid-cols-8 gap-4">
-                    <div className="grid gap-2">
-                      <Label>OD (mm)</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={item.od}
-                        onChange={(e) => updateItem(index, "od", e.target.value)}
-                        placeholder="Auto"
-                        readOnly={!!item.sizeId}
-                        className={item.sizeId ? "bg-muted" : ""}
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>WT (mm)</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={item.wt}
-                        onChange={(e) => updateItem(index, "wt", e.target.value)}
-                        placeholder="Auto"
-                        readOnly={!!item.sizeId}
-                        className={item.sizeId ? "bg-muted" : ""}
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>Length</Label>
-                      <Input
-                        value={item.length}
-                        onChange={(e) => updateItem(index, "length", e.target.value)}
-                        placeholder="9.00-11.8"
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>Ends</Label>
-                      <Select
-                        value={item.ends}
-                        onValueChange={(value) => updateItem(index, "ends", value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="BE">BE</SelectItem>
-                          <SelectItem value="PE">PE</SelectItem>
-                          <SelectItem value="NPTM">NPTM</SelectItem>
-                          <SelectItem value="BSPT">BSPT</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    {item.itemCategory === "Fitting" ? (
+                      <div className="grid gap-2 col-span-4">
+                        <Label>Select Fitting *</Label>
+                        <FittingSelect
+                          value={item.fittingLabel}
+                          onChange={(text) => {
+                            setItems((prev) => {
+                              const newItems = [...prev];
+                              newItems[index] = { ...newItems[index], fittingLabel: text, fittingId: "" };
+                              return newItems;
+                            });
+                          }}
+                          onSelect={(f) => {
+                            setItems((prev) => {
+                              const newItems = [...prev];
+                              newItems[index] = {
+                                ...newItems[index],
+                                fittingId: f.id,
+                                fittingLabel: `${f.type} ${f.size} ${f.schedule || ""} ${f.endType || ""} ${f.materialGrade}`.replace(/\s+/g, " ").trim(),
+                                product: f.type,
+                                material: f.materialGrade,
+                                sizeLabel: f.size,
+                                additionalSpec: [f.endType, f.rating, f.standard].filter(Boolean).join(", "),
+                              };
+                              return newItems;
+                            });
+                          }}
+                        />
+                      </div>
+                    ) : item.itemCategory === "Flange" ? (
+                      <div className="grid gap-2 col-span-4">
+                        <Label>Select Flange *</Label>
+                        <FlangeSelect
+                          value={item.flangeLabel}
+                          onChange={(text) => {
+                            setItems((prev) => {
+                              const newItems = [...prev];
+                              newItems[index] = { ...newItems[index], flangeLabel: text, flangeId: "" };
+                              return newItems;
+                            });
+                          }}
+                          onSelect={(f) => {
+                            setItems((prev) => {
+                              const newItems = [...prev];
+                              newItems[index] = {
+                                ...newItems[index],
+                                flangeId: f.id,
+                                flangeLabel: `${f.type} ${f.size} ${f.rating}# ${f.facing || ""} ${f.materialGrade}`.replace(/\s+/g, " ").trim(),
+                                product: f.type,
+                                material: f.materialGrade,
+                                sizeLabel: f.size,
+                                additionalSpec: [f.facing, f.rating + "#", f.standard].filter(Boolean).join(", "),
+                              };
+                              return newItems;
+                            });
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <div className="grid gap-2">
+                          <Label>OD (mm)</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={item.od}
+                            onChange={(e) => updateItem(index, "od", e.target.value)}
+                            placeholder="Auto"
+                            readOnly={!!item.sizeId}
+                            className={item.sizeId ? "bg-muted" : ""}
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label>WT (mm)</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={item.wt}
+                            onChange={(e) => updateItem(index, "wt", e.target.value)}
+                            placeholder="Auto"
+                            readOnly={!!item.sizeId}
+                            className={item.sizeId ? "bg-muted" : ""}
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label>Length</Label>
+                          <Input
+                            value={item.length}
+                            onChange={(e) => updateItem(index, "length", e.target.value)}
+                            placeholder="9.00-11.8"
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label>Ends</Label>
+                          <Select
+                            value={item.ends}
+                            onValueChange={(value) => updateItem(index, "ends", value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="BE">BE</SelectItem>
+                              <SelectItem value="PE">PE</SelectItem>
+                              <SelectItem value="NPTM">NPTM</SelectItem>
+                              <SelectItem value="BSPT">BSPT</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </>
+                    )}
                     <div className="grid gap-2">
                       <Label>Qty (Mtr) *</Label>
                       <Input

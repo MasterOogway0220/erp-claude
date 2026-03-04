@@ -820,7 +820,7 @@ function NonStandardQuotationPage() {
                           onClick={() => {
                             setItems((prev) => {
                               const newItems = [...prev];
-                              newItems[index] = { ...emptyItem, itemCategory: cat, quantity: item.quantity, unitRate: item.unitRate, amount: item.amount, delivery: item.delivery };
+                              newItems[index] = { ...item, itemCategory: cat };
                               return newItems;
                             });
                           }}
@@ -869,71 +869,6 @@ function NonStandardQuotationPage() {
                     </Button>
                   )}
                 </div>
-
-                {/* Fitting/Flange selector */}
-                {item.itemCategory === "Fitting" && (
-                  <div className="grid gap-2">
-                    <Label className="text-sm">Select Fitting *</Label>
-                    <FittingSelect
-                      value={item.fittingLabel}
-                      onChange={(text) => {
-                        setItems((prev) => {
-                          const newItems = [...prev];
-                          newItems[index] = { ...newItems[index], fittingLabel: text, fittingId: "" };
-                          return newItems;
-                        });
-                      }}
-                      onSelect={(f) => {
-                        setItems((prev) => {
-                          const newItems = [...prev];
-                          const desc = `${f.type} ${f.size} ${f.schedule || ""} ${f.endType || ""} ${f.materialGrade} ${f.standard || ""}`.replace(/\s+/g, " ").trim();
-                          newItems[index] = {
-                            ...newItems[index],
-                            fittingId: f.id,
-                            fittingLabel: desc,
-                            itemDescription: desc,
-                            material: f.materialGrade,
-                            size: f.size,
-                            endType: f.endType || "",
-                          };
-                          return newItems;
-                        });
-                      }}
-                    />
-                  </div>
-                )}
-
-                {item.itemCategory === "Flange" && (
-                  <div className="grid gap-2">
-                    <Label className="text-sm">Select Flange *</Label>
-                    <FlangeSelect
-                      value={item.flangeLabel}
-                      onChange={(text) => {
-                        setItems((prev) => {
-                          const newItems = [...prev];
-                          newItems[index] = { ...newItems[index], flangeLabel: text, flangeId: "" };
-                          return newItems;
-                        });
-                      }}
-                      onSelect={(f) => {
-                        setItems((prev) => {
-                          const newItems = [...prev];
-                          const desc = `${f.type} ${f.size} ${f.rating}# ${f.facing || ""} ${f.materialGrade} ${f.standard || ""}`.replace(/\s+/g, " ").trim();
-                          newItems[index] = {
-                            ...newItems[index],
-                            flangeId: f.id,
-                            flangeLabel: desc,
-                            itemDescription: desc,
-                            material: f.materialGrade,
-                            size: f.size,
-                            endType: f.facing || "",
-                          };
-                          return newItems;
-                        });
-                      }}
-                    />
-                  </div>
-                )}
 
                 {/* Material Code autocomplete (shared across both modes) */}
                 <div className="grid gap-2">
@@ -1052,7 +987,69 @@ function NonStandardQuotationPage() {
                 )}
 
                 {/* Qty / Rate / Total Amount */}
-                <div className="grid grid-cols-3 gap-4">
+                <div className={`grid gap-4 ${item.itemCategory !== "Item" ? "grid-cols-4" : "grid-cols-3"}`}>
+                  {item.itemCategory === "Fitting" && (
+                    <div className="grid gap-2">
+                      <Label className="text-sm">Select Fitting *</Label>
+                      <FittingSelect
+                        value={item.fittingLabel}
+                        onChange={(text) => {
+                          setItems((prev) => {
+                            const newItems = [...prev];
+                            newItems[index] = { ...newItems[index], fittingLabel: text, fittingId: "" };
+                            return newItems;
+                          });
+                        }}
+                        onSelect={(f) => {
+                          setItems((prev) => {
+                            const newItems = [...prev];
+                            const desc = `${f.type} ${f.size} ${f.schedule || ""} ${f.endType || ""} ${f.materialGrade} ${f.standard || ""}`.replace(/\s+/g, " ").trim();
+                            newItems[index] = {
+                              ...newItems[index],
+                              fittingId: f.id,
+                              fittingLabel: desc,
+                              itemDescription: desc,
+                              material: f.materialGrade,
+                              size: f.size,
+                              endType: f.endType || "",
+                            };
+                            return newItems;
+                          });
+                        }}
+                      />
+                    </div>
+                  )}
+                  {item.itemCategory === "Flange" && (
+                    <div className="grid gap-2">
+                      <Label className="text-sm">Select Flange *</Label>
+                      <FlangeSelect
+                        value={item.flangeLabel}
+                        onChange={(text) => {
+                          setItems((prev) => {
+                            const newItems = [...prev];
+                            newItems[index] = { ...newItems[index], flangeLabel: text, flangeId: "" };
+                            return newItems;
+                          });
+                        }}
+                        onSelect={(f) => {
+                          setItems((prev) => {
+                            const newItems = [...prev];
+                            const desc = `${f.type} ${f.size} ${f.rating}# ${f.facing || ""} ${f.materialGrade} ${f.standard || ""}`.replace(/\s+/g, " ").trim();
+                            newItems[index] = {
+                              ...newItems[index],
+                              flangeId: f.id,
+                              flangeLabel: desc,
+                              itemDescription: desc,
+                              material: f.materialGrade,
+                              size: f.size,
+                              endType: f.facing || "",
+                            };
+                            return newItems;
+                          });
+                        }}
+                      />
+                    </div>
+                  )}
                   <div className="grid gap-2">
                     <Label className="text-sm">Qty *</Label>
                     <Input
