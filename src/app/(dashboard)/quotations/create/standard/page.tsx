@@ -668,8 +668,8 @@ function StandardQuotationPage() {
             <CardTitle>Quotation Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
-            {/* Row 1: Customer + Buyer (large dropdowns, 2 per row) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Row 1: Customer | Buyer | Market Type | Currency */}
+            <div className="grid grid-cols-4 gap-4">
               <div className="grid gap-2">
                 <Label>Customer *</Label>
                 <div className="flex gap-2">
@@ -732,10 +732,7 @@ function StandardQuotationPage() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
 
-            {/* Row 2: Market Type, Currency, Quotation No, Rev No (small fields, 4 per row) */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="grid gap-2">
                 <Label>Market Type</Label>
                 <Select
@@ -773,7 +770,10 @@ function StandardQuotationPage() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
 
+            {/* Row 2: Quotation No | Rev No | Deal Owner | Inquiry No */}
+            <div className="grid grid-cols-4 gap-4">
               <div className="grid gap-2">
                 <Label>Quotation No.</Label>
                 <Input
@@ -791,42 +791,7 @@ function StandardQuotationPage() {
                   className="bg-muted"
                 />
               </div>
-            </div>
 
-            {/* Row 3: Dates (small fields, 3 per row) */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div className="grid gap-2">
-                <Label>Quotation Date</Label>
-                <Input
-                  type="date"
-                  value={formData.quotationDate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, quotationDate: e.target.value })
-                  }
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label>Inquiry No.</Label>
-                <Input
-                  value={formData.inquiryNo}
-                  onChange={(e) => setFormData({ ...formData, inquiryNo: e.target.value })}
-                  placeholder="Client inquiry ref."
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label>Inquiry Date</Label>
-                <Input
-                  type="date"
-                  value={formData.inquiryDate}
-                  onChange={(e) => setFormData({ ...formData, inquiryDate: e.target.value })}
-                />
-              </div>
-            </div>
-
-            {/* Row 4: Deal Owner, Follow Up Date (2 per row) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label>Deal Owner</Label>
                 <Select
@@ -847,6 +812,38 @@ function StandardQuotationPage() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Inquiry No.</Label>
+                <Input
+                  value={formData.inquiryNo}
+                  onChange={(e) => setFormData({ ...formData, inquiryNo: e.target.value })}
+                  placeholder="Client inquiry ref."
+                />
+              </div>
+            </div>
+
+            {/* Row 3: Quotation Date | Inquiry Date | Follow Up Date */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="grid gap-2">
+                <Label>Quotation Date</Label>
+                <Input
+                  type="date"
+                  value={formData.quotationDate}
+                  onChange={(e) =>
+                    setFormData({ ...formData, quotationDate: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Inquiry Date</Label>
+                <Input
+                  type="date"
+                  value={formData.inquiryDate}
+                  onChange={(e) => setFormData({ ...formData, inquiryDate: e.target.value })}
+                />
               </div>
 
               <div className="grid gap-2">
