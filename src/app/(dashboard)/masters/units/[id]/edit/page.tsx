@@ -48,7 +48,7 @@ export default function EditUnitPage() {
 
         if (!found) {
           toast.error("Unit not found");
-          router.push("/masters/units");
+          router.push("/masters/products");
           return;
         }
 
@@ -97,7 +97,7 @@ export default function EditUnitPage() {
       }
 
       toast.success("Unit updated successfully");
-      router.push("/masters/units");
+      router.push("/masters/products");
     } catch {
       toast.error("Failed to update unit");
     } finally {
@@ -115,7 +115,7 @@ export default function EditUnitPage() {
         title="Edit Unit"
         description={unit ? `Editing: ${unit.code} - ${unit.name}` : "Update unit of measurement"}
       >
-        <Button variant="outline" onClick={() => router.push("/masters/units")}>
+        <Button variant="outline" onClick={() => router.push("/masters/products")}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
         </Button>

@@ -73,7 +73,7 @@ export default function EditSizePage() {
 
         if (!found) {
           toast.error("Size not found");
-          router.push("/masters/sizes");
+          router.push("/masters/products");
           return;
         }
 
@@ -156,7 +156,7 @@ export default function EditSizePage() {
       }
 
       toast.success("Size updated successfully");
-      router.push("/masters/sizes");
+      router.push("/masters/products");
     } catch {
       toast.error("Failed to update size");
     } finally {
@@ -174,7 +174,7 @@ export default function EditSizePage() {
         title="Edit Size"
         description={size ? `Editing: ${size.sizeLabel}` : "Update pipe size specification"}
       >
-        <Button variant="outline" onClick={() => router.push("/masters/sizes")}>
+        <Button variant="outline" onClick={() => router.push("/masters/products")}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
         </Button>

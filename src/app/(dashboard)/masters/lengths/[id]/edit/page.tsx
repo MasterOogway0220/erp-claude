@@ -36,7 +36,7 @@ export default function EditLengthPage() {
 
         if (!found) {
           toast.error("Length not found");
-          router.push("/masters/lengths");
+          router.push("/masters/products");
           return;
         }
 
@@ -74,7 +74,7 @@ export default function EditLengthPage() {
       }
 
       toast.success("Length updated successfully");
-      router.push("/masters/lengths");
+      router.push("/masters/products");
     } catch {
       toast.error("Failed to update length");
     } finally {
@@ -92,7 +92,7 @@ export default function EditLengthPage() {
         title="Edit Length"
         description={length ? `Editing: ${length.label}` : "Update pipe length option"}
       >
-        <Button variant="outline" onClick={() => router.push("/masters/lengths")}>
+        <Button variant="outline" onClick={() => router.push("/masters/products")}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
         </Button>

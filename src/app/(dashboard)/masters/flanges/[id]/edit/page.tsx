@@ -76,7 +76,7 @@ export default function EditFlangePage() {
 
         if (!found) {
           toast.error("Flange not found");
-          router.push("/masters/flanges");
+          router.push("/masters/products");
           return;
         }
 
@@ -138,7 +138,7 @@ export default function EditFlangePage() {
       }
 
       toast.success("Flange updated successfully");
-      router.push("/masters/flanges");
+      router.push("/masters/products");
     } catch {
       toast.error("Failed to update flange");
     } finally {
@@ -156,7 +156,7 @@ export default function EditFlangePage() {
         title="Edit Flange"
         description={flange ? `Editing: ${flange.type} - ${flange.size} - ${flange.rating}#` : "Update flange specification"}
       >
-        <Button variant="outline" onClick={() => router.push("/masters/flanges")}>
+        <Button variant="outline" onClick={() => router.push("/masters/products")}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
         </Button>

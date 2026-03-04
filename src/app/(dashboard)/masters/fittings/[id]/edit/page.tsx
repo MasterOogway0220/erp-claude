@@ -75,7 +75,7 @@ export default function EditFittingPage() {
 
         if (!found) {
           toast.error("Fitting not found");
-          router.push("/masters/fittings");
+          router.push("/masters/products");
           return;
         }
 
@@ -135,7 +135,7 @@ export default function EditFittingPage() {
       }
 
       toast.success("Fitting updated successfully");
-      router.push("/masters/fittings");
+      router.push("/masters/products");
     } catch {
       toast.error("Failed to update fitting");
     } finally {
@@ -153,7 +153,7 @@ export default function EditFittingPage() {
         title="Edit Fitting"
         description={fitting ? `Editing: ${fitting.type} - ${fitting.size}` : "Update fitting specification"}
       >
-        <Button variant="outline" onClick={() => router.push("/masters/fittings")}>
+        <Button variant="outline" onClick={() => router.push("/masters/products")}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
         </Button>
