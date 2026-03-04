@@ -81,7 +81,6 @@ const navSections: NavSection[] = [
           { title: "Products", href: "/masters/products" },
           { title: "Testing Types", href: "/masters/testing" },
           { title: "Terms & Conditions", href: "/masters/terms-conditions" },
-          { title: "Financial Years", href: "/masters/financial-years", roles: ["SUPER_ADMIN"] },
           { title: "Offer Terms", href: "/masters/offer-terms" },
           { title: "Technical Exchange", href: "/masters/technical-exchange" },
           { title: "Other Masters", href: "/masters/other" },

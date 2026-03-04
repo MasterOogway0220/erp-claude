@@ -402,7 +402,7 @@ function PipesPanel() {
               </div>
               <div className="grid gap-2">
                 <Label>Dimensional Standard</Label>
-                <SmartCombobox
+                <SmartCombobox<{ id: string; name: string; code: string }>
                   options={dimensionalStandards}
                   value={dimStdSearch}
                   onSelect={(std) => { setFormData({ ...formData, dimensionalStandardId: std.id }); setDimStdSearch(std.name); }}

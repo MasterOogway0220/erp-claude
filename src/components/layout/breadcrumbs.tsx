@@ -31,7 +31,6 @@ const labelMap: Record<string, string> = {
   "delivery-terms": "Delivery Terms",
   tax: "Tax Rates",
   "inspection-agencies": "Inspection Agencies",
-  "financial-years": "Financial Years",
   other: "Other Masters",
   company: "Company",
   // Actions
