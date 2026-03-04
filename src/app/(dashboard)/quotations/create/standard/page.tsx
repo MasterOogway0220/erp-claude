@@ -669,8 +669,8 @@ function StandardQuotationPage() {
           </CardHeader>
           <CardContent className="space-y-5">
             {/* Row 1: Customer | Buyer | Market Type | Currency | Quotation No | Rev No | Deal Owner | Inquiry No */}
-            <div className="grid grid-cols-8 gap-4">
-              <div className="grid gap-2">
+            <div className="grid grid-cols-10 gap-4">
+              <div className="grid gap-2 col-span-2">
                 <Label>Customer *</Label>
                 <div className="flex gap-2">
                   <Select
@@ -702,7 +702,7 @@ function StandardQuotationPage() {
                 </div>
               </div>
 
-              <div className="grid gap-2">
+              <div className="grid gap-2 col-span-2">
                 <Label>Buyer (Attn.)</Label>
                 <Select
                   value={formData.buyerId || "NONE"}
