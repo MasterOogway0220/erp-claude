@@ -265,189 +265,80 @@ export default function CustomerEditPage() {
         </Button>
       </PageHeader>
 
-      <div className="space-y-6 max-w-4xl">
-        {/* Section 1: Contact Person */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Contact Person</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-1.5">
-                <Label>Name</Label>
-                <Input
-                  value={formData.contactPerson}
-                  onChange={(e) => update("contactPerson", e.target.value)}
-                  placeholder="Contact person name"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Email</Label>
-                <Input
-                  type="email"
-                  value={formData.contactPersonEmail}
-                  onChange={(e) => update("contactPersonEmail", e.target.value)}
-                  placeholder="contact@email.com"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Phone No.</Label>
-                <Input
-                  value={formData.contactPersonPhone}
-                  onChange={(e) => update("contactPersonPhone", e.target.value)}
-                  placeholder="+91 ..."
-                />
-              </div>
+      {/* Row 1: Contact Person (full width) */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Contact Person</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-1.5">
+              <Label>Name</Label>
+              <Input value={formData.contactPerson} onChange={(e) => update("contactPerson", e.target.value)} placeholder="Contact person name" />
             </div>
-          </CardContent>
-        </Card>
+            <div className="space-y-1.5">
+              <Label>Email</Label>
+              <Input type="email" value={formData.contactPersonEmail} onChange={(e) => update("contactPersonEmail", e.target.value)} placeholder="contact@email.com" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Phone No.</Label>
+              <Input value={formData.contactPersonPhone} onChange={(e) => update("contactPersonPhone", e.target.value)} placeholder="+91 ..." />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-        {/* Section 2: Company Details */}
+      {/* Row 2: Company Details | Statutory Details */}
+      <div className="grid grid-cols-2 gap-6">
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Company Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Company Type */}
             <div className="space-y-1.5">
               <Label>Company Type</Label>
               <div className="flex gap-6">
-                {[
-                  { value: "BUYER", label: "Buyer" },
-                  { value: "SUPPLIER", label: "Supplier" },
-                  { value: "BOTH", label: "Both" },
-                ].map((opt) => (
-                  <label
-                    key={opt.value}
-                    className="flex items-center gap-2 cursor-pointer"
-                  >
-                    <input
-                      type="radio"
-                      name="companyType"
-                      value={opt.value}
-                      checked={formData.companyType === opt.value}
-                      onChange={(e) => update("companyType", e.target.value)}
-                      className="h-4 w-4 text-primary"
-                    />
+                {[{ value: "BUYER", label: "Buyer" }, { value: "SUPPLIER", label: "Supplier" }, { value: "BOTH", label: "Both" }].map((opt) => (
+                  <label key={opt.value} className="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="companyType" value={opt.value} checked={formData.companyType === opt.value} onChange={(e) => update("companyType", e.target.value)} className="h-4 w-4 text-primary" />
                     <span className="text-sm">{opt.label}</span>
                   </label>
                 ))}
               </div>
             </div>
-
+            <div className="space-y-1.5">
+              <Label>Company Name *</Label>
+              <Input value={formData.name} onChange={(e) => update("name", e.target.value)} placeholder="Company name" />
+            </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label>Company Name *</Label>
-                <Input
-                  value={formData.name}
-                  onChange={(e) => update("name", e.target.value)}
-                  placeholder="Company name"
-                />
-              </div>
               <div className="space-y-1.5">
                 <Label>Company Email</Label>
-                <Input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => update("email", e.target.value)}
-                  placeholder="company@email.com"
-                />
+                <Input type="email" value={formData.email} onChange={(e) => update("email", e.target.value)} placeholder="company@email.com" />
               </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>Phone</Label>
-                <Input
-                  value={formData.phone}
-                  onChange={(e) => update("phone", e.target.value)}
-                  placeholder="+91 22 23634200"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Company Reference Code</Label>
-                <Input
-                  value={formData.companyReferenceCode}
-                  onChange={(e) => update("companyReferenceCode", e.target.value)}
-                  placeholder="Internal reference"
-                />
+                <Input value={formData.phone} onChange={(e) => update("phone", e.target.value)} placeholder="+91 22 23634200" />
               </div>
             </div>
-
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label>GST Number</Label>
-                <Input
-                  value={formData.gstNo}
-                  onChange={(e) => update("gstNo", e.target.value.toUpperCase())}
-                  placeholder="22AAAAA0000A1Z5"
-                  className="font-mono"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>GST Type</Label>
-                <Select
-                  value={formData.gstType || "NONE"}
-                  onValueChange={(v) => update("gstType", v === "NONE" ? "" : v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select GST type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="NONE">Not specified</SelectItem>
-                    <SelectItem value="REGULAR">Regular</SelectItem>
-                    <SelectItem value="COMPOSITION">Composition</SelectItem>
-                    <SelectItem value="UNREGISTERED">Unregistered</SelectItem>
-                    <SelectItem value="SEZ">SEZ</SelectItem>
-                    <SelectItem value="EXPORT">Export</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label>PAN Number</Label>
-                <Input
-                  value={formData.panNo}
-                  onChange={(e) => update("panNo", e.target.value.toUpperCase())}
-                  placeholder="AAAAA0000A"
-                  maxLength={10}
-                  className="font-mono"
-                />
+                <Label>Reference Code</Label>
+                <Input value={formData.companyReferenceCode} onChange={(e) => update("companyReferenceCode", e.target.value)} placeholder="Internal reference" />
               </div>
               <div className="space-y-1.5">
                 <Label>Industry Segment</Label>
-                <Input
-                  value={formData.industrySegment}
-                  onChange={(e) => update("industrySegment", e.target.value)}
-                  placeholder="e.g., Oil & Gas, Power, Petrochemical"
-                />
+                <Input value={formData.industrySegment} onChange={(e) => update("industrySegment", e.target.value)} placeholder="e.g., Oil & Gas" />
               </div>
             </div>
-
-            {/* Status */}
             <div className="space-y-1.5">
               <Label>Status</Label>
               <div className="flex gap-6">
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="isActive"
-                    checked={formData.isActive}
-                    onChange={() => update("isActive", true)}
-                    className="h-4 w-4"
-                  />
+                  <input type="radio" name="isActive" checked={formData.isActive} onChange={() => update("isActive", true)} className="h-4 w-4" />
                   <span className="text-sm">Active</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="isActive"
-                    checked={!formData.isActive}
-                    onChange={() => update("isActive", false)}
-                    className="h-4 w-4"
-                  />
+                  <input type="radio" name="isActive" checked={!formData.isActive} onChange={() => update("isActive", false)} className="h-4 w-4" />
                   <span className="text-sm">Inactive</span>
                 </label>
               </div>
@@ -455,7 +346,39 @@ export default function CustomerEditPage() {
           </CardContent>
         </Card>
 
-        {/* Section 3: Address */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Statutory Details</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-1.5">
+              <Label>GST Number</Label>
+              <Input value={formData.gstNo} onChange={(e) => update("gstNo", e.target.value.toUpperCase())} placeholder="22AAAAA0000A1Z5" className="font-mono" maxLength={15} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>GST Type</Label>
+              <Select value={formData.gstType || "NONE"} onValueChange={(v) => update("gstType", v === "NONE" ? "" : v)}>
+                <SelectTrigger><SelectValue placeholder="Select GST type" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="NONE">Not specified</SelectItem>
+                  <SelectItem value="REGULAR">Regular</SelectItem>
+                  <SelectItem value="COMPOSITION">Composition</SelectItem>
+                  <SelectItem value="UNREGISTERED">Unregistered</SelectItem>
+                  <SelectItem value="SEZ">SEZ</SelectItem>
+                  <SelectItem value="EXPORT">Export</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>PAN Number</Label>
+              <Input value={formData.panNo} onChange={(e) => update("panNo", e.target.value.toUpperCase())} placeholder="AAAAA0000A" maxLength={10} className="font-mono" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Row 3: Address | Financial Details */}
+      <div className="grid grid-cols-2 gap-6">
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Address</CardTitle>
@@ -463,70 +386,32 @@ export default function CustomerEditPage() {
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
               <Label>Address Line 1</Label>
-              <Input
-                value={formData.addressLine1}
-                onChange={(e) => update("addressLine1", e.target.value)}
-                placeholder="Street address"
-              />
+              <Input value={formData.addressLine1} onChange={(e) => update("addressLine1", e.target.value)} placeholder="Street address" />
             </div>
             <div className="space-y-1.5">
               <Label>Address Line 2</Label>
-              <Input
-                value={formData.addressLine2}
-                onChange={(e) => update("addressLine2", e.target.value)}
-                placeholder="Area, landmark"
-              />
+              <Input value={formData.addressLine2} onChange={(e) => update("addressLine2", e.target.value)} placeholder="Area, landmark" />
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label>City</Label>
-                <Input
-                  value={formData.city}
-                  onChange={(e) => update("city", e.target.value)}
-                  placeholder="Mumbai"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Pincode</Label>
-                <Input
-                  value={formData.pincode}
-                  onChange={(e) => update("pincode", e.target.value)}
-                  placeholder="400004"
-                />
-              </div>
+              <div className="space-y-1.5"><Label>City</Label><Input value={formData.city} onChange={(e) => update("city", e.target.value)} placeholder="Mumbai" /></div>
+              <div className="space-y-1.5"><Label>Pincode</Label><Input value={formData.pincode} onChange={(e) => update("pincode", e.target.value)} placeholder="400004" /></div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>State</Label>
-                <Select
-                  value={formData.state || "NONE"}
-                  onValueChange={(v) => update("state", v === "NONE" ? "" : v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select state" />
-                  </SelectTrigger>
+                <Select value={formData.state || "NONE"} onValueChange={(v) => update("state", v === "NONE" ? "" : v)}>
+                  <SelectTrigger><SelectValue placeholder="Select state" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="NONE">Select state</SelectItem>
-                    {INDIAN_STATES.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {s}
-                      </SelectItem>
-                    ))}
+                    {INDIAN_STATES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5">
-                <Label>Country</Label>
-                <Input
-                  value={formData.country}
-                  onChange={(e) => update("country", e.target.value)}
-                />
-              </div>
+              <div className="space-y-1.5"><Label>Country</Label><Input value={formData.country} onChange={(e) => update("country", e.target.value)} /></div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Section 4: Financial Details */}
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Financial Details</CardTitle>
@@ -535,58 +420,27 @@ export default function CustomerEditPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>Opening Balance</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={formData.openingBalance}
-                  onChange={(e) => update("openingBalance", e.target.value)}
-                />
+                <Input type="number" step="0.01" value={formData.openingBalance} onChange={(e) => update("openingBalance", e.target.value)} />
               </div>
               <div className="space-y-1.5">
                 <Label>Credit Limit (Rs.)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.creditLimit}
-                  onChange={(e) => update("creditLimit", e.target.value)}
-                  placeholder="No limit"
-                />
+                <Input type="number" step="0.01" min="0" value={formData.creditLimit} onChange={(e) => update("creditLimit", e.target.value)} placeholder="No limit" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>Credit Days</Label>
-                <Input
-                  type="number"
-                  step="1"
-                  min="0"
-                  value={formData.creditDays}
-                  onChange={(e) => update("creditDays", e.target.value)}
-                  placeholder="e.g., 30"
-                />
+                <Input type="number" step="1" min="0" value={formData.creditDays} onChange={(e) => update("creditDays", e.target.value)} placeholder="e.g., 30" />
               </div>
               <div className="space-y-1.5">
                 <Label>Payment Terms</Label>
-                <Input
-                  value={formData.paymentTerms}
-                  onChange={(e) => update("paymentTerms", e.target.value)}
-                  placeholder="e.g., 100% within 30 Days"
-                />
+                <Input value={formData.paymentTerms} onChange={(e) => update("paymentTerms", e.target.value)} placeholder="e.g., 100% within 30 Days" />
               </div>
             </div>
-            <div className="space-y-1.5 max-w-xs">
+            <div className="space-y-1.5">
               <Label>Default Currency</Label>
-              <Select
-                value={formData.defaultCurrency}
-                onValueChange={(v) => {
-                  update("defaultCurrency", v);
-                  update("currency", v);
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
+              <Select value={formData.defaultCurrency} onValueChange={(v) => { update("defaultCurrency", v); update("currency", v); }}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="INR">INR - Indian Rupee</SelectItem>
                   <SelectItem value="USD">USD - US Dollar</SelectItem>
@@ -598,9 +452,10 @@ export default function CustomerEditPage() {
             </div>
           </CardContent>
         </Card>
+      </div>
 
-        {/* Section 5: Dispatch Addresses */}
-        <Card>
+      {/* Dispatch Addresses (full width) */}
+      <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between text-base">
               <span>Dispatch Addresses</span>
@@ -772,18 +627,14 @@ export default function CustomerEditPage() {
           </CardContent>
         </Card>
 
-        <Separator />
+      <Separator />
 
-        {/* Bottom action bar */}
-        <div className="flex justify-end gap-3 pb-8">
-          <Button variant="outline" onClick={() => router.push("/masters/customers")}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave} disabled={saving}>
-            <Save className="w-4 h-4 mr-2" />
-            {saving ? "Saving..." : "Save Changes"}
-          </Button>
-        </div>
+      <div className="flex justify-end gap-3 pb-8">
+        <Button variant="outline" onClick={() => router.push("/masters/customers")}>Cancel</Button>
+        <Button onClick={handleSave} disabled={saving}>
+          <Save className="w-4 h-4 mr-2" />
+          {saving ? "Saving..." : "Save Changes"}
+        </Button>
       </div>
     </div>
   );
