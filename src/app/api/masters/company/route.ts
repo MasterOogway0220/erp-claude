@@ -8,12 +8,14 @@ export async function GET() {
     const { authorized, response } = await checkAccess("masters", "read");
     if (!authorized) return response!;
 
-    const company = await prisma.companyMaster.findFirst();
-    return NextResponse.json({ company });
+    const companies = await prisma.companyMaster.findMany({
+      orderBy: { createdAt: "asc" },
+    });
+    return NextResponse.json({ companies });
   } catch (error) {
-    console.error("Error fetching company:", error);
+    console.error("Error fetching companies:", error);
     return NextResponse.json(
-      { error: "Failed to fetch company" },
+      { error: "Failed to fetch companies" },
       { status: 500 }
     );
   }
@@ -26,13 +28,8 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
-    // Check if company already exists
-    const existing = await prisma.companyMaster.findFirst();
-    if (existing) {
-      return NextResponse.json(
-        { error: "Company already exists. Use PATCH to update." },
-        { status: 400 }
-      );
+    if (!body.companyName) {
+      return NextResponse.json({ error: "Company name is required" }, { status: 400 });
     }
 
     const company = await prisma.companyMaster.create({
@@ -77,69 +74,6 @@ export async function POST(request: NextRequest) {
     console.error("Error creating company:", error);
     return NextResponse.json(
       { error: "Failed to create company" },
-      { status: 500 }
-    );
-  }
-}
-
-export async function PATCH(request: NextRequest) {
-  try {
-    const { authorized, session, response } = await checkAccess("masters", "write");
-    if (!authorized) return response!;
-
-    const body = await request.json();
-    const existing = await prisma.companyMaster.findFirst();
-
-    if (!existing) {
-      return NextResponse.json(
-        { error: "Company not found" },
-        { status: 404 }
-      );
-    }
-
-    const company = await prisma.companyMaster.update({
-      where: { id: existing.id },
-      data: {
-        companyName: body.companyName ?? existing.companyName,
-        companyType: body.companyType ?? existing.companyType,
-        regAddressLine1: body.regAddressLine1 ?? existing.regAddressLine1,
-        regAddressLine2: body.regAddressLine2 ?? existing.regAddressLine2,
-        regCity: body.regCity ?? existing.regCity,
-        regPincode: body.regPincode ?? existing.regPincode,
-        regState: body.regState ?? existing.regState,
-        regCountry: body.regCountry ?? existing.regCountry,
-        whAddressLine1: body.whAddressLine1 ?? existing.whAddressLine1,
-        whAddressLine2: body.whAddressLine2 ?? existing.whAddressLine2,
-        whCity: body.whCity ?? existing.whCity,
-        whPincode: body.whPincode ?? existing.whPincode,
-        whState: body.whState ?? existing.whState,
-        whCountry: body.whCountry ?? existing.whCountry,
-        panNo: body.panNo ?? existing.panNo,
-        tanNo: body.tanNo ?? existing.tanNo,
-        gstNo: body.gstNo ?? existing.gstNo,
-        cinNo: body.cinNo ?? existing.cinNo,
-        telephoneNo: body.telephoneNo ?? existing.telephoneNo,
-        email: body.email ?? existing.email,
-        website: body.website ?? existing.website,
-        companyLogoUrl: body.companyLogoUrl ?? existing.companyLogoUrl,
-        fyStartMonth: body.fyStartMonth ?? existing.fyStartMonth,
-        fyStartDate: body.fyStartDate !== undefined ? (body.fyStartDate ? new Date(body.fyStartDate) : null) : existing.fyStartDate,
-        fyEndDate: body.fyEndDate !== undefined ? (body.fyEndDate ? new Date(body.fyEndDate) : null) : existing.fyEndDate,
-      },
-    });
-
-    await createAuditLog({
-      tableName: "CompanyMaster",
-      recordId: existing.id,
-      action: "UPDATE",
-      userId: session.user?.id,
-    });
-
-    return NextResponse.json(company);
-  } catch (error) {
-    console.error("Error updating company:", error);
-    return NextResponse.json(
-      { error: "Failed to update company" },
       { status: 500 }
     );
   }
