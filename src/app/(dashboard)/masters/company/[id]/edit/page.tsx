@@ -224,183 +224,82 @@ export default function CompanyEditPage() {
         </Button>
       </PageHeader>
 
-      <div className="space-y-6 max-w-4xl">
-        {/* Company Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Building2 className="w-4 h-4" />
-              Company Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label>Company Name *</Label>
-                <Input
-                  value={formData.companyName}
-                  onChange={(e) => updateField("companyName", e.target.value)}
-                  placeholder="Enter company name"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Company Type</Label>
-                <Select
-                  value={formData.companyType || "NONE"}
-                  onValueChange={(v) => updateField("companyType", v === "NONE" ? "" : v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="NONE">Select type</SelectItem>
-                    {COMPANY_TYPES.map((t) => (
-                      <SelectItem key={t} value={t}>
-                        {t}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label>Email</Label>
-                <Input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => updateField("email", e.target.value)}
-                  placeholder="company@email.com"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Telephone</Label>
-                <Input
-                  value={formData.telephoneNo}
-                  onChange={(e) => updateField("telephoneNo", e.target.value)}
-                  placeholder="+91 ..."
-                />
-              </div>
-            </div>
-
+      {/* Row 1: Company Info (full width) */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Building2 className="w-4 h-4" />
+            Company Information
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label>Website</Label>
+              <Label>Company Name *</Label>
               <Input
-                value={formData.website}
-                onChange={(e) => updateField("website", e.target.value)}
-                placeholder="https://..."
+                value={formData.companyName}
+                onChange={(e) => updateField("companyName", e.target.value)}
+                placeholder="Enter company name"
               />
             </div>
-
-            {/* Logo Upload */}
             <div className="space-y-1.5">
-              <Label>Company Logo</Label>
-              {formData.companyLogoUrl ? (
-                <div className="flex items-center gap-4">
-                  <div className="border rounded-md p-2 bg-muted/30">
-                    <img
-                      src={formData.companyLogoUrl}
-                      alt="Logo"
-                      className="h-12 max-w-[160px] object-contain"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = "none";
-                      }}
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={uploading}
-                    >
-                      <Upload className="w-4 h-4 mr-1" />
-                      Change
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => updateField("companyLogoUrl", "")}
-                    >
-                      <X className="w-4 h-4 mr-1" />
-                      Remove
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div
-                  className="border-2 border-dashed rounded-md p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <Image className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-xs text-muted-foreground">
-                    {uploading ? "Uploading..." : "Click to upload logo (max 2 MB)"}
-                  </p>
-                </div>
-              )}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleLogoUpload}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Financial Year */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Calendar className="w-4 h-4" />
-              Financial Year
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-1.5">
-              <Label>FY Start Month</Label>
+              <Label>Company Type</Label>
               <Select
-                value={formData.fyStartMonth.toString()}
-                onValueChange={(v) => updateField("fyStartMonth", parseInt(v))}
+                value={formData.companyType || "NONE"}
+                onValueChange={(v) => updateField("companyType", v === "NONE" ? "" : v)}
               >
-                <SelectTrigger className="w-48">
-                  <SelectValue />
-                </SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
                 <SelectContent>
-                  {MONTHS.map((m) => (
-                    <SelectItem key={m.value} value={m.value.toString()}>
-                      {m.label}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="NONE">Select type</SelectItem>
+                  {COMPANY_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label>FY Start Date</Label>
-                <Input
-                  type="date"
-                  value={formData.fyStartDate}
-                  onChange={(e) => updateField("fyStartDate", e.target.value)}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>FY End Date</Label>
-                <Input
-                  type="date"
-                  value={formData.fyEndDate}
-                  onChange={(e) => updateField("fyEndDate", e.target.value)}
-                />
-              </div>
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-1.5">
+              <Label>Email</Label>
+              <Input type="email" value={formData.email} onChange={(e) => updateField("email", e.target.value)} placeholder="company@email.com" />
             </div>
-          </CardContent>
-        </Card>
+            <div className="space-y-1.5">
+              <Label>Telephone</Label>
+              <Input value={formData.telephoneNo} onChange={(e) => updateField("telephoneNo", e.target.value)} placeholder="+91 ..." />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Website</Label>
+              <Input value={formData.website} onChange={(e) => updateField("website", e.target.value)} placeholder="https://..." />
+            </div>
+          </div>
+          {/* Logo */}
+          <div className="space-y-1.5">
+            <Label>Company Logo</Label>
+            {formData.companyLogoUrl ? (
+              <div className="flex items-center gap-4">
+                <div className="border rounded-md p-2 bg-muted/30">
+                  <img src={formData.companyLogoUrl} alt="Logo" className="h-12 max-w-[160px] object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                </div>
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+                    <Upload className="w-4 h-4 mr-1" /> Change
+                  </Button>
+                  <Button type="button" variant="outline" size="sm" onClick={() => updateField("companyLogoUrl", "")}>
+                    <X className="w-4 h-4 mr-1" /> Remove
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="border-2 border-dashed rounded-md p-4 text-center cursor-pointer hover:border-primary/50 transition-colors max-w-xs" onClick={() => fileInputRef.current?.click()}>
+                <Image className="w-5 h-5 mx-auto mb-1 text-muted-foreground" />
+                <p className="text-xs text-muted-foreground">{uploading ? "Uploading..." : "Click to upload logo (max 2 MB)"}</p>
+              </div>
+            )}
+            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+          </div>
+        </CardContent>
+      </Card>
 
-        {/* Statutory Details */}
+      {/* Row 2: Statutory + Financial Year side by side */}
+      <div className="grid grid-cols-2 gap-6">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
@@ -412,45 +311,59 @@ export default function CompanyEditPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>PAN No.</Label>
-                <Input
-                  value={formData.panNo}
-                  onChange={(e) => updateField("panNo", e.target.value.toUpperCase())}
-                  placeholder="ABCDE1234F"
-                  className="font-mono"
-                />
+                <Input value={formData.panNo} onChange={(e) => updateField("panNo", e.target.value.toUpperCase())} placeholder="ABCDE1234F" className="font-mono" />
               </div>
               <div className="space-y-1.5">
                 <Label>TAN No.</Label>
-                <Input
-                  value={formData.tanNo}
-                  onChange={(e) => updateField("tanNo", e.target.value.toUpperCase())}
-                  className="font-mono"
-                />
+                <Input value={formData.tanNo} onChange={(e) => updateField("tanNo", e.target.value.toUpperCase())} className="font-mono" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>GST No.</Label>
-                <Input
-                  value={formData.gstNo}
-                  onChange={(e) => updateField("gstNo", e.target.value.toUpperCase())}
-                  placeholder="15-character GST number"
-                  className="font-mono"
-                />
+                <Input value={formData.gstNo} onChange={(e) => updateField("gstNo", e.target.value.toUpperCase())} placeholder="15-char GST" className="font-mono" />
               </div>
               <div className="space-y-1.5">
                 <Label>CIN No.</Label>
-                <Input
-                  value={formData.cinNo}
-                  onChange={(e) => updateField("cinNo", e.target.value.toUpperCase())}
-                  className="font-mono"
-                />
+                <Input value={formData.cinNo} onChange={(e) => updateField("cinNo", e.target.value.toUpperCase())} className="font-mono" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Registered Address */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Calendar className="w-4 h-4" />
+              Financial Year
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-1.5">
+              <Label>FY Start Month</Label>
+              <Select value={formData.fyStartMonth.toString()} onValueChange={(v) => updateField("fyStartMonth", parseInt(v))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {MONTHS.map((m) => <SelectItem key={m.value} value={m.value.toString()}>{m.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>FY Start Date</Label>
+                <Input type="date" value={formData.fyStartDate} onChange={(e) => updateField("fyStartDate", e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>FY End Date</Label>
+                <Input type="date" value={formData.fyEndDate} onChange={(e) => updateField("fyEndDate", e.target.value)} />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Row 3: Registered Address + Warehouse Address side by side */}
+      <div className="grid grid-cols-2 gap-6">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
@@ -461,59 +374,23 @@ export default function CompanyEditPage() {
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
               <Label>Address Line 1</Label>
-              <Input
-                value={formData.regAddressLine1}
-                onChange={(e) => updateField("regAddressLine1", e.target.value)}
-                placeholder="Street address"
-              />
+              <Input value={formData.regAddressLine1} onChange={(e) => updateField("regAddressLine1", e.target.value)} placeholder="Street address" />
             </div>
             <div className="space-y-1.5">
               <Label>Address Line 2</Label>
-              <Input
-                value={formData.regAddressLine2}
-                onChange={(e) => updateField("regAddressLine2", e.target.value)}
-                placeholder="Area, landmark"
-              />
+              <Input value={formData.regAddressLine2} onChange={(e) => updateField("regAddressLine2", e.target.value)} placeholder="Area, landmark" />
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label>City</Label>
-                <Input
-                  value={formData.regCity}
-                  onChange={(e) => updateField("regCity", e.target.value)}
-                  placeholder="Mumbai"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Pincode</Label>
-                <Input
-                  value={formData.regPincode}
-                  onChange={(e) => updateField("regPincode", e.target.value)}
-                  placeholder="400001"
-                />
-              </div>
+              <div className="space-y-1.5"><Label>City</Label><Input value={formData.regCity} onChange={(e) => updateField("regCity", e.target.value)} placeholder="Mumbai" /></div>
+              <div className="space-y-1.5"><Label>Pincode</Label><Input value={formData.regPincode} onChange={(e) => updateField("regPincode", e.target.value)} placeholder="400001" /></div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label>State</Label>
-                <Input
-                  value={formData.regState}
-                  onChange={(e) => updateField("regState", e.target.value)}
-                  placeholder="Maharashtra"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Country</Label>
-                <Input
-                  value={formData.regCountry}
-                  onChange={(e) => updateField("regCountry", e.target.value)}
-                />
-              </div>
+              <div className="space-y-1.5"><Label>State</Label><Input value={formData.regState} onChange={(e) => updateField("regState", e.target.value)} placeholder="Maharashtra" /></div>
+              <div className="space-y-1.5"><Label>Country</Label><Input value={formData.regCountry} onChange={(e) => updateField("regCountry", e.target.value)} /></div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Warehouse Address */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
@@ -524,70 +401,32 @@ export default function CompanyEditPage() {
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
               <Label>Address Line 1</Label>
-              <Input
-                value={formData.whAddressLine1}
-                onChange={(e) => updateField("whAddressLine1", e.target.value)}
-                placeholder="Street address"
-              />
+              <Input value={formData.whAddressLine1} onChange={(e) => updateField("whAddressLine1", e.target.value)} placeholder="Street address" />
             </div>
             <div className="space-y-1.5">
               <Label>Address Line 2</Label>
-              <Input
-                value={formData.whAddressLine2}
-                onChange={(e) => updateField("whAddressLine2", e.target.value)}
-                placeholder="Area, landmark"
-              />
+              <Input value={formData.whAddressLine2} onChange={(e) => updateField("whAddressLine2", e.target.value)} placeholder="Area, landmark" />
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label>City</Label>
-                <Input
-                  value={formData.whCity}
-                  onChange={(e) => updateField("whCity", e.target.value)}
-                  placeholder="Mumbai"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Pincode</Label>
-                <Input
-                  value={formData.whPincode}
-                  onChange={(e) => updateField("whPincode", e.target.value)}
-                  placeholder="400001"
-                />
-              </div>
+              <div className="space-y-1.5"><Label>City</Label><Input value={formData.whCity} onChange={(e) => updateField("whCity", e.target.value)} placeholder="Mumbai" /></div>
+              <div className="space-y-1.5"><Label>Pincode</Label><Input value={formData.whPincode} onChange={(e) => updateField("whPincode", e.target.value)} placeholder="400001" /></div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label>State</Label>
-                <Input
-                  value={formData.whState}
-                  onChange={(e) => updateField("whState", e.target.value)}
-                  placeholder="Maharashtra"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Country</Label>
-                <Input
-                  value={formData.whCountry}
-                  onChange={(e) => updateField("whCountry", e.target.value)}
-                />
-              </div>
+              <div className="space-y-1.5"><Label>State</Label><Input value={formData.whState} onChange={(e) => updateField("whState", e.target.value)} placeholder="Maharashtra" /></div>
+              <div className="space-y-1.5"><Label>Country</Label><Input value={formData.whCountry} onChange={(e) => updateField("whCountry", e.target.value)} /></div>
             </div>
           </CardContent>
         </Card>
+      </div>
 
-        <Separator />
+      <Separator />
 
-        {/* Bottom action bar */}
-        <div className="flex justify-end gap-3 pb-8">
-          <Button variant="outline" onClick={() => router.push("/masters/company")}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave} disabled={saving}>
-            <Save className="w-4 h-4 mr-2" />
-            {saving ? "Saving..." : "Save Changes"}
-          </Button>
-        </div>
+      <div className="flex justify-end gap-3 pb-8">
+        <Button variant="outline" onClick={() => router.push("/masters/company")}>Cancel</Button>
+        <Button onClick={handleSave} disabled={saving}>
+          <Save className="w-4 h-4 mr-2" />
+          {saving ? "Saving..." : "Save Changes"}
+        </Button>
       </div>
     </div>
   );
