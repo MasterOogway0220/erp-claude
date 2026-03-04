@@ -27,7 +27,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Bell, LogOut, Menu, KeyRound, ChevronDown } from "lucide-react";
-import { GlobalSearch } from "@/components/shared/global-search";
 
 export function TopBar() {
   const { user } = useCurrentUser();
@@ -107,13 +106,6 @@ export function TopBar() {
           >
             <Menu className="h-5 w-5" />
           </Button>
-        </div>
-
-        {/* Center: Global Search - more prominent */}
-        <div className="flex flex-1 items-center justify-center px-4 md:px-12 lg:px-24">
-          <div className="w-full max-w-lg">
-            <GlobalSearch />
-          </div>
         </div>
 
         {/* Right: Notifications + User */}

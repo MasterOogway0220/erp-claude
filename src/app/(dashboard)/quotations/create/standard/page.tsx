@@ -1026,8 +1026,8 @@ function StandardQuotationPage() {
                     </div>
                   )}
 
-                  {/* Row 1: Material Code | Product | Material | Additional Specs */}
-                  <div className="grid grid-cols-4 gap-4">
+                  {/* Row 1: Material Code | Product | Material | Additional Specs | Size */}
+                  <div className="grid grid-cols-5 gap-4">
                     <div className="grid gap-2">
                       <Label>Material Code</Label>
                       <SmartCombobox
@@ -1069,11 +1069,7 @@ function StandardQuotationPage() {
                         if (fields.length) updateItem(index, "length", fields.length);
                       }}
                     />
-                  </div>
-
-                  {/* Row 2: Size | OD | WT | Length | Ends */}
-                  <div className="grid grid-cols-6 gap-4">
-                    <div className="grid gap-2 col-span-2">
+                    <div className="grid gap-2">
                       <Label>Size (NPS x Sch) *</Label>
                       <SmartCombobox
                         options={sizeOptions}
@@ -1090,10 +1086,14 @@ function StandardQuotationPage() {
                         filterFn={(s: any, query) =>
                           s.sizeLabel.toLowerCase().includes(query.toLowerCase())
                         }
-                        placeholder={hasPipeType ? "Type to search sizes..." : "Select product first"}
+                        placeholder={hasPipeType ? "Search sizes..." : "Select product first"}
                         disabled={!hasPipeType}
                       />
                     </div>
+                  </div>
+
+                  {/* Row 2: OD | WT | Length | Ends | Qty | Unit Rate | Unit Wt | Total Wt */}
+                  <div className="grid grid-cols-8 gap-4">
                     <div className="grid gap-2">
                       <Label>OD (mm)</Label>
                       <Input
@@ -1143,10 +1143,6 @@ function StandardQuotationPage() {
                         </SelectContent>
                       </Select>
                     </div>
-                  </div>
-
-                  {/* Row 3: Qty | Unit Rate | Unit Weight | Total Weight */}
-                  <div className="grid grid-cols-4 gap-4">
                     <div className="grid gap-2">
                       <Label>Qty (Mtr) *</Label>
                       <Input
@@ -1187,7 +1183,7 @@ function StandardQuotationPage() {
                     </div>
                   </div>
 
-                  {/* Row 4: Remark | Total Amount */}
+                  {/* Row 3: Remark | Total Amount */}
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label>Remark</Label>
