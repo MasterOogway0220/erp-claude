@@ -121,6 +121,31 @@ export default function CompanyCreatePage() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  const handleGstinChange = useCallback(async (value: string) => {
+    updateField("gstNo", value.toUpperCase());
+    const gstin = value.toUpperCase();
+    if (gstin.length !== 15) return;
+    try {
+      const res = await fetch(`/api/gst/search?gstin=${gstin}`);
+      if (!res.ok) { toast.error("Invalid GSTIN"); return; }
+      const data = await res.json();
+      setFormData((prev) => ({
+        ...prev,
+        panNo: data.pan || prev.panNo,
+        companyType: data.companyType && !prev.companyType ? data.companyType : prev.companyType,
+        companyName: data.companyName && !prev.companyName ? data.companyName : prev.companyName,
+        regAddressLine1: data.regAddressLine1 && !prev.regAddressLine1 ? data.regAddressLine1 : prev.regAddressLine1,
+        regCity: data.regCity && !prev.regCity ? data.regCity : prev.regCity,
+        regState: data.regState || data.state || prev.regState,
+        regPincode: data.regPincode && !prev.regPincode ? data.regPincode : prev.regPincode,
+        regCountry: data.country || prev.regCountry,
+      }));
+      toast.success(data.fromApi ? "Company details fetched from GSTIN" : "PAN and state auto-filled from GSTIN");
+    } catch {
+      toast.error("Failed to fetch GSTIN details");
+    }
+  }, []);
+
   const handlePincodeChange = useCallback(async (prefix: "reg" | "wh", value: string) => {
     updateField(`${prefix}Pincode` as keyof CompanyFormData, value);
     if (value.length !== 6 || !/^\d{6}$/.test(value)) return;
@@ -312,7 +337,7 @@ export default function CompanyCreatePage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>GST No.</Label>
-                <Input value={formData.gstNo} onChange={(e) => updateField("gstNo", e.target.value.toUpperCase())} placeholder="15-char GST" className="font-mono" />
+                <Input value={formData.gstNo} onChange={(e) => handleGstinChange(e.target.value)} placeholder="15-char GST" className="font-mono" maxLength={15} />
               </div>
               <div className="space-y-1.5">
                 <Label>CIN No.</Label>
