@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -15,27 +15,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Plus, Pencil, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
 
-const FITTING_TYPES = ["Elbow", "Tee", "Reducer", "Cap", "Coupling", "Union", "Nipple", "Bush"];
-const END_TYPES = ["BW", "SW", "Threaded"];
 const TAB_TYPES = ["All", "Elbow", "Tee", "Reducer", "Cap", "Others"] as const;
 
 interface Fitting {
@@ -51,35 +33,11 @@ interface Fitting {
   isActive: boolean;
 }
 
-interface FittingFormData {
-  type: string;
-  size: string;
-  schedule: string;
-  materialGrade: string;
-  standard: string;
-  endType: string;
-  rating: string;
-  description: string;
-}
-
-const emptyForm: FittingFormData = {
-  type: "Elbow",
-  size: "",
-  schedule: "",
-  materialGrade: "",
-  standard: "",
-  endType: "",
-  rating: "",
-  description: "",
-};
-
 export default function FittingsPage() {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("All");
   const [search, setSearch] = useState("");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingFitting, setEditingFitting] = useState<Fitting | null>(null);
-  const [formData, setFormData] = useState<FittingFormData>(emptyForm);
 
   const typeFilter = activeTab === "All" ? undefined
     : activeTab === "Others" ? undefined
@@ -104,48 +62,6 @@ export default function FittingsPage() {
     return true;
   });
 
-  const createMutation = useMutation({
-    mutationFn: async (data: FittingFormData) => {
-      const res = await fetch("/api/masters/fittings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Failed to create fitting");
-      }
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["fittings"] });
-      toast.success("Fitting created successfully");
-      handleCloseDialog();
-    },
-    onError: (err: Error) => toast.error(err.message),
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: FittingFormData }) => {
-      const res = await fetch(`/api/masters/fittings/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Failed to update fitting");
-      }
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["fittings"] });
-      toast.success("Fitting updated successfully");
-      handleCloseDialog();
-    },
-    onError: (err: Error) => toast.error(err.message),
-  });
-
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const res = await fetch(`/api/masters/fittings/${id}`, { method: "DELETE" });
@@ -162,47 +78,11 @@ export default function FittingsPage() {
     onError: (err: Error) => toast.error(err.message),
   });
 
-  const handleOpenDialog = (fitting?: Fitting) => {
-    if (fitting) {
-      setEditingFitting(fitting);
-      setFormData({
-        type: fitting.type,
-        size: fitting.size,
-        schedule: fitting.schedule || "",
-        materialGrade: fitting.materialGrade,
-        standard: fitting.standard || "",
-        endType: fitting.endType || "",
-        rating: fitting.rating || "",
-        description: fitting.description || "",
-      });
-    } else {
-      setEditingFitting(null);
-      setFormData({ ...emptyForm });
-    }
-    setIsDialogOpen(true);
-  };
-
-  const handleCloseDialog = () => {
-    setIsDialogOpen(false);
-    setEditingFitting(null);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editingFitting) {
-      updateMutation.mutate({ id: editingFitting.id, data: formData });
-    } else {
-      createMutation.mutate(formData);
-    }
-  };
-
   const handleDelete = (id: string) => {
     if (confirm("Are you sure you want to delete this fitting?")) {
       deleteMutation.mutate(id);
     }
   };
-
-  const showRating = formData.endType === "SW" || formData.endType === "Threaded";
 
   return (
     <div className="space-y-6">
@@ -218,7 +98,7 @@ export default function FittingsPage() {
               <TabsTrigger key={tab} value={tab}>{tab}</TabsTrigger>
             ))}
           </TabsList>
-          <Button onClick={() => handleOpenDialog()}>
+          <Button onClick={() => router.push("/masters/fittings/create")}>
             <Plus className="h-4 w-4 mr-2" />
             Add Fitting
           </Button>
@@ -241,126 +121,12 @@ export default function FittingsPage() {
             <FittingTable
               fittings={fittings}
               isLoading={isLoading}
-              onEdit={handleOpenDialog}
+              onEdit={(id) => router.push(`/masters/fittings/${id}/edit`)}
               onDelete={handleDelete}
             />
           </TabsContent>
         ))}
       </Tabs>
-
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <form onSubmit={handleSubmit}>
-            <DialogHeader>
-              <DialogTitle>{editingFitting ? "Edit" : "Add"} Fitting</DialogTitle>
-              <DialogDescription>
-                {editingFitting ? "Update" : "Create"} a fitting specification
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label>Type *</Label>
-                  <Select
-                    value={formData.type}
-                    onValueChange={(v) => setFormData({ ...formData, type: v })}
-                  >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {FITTING_TYPES.map((t) => (
-                        <SelectItem key={t} value={t}>{t}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label>Size (NPS) *</Label>
-                  <Input
-                    value={formData.size}
-                    onChange={(e) => setFormData({ ...formData, size: e.target.value })}
-                    placeholder='e.g. 1/2", 2", 4"'
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label>Schedule</Label>
-                  <Input
-                    value={formData.schedule}
-                    onChange={(e) => setFormData({ ...formData, schedule: e.target.value })}
-                    placeholder="e.g. 40, 80, 160, XXS"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label>End Type</Label>
-                  <Select
-                    value={formData.endType || "none"}
-                    onValueChange={(v) => setFormData({ ...formData, endType: v === "none" ? "" : v })}
-                  >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">--</SelectItem>
-                      {END_TYPES.map((t) => (
-                        <SelectItem key={t} value={t}>{t}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {showRating && (
-                <div className="grid gap-2">
-                  <Label>Rating</Label>
-                  <Input
-                    value={formData.rating}
-                    onChange={(e) => setFormData({ ...formData, rating: e.target.value })}
-                    placeholder="e.g. 2000#, 3000#, 6000#"
-                  />
-                </div>
-              )}
-
-              <div className="grid gap-2">
-                <Label>Material Grade *</Label>
-                <Input
-                  value={formData.materialGrade}
-                  onChange={(e) => setFormData({ ...formData, materialGrade: e.target.value })}
-                  placeholder="e.g. ASTM A234 WPB, ASTM A403 WP304"
-                  required
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label>Standard</Label>
-                <Input
-                  value={formData.standard}
-                  onChange={(e) => setFormData({ ...formData, standard: e.target.value })}
-                  placeholder="e.g. ASME B16.9, ASME B16.11"
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label>Description</Label>
-                <Textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Auto-generated if left blank"
-                  rows={2}
-                />
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={handleCloseDialog}>Cancel</Button>
-              <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
-                {createMutation.isPending || updateMutation.isPending ? "Saving..." : editingFitting ? "Update" : "Create"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
@@ -373,7 +139,7 @@ function FittingTable({
 }: {
   fittings: Fitting[];
   isLoading: boolean;
-  onEdit: (fitting: Fitting) => void;
+  onEdit: (id: string) => void;
   onDelete: (id: string) => void;
 }) {
   return (
@@ -416,7 +182,7 @@ function FittingTable({
                 <TableCell>{fitting.standard || "-"}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
-                    <Button variant="ghost" size="icon" onClick={() => onEdit(fitting)}>
+                    <Button variant="ghost" size="icon" onClick={() => onEdit(fitting.id)}>
                       <Pencil className="h-4 w-4" />
                     </Button>
                     <Button variant="ghost" size="icon" onClick={() => onDelete(fitting.id)}>

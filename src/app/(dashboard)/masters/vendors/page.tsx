@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -15,42 +16,38 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "@/components/ui/sheet";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Textarea } from "@/components/ui/textarea";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, Search, ThumbsUp, ThumbsDown, CheckCircle, Clock, XCircle } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Search,
+  ThumbsUp,
+  ThumbsDown,
+  CheckCircle,
+  Clock,
+  XCircle,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/hooks/use-current-user";
-
-const INDIAN_STATES = [
-  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
-  "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
-  "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram",
-  "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu",
-  "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal",
-  "Andaman and Nicobar Islands", "Chandigarh", "Dadra and Nagar Haveli and Daman and Diu",
-  "Delhi", "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry",
-];
 
 interface Vendor {
   id: string;
@@ -85,65 +82,11 @@ interface Vendor {
   approvedBy: { id: string; name: string } | null;
 }
 
-interface VendorFormData {
-  name: string;
-  contactPerson: string;
-  email: string;
-  phone: string;
-  addressLine1: string;
-  addressLine2: string;
-  city: string;
-  state: string;
-  country: string;
-  pincode: string;
-  gstNo: string;
-  gstType: string;
-  panNo: string;
-  productsSupplied: string;
-  avgLeadTimeDays: string;
-  performanceScore: string;
-  vendorRating: string;
-  bankAccountNo: string;
-  bankIfsc: string;
-  bankName: string;
-  bankBranchName: string;
-  bankAccountType: string;
-  tanNo: string;
-}
-
-const emptyForm: VendorFormData = {
-  name: "",
-  contactPerson: "",
-  email: "",
-  phone: "",
-  addressLine1: "",
-  addressLine2: "",
-  city: "",
-  state: "",
-  country: "India",
-  pincode: "",
-  gstNo: "",
-  gstType: "",
-  panNo: "",
-  productsSupplied: "",
-  avgLeadTimeDays: "",
-  performanceScore: "",
-  vendorRating: "",
-  bankAccountNo: "",
-  bankIfsc: "",
-  bankName: "",
-  bankBranchName: "",
-  bankAccountType: "",
-  tanNo: "",
-};
-
 export default function VendorsPage() {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const { user } = useCurrentUser();
   const [search, setSearch] = useState("");
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
-  const [formData, setFormData] = useState<VendorFormData>(emptyForm);
   const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
   const [approvalAction, setApprovalAction] = useState<"approve" | "reject">("approve");
   const [approvalVendor, setApprovalVendor] = useState<Vendor | null>(null);
@@ -161,65 +104,36 @@ export default function VendorsPage() {
     },
   });
 
-  const createMutation = useMutation({
-    mutationFn: async (data: VendorFormData) => {
-      const res = await fetch("/api/masters/vendors", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) throw new Error("Failed to create vendor");
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["vendors"] });
-      toast.success("Vendor created successfully");
-      handleCloseSheet();
-    },
-    onError: () => {
-      toast.error("Failed to create vendor");
-    },
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: VendorFormData }) => {
-      const res = await fetch(`/api/masters/vendors/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) throw new Error("Failed to update vendor");
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["vendors"] });
-      toast.success("Vendor updated successfully");
-      handleCloseSheet();
-    },
-    onError: () => {
-      toast.error("Failed to update vendor");
-    },
-  });
-
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const res = await fetch(`/api/masters/vendors/${id}`, {
         method: "DELETE",
       });
-      if (!res.ok) throw new Error("Failed to delete vendor");
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to delete vendor");
+      }
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["vendors"] });
       toast.success("Vendor deleted successfully");
     },
-    onError: () => {
-      toast.error("Failed to delete vendor");
+    onError: (error: Error) => {
+      toast.error(error.message);
     },
   });
 
   const approvalMutation = useMutation({
-    mutationFn: async ({ id, action, remarks }: { id: string; action: string; remarks: string }) => {
+    mutationFn: async ({
+      id,
+      action,
+      remarks,
+    }: {
+      id: string;
+      action: string;
+      remarks: string;
+    }) => {
       const res = await fetch(`/api/masters/vendors/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -233,12 +147,14 @@ export default function VendorsPage() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["vendors"] });
-      toast.success(variables.action === "approve" ? "Vendor approved" : "Vendor rejected");
+      toast.success(
+        variables.action === "approve" ? "Vendor approved" : "Vendor rejected"
+      );
       setApprovalDialogOpen(false);
       setApprovalRemarks("");
       setApprovalVendor(null);
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error.message);
     },
   });
@@ -263,62 +179,6 @@ export default function VendorsPage() {
     });
   };
 
-  const handleOpenSheet = (vendor?: Vendor) => {
-    if (vendor) {
-      setEditingVendor(vendor);
-      setFormData({
-        name: vendor.name,
-        contactPerson: vendor.contactPerson || "",
-        email: vendor.email || "",
-        phone: vendor.phone || "",
-        addressLine1: vendor.addressLine1 || "",
-        addressLine2: vendor.addressLine2 || "",
-        city: vendor.city || "",
-        state: vendor.state || "",
-        country: vendor.country,
-        pincode: vendor.pincode || "",
-        gstNo: vendor.gstNo || "",
-        gstType: vendor.gstType || "",
-        panNo: vendor.pan || "",
-        productsSupplied: vendor.productsSupplied || "",
-        avgLeadTimeDays: vendor.avgLeadTimeDays?.toString() || "",
-        performanceScore: vendor.performanceScore?.toString() || "",
-        vendorRating: vendor.vendorRating?.toString() || "",
-        bankAccountNo: vendor.bankAccountNo || "",
-        bankIfsc: vendor.bankIfsc || "",
-        bankName: vendor.bankName || "",
-        bankBranchName: vendor.bankBranchName || "",
-        bankAccountType: vendor.bankAccountType || "",
-        tanNo: vendor.tanNo || "",
-      });
-    } else {
-      setEditingVendor(null);
-      setFormData(emptyForm);
-    }
-    setIsSheetOpen(true);
-  };
-
-  const handleCloseSheet = () => {
-    setIsSheetOpen(false);
-    setEditingVendor(null);
-    setFormData(emptyForm);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editingVendor) {
-      updateMutation.mutate({ id: editingVendor.id, data: formData });
-    } else {
-      createMutation.mutate(formData);
-    }
-  };
-
-  const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this vendor?")) {
-      deleteMutation.mutate(id);
-    }
-  };
-
   return (
     <div className="space-y-6">
       <PageHeader
@@ -336,7 +196,7 @@ export default function VendorsPage() {
             className="pl-10"
           />
         </div>
-        <Button onClick={() => handleOpenSheet()}>
+        <Button onClick={() => router.push("/masters/vendors/create")}>
           <Plus className="h-4 w-4 mr-2" />
           Add Vendor
         </Button>
@@ -359,13 +219,19 @@ export default function VendorsPage() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                <TableCell
+                  colSpan={8}
+                  className="text-center py-8 text-muted-foreground"
+                >
                   Loading vendors...
                 </TableCell>
               </TableRow>
             ) : data?.vendors?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                <TableCell
+                  colSpan={8}
+                  className="text-center py-8 text-muted-foreground"
+                >
                   No vendors found
                 </TableCell>
               </TableRow>
@@ -375,13 +241,15 @@ export default function VendorsPage() {
                   <TableCell className="font-medium">{vendor.name}</TableCell>
                   <TableCell>{vendor.contactPerson || "—"}</TableCell>
                   <TableCell>{vendor.city || "—"}</TableCell>
-                  <TableCell className="font-mono text-xs">{vendor.gstNo || "—"}</TableCell>
+                  <TableCell className="font-mono text-xs">
+                    {vendor.gstNo || "—"}
+                  </TableCell>
                   <TableCell className="max-w-xs truncate">
                     {vendor.productsSupplied || "—"}
                   </TableCell>
                   <TableCell>
                     {vendor.vendorRating ? (
-                      <Badge variant="outline">{vendor.vendorRating}/10</Badge>
+                      <Badge variant="outline">{vendor.vendorRating}/5</Badge>
                     ) : vendor.performanceScore ? (
                       <Badge variant="outline">{vendor.performanceScore}/10</Badge>
                     ) : (
@@ -443,17 +311,37 @@ export default function VendorsPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleOpenSheet(vendor)}
+                        onClick={() =>
+                          router.push(`/masters/vendors/${vendor.id}/edit`)
+                        }
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(vendor.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Vendor</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete &quot;{vendor.name}&quot;? This
+                              action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => deleteMutation.mutate(vendor.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -485,385 +373,51 @@ export default function VendorsPage() {
                 id="approvalRemarks"
                 value={approvalRemarks}
                 onChange={(e) => setApprovalRemarks(e.target.value)}
-                placeholder={approvalAction === "approve" ? "Optional remarks..." : "Reason for rejection..."}
+                placeholder={
+                  approvalAction === "approve"
+                    ? "Optional remarks..."
+                    : "Reason for rejection..."
+                }
                 rows={3}
               />
             </div>
             <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={() => { setApprovalDialogOpen(false); setApprovalRemarks(""); }}>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setApprovalDialogOpen(false);
+                  setApprovalRemarks("");
+                }}
+              >
                 Cancel
               </Button>
               <Button
                 onClick={handleApprovalSubmit}
-                disabled={approvalMutation.isPending || (approvalAction === "reject" && !approvalRemarks.trim())}
-                className={approvalAction === "approve" ? "bg-green-600 hover:bg-green-700" : ""}
+                disabled={
+                  approvalMutation.isPending ||
+                  (approvalAction === "reject" && !approvalRemarks.trim())
+                }
+                className={
+                  approvalAction === "approve" ? "bg-green-600 hover:bg-green-700" : ""
+                }
                 variant={approvalAction === "reject" ? "destructive" : "default"}
               >
                 {approvalAction === "approve" ? (
-                  <><ThumbsUp className="h-4 w-4 mr-2" />Approve</>
+                  <>
+                    <ThumbsUp className="h-4 w-4 mr-2" />
+                    Approve
+                  </>
                 ) : (
-                  <><ThumbsDown className="h-4 w-4 mr-2" />Reject</>
+                  <>
+                    <ThumbsDown className="h-4 w-4 mr-2" />
+                    Reject
+                  </>
                 )}
               </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Sheet-based Form (matching Customer Master design) */}
-      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-        <SheetContent className="!max-w-2xl overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>
-              {editingVendor ? "Edit" : "Add"} Vendor
-            </SheetTitle>
-            <SheetDescription>
-              {editingVendor ? "Update" : "Create"} vendor / supplier information
-            </SheetDescription>
-          </SheetHeader>
-
-          <form onSubmit={handleSubmit} className="space-y-6 mt-6">
-            {/* Vendor Name */}
-            <div className="grid gap-2">
-              <Label htmlFor="name">Vendor Name *</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="e.g., ISMT Limited"
-                required
-              />
-            </div>
-
-            {/* Contact Person Details */}
-            <div>
-              <div className="bg-muted px-3 py-2 rounded-md mb-3">
-                <h4 className="text-sm font-medium">Contact Person Details</h4>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="contactPerson">Contact Person</Label>
-                  <Input
-                    id="contactPerson"
-                    value={formData.contactPerson}
-                    onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  />
-                </div>
-                <div className="grid gap-2 col-span-2">
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input
-                    id="phone"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Address & GST Details */}
-            <div>
-              <div className="bg-muted px-3 py-2 rounded-md mb-3">
-                <h4 className="text-sm font-medium">Address & GST Details</h4>
-              </div>
-              <div className="space-y-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="addressLine1">Address Line 1</Label>
-                  <Input
-                    id="addressLine1"
-                    value={formData.addressLine1}
-                    onChange={(e) => setFormData({ ...formData, addressLine1: e.target.value })}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="addressLine2">Address Line 2</Label>
-                  <Input
-                    id="addressLine2"
-                    value={formData.addressLine2}
-                    onChange={(e) => setFormData({ ...formData, addressLine2: e.target.value })}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="city">City</Label>
-                    <Input
-                      id="city"
-                      value={formData.city}
-                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="pincode">Pincode</Label>
-                    <Input
-                      id="pincode"
-                      value={formData.pincode}
-                      onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="state">State</Label>
-                    <Select
-                      value={formData.state}
-                      onValueChange={(v) => setFormData({ ...formData, state: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select state" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {INDIAN_STATES.map((s) => (
-                          <SelectItem key={s} value={s}>{s}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="country">Country</Label>
-                    <Input
-                      id="country"
-                      value={formData.country}
-                      onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="gstNo">GST Number</Label>
-                    <Input
-                      id="gstNo"
-                      value={formData.gstNo}
-                      onChange={(e) => setFormData({ ...formData, gstNo: e.target.value.toUpperCase() })}
-                      placeholder="22AAAAA0000A1Z5"
-                      className="font-mono"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="gstType">GST Type</Label>
-                    <Select
-                      value={formData.gstType}
-                      onValueChange={(v) => setFormData({ ...formData, gstType: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select GST type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="REGULAR">Regular</SelectItem>
-                        <SelectItem value="UNREGISTERED">Unregistered</SelectItem>
-                        <SelectItem value="COMPOSITION">Composition</SelectItem>
-                        <SelectItem value="SEZ">SEZ</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="panNo">PAN Number</Label>
-                  <Input
-                    id="panNo"
-                    value={formData.panNo}
-                    onChange={(e) => setFormData({ ...formData, panNo: e.target.value.toUpperCase() })}
-                    placeholder="AAAAA0000A"
-                    maxLength={10}
-                    className="font-mono"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Vendor Details */}
-            <div>
-              <div className="bg-muted px-3 py-2 rounded-md mb-3">
-                <h4 className="text-sm font-medium">Vendor Details</h4>
-              </div>
-              <div className="space-y-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="productsSupplied">Products Supplied</Label>
-                  <Textarea
-                    id="productsSupplied"
-                    value={formData.productsSupplied}
-                    onChange={(e) => setFormData({ ...formData, productsSupplied: e.target.value })}
-                    placeholder="e.g., CS Seamless Pipes, SS ERW Pipes, Alloy Steel Tubes"
-                    rows={2}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="avgLeadTimeDays">Avg Lead Time (Days)</Label>
-                    <Input
-                      id="avgLeadTimeDays"
-                      type="number"
-                      value={formData.avgLeadTimeDays}
-                      onChange={(e) => setFormData({ ...formData, avgLeadTimeDays: e.target.value })}
-                      placeholder="30"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="vendorRating">Vendor Rating (0-10)</Label>
-                    <Input
-                      id="vendorRating"
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      max="10"
-                      value={formData.vendorRating}
-                      onChange={(e) => setFormData({ ...formData, vendorRating: e.target.value })}
-                      placeholder="8.5"
-                    />
-                  </div>
-                </div>
-
-                {editingVendor && (
-                  <div className="grid grid-cols-2 gap-4 p-3 bg-muted/50 rounded-lg">
-                    <div>
-                      <Label className="text-muted-foreground text-xs">Approval Status</Label>
-                      <div className="mt-1">
-                        {editingVendor.approvedStatus ? (
-                          <Badge className="bg-green-600">
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Approved
-                          </Badge>
-                        ) : editingVendor.approvalRemarks && !editingVendor.approvedById ? (
-                          <Badge variant="destructive">Rejected</Badge>
-                        ) : (
-                          <Badge variant="secondary">Pending Approval</Badge>
-                        )}
-                      </div>
-                    </div>
-                    {editingVendor.approvedBy && (
-                      <div>
-                        <Label className="text-muted-foreground text-xs">Approved By</Label>
-                        <div className="text-sm mt-1">{editingVendor.approvedBy.name}</div>
-                        {editingVendor.approvalDate && (
-                          <div className="text-xs text-muted-foreground">
-                            {new Date(editingVendor.approvalDate).toLocaleDateString()}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    {editingVendor.approvalRemarks && (
-                      <div className="col-span-2">
-                        <Label className="text-muted-foreground text-xs">Remarks</Label>
-                        <div className="text-sm mt-1">{editingVendor.approvalRemarks}</div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Bank Details */}
-            <div>
-              <div className="bg-muted px-3 py-2 rounded-md mb-3">
-                <h4 className="text-sm font-medium">Bank Details</h4>
-              </div>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="bankName">Bank Name</Label>
-                    <Input
-                      id="bankName"
-                      value={formData.bankName}
-                      onChange={(e) => setFormData({ ...formData, bankName: e.target.value })}
-                      placeholder="e.g., State Bank of India"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="bankBranchName">Branch Name</Label>
-                    <Input
-                      id="bankBranchName"
-                      value={formData.bankBranchName}
-                      onChange={(e) => setFormData({ ...formData, bankBranchName: e.target.value })}
-                      placeholder="e.g., Andheri West"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="bankAccountNo">Account Number</Label>
-                    <Input
-                      id="bankAccountNo"
-                      value={formData.bankAccountNo}
-                      onChange={(e) => setFormData({ ...formData, bankAccountNo: e.target.value })}
-                      className="font-mono"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="bankAccountType">Account Type</Label>
-                    <Select
-                      value={formData.bankAccountType}
-                      onValueChange={(value) => setFormData({ ...formData, bankAccountType: value })}
-                    >
-                      <SelectTrigger id="bankAccountType">
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="SAVING">Saving</SelectItem>
-                        <SelectItem value="CURRENT">Current</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="bankIfsc">IFSC Code</Label>
-                    <Input
-                      id="bankIfsc"
-                      value={formData.bankIfsc}
-                      onChange={(e) => setFormData({ ...formData, bankIfsc: e.target.value.toUpperCase() })}
-                      placeholder="SBIN0001234"
-                      className="font-mono"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="tanNo">TAN Number</Label>
-                    <Input
-                      id="tanNo"
-                      value={formData.tanNo}
-                      onChange={(e) => setFormData({ ...formData, tanNo: e.target.value.toUpperCase() })}
-                      placeholder="MUMX12345X"
-                      maxLength={10}
-                      className="font-mono"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Footer Buttons */}
-            <div className="flex justify-end gap-3 pt-4 border-t">
-              <Button type="button" variant="outline" onClick={handleCloseSheet}>
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={createMutation.isPending || updateMutation.isPending}
-              >
-                {createMutation.isPending || updateMutation.isPending
-                  ? "Saving..."
-                  : editingVendor
-                  ? "Update Vendor"
-                  : "Create Vendor"}
-              </Button>
-            </div>
-          </form>
-        </SheetContent>
-      </Sheet>
     </div>
   );
 }

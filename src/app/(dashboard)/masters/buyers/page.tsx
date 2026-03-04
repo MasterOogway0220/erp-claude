@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { DataTable, Column } from "@/components/shared/data-table";
 import { Button } from "@/components/ui/button";
@@ -14,13 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil } from "lucide-react";
 import { toast } from "sonner";
@@ -45,36 +39,13 @@ interface Buyer {
   };
 }
 
-interface BuyerFormData {
-  customerId: string;
-  buyerName: string;
-  designation: string;
-  email: string;
-  mobile: string;
-  telephone: string;
-  isActive: boolean;
-}
-
-const emptyForm: BuyerFormData = {
-  customerId: "",
-  buyerName: "",
-  designation: "",
-  email: "",
-  mobile: "",
-  telephone: "",
-  isActive: true,
-};
-
 export default function BuyersPage() {
+  const router = useRouter();
   const [buyers, setBuyers] = useState<Buyer[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [customerFilter, setCustomerFilter] = useState("");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingBuyer, setEditingBuyer] = useState<Buyer | null>(null);
-  const [formData, setFormData] = useState<BuyerFormData>(emptyForm);
-  const [saving, setSaving] = useState(false);
 
   const fetchBuyers = useCallback(async () => {
     try {
@@ -115,77 +86,6 @@ export default function BuyersPage() {
     return () => clearTimeout(timer);
   }, [fetchBuyers]);
 
-  const handleOpenDialog = (buyer?: Buyer) => {
-    if (buyer) {
-      setEditingBuyer(buyer);
-      setFormData({
-        customerId: buyer.customerId,
-        buyerName: buyer.buyerName,
-        designation: buyer.designation || "",
-        email: buyer.email || "",
-        mobile: buyer.mobile || "",
-        telephone: buyer.telephone || "",
-        isActive: buyer.isActive,
-      });
-    } else {
-      setEditingBuyer(null);
-      setFormData(emptyForm);
-    }
-    setIsDialogOpen(true);
-  };
-
-  const handleCloseDialog = () => {
-    setIsDialogOpen(false);
-    setEditingBuyer(null);
-    setFormData(emptyForm);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!formData.customerId) {
-      toast.error("Please select a customer");
-      return;
-    }
-    if (!formData.buyerName.trim()) {
-      toast.error("Buyer name is required");
-      return;
-    }
-    if (!formData.email.trim()) {
-      toast.error("Email is required");
-      return;
-    }
-
-    setSaving(true);
-    try {
-      if (editingBuyer) {
-        const res = await fetch(`/api/masters/buyers/${editingBuyer.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
-        });
-        if (!res.ok) throw new Error("Failed to update buyer");
-        toast.success("Buyer updated successfully");
-      } else {
-        const res = await fetch("/api/masters/buyers", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
-        });
-        if (!res.ok) throw new Error("Failed to create buyer");
-        toast.success("Buyer created successfully");
-      }
-      handleCloseDialog();
-      fetchBuyers();
-    } catch {
-      toast.error(
-        editingBuyer ? "Failed to update buyer" : "Failed to create buyer"
-      );
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const columns: Column<Buyer>[] = [
     {
       key: "buyerName",
@@ -196,22 +96,22 @@ export default function BuyersPage() {
     {
       key: "customer",
       header: "Customer",
-      cell: (row) => row.customer?.name || "—",
+      cell: (row) => row.customer?.name || "\u2014",
     },
     {
       key: "designation",
       header: "Designation",
-      cell: (row) => row.designation || "—",
+      cell: (row) => row.designation || "\u2014",
     },
     {
       key: "email",
       header: "Email",
-      cell: (row) => row.email || "—",
+      cell: (row) => row.email || "\u2014",
     },
     {
       key: "mobile",
       header: "Mobile",
-      cell: (row) => row.mobile || "—",
+      cell: (row) => row.mobile || "\u2014",
     },
     {
       key: "isActive",
@@ -229,7 +129,7 @@ export default function BuyersPage() {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => handleOpenDialog(row)}
+          onClick={() => router.push(`/masters/buyers/${row.id}/edit`)}
         >
           <Pencil className="h-4 w-4" />
         </Button>
@@ -243,161 +143,10 @@ export default function BuyersPage() {
         title="Buyer Master"
         description="Manage buyer contacts for each customer"
       >
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => handleOpenDialog()}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Buyer
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-            <form onSubmit={handleSubmit}>
-              <DialogHeader>
-                <DialogTitle>
-                  {editingBuyer ? "Edit" : "Add"} Buyer
-                </DialogTitle>
-              </DialogHeader>
-
-              <div className="grid gap-4 py-4">
-                {/* Customer Dropdown */}
-                <div className="grid gap-2">
-                  <Label htmlFor="customerId">Customer *</Label>
-                  <Select
-                    value={formData.customerId}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, customerId: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a customer" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {customers.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Buyer Name */}
-                <div className="grid gap-2">
-                  <Label htmlFor="buyerName">Buyer Name *</Label>
-                  <Input
-                    id="buyerName"
-                    value={formData.buyerName}
-                    onChange={(e) =>
-                      setFormData({ ...formData, buyerName: e.target.value })
-                    }
-                    placeholder="e.g., Rajesh Kumar"
-                    required
-                  />
-                </div>
-
-                {/* Designation */}
-                <div className="grid gap-2">
-                  <Label htmlFor="designation">Designation</Label>
-                  <Input
-                    id="designation"
-                    value={formData.designation}
-                    onChange={(e) =>
-                      setFormData({ ...formData, designation: e.target.value })
-                    }
-                    placeholder="e.g., Purchase Manager"
-                  />
-                </div>
-
-                {/* Email */}
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Email *</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) =>
-                      setFormData({ ...formData, email: e.target.value })
-                    }
-                    placeholder="e.g., buyer@company.com"
-                    required
-                  />
-                </div>
-
-                {/* Mobile & Telephone */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="mobile">Mobile</Label>
-                    <Input
-                      id="mobile"
-                      value={formData.mobile}
-                      onChange={(e) =>
-                        setFormData({ ...formData, mobile: e.target.value })
-                      }
-                      placeholder="e.g., +91 98765 43210"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="telephone">Telephone</Label>
-                    <Input
-                      id="telephone"
-                      value={formData.telephone}
-                      onChange={(e) =>
-                        setFormData({ ...formData, telephone: e.target.value })
-                      }
-                      placeholder="e.g., 022-12345678"
-                    />
-                  </div>
-                </div>
-
-                {/* Status Toggle */}
-                <div className="grid gap-2">
-                  <Label>Status</Label>
-                  <div className="flex items-center gap-4 pt-1">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="isActive"
-                        checked={formData.isActive === true}
-                        onChange={() =>
-                          setFormData({ ...formData, isActive: true })
-                        }
-                      />
-                      <span>Active</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="isActive"
-                        checked={formData.isActive === false}
-                        onChange={() =>
-                          setFormData({ ...formData, isActive: false })
-                        }
-                      />
-                      <span>Inactive</span>
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleCloseDialog}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={saving}>
-                  {saving
-                    ? "Saving..."
-                    : editingBuyer
-                    ? "Update"
-                    : "Create"}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={() => router.push("/masters/buyers/create")}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Buyer
+        </Button>
       </PageHeader>
 
       {/* Filters */}

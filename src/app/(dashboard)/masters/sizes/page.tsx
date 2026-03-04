@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -14,25 +15,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Plus, Pencil, Trash2, Search, Calculator } from "lucide-react";
+import { Plus, Pencil, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
-import { calculateWeightPerMeter } from "@/lib/weight-calculation";
 
 type PipeType = "CS_AS" | "SS_DS";
 
@@ -45,29 +29,12 @@ interface SizeEntry {
   pipeType: PipeType;
 }
 
-interface SizeFormData {
-  sizeLabel: string;
-  od: string;
-  wt: string;
-  weight: string;
-  pipeType: PipeType;
-}
-
 export default function SizesPage() {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<PipeType>("CS_AS");
   const [search, setSearch] = useState("");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingSize, setEditingSize] = useState<SizeEntry | null>(null);
-  const [formData, setFormData] = useState<SizeFormData>({
-    sizeLabel: "",
-    od: "",
-    wt: "",
-    weight: "",
-    pipeType: "CS_AS",
-  });
 
-  // Fetch sizes
   const { data, isLoading } = useQuery({
     queryKey: ["sizes", activeTab, search],
     queryFn: async () => {
@@ -81,49 +48,6 @@ export default function SizesPage() {
     },
   });
 
-  // Create mutation
-  const createMutation = useMutation({
-    mutationFn: async (data: SizeFormData) => {
-      const res = await fetch("/api/masters/sizes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) throw new Error("Failed to create size");
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["sizes"] });
-      toast.success("Size created successfully");
-      handleCloseDialog();
-    },
-    onError: () => {
-      toast.error("Failed to create size");
-    },
-  });
-
-  // Update mutation
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: SizeFormData }) => {
-      const res = await fetch(`/api/masters/sizes/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) throw new Error("Failed to update size");
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["sizes"] });
-      toast.success("Size updated successfully");
-      handleCloseDialog();
-    },
-    onError: () => {
-      toast.error("Failed to update size");
-    },
-  });
-
-  // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const res = await fetch(`/api/masters/sizes/${id}`, {
@@ -144,53 +68,6 @@ export default function SizesPage() {
     },
   });
 
-  const autoCalcWeight = (od: string, wt: string, pipeType: PipeType) => {
-    const odVal = parseFloat(od);
-    const wtVal = parseFloat(wt);
-    if (odVal && wtVal) {
-      const w = calculateWeightPerMeter(odVal, wtVal, pipeType);
-      if (w !== null) return w.toString();
-    }
-    return "";
-  };
-
-  const handleOpenDialog = (size?: SizeEntry) => {
-    if (size) {
-      setEditingSize(size);
-      setFormData({
-        sizeLabel: size.sizeLabel,
-        od: size.od.toString(),
-        wt: size.wt.toString(),
-        weight: size.weight.toString(),
-        pipeType: size.pipeType,
-      });
-    } else {
-      setEditingSize(null);
-      setFormData({
-        sizeLabel: "",
-        od: "",
-        wt: "",
-        weight: "",
-        pipeType: activeTab,
-      });
-    }
-    setIsDialogOpen(true);
-  };
-
-  const handleCloseDialog = () => {
-    setIsDialogOpen(false);
-    setEditingSize(null);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editingSize) {
-      updateMutation.mutate({ id: editingSize.id, data: formData });
-    } else {
-      createMutation.mutate(formData);
-    }
-  };
-
   const handleDelete = (id: string) => {
     if (confirm("Are you sure you want to delete this size?")) {
       deleteMutation.mutate(id);
@@ -207,10 +84,10 @@ export default function SizesPage() {
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as PipeType)}>
         <div className="flex items-center justify-between">
           <TabsList>
-            <TabsTrigger value="CS_AS">CS & AS Pipes (191)</TabsTrigger>
-            <TabsTrigger value="SS_DS">SS & DS Pipes (80)</TabsTrigger>
+            <TabsTrigger value="CS_AS">CS &amp; AS Pipes (191)</TabsTrigger>
+            <TabsTrigger value="SS_DS">SS &amp; DS Pipes (80)</TabsTrigger>
           </TabsList>
-          <Button onClick={() => handleOpenDialog()}>
+          <Button onClick={() => router.push("/masters/sizes/create")}>
             <Plus className="h-4 w-4 mr-2" />
             Add Size
           </Button>
@@ -232,7 +109,7 @@ export default function SizesPage() {
           <SizeTable
             sizes={data?.sizes || []}
             isLoading={isLoading}
-            onEdit={handleOpenDialog}
+            onEdit={(id) => router.push(`/masters/sizes/${id}/edit`)}
             onDelete={handleDelete}
           />
         </TabsContent>
@@ -241,134 +118,11 @@ export default function SizesPage() {
           <SizeTable
             sizes={data?.sizes || []}
             isLoading={isLoading}
-            onEdit={handleOpenDialog}
+            onEdit={(id) => router.push(`/masters/sizes/${id}/edit`)}
             onDelete={handleDelete}
           />
         </TabsContent>
       </Tabs>
-
-      {/* Create/Edit Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
-          <form onSubmit={handleSubmit}>
-            <DialogHeader>
-              <DialogTitle>
-                {editingSize ? "Edit" : "Add"} Size
-              </DialogTitle>
-              <DialogDescription>
-                {editingSize ? "Update" : "Create"} a size specification
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="sizeLabel">Size Label *</Label>
-                <Input
-                  id="sizeLabel"
-                  value={formData.sizeLabel}
-                  onChange={(e) =>
-                    setFormData({ ...formData, sizeLabel: e.target.value })
-                  }
-                  placeholder='e.g., 1/2" NB X Sch 40'
-                  required
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="pipeType">Pipe Type *</Label>
-                <Select
-                  value={formData.pipeType}
-                  onValueChange={(value: PipeType) => {
-                    const weight = autoCalcWeight(formData.od, formData.wt, value);
-                    setFormData({ ...formData, pipeType: value, weight: weight || formData.weight });
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="CS_AS">CS & AS Pipes</SelectItem>
-                    <SelectItem value="SS_DS">SS & DS Pipes</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="od">OD (mm) *</Label>
-                  <Input
-                    id="od"
-                    type="number"
-                    step="0.001"
-                    value={formData.od}
-                    onChange={(e) => {
-                      const od = e.target.value;
-                      const weight = autoCalcWeight(od, formData.wt, formData.pipeType);
-                      setFormData({ ...formData, od, weight: weight || formData.weight });
-                    }}
-                    placeholder="21.3"
-                    required
-                  />
-                </div>
-
-                <div className="grid gap-2">
-                  <Label htmlFor="wt">WT (mm) *</Label>
-                  <Input
-                    id="wt"
-                    type="number"
-                    step="0.001"
-                    value={formData.wt}
-                    onChange={(e) => {
-                      const wt = e.target.value;
-                      const weight = autoCalcWeight(formData.od, wt, formData.pipeType);
-                      setFormData({ ...formData, wt, weight: weight || formData.weight });
-                    }}
-                    placeholder="2.77"
-                    required
-                  />
-                </div>
-
-                <div className="grid gap-2">
-                  <Label htmlFor="weight" className="flex items-center gap-1.5">
-                    Weight (Kg/Meter) *
-                    <Calculator className="h-3 w-3 text-muted-foreground" />
-                  </Label>
-                  <Input
-                    id="weight"
-                    type="number"
-                    step="0.0001"
-                    value={formData.weight}
-                    onChange={(e) =>
-                      setFormData({ ...formData, weight: e.target.value })
-                    }
-                    placeholder="1.266"
-                    required
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Auto-calculated from OD & WT. Editable for override.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={handleCloseDialog}>
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={createMutation.isPending || updateMutation.isPending}
-              >
-                {createMutation.isPending || updateMutation.isPending
-                  ? "Saving..."
-                  : editingSize
-                  ? "Update"
-                  : "Create"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
@@ -381,7 +135,7 @@ function SizeTable({
 }: {
   sizes: SizeEntry[];
   isLoading: boolean;
-  onEdit: (size: SizeEntry) => void;
+  onEdit: (id: string) => void;
   onDelete: (id: string) => void;
 }) {
   return (
@@ -421,7 +175,7 @@ function SizeTable({
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => onEdit(size)}
+                      onClick={() => onEdit(size.id)}
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>

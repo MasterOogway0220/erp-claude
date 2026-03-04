@@ -1,18 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { DataTable, Column } from "@/components/shared/data-table";
 import { Plus, Pencil } from "lucide-react";
@@ -27,25 +19,10 @@ interface Unit {
   updatedAt: string;
 }
 
-interface UnitFormData {
-  code: string;
-  name: string;
-  isActive: boolean;
-}
-
-const emptyForm: UnitFormData = {
-  code: "",
-  name: "",
-  isActive: true,
-};
-
 export default function UnitsPage() {
+  const router = useRouter();
   const [units, setUnits] = useState<Unit[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
-  const [formData, setFormData] = useState<UnitFormData>(emptyForm);
-  const [saving, setSaving] = useState(false);
 
   const fetchUnits = useCallback(async () => {
     try {
@@ -64,70 +41,6 @@ export default function UnitsPage() {
   useEffect(() => {
     fetchUnits();
   }, [fetchUnits]);
-
-  const handleOpenCreate = () => {
-    setEditingUnit(null);
-    setFormData(emptyForm);
-    setIsDialogOpen(true);
-  };
-
-  const handleOpenEdit = (unit: Unit) => {
-    setEditingUnit(unit);
-    setFormData({
-      code: unit.code,
-      name: unit.name,
-      isActive: unit.isActive,
-    });
-    setIsDialogOpen(true);
-  };
-
-  const handleCloseDialog = () => {
-    setIsDialogOpen(false);
-    setEditingUnit(null);
-    setFormData(emptyForm);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!formData.code.trim() || !formData.name.trim()) {
-      toast.error("Code and Name are required");
-      return;
-    }
-
-    setSaving(true);
-    try {
-      if (editingUnit) {
-        const res = await fetch(`/api/masters/units/${editingUnit.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
-        });
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.error || "Failed to update unit");
-        }
-        toast.success("Unit updated successfully");
-      } else {
-        const res = await fetch("/api/masters/units", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
-        });
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.error || "Failed to create unit");
-        }
-        toast.success("Unit created successfully");
-      }
-      handleCloseDialog();
-      fetchUnits();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to save unit");
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const columns: Column<Unit>[] = [
     {
@@ -159,7 +72,7 @@ export default function UnitsPage() {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => handleOpenEdit(row)}
+          onClick={() => router.push(`/masters/units/${row.id}/edit`)}
         >
           <Pencil className="h-4 w-4" />
         </Button>
@@ -173,13 +86,13 @@ export default function UnitsPage() {
         title="Unit Master (UOM)"
         description="Manage units of measurement for products and materials"
       >
-        <Button onClick={handleOpenCreate}>
+        <Button onClick={() => router.push("/masters/units/create")}>
           <Plus className="h-4 w-4 mr-2" />
           Add Unit
         </Button>
       </PageHeader>
 
-      {/* Summary Card */}
+      {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="pb-2">
@@ -258,92 +171,6 @@ export default function UnitsPage() {
           ))}
         </div>
       </div>
-
-      {/* Create/Edit Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
-          <form onSubmit={handleSubmit}>
-            <DialogHeader>
-              <DialogTitle>
-                {editingUnit ? "Edit" : "Add"} Unit
-              </DialogTitle>
-            </DialogHeader>
-
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="code">Code *</Label>
-                <Input
-                  id="code"
-                  value={formData.code}
-                  onChange={(e) =>
-                    setFormData({ ...formData, code: e.target.value })
-                  }
-                  placeholder='e.g., "Kg", "Pcs"'
-                  required
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="name">Name *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  placeholder='e.g., "Kilogram", "Pieces"'
-                  required
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label>Status</Label>
-                <div className="flex items-center gap-4 pt-1">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="isActive"
-                      checked={formData.isActive === true}
-                      onChange={() =>
-                        setFormData({ ...formData, isActive: true })
-                      }
-                    />
-                    <span className="text-sm">Active</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="isActive"
-                      checked={formData.isActive === false}
-                      onChange={() =>
-                        setFormData({ ...formData, isActive: false })
-                      }
-                    />
-                    <span className="text-sm">Inactive</span>
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleCloseDialog}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={saving}>
-                {saving
-                  ? "Saving..."
-                  : editingUnit
-                  ? "Update"
-                  : "Create"}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
