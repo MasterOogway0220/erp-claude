@@ -3,20 +3,21 @@ import { checkAccess } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { authorized, session, response } = await checkAccess("masters", "write");
     if (!authorized) return response!;
 
+    const { id } = await params;
     const body = await request.json();
-    const existing = await prisma.companyMaster.findUnique({ where: { id: params.id } });
+    const existing = await prisma.companyMaster.findUnique({ where: { id } });
 
     if (!existing) {
       return NextResponse.json({ error: "Company not found" }, { status: 404 });
     }
 
     const company = await prisma.companyMaster.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         companyName: body.companyName ?? existing.companyName,
         companyType: body.companyType ?? existing.companyType,
@@ -48,7 +49,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     await createAuditLog({
       tableName: "CompanyMaster",
-      recordId: params.id,
+      recordId: id,
       action: "UPDATE",
       userId: session.user?.id,
     });
@@ -60,21 +61,22 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   }
 }
 
-export async function DELETE(_request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { authorized, session, response } = await checkAccess("masters", "delete");
     if (!authorized) return response!;
 
-    const existing = await prisma.companyMaster.findUnique({ where: { id: params.id } });
+    const { id } = await params;
+    const existing = await prisma.companyMaster.findUnique({ where: { id } });
     if (!existing) {
       return NextResponse.json({ error: "Company not found" }, { status: 404 });
     }
 
-    await prisma.companyMaster.delete({ where: { id: params.id } });
+    await prisma.companyMaster.delete({ where: { id } });
 
     await createAuditLog({
       tableName: "CompanyMaster",
-      recordId: params.id,
+      recordId: id,
       action: "DELETE",
       userId: session.user?.id,
     });
