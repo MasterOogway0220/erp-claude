@@ -425,7 +425,7 @@ function PipesPanel() {
                   <Label>Length</Label>
                   <div className="flex gap-2">
                     <div className="flex-1">
-                      <SmartCombobox
+                      <SmartCombobox<{ id: string; label: string }>
                         options={lengths}
                         value={formData.length || lengthSearch}
                         onSelect={(len) => { setFormData({ ...formData, length: len.label }); setLengthSearch(""); }}
