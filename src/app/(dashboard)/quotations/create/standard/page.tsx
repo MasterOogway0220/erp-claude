@@ -650,7 +650,7 @@ function StandardQuotationPage() {
   const isINR = formData.currency === "INR";
 
   return (
-    <div className="space-y-6 max-w-7xl">
+    <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => router.push("/quotations/create")}>
           <ArrowLeft className="h-4 w-4" />
