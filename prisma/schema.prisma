@@ -765,6 +765,7 @@ model EmployeeMaster {
   mobile       String?
   telephone    String?
   linkedUserId String?  @unique
+  moduleAccess Json?
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

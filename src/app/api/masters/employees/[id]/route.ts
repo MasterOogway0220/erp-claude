@@ -57,6 +57,7 @@ export async function PATCH(
         mobile: body.mobile ?? undefined,
         telephone: body.telephone ?? undefined,
         linkedUserId,
+        moduleAccess: Array.isArray(body.moduleAccess) ? body.moduleAccess : undefined,
         isActive: body.isActive ?? undefined,
       },
     });

@@ -39,6 +39,7 @@ export async function GET(request: NextRequest) {
       telephone: e.telephone,
       userId: e.linkedUserId,
       user: e.linkedUser,
+      moduleAccess: e.moduleAccess ?? [],
       isActive: e.isActive,
       createdAt: e.createdAt,
       updatedAt: e.updatedAt,
@@ -82,6 +83,7 @@ export async function POST(request: NextRequest) {
         mobile: body.mobile || null,
         telephone: body.telephone || null,
         linkedUserId: body.linkedUserId || null,
+        moduleAccess: Array.isArray(body.moduleAccess) ? body.moduleAccess : [],
         isActive: body.isActive ?? true,
       },
       include: {
