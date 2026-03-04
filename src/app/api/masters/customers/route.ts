@@ -164,14 +164,37 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Auto-create a BuyerMaster when companyType is "BOTH" and contactPerson is provided
-    if (companyType === "BOTH" && contactPerson) {
+    // Auto-create a BuyerMaster contact when companyType includes BUYER
+    if ((companyType === "BUYER" || companyType === "BOTH") && contactPerson) {
       await prisma.buyerMaster.create({
         data: {
           customerId: newCustomer.id,
           buyerName: contactPerson,
           email: contactPersonEmail || null,
           mobile: contactPersonPhone || null,
+        },
+      });
+    }
+
+    // Auto-create a linked VendorMaster when companyType is SUPPLIER or BOTH
+    if (companyType === "SUPPLIER" || companyType === "BOTH") {
+      await prisma.vendorMaster.create({
+        data: {
+          linkedCustomerId: newCustomer.id,
+          name,
+          addressLine1: addressLine1 || null,
+          addressLine2: addressLine2 || null,
+          city: city || null,
+          state: state || null,
+          country: country || "India",
+          pincode: pincode || null,
+          contactPerson: contactPerson || null,
+          email: email || null,
+          phone: phone || null,
+          gstNo: gstNo || null,
+          gstType: gstType || null,
+          pan: (body.panNo || body.pan) || null,
+          approvedStatus: false,
         },
       });
     }

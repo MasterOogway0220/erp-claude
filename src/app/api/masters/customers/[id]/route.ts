@@ -110,13 +110,11 @@ export async function PATCH(
       }
     }
 
-    // Check if companyType is changing to "BOTH" so we can auto-create a buyer
-    const existingCustomer = companyType === "BOTH"
-      ? await prisma.customerMaster.findUnique({
-          where: { id },
-          select: { companyType: true, contactPerson: true, contactPersonEmail: true, contactPersonPhone: true },
-        })
-      : null;
+    // Fetch existing customer for type-change logic
+    const existingCustomer = await prisma.customerMaster.findUnique({
+      where: { id },
+      select: { companyType: true, contactPerson: true, contactPersonEmail: true, contactPersonPhone: true, linkedVendor: { select: { id: true } } },
+    });
 
     const updated = await prisma.customerMaster.update({
       where: { id },
@@ -154,25 +152,72 @@ export async function PATCH(
       },
     });
 
-    // Auto-create buyer when companyType changes TO "BOTH" and no buyers exist yet
-    if (
-      companyType === "BOTH" &&
-      existingCustomer &&
-      existingCustomer.companyType !== "BOTH"
-    ) {
-      const buyerCount = await prisma.buyerMaster.count({ where: { customerId: id } });
-      if (buyerCount === 0) {
-        const cp = contactPerson ?? existingCustomer.contactPerson;
-        if (cp) {
-          await prisma.buyerMaster.create({
-            data: {
-              customerId: id,
-              buyerName: cp,
-              email: (contactPersonEmail ?? existingCustomer.contactPersonEmail) || null,
-              mobile: (contactPersonPhone ?? existingCustomer.contactPersonPhone) || null,
-            },
-          });
+    if (companyType && existingCustomer) {
+      const wasSupplier = existingCustomer.companyType === "SUPPLIER" || existingCustomer.companyType === "BOTH";
+      const isSupplier = companyType === "SUPPLIER" || companyType === "BOTH";
+      const isBuyer = companyType === "BUYER" || companyType === "BOTH";
+
+      // Auto-create buyer contact when type becomes BUYER/BOTH and none exists
+      if (isBuyer) {
+        const buyerCount = await prisma.buyerMaster.count({ where: { customerId: id } });
+        if (buyerCount === 0) {
+          const cp = contactPerson ?? existingCustomer.contactPerson;
+          if (cp) {
+            await prisma.buyerMaster.create({
+              data: {
+                customerId: id,
+                buyerName: cp,
+                email: (contactPersonEmail ?? existingCustomer.contactPersonEmail) || null,
+                mobile: (contactPersonPhone ?? existingCustomer.contactPersonPhone) || null,
+              },
+            });
+          }
         }
+      }
+
+      // Auto-create linked VendorMaster when type becomes SUPPLIER/BOTH and none exists
+      if (isSupplier && !wasSupplier && !existingCustomer.linkedVendor) {
+        await prisma.vendorMaster.create({
+          data: {
+            linkedCustomerId: id,
+            name: name ?? updated.name,
+            addressLine1: addressLine1 || updated.addressLine1 || null,
+            addressLine2: addressLine2 || updated.addressLine2 || null,
+            city: city || updated.city || null,
+            state: state || updated.state || null,
+            country: country || updated.country || "India",
+            pincode: pincode || updated.pincode || null,
+            contactPerson: contactPerson || updated.contactPerson || null,
+            email: email || updated.email || null,
+            phone: phone || updated.phone || null,
+            gstNo: gstNo || updated.gstNo || null,
+            gstType: (gstType || updated.gstType) as any || null,
+            pan: (pan || panNo || updated.pan) || null,
+            approvedStatus: false,
+          },
+        });
+      }
+
+      // Sync address/name changes to linked vendor if it exists
+      if (isSupplier && existingCustomer.linkedVendor) {
+        await prisma.vendorMaster.update({
+          where: { linkedCustomerId: id },
+          data: {
+            name: name ?? undefined,
+            addressLine1: addressLine1 ?? undefined,
+            addressLine2: addressLine2 ?? undefined,
+            city: city ?? undefined,
+            state: state ?? undefined,
+            country: country ?? undefined,
+            pincode: pincode ?? undefined,
+            contactPerson: contactPerson ?? undefined,
+            email: email ?? undefined,
+            phone: phone ?? undefined,
+            gstNo: gstNo ?? undefined,
+            gstType: gstType as any ?? undefined,
+            pan: (pan || panNo) ?? undefined,
+          },
+        });
       }
     }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { PageLoading } from "@/components/shared/page-loading";
@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Save, MapPin, Plus, X } from "lucide-react";
+import { ArrowLeft, Save, MapPin, Plus, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 const INDIAN_STATES = [
@@ -125,6 +125,7 @@ export default function CustomerEditPage() {
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState<CustomerFormData | null>(null);
   const [saving, setSaving] = useState(false);
+  const [fetchingPincode, setFetchingPincode] = useState(false);
 
   useEffect(() => {
     const fetchCustomer = async () => {
@@ -192,6 +193,42 @@ export default function CustomerEditPage() {
   const update = (field: keyof CustomerFormData, value: any) => {
     setFormData((prev) => (prev ? { ...prev, [field]: value } : prev));
   };
+
+  const handlePincodeChange = useCallback(async (value: string) => {
+    setFormData((prev) => prev ? { ...prev, pincode: value } : prev);
+    if (value.length !== 6 || !/^\d{6}$/.test(value)) return;
+    setFetchingPincode(true);
+    try {
+      const res = await fetch(`https://api.postalpincode.in/pincode/${value}`);
+      const data = await res.json();
+      if (data?.[0]?.Status === "Success" && data[0].PostOffice?.length > 0) {
+        const po = data[0].PostOffice[0];
+        setFormData((prev) => prev ? ({ ...prev, city: po.District || prev.city, state: po.State || prev.state, country: po.Country || "India" }) : prev);
+      } else { toast.error("Pincode not found"); }
+    } catch { toast.error("Failed to fetch address"); }
+    finally { setFetchingPincode(false); }
+  }, []);
+
+  const handleGstinChange = useCallback(async (value: string) => {
+    setFormData((prev) => prev ? { ...prev, gstNo: value.toUpperCase() } : prev);
+    const gstin = value.toUpperCase();
+    if (gstin.length !== 15) return;
+    try {
+      const res = await fetch(`/api/gst/search?gstin=${gstin}`);
+      if (!res.ok) { toast.error("Invalid GSTIN"); return; }
+      const data = await res.json();
+      setFormData((prev) => prev ? ({
+        ...prev,
+        panNo: data.pan || prev.panNo,
+        name: data.companyName && !prev.name ? data.companyName : prev.name,
+        state: data.regState || data.state || prev.state,
+        city: data.regCity && !prev.city ? data.regCity : prev.city,
+        pincode: data.regPincode && !prev.pincode ? data.regPincode : prev.pincode,
+        addressLine1: data.regAddressLine1 && !prev.addressLine1 ? data.regAddressLine1 : prev.addressLine1,
+      }) : prev);
+      toast.success(data.fromApi ? "Company details fetched from GSTIN" : "PAN and state auto-filled from GSTIN");
+    } catch { toast.error("Failed to fetch GSTIN details"); }
+  }, []);
 
   const addDispatchAddress = () => {
     if (!formData) return;
@@ -353,7 +390,7 @@ export default function CustomerEditPage() {
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
               <Label>GST Number</Label>
-              <Input value={formData.gstNo} onChange={(e) => update("gstNo", e.target.value.toUpperCase())} placeholder="22AAAAA0000A1Z5" className="font-mono" maxLength={15} />
+              <Input value={formData.gstNo} onChange={(e) => handleGstinChange(e.target.value)} placeholder="22AAAAA0000A1Z5" className="font-mono" maxLength={15} />
             </div>
             <div className="space-y-1.5">
               <Label>GST Type</Label>
@@ -394,7 +431,13 @@ export default function CustomerEditPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5"><Label>City</Label><Input value={formData.city} onChange={(e) => update("city", e.target.value)} placeholder="Mumbai" /></div>
-              <div className="space-y-1.5"><Label>Pincode</Label><Input value={formData.pincode} onChange={(e) => update("pincode", e.target.value)} placeholder="400004" /></div>
+              <div className="space-y-1.5">
+                <Label>Pincode</Label>
+                <div className="relative">
+                  <Input value={formData.pincode} onChange={(e) => handlePincodeChange(e.target.value)} placeholder="400004" maxLength={6} />
+                  {fetchingPincode && <Loader2 className="w-4 h-4 animate-spin absolute right-2.5 top-2.5 text-muted-foreground" />}
+                </div>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
