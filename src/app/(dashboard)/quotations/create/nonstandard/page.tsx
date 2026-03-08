@@ -803,7 +803,7 @@ function NonStandardQuotationPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             {items.map((item, index) => (
-              <div key={index} className="p-4 border rounded-lg space-y-4">
+              <div key={index} className="p-4 border rounded-lg space-y-4 overflow-visible relative" style={{ zIndex: items.length - index }}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 flex-wrap">
                     <span className="font-semibold text-sm">Item #{index + 1}</span>
@@ -870,40 +870,102 @@ function NonStandardQuotationPage() {
                   )}
                 </div>
 
-                {/* Material Code autocomplete (shared across both modes) */}
-                <div className="grid gap-2">
-                  <Label className="text-sm">Material Code</Label>
-                  <SmartCombobox
-                    options={materialCodes}
-                    value={item.materialCodeLabel || ""}
-                    onSelect={(mc: any) => {
-                      setItems((prev) => {
-                        const newItems = [...prev];
-                        newItems[index] = { ...newItems[index], materialCodeId: mc.id, materialCodeLabel: mc.code, materialCode: mc.code };
-                        return newItems;
-                      });
-                    }}
-                    onChange={(text) => {
-                      setItems((prev) => {
-                        const newItems = [...prev];
-                        newItems[index] = { ...newItems[index], materialCodeLabel: text, materialCodeId: "", materialCode: text };
-                        return newItems;
-                      });
-                    }}
-                    displayFn={(mc: any) => `${mc.code}${mc.description ? ` — ${mc.description}` : ""}`}
-                    filterFn={(mc: any, query) =>
-                      mc.code.toLowerCase().includes(query.toLowerCase()) ||
-                      (mc.description || "").toLowerCase().includes(query.toLowerCase())
-                    }
-                    placeholder="Search material code..."
-                  />
-                </div>
-
                 {useStructuredInput[index] ? (
-                  <div className="space-y-4">
-                    {/* Description row: Short Description */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="grid gap-2 md:col-span-2">
+                  <>
+                    {/* Fitting/Flange selector for non-Item categories */}
+                    {item.itemCategory === "Fitting" && (
+                      <div className="grid gap-2">
+                        <Label className="text-sm">Select Fitting *</Label>
+                        <FittingSelect
+                          value={item.fittingLabel}
+                          onChange={(text) => {
+                            setItems((prev) => {
+                              const newItems = [...prev];
+                              newItems[index] = { ...newItems[index], fittingLabel: text, fittingId: "" };
+                              return newItems;
+                            });
+                          }}
+                          onSelect={(f) => {
+                            setItems((prev) => {
+                              const newItems = [...prev];
+                              const desc = `${f.type} ${f.size} ${f.schedule || ""} ${f.endType || ""} ${f.materialGrade} ${f.standard || ""}`.replace(/\s+/g, " ").trim();
+                              newItems[index] = {
+                                ...newItems[index],
+                                fittingId: f.id,
+                                fittingLabel: desc,
+                                itemDescription: desc,
+                                material: f.materialGrade,
+                                size: f.size,
+                                endType: f.endType || "",
+                              };
+                              return newItems;
+                            });
+                          }}
+                        />
+                      </div>
+                    )}
+                    {item.itemCategory === "Flange" && (
+                      <div className="grid gap-2">
+                        <Label className="text-sm">Select Flange *</Label>
+                        <FlangeSelect
+                          value={item.flangeLabel}
+                          onChange={(text) => {
+                            setItems((prev) => {
+                              const newItems = [...prev];
+                              newItems[index] = { ...newItems[index], flangeLabel: text, flangeId: "" };
+                              return newItems;
+                            });
+                          }}
+                          onSelect={(f) => {
+                            setItems((prev) => {
+                              const newItems = [...prev];
+                              const desc = `${f.type} ${f.size} ${f.rating}# ${f.facing || ""} ${f.materialGrade} ${f.standard || ""}`.replace(/\s+/g, " ").trim();
+                              newItems[index] = {
+                                ...newItems[index],
+                                flangeId: f.id,
+                                flangeLabel: desc,
+                                itemDescription: desc,
+                                material: f.materialGrade,
+                                size: f.size,
+                                endType: f.facing || "",
+                              };
+                              return newItems;
+                            });
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {/* Row 1: Material Code | Short Description | Size | End Type | Material | Tag Number */}
+                    <div className="grid grid-cols-6 gap-4">
+                      <div className="grid gap-2">
+                        <Label className="text-sm">Material Code</Label>
+                        <SmartCombobox
+                          options={materialCodes}
+                          value={item.materialCodeLabel || ""}
+                          onSelect={(mc: any) => {
+                            setItems((prev) => {
+                              const newItems = [...prev];
+                              newItems[index] = { ...newItems[index], materialCodeId: mc.id, materialCodeLabel: mc.code, materialCode: mc.code };
+                              return newItems;
+                            });
+                          }}
+                          onChange={(text) => {
+                            setItems((prev) => {
+                              const newItems = [...prev];
+                              newItems[index] = { ...newItems[index], materialCodeLabel: text, materialCodeId: "", materialCode: text };
+                              return newItems;
+                            });
+                          }}
+                          displayFn={(mc: any) => `${mc.code}${mc.description ? ` — ${mc.description}` : ""}`}
+                          filterFn={(mc: any, query) =>
+                            mc.code.toLowerCase().includes(query.toLowerCase()) ||
+                            (mc.description || "").toLowerCase().includes(query.toLowerCase())
+                          }
+                          placeholder="Search material code..."
+                        />
+                      </div>
+                      <div className="grid gap-2">
                         <Label className="text-sm">Short Description</Label>
                         <Input
                           value={item.itemDescription}
@@ -911,9 +973,6 @@ function NonStandardQuotationPage() {
                           placeholder="PIPE BE 6&quot; S-40 A106B + NACE"
                         />
                       </div>
-                    </div>
-                    {/* Specs row: Size, End Type, Material (3 cols) */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="grid gap-2">
                         <Label className="text-sm">Size</Label>
                         <Input
@@ -938,9 +997,6 @@ function NonStandardQuotationPage() {
                           placeholder="A106Gr.B + NACE"
                         />
                       </div>
-                    </div>
-                    {/* Reference row: Tag, DWG, Item No (3 cols) */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="grid gap-2">
                         <Label className="text-sm">Tag Number</Label>
                         <Input
@@ -948,6 +1004,10 @@ function NonStandardQuotationPage() {
                           onChange={(e) => updateItem(index, "tagNo", e.target.value)}
                         />
                       </div>
+                    </div>
+
+                    {/* Row 2: Drawing Ref | Item No | Certificate Req | Qty | Unit Rate | Total Amount */}
+                    <div className="grid grid-cols-6 gap-4">
                       <div className="grid gap-2">
                         <Label className="text-sm">Drawing Ref (DWG)</Label>
                         <Input
@@ -962,119 +1022,175 @@ function NonStandardQuotationPage() {
                           onChange={(e) => updateItem(index, "itemNo", e.target.value)}
                         />
                       </div>
+                      <div className="grid gap-2">
+                        <Label className="text-sm">Certificate Required</Label>
+                        <Input
+                          value={item.certificateReq}
+                          onChange={(e) => updateItem(index, "certificateReq", e.target.value)}
+                          placeholder="NACE MILLS TEST CERTS..."
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label className="text-sm">Qty *</Label>
+                        <Input
+                          type="number"
+                          step="0.001"
+                          value={item.quantity}
+                          onChange={(e) => updateItem(index, "quantity", e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label className="text-sm">Unit Rate ({formData.currency}) *</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={item.unitRate}
+                          onChange={(e) => updateItem(index, "unitRate", e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label className="text-sm">Total Amount ({formData.currency})</Label>
+                        <Input value={item.amount} readOnly className="bg-muted font-semibold" />
+                      </div>
                     </div>
-                    <div className="grid gap-2">
-                      <Label className="text-sm">Certificate Required</Label>
-                      <Textarea
-                        value={item.certificateReq}
-                        onChange={(e) => updateItem(index, "certificateReq", e.target.value)}
-                        rows={2}
-                        placeholder="NACE MILLS (MANUFACTURERS) TEST CERTIFICATES..."
-                      />
-                    </div>
-                  </div>
+                  </>
                 ) : (
-                  <div className="grid gap-1">
-                    <Label className="text-xs">Full Item Description</Label>
-                    <Textarea
-                      value={item.itemDescription}
-                      onChange={(e) => updateItem(index, "itemDescription", e.target.value)}
-                      rows={8}
-                      placeholder={"MATERIAL CODE: 9715286\nPIPE BE 6\" S-40 A106B + NACE + CLAD N10276\nSIZE: 6\" X SCH-40\nBEVELLED ENDS\nMATERIAL: A106Gr.B + NACE\nTAG NUMBER: ...\nDWG: ...\nITEM NO.: ...\n\nCERTIFICATE REQUIRED: ..."}
-                      className="font-mono text-xs"
-                    />
-                  </div>
-                )}
+                  <>
+                    {/* Free Text mode: Material Code + Description textarea */}
+                    <div className="grid gap-2">
+                      <Label className="text-sm">Material Code</Label>
+                      <SmartCombobox
+                        options={materialCodes}
+                        value={item.materialCodeLabel || ""}
+                        onSelect={(mc: any) => {
+                          setItems((prev) => {
+                            const newItems = [...prev];
+                            newItems[index] = { ...newItems[index], materialCodeId: mc.id, materialCodeLabel: mc.code, materialCode: mc.code };
+                            return newItems;
+                          });
+                        }}
+                        onChange={(text) => {
+                          setItems((prev) => {
+                            const newItems = [...prev];
+                            newItems[index] = { ...newItems[index], materialCodeLabel: text, materialCodeId: "", materialCode: text };
+                            return newItems;
+                          });
+                        }}
+                        displayFn={(mc: any) => `${mc.code}${mc.description ? ` — ${mc.description}` : ""}`}
+                        filterFn={(mc: any, query) =>
+                          mc.code.toLowerCase().includes(query.toLowerCase()) ||
+                          (mc.description || "").toLowerCase().includes(query.toLowerCase())
+                        }
+                        placeholder="Search material code..."
+                      />
+                    </div>
 
-                {/* Qty / Rate / Total Amount */}
-                <div className={`grid gap-4 ${item.itemCategory !== "Item" ? "grid-cols-4" : "grid-cols-3"}`}>
-                  {item.itemCategory === "Fitting" && (
-                    <div className="grid gap-2">
-                      <Label className="text-sm">Select Fitting *</Label>
-                      <FittingSelect
-                        value={item.fittingLabel}
-                        onChange={(text) => {
-                          setItems((prev) => {
-                            const newItems = [...prev];
-                            newItems[index] = { ...newItems[index], fittingLabel: text, fittingId: "" };
-                            return newItems;
-                          });
-                        }}
-                        onSelect={(f) => {
-                          setItems((prev) => {
-                            const newItems = [...prev];
-                            const desc = `${f.type} ${f.size} ${f.schedule || ""} ${f.endType || ""} ${f.materialGrade} ${f.standard || ""}`.replace(/\s+/g, " ").trim();
-                            newItems[index] = {
-                              ...newItems[index],
-                              fittingId: f.id,
-                              fittingLabel: desc,
-                              itemDescription: desc,
-                              material: f.materialGrade,
-                              size: f.size,
-                              endType: f.endType || "",
-                            };
-                            return newItems;
-                          });
-                        }}
+                    {/* Fitting/Flange selector for non-Item categories */}
+                    {item.itemCategory === "Fitting" && (
+                      <div className="grid gap-2">
+                        <Label className="text-sm">Select Fitting *</Label>
+                        <FittingSelect
+                          value={item.fittingLabel}
+                          onChange={(text) => {
+                            setItems((prev) => {
+                              const newItems = [...prev];
+                              newItems[index] = { ...newItems[index], fittingLabel: text, fittingId: "" };
+                              return newItems;
+                            });
+                          }}
+                          onSelect={(f) => {
+                            setItems((prev) => {
+                              const newItems = [...prev];
+                              const desc = `${f.type} ${f.size} ${f.schedule || ""} ${f.endType || ""} ${f.materialGrade} ${f.standard || ""}`.replace(/\s+/g, " ").trim();
+                              newItems[index] = {
+                                ...newItems[index],
+                                fittingId: f.id,
+                                fittingLabel: desc,
+                                itemDescription: desc,
+                                material: f.materialGrade,
+                                size: f.size,
+                                endType: f.endType || "",
+                              };
+                              return newItems;
+                            });
+                          }}
+                        />
+                      </div>
+                    )}
+                    {item.itemCategory === "Flange" && (
+                      <div className="grid gap-2">
+                        <Label className="text-sm">Select Flange *</Label>
+                        <FlangeSelect
+                          value={item.flangeLabel}
+                          onChange={(text) => {
+                            setItems((prev) => {
+                              const newItems = [...prev];
+                              newItems[index] = { ...newItems[index], flangeLabel: text, flangeId: "" };
+                              return newItems;
+                            });
+                          }}
+                          onSelect={(f) => {
+                            setItems((prev) => {
+                              const newItems = [...prev];
+                              const desc = `${f.type} ${f.size} ${f.rating}# ${f.facing || ""} ${f.materialGrade} ${f.standard || ""}`.replace(/\s+/g, " ").trim();
+                              newItems[index] = {
+                                ...newItems[index],
+                                flangeId: f.id,
+                                flangeLabel: desc,
+                                itemDescription: desc,
+                                material: f.materialGrade,
+                                size: f.size,
+                                endType: f.facing || "",
+                              };
+                              return newItems;
+                            });
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    <div className="grid gap-1">
+                      <Label className="text-xs">Full Item Description</Label>
+                      <Textarea
+                        value={item.itemDescription}
+                        onChange={(e) => updateItem(index, "itemDescription", e.target.value)}
+                        rows={8}
+                        placeholder={"MATERIAL CODE: 9715286\nPIPE BE 6\" S-40 A106B + NACE + CLAD N10276\nSIZE: 6\" X SCH-40\nBEVELLED ENDS\nMATERIAL: A106Gr.B + NACE\nTAG NUMBER: ...\nDWG: ...\nITEM NO.: ...\n\nCERTIFICATE REQUIRED: ..."}
+                        className="font-mono text-xs"
                       />
                     </div>
-                  )}
-                  {item.itemCategory === "Flange" && (
-                    <div className="grid gap-2">
-                      <Label className="text-sm">Select Flange *</Label>
-                      <FlangeSelect
-                        value={item.flangeLabel}
-                        onChange={(text) => {
-                          setItems((prev) => {
-                            const newItems = [...prev];
-                            newItems[index] = { ...newItems[index], flangeLabel: text, flangeId: "" };
-                            return newItems;
-                          });
-                        }}
-                        onSelect={(f) => {
-                          setItems((prev) => {
-                            const newItems = [...prev];
-                            const desc = `${f.type} ${f.size} ${f.rating}# ${f.facing || ""} ${f.materialGrade} ${f.standard || ""}`.replace(/\s+/g, " ").trim();
-                            newItems[index] = {
-                              ...newItems[index],
-                              flangeId: f.id,
-                              flangeLabel: desc,
-                              itemDescription: desc,
-                              material: f.materialGrade,
-                              size: f.size,
-                              endType: f.facing || "",
-                            };
-                            return newItems;
-                          });
-                        }}
-                      />
+
+                    {/* Qty / Rate / Total Amount */}
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="grid gap-2">
+                        <Label className="text-sm">Qty *</Label>
+                        <Input
+                          type="number"
+                          step="0.001"
+                          value={item.quantity}
+                          onChange={(e) => updateItem(index, "quantity", e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label className="text-sm">Unit Rate ({formData.currency}) *</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={item.unitRate}
+                          onChange={(e) => updateItem(index, "unitRate", e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label className="text-sm">Total Amount ({formData.currency})</Label>
+                        <Input value={item.amount} readOnly className="bg-muted font-semibold" />
+                      </div>
                     </div>
-                  )}
-                  <div className="grid gap-2">
-                    <Label className="text-sm">Qty *</Label>
-                    <Input
-                      type="number"
-                      step="0.001"
-                      value={item.quantity}
-                      onChange={(e) => updateItem(index, "quantity", e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label className="text-sm">Unit Rate ({formData.currency}) *</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={item.unitRate}
-                      onChange={(e) => updateItem(index, "unitRate", e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label className="text-sm">Total Amount ({formData.currency})</Label>
-                    <Input value={item.amount} readOnly className="bg-muted font-semibold" />
-                  </div>
-                </div>
+                  </>
+                )}
               </div>
             ))}
 
