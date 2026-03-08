@@ -143,6 +143,8 @@ export default function QuotationDetailPage() {
     lossNotes: "",
   });
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [isEditingTerms, setIsEditingTerms] = useState(false);
+  const [editableTerms, setEditableTerms] = useState<any[]>([]);
 
   // Fetch quotation
   const { data, isLoading } = useQuery({
@@ -300,6 +302,64 @@ export default function QuotationDetailPage() {
     },
   });
 
+  // Save terms mutation (inline edit)
+  const saveTermsMutation = useMutation({
+    mutationFn: async (updatedTerms: any[]) => {
+      const res = await fetch(`/api/quotations/${params.id}/terms`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ terms: updatedTerms }),
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Failed to update terms");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["quotation", params.id] });
+      queryClient.invalidateQueries({ queryKey: ["quotation-activity", params.id] });
+      toast.success("Terms & Conditions updated");
+      setIsEditingTerms(false);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to update terms");
+    },
+  });
+
+  const handleStartEditTerms = () => {
+    setEditableTerms(quotation?.terms?.map((t: any) => ({ ...t })) || []);
+    setIsEditingTerms(true);
+  };
+
+  const handleTermChange = (index: number, field: string, value: any) => {
+    setEditableTerms((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], [field]: value };
+      return next;
+    });
+  };
+
+  const handleDeleteTerm = (index: number) => {
+    setEditableTerms((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleAddTerm = () => {
+    setEditableTerms((prev) => [
+      ...prev,
+      { termName: "", termValue: "", isIncluded: true, isCustom: true, isDefault: false, isHeadingEditable: true },
+    ]);
+  };
+
+  const handleSaveTerms = () => {
+    const valid = editableTerms.every((t) => t.termName && t.termValue);
+    if (!valid) {
+      toast.error("All terms must have a name and value");
+      return;
+    }
+    saveTermsMutation.mutate(editableTerms);
+  };
+
   const handleDownloadPDF = (variant?: string) => {
     const variantParam = variant ? `&variant=${variant}` : "";
     window.open(`/api/quotations/${params.id}/pdf?format=html${variantParam}`, "_blank");
@@ -454,6 +514,19 @@ export default function QuotationDetailPage() {
         )}
         {(quotation.status === "APPROVED" || quotation.status === "SENT") && (
           <>
+            {(user?.role === "MANAGEMENT" || user?.role === "SUPER_ADMIN") && (
+              <Button
+                variant="outline"
+                onClick={() =>
+                  router.push(
+                    `/quotations/create/${quotation.quotationCategory === "NON_STANDARD" ? "nonstandard" : "standard"}?editId=${quotation.id}`
+                  )
+                }
+              >
+                <Pencil className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
+            )}
             <Button onClick={handleOpenEmailDialog}>
               <Mail className="h-4 w-4 mr-2" />
               {quotation.status === "SENT" ? "Resend" : "Send to Customer"}
@@ -489,6 +562,19 @@ export default function QuotationDetailPage() {
               </Button>
             )}
           </>
+        )}
+        {quotation.status === "WON" && (user?.role === "MANAGEMENT" || user?.role === "SUPER_ADMIN") && (
+          <Button
+            variant="outline"
+            onClick={() =>
+              router.push(
+                `/quotations/create/${quotation.quotationCategory === "NON_STANDARD" ? "nonstandard" : "standard"}?editId=${quotation.id}`
+              )
+            }
+          >
+            <Pencil className="h-4 w-4 mr-2" />
+            Edit Items
+          </Button>
         )}
         {quotation.status === "SENT" && (
           <Button
@@ -895,30 +981,94 @@ export default function QuotationDetailPage() {
 
 
       {/* Terms & Conditions */}
-      {quotation.terms && quotation.terms.length > 0 && (
+      {(quotation.terms?.length > 0 || isEditingTerms) && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ListChecks className="h-5 w-5" />
-              Terms & Conditions ({quotation.terms.filter((t: any) => t.isIncluded).length} terms)
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <ListChecks className="h-5 w-5" />
+                Terms & Conditions ({isEditingTerms ? editableTerms.filter((t: any) => t.isIncluded).length : quotation.terms.filter((t: any) => t.isIncluded).length} terms)
+              </CardTitle>
+              {!isEditingTerms ? (
+                <Button variant="outline" size="sm" onClick={handleStartEditTerms}>
+                  <Pencil className="h-3.5 w-3.5 mr-1.5" />
+                  Edit Terms
+                </Button>
+              ) : (
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setIsEditingTerms(false)}>
+                    Cancel
+                  </Button>
+                  <Button size="sm" onClick={handleSaveTerms} disabled={saveTermsMutation.isPending}>
+                    {saveTermsMutation.isPending ? "Saving..." : "Save Terms"}
+                  </Button>
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {quotation.terms
-                .filter((t: any) => t.isIncluded)
-                .map((term: any, index: number) => (
-                  <div key={term.id} className="flex gap-3 text-sm">
-                    <span className="font-semibold text-muted-foreground min-w-[24px]">
+            {isEditingTerms ? (
+              <div className="space-y-3">
+                {editableTerms.map((term: any, index: number) => (
+                  <div key={index} className="flex gap-2 items-start border rounded-lg p-3">
+                    <span className="font-semibold text-muted-foreground min-w-[24px] mt-2">
                       {index + 1}.
                     </span>
-                    <div>
-                      <span className="font-medium">{term.termName}:</span>{" "}
-                      <span className="text-muted-foreground">{term.termValue}</span>
+                    <div className="flex-1 grid gap-2">
+                      <div className="flex gap-2">
+                        <Input
+                          value={term.termName}
+                          onChange={(e) => handleTermChange(index, "termName", e.target.value)}
+                          placeholder="Term name"
+                          className="max-w-[200px]"
+                        />
+                        <div className="flex items-center gap-2 ml-auto">
+                          <Checkbox
+                            checked={term.isIncluded}
+                            onCheckedChange={(checked) => handleTermChange(index, "isIncluded", !!checked)}
+                          />
+                          <Label className="text-xs text-muted-foreground">Include in PDF</Label>
+                        </div>
+                      </div>
+                      <Textarea
+                        value={term.termValue}
+                        onChange={(e) => handleTermChange(index, "termValue", e.target.value)}
+                        placeholder="Term value"
+                        rows={2}
+                        className="text-sm"
+                      />
                     </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive hover:text-destructive mt-1"
+                      onClick={() => handleDeleteTerm(index)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 ))}
-            </div>
+                <Button variant="outline" size="sm" onClick={handleAddTerm} className="mt-2">
+                  + Add Term
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {quotation.terms
+                  .filter((t: any) => t.isIncluded)
+                  .map((term: any, index: number) => (
+                    <div key={term.id} className="flex gap-3 text-sm">
+                      <span className="font-semibold text-muted-foreground min-w-[24px]">
+                        {index + 1}.
+                      </span>
+                      <div>
+                        <span className="font-medium">{term.termName}:</span>{" "}
+                        <span className="text-muted-foreground">{term.termValue}</span>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

@@ -495,7 +495,7 @@ export function generateStandardQuotationHtml(
   <!-- ZONE 8: Footer -->
   <tr class="footer-disclaimer">
     <td colspan="5" class="left">This is a computer generated document hence not signed.</td>
-    <td colspan="4" class="right">FORMAT: QTN-Rev.2, Dated: 19/12/2012</td>
+    <td colspan="4" class="right">FORMAT: QTN-Rev.2</td>
   </tr>
   <tr class="footer-appreciation">
     <td colspan="9">YOUR ORDER WILL BE GREATLY APPRECIATED AND WILL RECEIVE OUR PROMPT AND CAREFUL ATTENTION.</td>

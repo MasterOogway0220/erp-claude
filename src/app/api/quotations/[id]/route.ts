@@ -282,7 +282,10 @@ export async function DELETE(
   }
 }
 
-// PUT — Full edit of DRAFT quotation (items, terms, header fields)
+// Statuses that MANAGEMENT/SUPER_ADMIN can edit directly (post-approval editing)
+const ADMIN_EDITABLE_STATUSES = ["DRAFT", "PENDING_APPROVAL", "APPROVED", "SENT", "WON"];
+
+// PUT — Full edit of quotation (items, terms, header fields)
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -294,7 +297,12 @@ export async function PUT(
 
     const existing = await prisma.quotation.findUnique({
       where: { id },
-      select: { status: true, quotationNo: true, customerId: true, quotationType: true, quotationCategory: true },
+      select: {
+        status: true, quotationNo: true, customerId: true,
+        quotationType: true, quotationCategory: true, version: true,
+        items: { select: { id: true, sNo: true, product: true, material: true, sizeLabel: true, quantity: true, unitRate: true, amount: true } },
+        terms: { select: { id: true, termName: true, termValue: true, isIncluded: true } },
+      },
     });
 
     if (!existing) {
@@ -304,9 +312,15 @@ export async function PUT(
     const userRole = session.user?.role;
     const isAdminOrMgmt = userRole === "SUPER_ADMIN" || userRole === "MANAGEMENT";
 
-    if (existing.status !== "DRAFT" && !(isAdminOrMgmt && existing.status === "PENDING_APPROVAL")) {
+    // DRAFT: anyone with write access can edit
+    // PENDING_APPROVAL, APPROVED, SENT, WON: only MANAGEMENT/SUPER_ADMIN
+    if (existing.status === "DRAFT") {
+      // allowed for all with write access
+    } else if (isAdminOrMgmt && ADMIN_EDITABLE_STATUSES.includes(existing.status)) {
+      // allowed for admin/management
+    } else {
       return NextResponse.json(
-        { error: "Only DRAFT quotations can be edited. Use revision for approved/sent quotations." },
+        { error: `Cannot edit quotation in ${existing.status} status. Only management can edit post-approval quotations.` },
         { status: 400 }
       );
     }
@@ -463,17 +477,77 @@ export async function PUT(
       });
     });
 
+    // Build detailed change log for audit trail
+    const changeDetails: Record<string, any> = {
+      quotationNo: existing.quotationNo,
+      editedInStatus: existing.status,
+      itemCount: items.length,
+      previousItemCount: existing.items.length,
+    };
+
+    // Track item-level changes
+    const oldItemMap = new Map(existing.items.map((i: any) => [i.sNo, i]));
+    const itemChanges: any[] = [];
+    items.forEach((newItem: any, idx: number) => {
+      const sNo = idx + 1;
+      const oldItem = oldItemMap.get(sNo);
+      if (oldItem) {
+        const diffs: Record<string, { old: any; new: any }> = {};
+        for (const field of ["product", "material", "sizeLabel", "quantity", "unitRate", "amount"]) {
+          const oldVal = String(oldItem[field] ?? "");
+          const newVal = String(newItem[field] ?? newItem[field === "sizeLabel" ? "sizeLabel" : field] ?? "");
+          if (oldVal !== newVal) {
+            diffs[field] = { old: oldItem[field], new: newItem[field] };
+          }
+        }
+        if (Object.keys(diffs).length > 0) {
+          itemChanges.push({ sNo, action: "modified", changes: diffs });
+        }
+      } else {
+        itemChanges.push({ sNo, action: "added", product: newItem.product });
+      }
+    });
+    // Removed items
+    existing.items.forEach((oldItem: any) => {
+      if (oldItem.sNo > items.length) {
+        itemChanges.push({ sNo: oldItem.sNo, action: "removed", product: oldItem.product });
+      }
+    });
+    if (itemChanges.length > 0) changeDetails.itemChanges = itemChanges;
+
+    // Track term changes
+    const oldTerms = existing.terms || [];
+    const newTerms = terms || [];
+    const termChanges: any[] = [];
+    newTerms.forEach((nt: any, idx: number) => {
+      const ot = oldTerms[idx];
+      if (ot) {
+        if (ot.termName !== nt.termName || ot.termValue !== nt.termValue || ot.isIncluded !== (nt.isIncluded ?? true)) {
+          termChanges.push({ action: "modified", termName: nt.termName, oldValue: ot.termValue, newValue: nt.termValue });
+        }
+      } else {
+        termChanges.push({ action: "added", termName: nt.termName });
+      }
+    });
+    oldTerms.forEach((ot: any, idx: number) => {
+      if (idx >= newTerms.length) {
+        termChanges.push({ action: "removed", termName: ot.termName });
+      }
+    });
+    if (termChanges.length > 0) changeDetails.termChanges = termChanges;
+
     createAuditLog({
       userId: session.user.id,
       action: "UPDATE",
       tableName: "Quotation",
       recordId: id,
-      newValue: JSON.stringify({ quotationNo: existing.quotationNo, itemCount: items.length }),
+      oldValue: existing.status !== "DRAFT" ? `Edited in ${existing.status} status` : undefined,
+      newValue: JSON.stringify(changeDetails),
     }).catch(console.error);
 
     return NextResponse.json(updated);
   } catch (error) {
-    console.error("Error editing draft quotation:", error);
+    console.error("Error editing quotation:", error);
     return NextResponse.json(
       { error: "Failed to edit quotation" },
       { status: 500 }
