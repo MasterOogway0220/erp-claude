@@ -28,7 +28,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, ArrowLeft, Building2, MapPin } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Building2, MapPin, ListChecks } from "lucide-react";
 import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
 import { FittingSelect } from "@/components/shared/fitting-select";
@@ -668,9 +668,9 @@ function StandardQuotationPage() {
             <CardTitle>Quotation Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
-            {/* Row 1: Customer | Buyer | Market Type | Currency | Quotation No | Rev No | Inquiry No */}
-            <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(18, minmax(0, 1fr))" }}>
-              <div className="grid gap-2 col-span-3">
+            {/* Row 1: Customer | Buyer | Market Type | Quotation No | Rev No | Currency */}
+            <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(5, minmax(0, 1fr)) minmax(60px, 90px)" }}>
+              <div className="grid gap-2">
                 <Label>Customer *</Label>
                 <div className="flex gap-2">
                   <Select
@@ -702,7 +702,7 @@ function StandardQuotationPage() {
                 </div>
               </div>
 
-              <div className="grid gap-2 col-span-2">
+              <div className="grid gap-2">
                 <Label>Buyer (Attn.)</Label>
                 <Select
                   value={formData.buyerId || "NONE"}
@@ -733,7 +733,7 @@ function StandardQuotationPage() {
                 </Select>
               </div>
 
-              <div className="grid gap-2 col-span-2">
+              <div className="grid gap-2">
                 <Label>Market Type</Label>
                 <Select
                   value={formData.quotationType}
@@ -751,7 +751,25 @@ function StandardQuotationPage() {
                 </Select>
               </div>
 
-              <div className="grid gap-2 col-span-2">
+              <div className="grid gap-2">
+                <Label>Quotation No.</Label>
+                <Input
+                  value={editId ? (editData?.quotation?.quotationNo || "") : (previewData?.previewNumber || "")}
+                  readOnly
+                  className="bg-muted"
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Rev. No.</Label>
+                <Input
+                  value={editId ? String(editData?.quotation?.version ?? 0) : "0"}
+                  readOnly
+                  className="bg-muted"
+                />
+              </div>
+
+              <div className="grid gap-2">
                 <Label>Currency</Label>
                 <Select
                   value={formData.currency}
@@ -770,37 +788,10 @@ function StandardQuotationPage() {
                   </SelectContent>
                 </Select>
               </div>
-
-              <div className="grid gap-2 col-span-3">
-                <Label>Quotation No.</Label>
-                <Input
-                  value={editId ? (editData?.quotation?.quotationNo || "") : (previewData?.previewNumber || "")}
-                  readOnly
-                  className="bg-muted"
-                />
-              </div>
-
-              <div className="grid gap-2 col-span-3">
-                <Label>Rev. No.</Label>
-                <Input
-                  value={editId ? String(editData?.quotation?.version ?? 0) : "0"}
-                  readOnly
-                  className="bg-muted"
-                />
-              </div>
-
-              <div className="grid gap-2 col-span-3">
-                <Label>Inquiry No.</Label>
-                <Input
-                  value={formData.inquiryNo}
-                  onChange={(e) => setFormData({ ...formData, inquiryNo: e.target.value })}
-                  placeholder="Client inquiry ref."
-                />
-              </div>
             </div>
 
-            {/* Row 2: Quotation Date | Inquiry Date | Follow Up Date | Deal Owner */}
-            <div className="grid grid-cols-4 gap-4">
+            {/* Row 2: Quotation Date | Inquiry Date | Inquiry No | Follow Up Date | Deal Owner */}
+            <div className="grid grid-cols-5 gap-4">
               <div className="grid gap-2">
                 <Label>Quotation Date</Label>
                 <Input
@@ -818,6 +809,15 @@ function StandardQuotationPage() {
                   type="date"
                   value={formData.inquiryDate}
                   onChange={(e) => setFormData({ ...formData, inquiryDate: e.target.value })}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Inquiry No.</Label>
+                <Input
+                  value={formData.inquiryNo}
+                  onChange={(e) => setFormData({ ...formData, inquiryNo: e.target.value })}
+                  placeholder="Client inquiry ref."
                 />
               </div>
 
@@ -1226,6 +1226,69 @@ function StandardQuotationPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Terms & Conditions */}
+        {terms.length > 0 && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <ListChecks className="h-5 w-5" />
+                  Terms & Conditions
+                </CardTitle>
+                <Button type="button" variant="outline" size="sm" onClick={addCustomTerm}>
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Custom Term
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {terms.map((term, index) => (
+                  <div key={index} className="flex gap-3 items-start">
+                    <Checkbox
+                      checked={term.isIncluded}
+                      onCheckedChange={() => toggleTermIncluded(index)}
+                      className="mt-2.5"
+                    />
+                    <div className="flex-1 grid grid-cols-[180px_1fr] gap-3 items-start">
+                      {term.isHeadingEditable ? (
+                        <Input
+                          value={term.termName}
+                          onChange={(e) => updateTermName(index, e.target.value)}
+                          placeholder="Term name"
+                          className={!term.isIncluded ? "opacity-50" : ""}
+                        />
+                      ) : (
+                        <p className={`text-sm font-medium pt-2 ${!term.isIncluded ? "opacity-50" : ""}`}>
+                          {term.termName}
+                        </p>
+                      )}
+                      <Textarea
+                        value={term.termValue}
+                        onChange={(e) => updateTermValue(index, e.target.value)}
+                        rows={2}
+                        className={`resize-none ${!term.isIncluded ? "opacity-50" : ""}`}
+                        placeholder="Term value..."
+                      />
+                    </div>
+                    {term.isCustom && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeCustomTerm(index)}
+                        className="text-destructive hover:text-destructive mt-1 shrink-0"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Actions */}
         <div className="flex justify-end gap-4">

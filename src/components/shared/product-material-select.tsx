@@ -100,12 +100,16 @@ export function ProductMaterialSelect({
     )
   ).sort();
 
-  // Additional specs: only show when both product AND material are selected
+  // Additional specs: show when product is selected.
+  // If material is also selected, filter by product+material.
+  // If no material is selected (or product has no material records), show all specs for the product.
   const matchingAdditionalSpecs = (() => {
-    if (!product || !material) return [];
-    const filtered = productMatches.filter(
-      (p) => p.material?.toLowerCase() === material.toLowerCase()
-    );
+    if (!product) return [];
+    const filtered = material
+      ? productMatches.filter(
+          (p) => p.material?.toLowerCase() === material.toLowerCase()
+        )
+      : productMatches;
     return Array.from(
       new Set(
         filtered.map((p) => p.additionalSpec).filter(Boolean) as string[]
@@ -113,21 +117,25 @@ export function ProductMaterialSelect({
     ).sort();
   })();
 
-  // When both product+material match a record, auto-fill specs
+  // When product+material match records, auto-fill specs.
+  // Only auto-fill additionalSpec when there's exactly one unique value (no ambiguity).
   const tryAutoFill = (prod: string, mat: string) => {
-    if (!onAutoFill || !prod || !mat) return;
-    const match = allProducts.find(
+    if (!onAutoFill || !prod) return;
+    const matches = allProducts.filter(
       (p) =>
         p.product.toLowerCase() === prod.toLowerCase() &&
-        p.material?.toLowerCase() === mat.toLowerCase()
+        (!mat || p.material?.toLowerCase() === mat.toLowerCase())
     );
-    if (match) {
-      onAutoFill({
-        additionalSpec: match.additionalSpec || undefined,
-        ends: match.ends || undefined,
-        length: match.length || undefined,
-      });
-    }
+    if (!matches.length) return;
+    const uniqueSpecs = Array.from(
+      new Set(matches.map((p) => p.additionalSpec).filter(Boolean))
+    );
+    const firstMatch = matches[0];
+    onAutoFill({
+      additionalSpec: uniqueSpecs.length === 1 ? (uniqueSpecs[0] as string) : undefined,
+      ends: firstMatch.ends || undefined,
+      length: firstMatch.length || undefined,
+    });
   };
 
   const gridCols = showAdditionalSpec ? "grid-cols-3" : "grid-cols-2";
@@ -145,6 +153,8 @@ export function ProductMaterialSelect({
               // Reset dependent fields when product changes
               onMaterialChange("");
               if (onAdditionalSpecChange) onAdditionalSpecChange("");
+              // Try auto-fill for products that have no material requirement
+              tryAutoFill(name, "");
             }}
             onChange={(text) => {
               onProductChange(text);
@@ -199,11 +209,11 @@ export function ProductMaterialSelect({
               onSelect={(name) => {
                 onAdditionalSpecChange(name);
                 // When additional spec is selected, try to auto-fill ends/length
-                if (onAutoFill && product && material) {
+                if (onAutoFill && product) {
                   const match = allProducts.find(
                     (p) =>
                       p.product.toLowerCase() === product.toLowerCase() &&
-                      p.material?.toLowerCase() === material.toLowerCase() &&
+                      (!material || p.material?.toLowerCase() === material.toLowerCase()) &&
                       p.additionalSpec?.toLowerCase() === name.toLowerCase()
                   );
                   if (match) {
