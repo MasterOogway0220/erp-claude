@@ -27,7 +27,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, ArrowLeft, Building2, MapPin, ListChecks } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Building2, MapPin, ListChecks, FileText, Package, Calculator } from "lucide-react";
 import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
 import { FittingSelect } from "@/components/shared/fitting-select";
@@ -717,15 +717,18 @@ function StandardQuotationPage() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Header Info */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Quotation Details</CardTitle>
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <FileText className="w-4 h-4 text-primary" />
+              Quotation Details
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
             {/* Row 1: Customer | Buyer | Market Type | Quotation No | Rev No | Currency */}
             <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(5, minmax(0, 1fr)) minmax(60px, 90px)" }}>
-              <div className="grid gap-2">
-                <Label>Customer *</Label>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Customer <span className="text-destructive">*</span></Label>
                 <div className="flex gap-2">
                   <Select
                     value={formData.customerId || undefined}
@@ -756,8 +759,8 @@ function StandardQuotationPage() {
                 </div>
               </div>
 
-              <div className="grid gap-2">
-                <Label>Buyer (Attn.)</Label>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Buyer (Attn.)</Label>
                 <Select
                   value={formData.buyerId || "NONE"}
                   onValueChange={(value) => {
@@ -787,8 +790,8 @@ function StandardQuotationPage() {
                 </Select>
               </div>
 
-              <div className="grid gap-2">
-                <Label>Market Type</Label>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Market Type</Label>
                 <Select
                   value={formData.quotationType}
                   onValueChange={(value) =>
@@ -805,8 +808,8 @@ function StandardQuotationPage() {
                 </Select>
               </div>
 
-              <div className="grid gap-2">
-                <Label>Quotation No.</Label>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Quotation No.</Label>
                 <Input
                   value={editId ? (editData?.quotation?.quotationNo || "") : (previewData?.previewNumber || "")}
                   readOnly
@@ -814,8 +817,8 @@ function StandardQuotationPage() {
                 />
               </div>
 
-              <div className="grid gap-2">
-                <Label>Rev. No.</Label>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Rev. No.</Label>
                 <Input
                   value={editId ? String(editData?.quotation?.version ?? 0) : "0"}
                   readOnly
@@ -823,8 +826,8 @@ function StandardQuotationPage() {
                 />
               </div>
 
-              <div className="grid gap-2">
-                <Label>Currency</Label>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Currency</Label>
                 <Select
                   value={formData.currency}
                   onValueChange={(value) =>
@@ -844,10 +847,12 @@ function StandardQuotationPage() {
               </div>
             </div>
 
+            <Separator className="my-1" />
+
             {/* Row 2: Quotation Date | Inquiry Date | Inquiry No | Follow Up Date | Deal Owner */}
-            <div className="grid grid-cols-5 gap-4">
-              <div className="grid gap-2">
-                <Label>Quotation Date</Label>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Quotation Date</Label>
                 <Input
                   type="date"
                   value={formData.quotationDate}
@@ -857,8 +862,8 @@ function StandardQuotationPage() {
                 />
               </div>
 
-              <div className="grid gap-2">
-                <Label>Inquiry Date</Label>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Inquiry Date</Label>
                 <Input
                   type="date"
                   value={formData.inquiryDate}
@@ -866,8 +871,8 @@ function StandardQuotationPage() {
                 />
               </div>
 
-              <div className="grid gap-2">
-                <Label>Inquiry No.</Label>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Inquiry No.</Label>
                 <Input
                   value={formData.inquiryNo}
                   onChange={(e) => setFormData({ ...formData, inquiryNo: e.target.value })}
@@ -875,8 +880,8 @@ function StandardQuotationPage() {
                 />
               </div>
 
-              <div className="grid gap-2">
-                <Label>Follow Up Date</Label>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Follow Up Date</Label>
                 <Input
                   type="date"
                   value={formData.nextActionDate}
@@ -886,8 +891,8 @@ function StandardQuotationPage() {
                 />
               </div>
 
-              <div className="grid gap-2">
-                <Label>Deal Owner</Label>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Deal Owner</Label>
                 <Select
                   value={formData.dealOwnerId || "NONE"}
                   onValueChange={(value) =>
@@ -913,10 +918,13 @@ function StandardQuotationPage() {
         </Card>
 
         {/* Line Items */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-4">
             <div>
-              <CardTitle>Quotation Items</CardTitle>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Package className="w-4 h-4 text-primary" />
+                Quotation Items
+              </CardTitle>
               <p className="text-sm text-muted-foreground mt-1">
                 Select product then pick Size (NPS x Schedule) to auto-fill OD, WT, Weight
               </p>
@@ -932,7 +940,7 @@ function StandardQuotationPage() {
               const hasPipeType = !!getPipeType(item.product);
 
               return (
-                <div key={index} className="grid gap-4 p-4 border rounded-lg relative">
+                <div key={index} className="grid gap-4 p-4 border border-border/50 rounded-lg relative bg-muted/20">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <span className="font-semibold text-sm">Item #{index + 1}</span>
@@ -968,8 +976,8 @@ function StandardQuotationPage() {
 
                   {/* Row 1: Material Code | Product | Material | Additional Specs | Size */}
                   <div className="grid grid-cols-5 gap-4">
-                    <div className="grid gap-2">
-                      <Label>Material Code</Label>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium">Material Code</Label>
                       <SmartCombobox
                         options={materialCodes}
                         value={item.materialCodeLabel || ""}
@@ -1009,8 +1017,8 @@ function StandardQuotationPage() {
                         if (fields.length) updateItem(index, "length", fields.length);
                       }}
                     />
-                    <div className="grid gap-2">
-                      <Label>Size (NPS x Sch) *</Label>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium">Size (NPS x Sch) <span className="text-destructive">*</span></Label>
                       <SmartCombobox
                         options={sizeOptions}
                         value={item.sizeLabel || ""}
@@ -1035,8 +1043,8 @@ function StandardQuotationPage() {
                   {/* Row 2: OD | WT | Length | Ends | Qty | Unit Rate | Unit Wt | Total Wt */}
                   <div className="grid grid-cols-8 gap-4">
                     {item.itemCategory === "Fitting" ? (
-                      <div className="grid gap-2 col-span-4">
-                        <Label>Select Fitting *</Label>
+                      <div className="space-y-1.5 col-span-4">
+                        <Label className="text-sm font-medium">Select Fitting <span className="text-destructive">*</span></Label>
                         <FittingSelect
                           value={item.fittingLabel}
                           onChange={(text) => {
@@ -1064,8 +1072,8 @@ function StandardQuotationPage() {
                         />
                       </div>
                     ) : item.itemCategory === "Flange" ? (
-                      <div className="grid gap-2 col-span-4">
-                        <Label>Select Flange *</Label>
+                      <div className="space-y-1.5 col-span-4">
+                        <Label className="text-sm font-medium">Select Flange <span className="text-destructive">*</span></Label>
                         <FlangeSelect
                           value={item.flangeLabel}
                           onChange={(text) => {
@@ -1094,8 +1102,8 @@ function StandardQuotationPage() {
                       </div>
                     ) : (
                       <>
-                        <div className="grid gap-2">
-                          <Label>OD (mm)</Label>
+                        <div className="space-y-1.5">
+                          <Label className="text-sm font-medium">OD (mm)</Label>
                           <Input
                             type="number"
                             step="0.01"
@@ -1106,8 +1114,8 @@ function StandardQuotationPage() {
                             className={item.sizeId ? "bg-muted" : ""}
                           />
                         </div>
-                        <div className="grid gap-2">
-                          <Label>WT (mm)</Label>
+                        <div className="space-y-1.5">
+                          <Label className="text-sm font-medium">WT (mm)</Label>
                           <Input
                             type="number"
                             step="0.01"
@@ -1118,16 +1126,16 @@ function StandardQuotationPage() {
                             className={item.sizeId ? "bg-muted" : ""}
                           />
                         </div>
-                        <div className="grid gap-2">
-                          <Label>Length</Label>
+                        <div className="space-y-1.5">
+                          <Label className="text-sm font-medium">Length</Label>
                           <Input
                             value={item.length}
                             onChange={(e) => updateItem(index, "length", e.target.value)}
                             placeholder="9.00-11.8"
                           />
                         </div>
-                        <div className="grid gap-2">
-                          <Label>Ends</Label>
+                        <div className="space-y-1.5">
+                          <Label className="text-sm font-medium">Ends</Label>
                           <Select
                             value={item.ends}
                             onValueChange={(value) => updateItem(index, "ends", value)}
@@ -1145,8 +1153,8 @@ function StandardQuotationPage() {
                         </div>
                       </>
                     )}
-                    <div className="grid gap-2">
-                      <Label>Qty (Mtr) *</Label>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium">Qty (Mtr) <span className="text-destructive">*</span></Label>
                       <Input
                         type="number"
                         step="0.001"
@@ -1155,8 +1163,8 @@ function StandardQuotationPage() {
                         required
                       />
                     </div>
-                    <div className="grid gap-2">
-                      <Label>Unit Rate ({curr}) *</Label>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium">Unit Rate ({curr}) <span className="text-destructive">*</span></Label>
                       <Input
                         type="number"
                         step="0.01"
@@ -1165,7 +1173,7 @@ function StandardQuotationPage() {
                         required
                       />
                     </div>
-                    <div className="grid gap-2">
+                    <div className="space-y-1.5">
                       <Label className="text-xs text-muted-foreground">Unit Wt (kg/m)</Label>
                       <Input
                         value={item.unitWeight}
@@ -1174,7 +1182,7 @@ function StandardQuotationPage() {
                         placeholder="Auto from size"
                       />
                     </div>
-                    <div className="grid gap-2">
+                    <div className="space-y-1.5">
                       <Label className="text-xs text-muted-foreground">Total Wt (MT)</Label>
                       <Input
                         value={item.totalWeightMT}
@@ -1186,50 +1194,55 @@ function StandardQuotationPage() {
                   </div>
 
                   {/* Row 3: Past Quote/PO, Remark, Total Amount */}
-                  <div className="grid grid-cols-6 gap-4">
-                    <div className="grid gap-2">
-                      <Label>Past Quote</Label>
+                  <div className="grid grid-cols-6 gap-4 pt-2 border-t border-border/30">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground">Past Quote</Label>
                       <Input
                         value={item.pastQuote}
                         onChange={(e) => updateItem(index, "pastQuote", e.target.value)}
                         placeholder="Quote ref"
+                        className="text-sm"
                       />
                     </div>
-                    <div className="grid gap-2">
-                      <Label>Past Quote Price</Label>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground">Past Quote Price</Label>
                       <Input
                         type="number"
                         step="0.01"
                         value={item.pastQuotePrice}
                         onChange={(e) => updateItem(index, "pastQuotePrice", e.target.value)}
+                        className="text-sm"
                       />
                     </div>
-                    <div className="grid gap-2">
-                      <Label>Past PO</Label>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground">Past PO</Label>
                       <Input
                         value={item.pastPo}
                         onChange={(e) => updateItem(index, "pastPo", e.target.value)}
                         placeholder="PO ref"
+                        className="text-sm"
                       />
                     </div>
-                    <div className="grid gap-2">
-                      <Label>Past PO Price</Label>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground">Past PO Price</Label>
                       <Input
                         type="number"
                         step="0.01"
                         value={item.pastPoPrice}
                         onChange={(e) => updateItem(index, "pastPoPrice", e.target.value)}
+                        className="text-sm"
                       />
                     </div>
-                    <div className="grid gap-2">
-                      <Label>Remark</Label>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground">Remark</Label>
                       <Input
                         value={item.remark}
                         onChange={(e) => updateItem(index, "remark", e.target.value)}
+                        className="text-sm"
                       />
                     </div>
-                    <div className="grid gap-2">
-                      <Label>Total Amount ({curr})</Label>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium">Total Amount ({curr})</Label>
                       <Input value={item.amount} readOnly className="bg-muted font-semibold" />
                     </div>
                   </div>
@@ -1240,10 +1253,16 @@ function StandardQuotationPage() {
         </Card>
 
         {/* Summary */}
-        <Card>
-          <CardContent className="pt-6">
+        <Card className="border-border/50 shadow-sm bg-muted/30">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Calculator className="w-4 h-4 text-primary" />
+              Financial Summary
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="flex justify-end">
-              <div className="space-y-2 text-sm w-64">
+              <div className="space-y-2 text-sm w-72">
                 <div className="flex justify-between py-1">
                   <span className="text-muted-foreground">Subtotal</span>
                   <span className="font-medium">{curr} {fmt(subtotal)}</span>
@@ -1256,8 +1275,8 @@ function StandardQuotationPage() {
                 )}
                 <Separator />
                 <div className="flex justify-between py-2">
-                  <span className="font-bold text-base">Grand Total</span>
-                  <span className="font-bold text-base">{curr} {fmt(grandTotal)}</span>
+                  <span className="font-bold text-lg">Grand Total</span>
+                  <span className="font-bold text-lg text-primary">{curr} {fmt(grandTotal)}</span>
                 </div>
               </div>
             </div>
@@ -1266,11 +1285,11 @@ function StandardQuotationPage() {
 
         {/* Terms & Conditions */}
         {terms.length > 0 && (
-          <Card>
-            <CardHeader>
+          <Card className="border-border/50 shadow-sm">
+            <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <ListChecks className="h-5 w-5" />
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <ListChecks className="h-4 w-4 text-primary" />
                   Terms & Conditions
                 </CardTitle>
                 <Button type="button" variant="outline" size="sm" onClick={addCustomTerm}>
@@ -1280,9 +1299,9 @@ function StandardQuotationPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {terms.map((term, index) => (
-                  <div key={index} className="flex gap-3 items-start">
+                  <div key={index} className="flex gap-3 items-start rounded-md p-2 hover:bg-muted/40 transition-colors">
                     <Checkbox
                       checked={term.isIncluded}
                       onCheckedChange={() => toggleTermIncluded(index)}
@@ -1327,8 +1346,9 @@ function StandardQuotationPage() {
         )}
 
         {/* Actions */}
-        <div className="flex justify-end gap-4">
-          <Button type="button" variant="outline" onClick={() => router.push("/quotations/create")}>
+        <div className="flex justify-end gap-3 pt-2 pb-4">
+          <Button type="button" variant="ghost" onClick={() => router.push("/quotations/create")}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
             Cancel
           </Button>
           <Button type="submit" disabled={createMutation.isPending}>

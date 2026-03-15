@@ -1,4 +1,3 @@
-import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 
 interface PageHeaderProps {
@@ -17,13 +16,13 @@ export function PageHeader({
   children,
 }: PageHeaderProps) {
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1">
-          <div className="flex items-center gap-3">
-            <h2 className="text-3xl font-bold tracking-tight">{title}</h2>
+    <div className="mb-0 border-b border-border/40 pb-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-0.5">
+          <div className="flex items-center gap-2.5">
+            <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
             {badge && (
-              <Badge variant={badgeVariant} className="text-xs font-medium">
+              <Badge variant={badgeVariant} className="text-[11px] font-medium">
                 {badge}
               </Badge>
             )}
@@ -36,7 +35,6 @@ export function PageHeader({
           <div className="flex items-center gap-2 shrink-0">{children}</div>
         )}
       </div>
-      <Separator className="bg-border/60" />
     </div>
   );
 }

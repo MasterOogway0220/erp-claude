@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronRight, Home } from "lucide-react";
+import { Home } from "lucide-react";
 
 const labelMap: Record<string, string> = {
   // Top-level modules
@@ -109,9 +109,9 @@ export function Breadcrumbs() {
   if (segments.length === 0) return null;
 
   return (
-    <nav className="flex items-center gap-1.5 text-sm text-muted-foreground">
-      <Link href="/" className="hover:text-foreground">
-        <Home className="h-4 w-4" />
+    <nav className="flex items-center gap-0 text-xs text-muted-foreground mb-1">
+      <Link href="/" className="hover:text-foreground transition-colors">
+        <Home className="h-3.5 w-3.5" />
       </Link>
       {segments.map((segment, index) => {
         const href = "/" + segments.slice(0, index + 1).join("/");
@@ -130,12 +130,12 @@ export function Breadcrumbs() {
         }
 
         return (
-          <span key={href} className="flex items-center gap-1.5">
-            <ChevronRight className="h-3.5 w-3.5" />
+          <span key={href} className="flex items-center gap-0">
+            <span className="mx-1.5 text-muted-foreground/50">/</span>
             {isLast ? (
               <span className="font-medium text-foreground">{label}</span>
             ) : (
-              <Link href={href} className="hover:text-foreground">
+              <Link href={href} className="hover:text-foreground transition-colors">
                 {label}
               </Link>
             )}
