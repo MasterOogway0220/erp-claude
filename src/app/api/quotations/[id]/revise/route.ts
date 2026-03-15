@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 
 // Allowed statuses from which a revision can be created (RC-01, RC-08, RC-09)
@@ -149,7 +149,7 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const { authorized, session, response } = await checkAccess("quotation", "write");
+    const { authorized, session, response, companyId } = await checkAccess("quotation", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -179,7 +179,7 @@ export async function POST(
 
     // Fetch the quotation to be revised
     const original = await prisma.quotation.findUnique({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
       include: {
         items: { orderBy: { sNo: "asc" } },
         terms: { orderBy: { termNo: "asc" } },
@@ -204,7 +204,7 @@ export async function POST(
 
     // Find all revisions in the chain (same quotationNo)
     const chainRevisions = await prisma.quotation.findMany({
-      where: { quotationNo: original.quotationNo },
+      where: { quotationNo: original.quotationNo, ...companyFilter(companyId) },
       select: { id: true, version: true, status: true },
       orderBy: { version: "asc" },
     });
@@ -271,6 +271,7 @@ export async function POST(
       // Create new revision with SAME quotationNo and incremented version
       const created = await tx.quotation.create({
         data: {
+          companyId,
           quotationNo: original.quotationNo, // FE-12: Same quotation number
           quotationDate: new Date(),
           customerId: original.customerId, // FE-01: Cannot change
@@ -392,6 +393,7 @@ export async function POST(
         revisionTrigger,
         parentRevisionId: sourceQuotation.id,
       }),
+      companyId,
     });
 
     return NextResponse.json({ quotation: newQuotation });

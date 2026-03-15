@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(request: NextRequest) {
   try {
-    const { authorized, response } = await checkAccess("reports", "read");
+    const { authorized, response, companyId } = await checkAccess("reports", "read");
     if (!authorized) return response!;
 
     // Fetch all dispatch notes with their sales order item delivery dates
     const dispatchNotes = await prisma.dispatchNote.findMany({
+      where: { ...companyFilter(companyId) },
       select: {
         id: true,
         dnNo: true,

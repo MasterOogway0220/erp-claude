@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 
 // PUT — Update terms & conditions for a quotation
 export async function PUT(
@@ -10,11 +10,11 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const { authorized, session, response } = await checkAccess("quotation", "write");
+    const { authorized, session, response, companyId } = await checkAccess("quotation", "write");
     if (!authorized) return response!;
 
-    const existing = await prisma.quotation.findUnique({
-      where: { id },
+    const existing = await prisma.quotation.findFirst({
+      where: { id, ...companyFilter(companyId) },
       select: {
         status: true,
         quotationNo: true,
@@ -96,6 +96,7 @@ export async function PUT(
         termCount: terms.length,
         changes: termChanges,
       }),
+      companyId,
     }).catch(console.error);
 
     return NextResponse.json({ success: true });

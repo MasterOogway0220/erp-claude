@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 
 function getCurrentFinancialYear(): string {
   const now = new Date();
@@ -12,13 +12,13 @@ function getCurrentFinancialYear(): string {
 
 export async function GET(request: NextRequest) {
   try {
-    const { authorized, response } = await checkAccess("labLetter", "read");
+    const { authorized, response, companyId } = await checkAccess("labLetter", "read");
     if (!authorized) return response!;
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
 
-    const where: any = {};
+    const where: any = { ...companyFilter(companyId) };
 
     if (search) {
       where.OR = [
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { authorized, session, response } = await checkAccess("labLetter", "write");
+    const { authorized, session, response, companyId } = await checkAccess("labLetter", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -83,6 +83,7 @@ export async function POST(request: NextRequest) {
     const labLetter = await prisma.labLetter.create({
       data: {
         letterNo,
+        companyId,
         heatNo: heatNo || null,
         specification: specification || null,
         sizeLabel: sizeLabel || null,

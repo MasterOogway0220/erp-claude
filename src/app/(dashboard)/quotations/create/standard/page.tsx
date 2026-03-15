@@ -7,7 +7,6 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -61,6 +60,10 @@ interface QuotationItem {
   totalWeightMT: string;
   taxRate: string;
   hsnCode: string;
+  pastQuote: string;
+  pastQuotePrice: string;
+  pastPo: string;
+  pastPoPrice: string;
   fittingId: string;
   fittingLabel: string;
   flangeId: string;
@@ -91,6 +94,10 @@ const emptyItem: QuotationItem = {
   totalWeightMT: "",
   taxRate: "",
   hsnCode: "",
+  pastQuote: "",
+  pastQuotePrice: "",
+  pastPo: "",
+  pastPoPrice: "",
   fittingId: "",
   fittingLabel: "",
   flangeId: "",
@@ -497,6 +504,10 @@ function StandardQuotationPage() {
           totalWeightMT: item.totalWeightMT ? String(item.totalWeightMT) : "",
           taxRate: item.taxRate ? String(item.taxRate) : "",
           hsnCode: item.hsnCode || "",
+          pastQuote: item.pastQuote || "",
+          pastQuotePrice: item.pastQuotePrice ? String(item.pastQuotePrice) : "",
+          pastPo: item.pastPo || "",
+          pastPoPrice: item.pastPoPrice ? String(item.pastPoPrice) : "",
           fittingId: item.fittingId || "",
           fittingLabel: "",
           flangeId: item.flangeId || "",
@@ -855,57 +866,6 @@ function StandardQuotationPage() {
               </div>
             </div>
 
-            {/* Customer + Buyer Info */}
-            {selectedCustomer && (
-              <div className="rounded-lg border bg-muted/50 p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <Building2 className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">Customer Details</span>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-2 text-sm">
-                  {(selectedCustomer.addressLine1 || selectedCustomer.city) && (
-                    <div>
-                      <span className="text-muted-foreground">Address:</span>{" "}
-                      {[selectedCustomer.addressLine1, selectedCustomer.city, selectedCustomer.state, selectedCustomer.pincode]
-                        .filter(Boolean)
-                        .join(", ")}
-                    </div>
-                  )}
-                  {selectedBuyer ? (
-                    <>
-                      <div>
-                        <span className="text-muted-foreground">Attn:</span>{" "}
-                        {selectedBuyer.buyerName}
-                        {selectedBuyer.designation && ` (${selectedBuyer.designation})`}
-                      </div>
-                      {selectedBuyer.email && (
-                        <div>
-                          <span className="text-muted-foreground">Buyer Email:</span> {selectedBuyer.email}
-                        </div>
-                      )}
-                      {selectedBuyer.mobile && (
-                        <div>
-                          <span className="text-muted-foreground">Buyer Mobile:</span> {selectedBuyer.mobile}
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      {selectedCustomer.contactPerson && (
-                        <div>
-                          <span className="text-muted-foreground">Contact:</span> {selectedCustomer.contactPerson}
-                        </div>
-                      )}
-                      {selectedCustomer.email && (
-                        <div>
-                          <span className="text-muted-foreground">Email:</span> {selectedCustomer.email}
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
           </CardContent>
         </Card>
 
@@ -1182,8 +1142,42 @@ function StandardQuotationPage() {
                     </div>
                   </div>
 
-                  {/* Row 3: Remark | Total Amount */}
-                  <div className="grid grid-cols-2 gap-4">
+                  {/* Row 3: Past Quote/PO, Remark, Total Amount */}
+                  <div className="grid grid-cols-6 gap-4">
+                    <div className="grid gap-2">
+                      <Label>Past Quote</Label>
+                      <Input
+                        value={item.pastQuote}
+                        onChange={(e) => updateItem(index, "pastQuote", e.target.value)}
+                        placeholder="Quote ref"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Past Quote Price</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={item.pastQuotePrice}
+                        onChange={(e) => updateItem(index, "pastQuotePrice", e.target.value)}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Past PO</Label>
+                      <Input
+                        value={item.pastPo}
+                        onChange={(e) => updateItem(index, "pastPo", e.target.value)}
+                        placeholder="PO ref"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Past PO Price</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={item.pastPoPrice}
+                        onChange={(e) => updateItem(index, "pastPoPrice", e.target.value)}
+                      />
+                    </div>
                     <div className="grid gap-2">
                       <Label>Remark</Label>
                       <Input

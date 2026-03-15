@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { validateFIFOReservation } from "@/lib/validators/business-rules";
 
 export async function POST(
@@ -9,12 +9,12 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const { authorized, session, response } = await checkAccess("salesOrder", "write");
+    const { authorized, session, response, companyId } = await checkAccess("salesOrder", "write");
     if (!authorized) return response!;
 
     // Enforce PO acceptance before stock reservation (ISO 9001:2018 §8.2.3)
     const salesOrder = await prisma.salesOrder.findUnique({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
       select: { poAcceptanceStatus: true },
     });
 
@@ -166,7 +166,7 @@ export async function GET(
 ) {
   try {
     const { id: _id } = await params;
-    const { authorized, session, response } = await checkAccess("salesOrder", "read");
+    const { authorized, session, response, companyId } = await checkAccess("salesOrder", "read");
     if (!authorized) return response!;
 
     const { searchParams } = new URL(request.url);
@@ -193,6 +193,7 @@ export async function GET(
     const whereClause: any = {
       status: "ACCEPTED",
       quantityMtr: { gt: 0 },
+      ...companyFilter(companyId),
     };
 
     if (soItem.product) {
@@ -240,7 +241,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const { authorized, session, response } = await checkAccess("salesOrder", "write");
+    const { authorized, session, response, companyId } = await checkAccess("salesOrder", "write");
     if (!authorized) return response!;
 
     const body = await request.json();

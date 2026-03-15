@@ -1,18 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(request: NextRequest) {
   try {
-    const { authorized, response } = await checkAccess("reports", "read");
+    const { authorized, response, companyId } = await checkAccess("reports", "read");
     if (!authorized) return response!;
 
     // Total items
-    const totalItems = await prisma.inventoryStock.count();
+    const totalItems = await prisma.inventoryStock.count({ where: { ...companyFilter(companyId) } });
 
     // Group by status
     const statusGroups = await prisma.inventoryStock.groupBy({
       by: ["status"],
+      where: { ...companyFilter(companyId) },
       _count: { id: true },
     });
 
@@ -24,6 +25,7 @@ export async function GET(request: NextRequest) {
     // Group by product with count and sum of quantityMtr
     const productGroups = await prisma.inventoryStock.groupBy({
       by: ["product"],
+      where: { ...companyFilter(companyId) },
       _count: { id: true },
       _sum: { quantityMtr: true },
     });
@@ -36,6 +38,7 @@ export async function GET(request: NextRequest) {
 
     // Total quantity (meters) and total pieces
     const totals = await prisma.inventoryStock.aggregate({
+      where: { ...companyFilter(companyId) },
       _sum: {
         quantityMtr: true,
         pieces: true,

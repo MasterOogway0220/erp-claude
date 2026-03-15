@@ -1,18 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(request: NextRequest) {
   try {
-    const { authorized, response } = await checkAccess("reports", "read");
+    const { authorized, response, companyId } = await checkAccess("reports", "read");
     if (!authorized) return response!;
 
     // Total quotations
-    const totalQuotations = await prisma.quotation.count();
+    const totalQuotations = await prisma.quotation.count({ where: { ...companyFilter(companyId) } });
 
     // Group by status
     const statusGroups = await prisma.quotation.groupBy({
       by: ["status"],
+      where: { ...companyFilter(companyId) },
       _count: { id: true },
     });
 
@@ -33,6 +34,7 @@ export async function GET(request: NextRequest) {
 
     // Recent 10 quotations
     const recentQuotations = await prisma.quotation.findMany({
+      where: { ...companyFilter(companyId) },
       take: 10,
       orderBy: { quotationDate: "desc" },
       include: {
@@ -44,7 +46,7 @@ export async function GET(request: NextRequest) {
 
     // Lost reasons from quotations
     const lostQuotations = await prisma.quotation.findMany({
-      where: { status: "LOST", lossReason: { not: null } },
+      where: { status: "LOST", lossReason: { not: null }, ...companyFilter(companyId) },
       select: { lossReason: true },
     });
     const reasonCounts: Record<string, number> = {};

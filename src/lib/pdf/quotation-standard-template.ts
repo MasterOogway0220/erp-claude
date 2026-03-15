@@ -419,18 +419,7 @@ export function generateStandardQuotationHtml(
     <td class="info-value" colspan="5">Direct Line: ${escapeHtml(quotation.preparedBy?.phone) || ""}</td>
   </tr>
   <tr class="info-grid">
-    <td class="info-value" colspan="2">${escapeHtml([quotation.customer.addressLine1, quotation.customer.city, quotation.customer.state ? `${quotation.customer.state}${quotation.customer.pincode ? " - " + quotation.customer.pincode : ""}` : quotation.customer.pincode, quotation.customer.country].filter(Boolean).join(", "))}</td>
-    <td class="info-value" colspan="2">${escapeHtml(quotation.buyer?.designation)}</td>
-    <td class="info-value" colspan="5"></td>
-  </tr>
-  <tr class="info-grid">
-    <td class="info-value" colspan="2"></td>
-    <td class="info-value" colspan="2">${escapeHtml(quotation.buyer?.email || quotation.customer.email)}</td>
-    <td class="info-small" colspan="5"></td>
-  </tr>
-  <tr class="info-grid">
-    <td class="info-value" colspan="2"></td>
-    <td class="info-value" colspan="2">${escapeHtml(quotation.buyer?.mobile || quotation.buyer?.telephone || quotation.customer.phone)}</td>
+    <td class="info-value" colspan="4"></td>
     <td class="info-small" colspan="5">Dated: ${formatDate(quotation.quotationDate)}</td>
   </tr>
 

@@ -1030,11 +1030,10 @@ export default function QuotationDetailPage() {
                           <Label className="text-xs text-muted-foreground">Include in PDF</Label>
                         </div>
                       </div>
-                      <Textarea
+                      <Input
                         value={term.termValue}
                         onChange={(e) => handleTermChange(index, "termValue", e.target.value)}
                         placeholder="Term value"
-                        rows={2}
                         className="text-sm"
                       />
                     </div>

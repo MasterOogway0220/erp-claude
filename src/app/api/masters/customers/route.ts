@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 
 export async function GET(request: NextRequest) {
   try {
-    const { authorized, response } = await checkAccess("masters", "read");
+    const { authorized, response, companyId } = await checkAccess("masters", "read");
     if (!authorized) return response!;
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
     const companyType = searchParams.get("companyType") || "";
 
-    const where: any = {};
+    const where: any = { ...companyFilter(companyId) };
 
     if (search) {
       where.OR = [
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { authorized, session, response } = await checkAccess("masters", "write");
+    const { authorized, session, response, companyId } = await checkAccess("masters", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -71,6 +71,7 @@ export async function POST(request: NextRequest) {
       gstNo,
       gstType,
       pan,
+      panNo,
       industrySegment,
       contactPerson,
       contactPersonEmail,
@@ -86,6 +87,12 @@ export async function POST(request: NextRequest) {
       defaultPaymentTermsId,
       defaultCurrency,
       companyReferenceCode,
+      tanNo,
+      bankName,
+      bankBranchName,
+      bankAccountNo,
+      bankIfsc,
+      bankAccountType,
       tagIds,
       dispatchAddresses,
     } = body;
@@ -103,7 +110,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Invalid GSTIN format" }, { status: 400 });
       }
 
-      const existing = await prisma.customerMaster.findFirst({ where: { gstNo } });
+      const existing = await prisma.customerMaster.findFirst({ where: { gstNo, ...companyFilter(companyId) } });
       if (existing) {
         return NextResponse.json({ error: "A customer with this GSTIN already exists" }, { status: 400 });
       }
@@ -111,6 +118,7 @@ export async function POST(request: NextRequest) {
 
     const newCustomer = await prisma.customerMaster.create({
       data: {
+        companyId,
         name,
         addressLine1: addressLine1 || null,
         addressLine2: addressLine2 || null,
@@ -120,7 +128,7 @@ export async function POST(request: NextRequest) {
         pincode: pincode || null,
         gstNo: gstNo || null,
         gstType: gstType || null,
-        pan: pan || null,
+        pan: pan || panNo || null,
         industrySegment: industrySegment || null,
         contactPerson: contactPerson || null,
         contactPersonEmail: contactPersonEmail || null,
@@ -136,6 +144,12 @@ export async function POST(request: NextRequest) {
         defaultPaymentTermsId: defaultPaymentTermsId || null,
         defaultCurrency: defaultCurrency || "INR",
         companyReferenceCode: companyReferenceCode || null,
+        tanNo: tanNo || null,
+        bankName: bankName || null,
+        bankBranchName: bankBranchName || null,
+        bankAccountNo: bankAccountNo || null,
+        bankIfsc: bankIfsc || null,
+        bankAccountType: bankAccountType || null,
         tags: tagIds?.length
           ? {
               create: tagIds.map((tagId: string) => ({ tagId })),
@@ -180,6 +194,7 @@ export async function POST(request: NextRequest) {
     if (companyType === "SUPPLIER" || companyType === "BOTH") {
       await prisma.vendorMaster.create({
         data: {
+          companyId,
           linkedCustomerId: newCustomer.id,
           name,
           addressLine1: addressLine1 || null,
@@ -205,6 +220,7 @@ export async function POST(request: NextRequest) {
       tableName: "CustomerMaster",
       recordId: newCustomer.id,
       newValue: JSON.stringify({ name: newCustomer.name }),
+      companyId,
     }).catch(console.error);
 
     return NextResponse.json(newCustomer, { status: 201 });

@@ -145,15 +145,15 @@ export async function autoGeneratePRFromShortfall(
     const currentFY = month >= 3 ? year : (parseInt(year) - 1).toString().padStart(2, '0');
 
     // Get next PR sequence number with row lock
-    let sequence = await tx.documentSequence.findUnique({
-      where: { documentType: 'PURCHASE_REQUISITION' },
+    let sequence = await tx.documentSequence.findFirst({
+      where: { documentType: 'PURCHASE_REQUISITION', companyId: null },
     });
 
     let nextNumber = 1;
     if (sequence) {
       nextNumber = sequence.currentNumber + 1;
       await tx.documentSequence.update({
-        where: { documentType: 'PURCHASE_REQUISITION' },
+        where: { id: sequence.id },
         data: { currentNumber: nextNumber },
       });
     } else {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 
 export async function GET(
@@ -9,11 +9,11 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { authorized, response } = await checkAccess("masters", "read");
+    const { authorized, response, companyId } = await checkAccess("masters", "read");
     if (!authorized) return response!;
 
     const customer = await prisma.customerMaster.findUnique({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
       include: {
         tags: { include: { tag: true } },
         buyers: true,
@@ -42,7 +42,7 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const { authorized, session, response } = await checkAccess("masters", "write");
+    const { authorized, session, response, companyId } = await checkAccess("masters", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -74,6 +74,12 @@ export async function PATCH(
       defaultPaymentTermsId,
       defaultCurrency,
       companyReferenceCode,
+      tanNo,
+      bankName,
+      bankBranchName,
+      bankAccountNo,
+      bankIfsc,
+      bankAccountType,
       tagIds,
       dispatchAddresses,
     } = body;
@@ -112,12 +118,12 @@ export async function PATCH(
 
     // Fetch existing customer for type-change logic
     const existingCustomer = await prisma.customerMaster.findUnique({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
       select: { companyType: true, contactPerson: true, contactPersonEmail: true, contactPersonPhone: true, linkedVendor: { select: { id: true } } },
     });
 
     const updated = await prisma.customerMaster.update({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
       data: {
         name,
         addressLine1: addressLine1 ?? undefined,
@@ -145,6 +151,12 @@ export async function PATCH(
         defaultPaymentTermsId: defaultPaymentTermsId ?? undefined,
         defaultCurrency: defaultCurrency ?? undefined,
         companyReferenceCode: companyReferenceCode ?? undefined,
+        tanNo: tanNo ?? undefined,
+        bankName: bankName ?? undefined,
+        bankBranchName: bankBranchName ?? undefined,
+        bankAccountNo: bankAccountNo ?? undefined,
+        bankIfsc: bankIfsc ?? undefined,
+        bankAccountType: bankAccountType ?? undefined,
       },
       include: {
         tags: { include: { tag: true } },
@@ -227,6 +239,7 @@ export async function PATCH(
       tableName: "CustomerMaster",
       recordId: id,
       newValue: JSON.stringify({ name: updated.name }),
+      companyId,
     }).catch(console.error);
 
     return NextResponse.json(updated);
@@ -245,12 +258,12 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const { authorized, session, response } = await checkAccess("masters", "delete");
+    const { authorized, session, response, companyId } = await checkAccess("masters", "delete");
     if (!authorized) return response!;
 
     // Check for linked records before deleting
     const customer = await prisma.customerMaster.findUnique({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
       select: {
         name: true,
         _count: {
@@ -282,7 +295,7 @@ export async function DELETE(
     }
 
     await prisma.customerMaster.delete({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
     });
 
     createAuditLog({
@@ -291,6 +304,7 @@ export async function DELETE(
       tableName: "CustomerMaster",
       recordId: id,
       oldValue: customer.name,
+      companyId,
     }).catch(console.error);
 
     return NextResponse.json({ success: true });

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 
 export async function GET(
@@ -9,11 +9,11 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { authorized, response } = await checkAccess("masters", "read");
+    const { authorized, response, companyId } = await checkAccess("masters", "read");
     if (!authorized) return response!;
 
-    const vendor = await prisma.vendorMaster.findUnique({
-      where: { id },
+    const vendor = await prisma.vendorMaster.findFirst({
+      where: { id, ...companyFilter(companyId) },
     });
 
     if (!vendor) {
@@ -36,7 +36,7 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const { authorized, session, response } = await checkAccess("masters", "write");
+    const { authorized, session, response, companyId } = await checkAccess("masters", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -52,8 +52,8 @@ export async function PATCH(
         );
       }
 
-      const vendor = await prisma.vendorMaster.findUnique({
-        where: { id },
+      const vendor = await prisma.vendorMaster.findFirst({
+        where: { id, ...companyFilter(companyId) },
         select: { name: true },
       });
       if (!vendor) {
@@ -82,6 +82,7 @@ export async function PATCH(
           fieldName: "approvedStatus",
           oldValue: "false",
           newValue: "true",
+          companyId,
         }).catch(console.error);
 
         return NextResponse.json(updated);
@@ -113,6 +114,7 @@ export async function PATCH(
         fieldName: "approvedStatus",
         oldValue: "true",
         newValue: "false",
+        companyId,
       }).catch(console.error);
 
       return NextResponse.json(updated);
@@ -182,6 +184,7 @@ export async function PATCH(
       tableName: "VendorMaster",
       recordId: id,
       newValue: JSON.stringify({ name: updated.name }),
+      companyId,
     }).catch(console.error);
 
     return NextResponse.json(updated);
@@ -200,12 +203,12 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const { authorized, session, response } = await checkAccess("masters", "delete");
+    const { authorized, session, response, companyId } = await checkAccess("masters", "delete");
     if (!authorized) return response!;
 
     // Check for linked records before deleting
-    const vendor = await prisma.vendorMaster.findUnique({
-      where: { id },
+    const vendor = await prisma.vendorMaster.findFirst({
+      where: { id, ...companyFilter(companyId) },
       select: {
         name: true,
         _count: {
@@ -242,6 +245,7 @@ export async function DELETE(
       tableName: "VendorMaster",
       recordId: id,
       oldValue: vendor.name,
+      companyId,
     }).catch(console.error);
 
     return NextResponse.json({ success: true });

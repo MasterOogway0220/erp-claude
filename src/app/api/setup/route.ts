@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
   const financialYear = (fyStartYear % 100).toString().padStart(2, "0");
   let seqCreated = 0;
   for (const s of sequences) {
-    const existing = await prisma.documentSequence.findUnique({ where: { documentType: s.documentType } });
+    const existing = await prisma.documentSequence.findFirst({ where: { documentType: s.documentType, companyId: null } });
     if (!existing) {
       await prisma.documentSequence.create({
         data: { ...s, currentNumber: 0, financialYear, resetMonth: 4 },

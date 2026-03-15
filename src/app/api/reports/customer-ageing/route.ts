@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(request: NextRequest) {
   try {
-    const { authorized, response } = await checkAccess("reports", "read");
+    const { authorized, response, companyId } = await checkAccess("reports", "read");
     if (!authorized) return response!;
 
     const now = new Date();
 
     // Fetch all customers with their invoices and payments
     const customers = await prisma.customerMaster.findMany({
-      where: { isActive: true },
+      where: { isActive: true, ...companyFilter(companyId) },
       select: {
         id: true,
         name: true,

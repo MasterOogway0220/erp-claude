@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(request: NextRequest) {
   try {
-    const { authorized, response } = await checkAccess("reports", "read");
+    const { authorized, response, companyId } = await checkAccess("reports", "read");
     if (!authorized) return response!;
 
     const { searchParams } = new URL(request.url);
@@ -29,61 +29,61 @@ export async function GET(request: NextRequest) {
       invoices,
     ] = await Promise.all([
       prisma.quotation.findMany({
-        where: { quotationNo: searchFilter },
+        where: { quotationNo: searchFilter, ...companyFilter(companyId) },
         select: { id: true, quotationNo: true, status: true, customer: { select: { name: true } } },
         take: 5,
         orderBy: { quotationDate: "desc" },
       }),
       prisma.salesOrder.findMany({
-        where: { soNo: searchFilter },
+        where: { soNo: searchFilter, ...companyFilter(companyId) },
         select: { id: true, soNo: true, status: true, customer: { select: { name: true } } },
         take: 5,
         orderBy: { soDate: "desc" },
       }),
       prisma.purchaseOrder.findMany({
-        where: { poNo: searchFilter },
+        where: { poNo: searchFilter, ...companyFilter(companyId) },
         select: { id: true, poNo: true, status: true, vendor: { select: { name: true } } },
         take: 5,
         orderBy: { poDate: "desc" },
       }),
       prisma.goodsReceiptNote.findMany({
-        where: { grnNo: searchFilter },
+        where: { grnNo: searchFilter, ...companyFilter(companyId) },
         select: { id: true, grnNo: true, vendor: { select: { name: true } } },
         take: 5,
         orderBy: { grnDate: "desc" },
       }),
       prisma.inventoryStock.findMany({
-        where: { heatNo: searchFilter },
+        where: { heatNo: searchFilter, ...companyFilter(companyId) },
         select: { id: true, heatNo: true, product: true, sizeLabel: true, status: true },
         take: 5,
         orderBy: { createdAt: "desc" },
       }),
       prisma.inspection.findMany({
-        where: { inspectionNo: searchFilter },
+        where: { inspectionNo: searchFilter, ...companyFilter(companyId) },
         select: { id: true, inspectionNo: true, overallResult: true },
         take: 5,
         orderBy: { inspectionDate: "desc" },
       }),
       prisma.nCR.findMany({
-        where: { ncrNo: searchFilter },
+        where: { ncrNo: searchFilter, ...companyFilter(companyId) },
         select: { id: true, ncrNo: true, status: true, heatNo: true },
         take: 5,
         orderBy: { ncrDate: "desc" },
       }),
       prisma.packingList.findMany({
-        where: { plNo: searchFilter },
+        where: { plNo: searchFilter, ...companyFilter(companyId) },
         select: { id: true, plNo: true, salesOrder: { select: { soNo: true } } },
         take: 5,
         orderBy: { plDate: "desc" },
       }),
       prisma.dispatchNote.findMany({
-        where: { dnNo: searchFilter },
+        where: { dnNo: searchFilter, ...companyFilter(companyId) },
         select: { id: true, dnNo: true, destination: true },
         take: 5,
         orderBy: { dispatchDate: "desc" },
       }),
       prisma.invoice.findMany({
-        where: { invoiceNo: searchFilter },
+        where: { invoiceNo: searchFilter, ...companyFilter(companyId) },
         select: { id: true, invoiceNo: true, status: true, totalAmount: true },
         take: 5,
         orderBy: { invoiceDate: "desc" },

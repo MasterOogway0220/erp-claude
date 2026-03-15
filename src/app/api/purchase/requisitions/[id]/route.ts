@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 
 export async function GET(
   request: NextRequest,
@@ -9,11 +9,11 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { authorized, session, response } = await checkAccess("purchaseRequisition", "read");
+    const { authorized, session, response, companyId } = await checkAccess("purchaseRequisition", "read");
     if (!authorized) return response!;
 
-    const purchaseRequisition = await prisma.purchaseRequisition.findUnique({
-      where: { id },
+    const purchaseRequisition = await prisma.purchaseRequisition.findFirst({
+      where: { id, ...companyFilter(companyId) },
       include: {
         salesOrder: {
           select: { id: true, soNo: true, soDate: true },
@@ -59,14 +59,14 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const { authorized, session, response } = await checkAccess("purchaseRequisition", "write");
+    const { authorized, session, response, companyId } = await checkAccess("purchaseRequisition", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
     const { status, approvalRemarks } = body;
 
-    const pr = await prisma.purchaseRequisition.findUnique({
-      where: { id },
+    const pr = await prisma.purchaseRequisition.findFirst({
+      where: { id, ...companyFilter(companyId) },
     });
 
     if (!pr) {
@@ -168,6 +168,7 @@ export async function PATCH(
       fieldName: "status",
       oldValue: pr.status,
       newValue: status,
+      companyId,
     }).catch(console.error);
 
     return NextResponse.json({ purchaseRequisition: updated });

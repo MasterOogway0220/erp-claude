@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 
 export async function GET(
   request: NextRequest,
@@ -9,11 +9,11 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { authorized, response } = await checkAccess("ncr", "read");
+    const { authorized, response, companyId } = await checkAccess("ncr", "read");
     if (!authorized) return response!;
 
-    const ncr = await prisma.nCR.findUnique({
-      where: { id },
+    const ncr = await prisma.nCR.findFirst({
+      where: { id, ...companyFilter(companyId) },
       include: {
         grnItem: {
           select: {
@@ -93,7 +93,7 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const { authorized, session, response } = await checkAccess("ncr", "write");
+    const { authorized, session, response, companyId } = await checkAccess("ncr", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -110,8 +110,8 @@ export async function PATCH(
       responsiblePersonId,
     } = body;
 
-    const existing = await prisma.nCR.findUnique({
-      where: { id },
+    const existing = await prisma.nCR.findFirst({
+      where: { id, ...companyFilter(companyId) },
     });
 
     if (!existing) {
@@ -226,6 +226,7 @@ export async function PATCH(
       fieldName: "status",
       oldValue: existing.status,
       newValue: updated.status,
+      companyId,
     }).catch(console.error);
 
     return NextResponse.json(updated);

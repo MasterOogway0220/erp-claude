@@ -6,6 +6,7 @@
 
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { authOptions } from "@/lib/auth";
 import { UserRole } from "@prisma/client";
 
@@ -143,11 +144,31 @@ export interface AuthResult {
   authorized: boolean;
   session: any;
   response?: NextResponse;
+  companyId?: string | null;
+}
+
+/**
+ * Get the active company ID for the current user.
+ * SUPER_ADMIN can switch companies via cookie.
+ * Other roles always use their assigned companyId.
+ */
+async function getActiveCompanyId(session: any): Promise<string | null> {
+  const userCompanyId = session?.user?.companyId || null;
+  const userRole = session?.user?.role as UserRole;
+
+  // SUPER_ADMIN can switch companies via cookie
+  if (userRole === "SUPER_ADMIN") {
+    const cookieStore = await cookies();
+    const activeCompany = cookieStore.get("activeCompanyId")?.value;
+    if (activeCompany) return activeCompany;
+  }
+
+  return userCompanyId;
 }
 
 /**
  * Check if user has access to a module action.
- * Returns session if authorized, or an error response if not.
+ * Returns session and companyId if authorized.
  */
 export async function checkAccess(
   module: keyof typeof MODULE_ACCESS,
@@ -189,12 +210,13 @@ export async function checkAccess(
     };
   }
 
-  return { authorized: true, session };
+  const companyId = await getActiveCompanyId(session);
+
+  return { authorized: true, session, companyId };
 }
 
 /**
  * Simple session check (authentication only, no role check).
- * Use for endpoints accessible to all authenticated users (e.g., search, health).
  */
 export async function checkAuth(): Promise<AuthResult> {
   const session = await getServerSession(authOptions);
@@ -207,5 +229,19 @@ export async function checkAuth(): Promise<AuthResult> {
     };
   }
 
-  return { authorized: true, session };
+  const companyId = await getActiveCompanyId(session);
+
+  return { authorized: true, session, companyId };
+}
+
+/**
+ * Build a Prisma where-clause filter for company isolation.
+ * Returns { companyId } if the user has an active company, otherwise empty object.
+ * Use this in all data queries: prisma.model.findMany({ where: { ...companyFilter(companyId) } })
+ */
+export function companyFilter(companyId: string | null | undefined): Record<string, string> {
+  if (companyId) {
+    return { companyId };
+  }
+  return {};
 }

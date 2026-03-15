@@ -1,18 +1,18 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { getCurrentFinancialYear, PREFIXES } from "@/lib/document-numbering";
 
 export async function GET() {
   try {
-    const { authorized, response } = await checkAccess("quotation", "read");
+    const { authorized, response, companyId } = await checkAccess("quotation", "read");
     if (!authorized) return response!;
 
     const currentFY = getCurrentFinancialYear();
     const prefix = PREFIXES.QUOTATION;
 
-    const sequence = await prisma.documentSequence.findUnique({
-      where: { documentType: "QUOTATION" },
+    const sequence = await prisma.documentSequence.findFirst({
+      where: { documentType: "QUOTATION", companyId: companyId || null },
     });
 
     let nextNumber: number;

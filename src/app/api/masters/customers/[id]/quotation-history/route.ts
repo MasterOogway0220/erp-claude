@@ -1,19 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { authorized, response } = await checkAccess("masters", "read");
+    const { authorized, response, companyId } = await checkAccess("masters", "read");
     if (!authorized) return response!;
 
     const { id } = await params;
 
     const quotations = await prisma.quotation.findMany({
-      where: { customerId: id },
+      where: { customerId: id, ...companyFilter(companyId) },
       include: {
         buyer: { select: { id: true, buyerName: true } },
         items: {

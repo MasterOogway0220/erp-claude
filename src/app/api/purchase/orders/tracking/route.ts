@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 
 export async function GET(request: NextRequest) {
   try {
-    const { authorized, session, response } = await checkAccess("purchaseOrder", "read");
+    const { authorized, session, response, companyId } = await checkAccess("purchaseOrder", "read");
     if (!authorized) return response!;
 
     // Fetch all active purchase orders with delivery tracking
     const purchaseOrders = await prisma.purchaseOrder.findMany({
       where: {
+        ...companyFilter(companyId),
         status: {
           notIn: ["CANCELLED"],
         },

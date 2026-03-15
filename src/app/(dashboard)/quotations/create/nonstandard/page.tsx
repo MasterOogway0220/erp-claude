@@ -52,6 +52,10 @@ interface NonStdItem {
   unitRate: string;
   amount: string;
   delivery: string;
+  pastQuote: string;
+  pastQuotePrice: string;
+  pastPo: string;
+  pastPoPrice: string;
   fittingId: string;
   fittingLabel: string;
   flangeId: string;
@@ -77,6 +81,10 @@ const emptyItem: NonStdItem = {
   unitRate: "",
   amount: "0.00",
   delivery: "8-10 Weeks, Ex-works",
+  pastQuote: "",
+  pastQuotePrice: "",
+  pastPo: "",
+  pastPoPrice: "",
   fittingId: "",
   fittingLabel: "",
   flangeId: "",
@@ -416,6 +424,10 @@ function NonStandardQuotationPage() {
           unitRate: String(item.unitRate),
           amount: String(item.amount),
           delivery: item.delivery || "",
+          pastQuote: item.pastQuote || "",
+          pastQuotePrice: item.pastQuotePrice ? String(item.pastQuotePrice) : "",
+          pastPo: item.pastPo || "",
+          pastPoPrice: item.pastPoPrice ? String(item.pastPoPrice) : "",
           fittingId: item.fittingId || "",
           fittingLabel: "",
           flangeId: item.flangeId || "",
@@ -521,6 +533,10 @@ function NonStandardQuotationPage() {
         drawingRef: item.drawingRef || "",
         itemDescription: description,
         certificateReq: item.certificateReq || "",
+        pastQuote: item.pastQuote || "",
+        pastQuotePrice: item.pastQuotePrice || "",
+        pastPo: item.pastPo || "",
+        pastPoPrice: item.pastPoPrice || "",
         fittingId: item.fittingId || "",
         flangeId: item.flangeId || "",
       };
@@ -760,30 +776,6 @@ function NonStandardQuotationPage() {
               </div>
             </div>
 
-            {/* Customer + Buyer Info */}
-            {selectedCustomer && (
-              <div className="rounded-lg border bg-muted/50 p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <Building2 className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">Customer Details</span>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-2 text-sm">
-                  {(selectedCustomer.addressLine1 || selectedCustomer.city) && (
-                    <div>
-                      <span className="text-muted-foreground">Address:</span>{" "}
-                      {[selectedCustomer.addressLine1, selectedCustomer.city, selectedCustomer.state].filter(Boolean).join(", ")}
-                    </div>
-                  )}
-                  {selectedBuyer && (
-                    <div>
-                      <span className="text-muted-foreground">Attn:</span>{" "}
-                      {selectedBuyer.buyerName}
-                      {selectedBuyer.designation && ` (${selectedBuyer.designation})`}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
           </CardContent>
         </Card>
 
@@ -1187,6 +1179,44 @@ function NonStandardQuotationPage() {
                       <div className="grid gap-2">
                         <Label className="text-sm">Total Amount ({formData.currency})</Label>
                         <Input value={item.amount} readOnly className="bg-muted font-semibold" />
+                      </div>
+                    </div>
+
+                    {/* Past Quote / PO */}
+                    <div className="grid grid-cols-4 gap-4">
+                      <div className="grid gap-2">
+                        <Label className="text-sm">Past Quote</Label>
+                        <Input
+                          value={item.pastQuote}
+                          onChange={(e) => updateItem(index, "pastQuote", e.target.value)}
+                          placeholder="Quote ref"
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label className="text-sm">Past Quote Price</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={item.pastQuotePrice}
+                          onChange={(e) => updateItem(index, "pastQuotePrice", e.target.value)}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label className="text-sm">Past PO</Label>
+                        <Input
+                          value={item.pastPo}
+                          onChange={(e) => updateItem(index, "pastPo", e.target.value)}
+                          placeholder="PO ref"
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label className="text-sm">Past PO Price</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={item.pastPoPrice}
+                          onChange={(e) => updateItem(index, "pastPoPrice", e.target.value)}
+                        />
                       </div>
                     </div>
                   </>

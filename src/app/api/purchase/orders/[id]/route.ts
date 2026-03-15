@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 
 /**
  * Valid Purchase Order status transitions
@@ -23,11 +23,11 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { authorized, session, response } = await checkAccess("purchaseOrder", "read");
+    const { authorized, session, response, companyId } = await checkAccess("purchaseOrder", "read");
     if (!authorized) return response!;
 
-    const purchaseOrder = await prisma.purchaseOrder.findUnique({
-      where: { id },
+    const purchaseOrder = await prisma.purchaseOrder.findFirst({
+      where: { id, ...companyFilter(companyId) },
       include: {
         vendor: true,
         salesOrder: {
@@ -120,14 +120,14 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const { authorized, session, response } = await checkAccess("purchaseOrder", "write");
+    const { authorized, session, response, companyId } = await checkAccess("purchaseOrder", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
     const { action, deliveryDate, specialRequirements, approvalRemarks, status, followUpNotes } = body;
 
-    const existing = await prisma.purchaseOrder.findUnique({
-      where: { id },
+    const existing = await prisma.purchaseOrder.findFirst({
+      where: { id, ...companyFilter(companyId) },
       select: { id: true, status: true },
     });
 
@@ -277,6 +277,7 @@ export async function PATCH(
       fieldName: "status",
       oldValue: existing.status,
       newValue: purchaseOrder.status,
+      companyId,
     }).catch(console.error);
 
     return NextResponse.json(purchaseOrder);

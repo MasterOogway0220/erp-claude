@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(request: NextRequest) {
   try {
-    const { authorized, response } = await checkAccess("reports", "read");
+    const { authorized, response, companyId } = await checkAccess("reports", "read");
     if (!authorized) return response!;
 
     // Fetch all active vendors
     const vendors = await prisma.vendorMaster.findMany({
-      where: { isActive: true },
+      where: { isActive: true, ...companyFilter(companyId) },
       select: {
         id: true,
         name: true,
@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch all POs with delivery dates
     const purchaseOrders = await prisma.purchaseOrder.findMany({
+      where: { ...companyFilter(companyId) },
       select: {
         id: true,
         vendorId: true,
@@ -27,6 +28,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch all GRNs with dates and vendor
     const grns = await prisma.goodsReceiptNote.findMany({
+      where: { ...companyFilter(companyId) },
       select: {
         id: true,
         grnDate: true,
@@ -52,6 +54,7 @@ export async function GET(request: NextRequest) {
     // Fetch NCR counts by vendor
     const ncrsByVendor = await prisma.nCR.groupBy({
       by: ["vendorId"],
+      where: { ...companyFilter(companyId) },
       _count: { id: true },
     });
 

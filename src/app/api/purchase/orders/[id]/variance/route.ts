@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { detectPOVariances } from "@/lib/business-logic/po-variance-detection";
 
 export async function GET(
@@ -9,11 +9,11 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { authorized, response } = await checkAccess("purchaseOrder", "read");
+    const { authorized, response, companyId } = await checkAccess("purchaseOrder", "read");
     if (!authorized) return response!;
 
     const po = await prisma.purchaseOrder.findUnique({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
       include: {
         items: { orderBy: { sNo: "asc" } },
         salesOrder: {

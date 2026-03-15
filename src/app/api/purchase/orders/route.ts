@@ -3,18 +3,18 @@ import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
 import { generateDocumentNumber } from "@/lib/document-numbering";
 import { POStatus } from "@prisma/client";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 
 export async function GET(request: NextRequest) {
   try {
-    const { authorized, session, response } = await checkAccess("purchaseOrder", "read");
+    const { authorized, session, response, companyId } = await checkAccess("purchaseOrder", "read");
     if (!authorized) return response!;
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
     const status = searchParams.get("status") as POStatus | null;
 
-    const where: any = {};
+    const where: any = { ...companyFilter(companyId) };
 
     if (search) {
       where.OR = [
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { authorized, session, response } = await checkAccess("purchaseOrder", "write");
+    const { authorized, session, response, companyId } = await checkAccess("purchaseOrder", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate PO number
-    const poNo = await generateDocumentNumber("PURCHASE_ORDER");
+    const poNo = await generateDocumentNumber("PURCHASE_ORDER", companyId);
 
     // Calculate total amount
     const totalAmount = items.reduce(
@@ -113,6 +113,7 @@ export async function POST(request: NextRequest) {
     const purchaseOrder = await prisma.purchaseOrder.create({
       data: {
         poNo,
+        companyId,
         vendorId,
         prId: prId || null,
         salesOrderId: salesOrderId || null,
@@ -163,6 +164,7 @@ export async function POST(request: NextRequest) {
       tableName: "PurchaseOrder",
       recordId: purchaseOrder.id,
       newValue: JSON.stringify({ poNo: purchaseOrder.poNo }),
+      companyId,
     }).catch(console.error);
 
     return NextResponse.json(purchaseOrder, { status: 201 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signOut } from "next-auth/react";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useSidebarStore } from "@/stores/sidebar-store";
@@ -25,8 +25,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Bell, LogOut, Menu, KeyRound, ChevronDown } from "lucide-react";
+import { Bell, LogOut, Menu, KeyRound, ChevronDown, Building2 } from "lucide-react";
+
+interface Company {
+  id: string;
+  companyName: string;
+  regCity?: string;
+}
 
 export function TopBar() {
   const { user } = useCurrentUser();
@@ -38,6 +51,47 @@ export function TopBar() {
   const [pwLoading, setPwLoading] = useState(false);
   const [pwError, setPwError] = useState("");
   const [pwSuccess, setPwSuccess] = useState(false);
+
+  // Company switcher state (SUPER_ADMIN only)
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [activeCompanyId, setActiveCompanyId] = useState<string>("");
+  const [activeCompanyName, setActiveCompanyName] = useState<string>("");
+
+  const isSuperAdmin = user?.role === "SUPER_ADMIN";
+
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+    fetch("/api/company/switch")
+      .then((r) => r.json())
+      .then((d) => {
+        setCompanies(d.companies || []);
+        // Set initial active company from user's companyId
+        if (user?.companyId) {
+          setActiveCompanyId(user.companyId);
+          const found = (d.companies || []).find((c: Company) => c.id === user.companyId);
+          if (found) setActiveCompanyName(found.companyName);
+        }
+      })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSuperAdmin]);
+
+  const switchCompany = async (companyId: string) => {
+    try {
+      await fetch("/api/company/switch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ companyId }),
+      });
+      setActiveCompanyId(companyId);
+      const found = companies.find((c) => c.id === companyId);
+      if (found) setActiveCompanyName(found.companyName);
+      // Reload to reflect company-scoped data
+      window.location.reload();
+    } catch {
+      // silently fail
+    }
+  };
 
   const initials = user?.name
     ? user.name
@@ -108,8 +162,46 @@ export function TopBar() {
           </Button>
         </div>
 
-        {/* Right: Notifications + User */}
+        {/* Right: Company Switcher + Notifications + User */}
         <div className="flex items-center gap-1">
+          {/* Company Switcher (SUPER_ADMIN only) */}
+          {isSuperAdmin && companies.length > 0 && (
+            <>
+              <div className="flex items-center gap-2 mr-2">
+                <Building2 className="h-4 w-4 text-muted-foreground" />
+                <Select
+                  value={activeCompanyId || "__none__"}
+                  onValueChange={(v) => {
+                    if (v !== "__none__") switchCompany(v);
+                  }}
+                >
+                  <SelectTrigger className="h-8 w-[200px] text-xs">
+                    <SelectValue placeholder="Select Company" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {companies.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.companyName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Separator orientation="vertical" className="mx-1 h-6" />
+            </>
+          )}
+
+          {/* Non-admin: show company name */}
+          {!isSuperAdmin && activeCompanyName && (
+            <>
+              <div className="flex items-center gap-1.5 mr-2 text-xs text-muted-foreground">
+                <Building2 className="h-3.5 w-3.5" />
+                <span className="font-medium">{activeCompanyName}</span>
+              </div>
+              <Separator orientation="vertical" className="mx-1 h-6" />
+            </>
+          )}
+
           {/* Notification bell */}
           <Button
             variant="ghost"
@@ -118,7 +210,6 @@ export function TopBar() {
             title="Notifications"
           >
             <Bell className="h-[18px] w-[18px]" />
-            {/* Dot indicator for unread notifications (visual only) */}
             <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-blue-500 ring-2 ring-background" />
           </Button>
 
@@ -148,7 +239,6 @@ export function TopBar() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              {/* User info header in dropdown */}
               <div className="px-3 py-2.5">
                 <p className="text-sm font-medium">{user?.name}</p>
                 <p className="text-xs text-muted-foreground">{user?.email}</p>

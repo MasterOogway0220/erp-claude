@@ -3,19 +3,19 @@ import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
 import { generateDocumentNumber } from "@/lib/document-numbering";
 import { SOStatus } from "@prisma/client";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { validateTraceability } from "@/lib/validators/business-rules";
 
 export async function GET(request: NextRequest) {
   try {
-    const { authorized, session, response } = await checkAccess("salesOrder", "read");
+    const { authorized, session, response, companyId } = await checkAccess("salesOrder", "read");
     if (!authorized) return response!;
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
     const status = searchParams.get("status") as SOStatus | null;
 
-    const where: any = {};
+    const where: any = { ...companyFilter(companyId) };
 
     if (search) {
       where.OR = [
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { authorized, session, response } = await checkAccess("salesOrder", "write");
+    const { authorized, session, response, companyId } = await checkAccess("salesOrder", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -184,12 +184,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate SO number
-    const soNo = await generateDocumentNumber("SALES_ORDER");
+    const soNo = await generateDocumentNumber("SALES_ORDER", companyId);
 
     // Use transaction to create SO + update quotation atomically
     const salesOrder = await prisma.$transaction(async (tx) => {
       const so = await tx.salesOrder.create({
         data: {
+          companyId,
           soNo,
           customerId,
           quotationId: quotationId || null,
@@ -238,6 +239,7 @@ export async function POST(request: NextRequest) {
 
     createAuditLog({
       userId: session.user.id,
+      companyId,
       action: "CREATE",
       tableName: "SalesOrder",
       recordId: salesOrder.id,

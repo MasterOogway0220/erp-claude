@@ -2,17 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
 import { generateDocumentNumber } from "@/lib/document-numbering";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 
 export async function GET(request: NextRequest) {
   try {
-    const { authorized, session, response } = await checkAccess("dispatchNote", "read");
+    const { authorized, session, response, companyId } = await checkAccess("dispatchNote", "read");
     if (!authorized) return response!;
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
 
-    const where: any = {};
+    const where: any = { ...companyFilter(companyId) };
 
     if (search) {
       where.OR = [
@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { authorized, session, response } = await checkAccess("dispatchNote", "write");
+    const { authorized, session, response, companyId } = await checkAccess("dispatchNote", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -150,7 +150,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const dnNo = await generateDocumentNumber("DISPATCH_NOTE");
+    const dnNo = await generateDocumentNumber("DISPATCH_NOTE", companyId);
 
     const inventoryStockIds = packingList.items.map(
       (item) => item.inventoryStockId
@@ -162,6 +162,7 @@ export async function POST(request: NextRequest) {
         data: {
           dnNo,
           packingListId,
+          ...(companyId && { companyId }),
           salesOrderId,
           warehouseId: warehouseId || null,
           vehicleNo: vehicleNo || null,
@@ -315,6 +316,7 @@ export async function POST(request: NextRequest) {
       tableName: "DispatchNote",
       recordId: dispatchNote.id,
       newValue: JSON.stringify({ dnNo }),
+      companyId,
     }).catch(console.error);
 
     return NextResponse.json(fullDispatchNote, { status: 201 });

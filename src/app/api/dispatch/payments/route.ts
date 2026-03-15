@@ -2,17 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
 import { generateDocumentNumber } from "@/lib/document-numbering";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 
 export async function GET(request: NextRequest) {
   try {
-    const { authorized, session, response } = await checkAccess("payment", "read");
+    const { authorized, session, response, companyId } = await checkAccess("payment", "read");
     if (!authorized) return response!;
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
 
-    const where: any = {};
+    const where: any = { ...companyFilter(companyId) };
 
     if (search) {
       where.OR = [
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { authorized, session, response } = await checkAccess("payment", "write");
+    const { authorized, session, response, companyId } = await checkAccess("payment", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const receiptNo = await generateDocumentNumber("RECEIPT");
+    const receiptNo = await generateDocumentNumber("RECEIPT", companyId);
 
     const paymentReceipt = await prisma.$transaction(async (tx) => {
       // Create the payment receipt
@@ -108,6 +108,7 @@ export async function POST(request: NextRequest) {
           receiptNo,
           invoiceId,
           customerId,
+          ...(companyId && { companyId }),
           amountReceived: parseFloat(amountReceived),
           paymentMode: paymentMode || "NEFT",
           referenceNo: referenceNo || null,
@@ -165,6 +166,7 @@ export async function POST(request: NextRequest) {
       tableName: "PaymentReceipt",
       recordId: paymentReceipt.id,
       newValue: JSON.stringify({ receiptNo: paymentReceipt.receiptNo }),
+      companyId,
     }).catch(console.error);
 
     return NextResponse.json(paymentReceipt, { status: 201 });

@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { authorized, response } = await checkAccess("masters", "read");
+    const { authorized, response, companyId } = await checkAccess("masters", "read");
     if (!authorized) return response!;
 
     const { id } = await params;
     const addresses = await prisma.customerDispatchAddress.findMany({
-      where: { customerId: id },
+      where: { customerId: id, customer: { ...companyFilter(companyId) } },
       orderBy: { createdAt: "asc" },
     });
 
@@ -31,7 +31,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { authorized, response } = await checkAccess("masters", "write");
+    const { authorized, response, companyId } = await checkAccess("masters", "write");
     if (!authorized) return response!;
 
     const { id } = await params;

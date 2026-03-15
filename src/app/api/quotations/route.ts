@@ -4,11 +4,11 @@ import { createAuditLog } from "@/lib/audit";
 import { numberToWords } from "@/lib/amount-in-words";
 import { generateDocumentNumber } from "@/lib/document-numbering";
 import { QuotationStatus, QuotationType, QuotationCategory } from "@prisma/client";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 
 export async function GET(request: NextRequest) {
   try {
-    const { authorized, session, response } = await checkAccess("quotation", "read");
+    const { authorized, session, response, companyId } = await checkAccess("quotation", "read");
     if (!authorized) return response!;
 
     const { searchParams } = new URL(request.url);
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     const conversionStatus = searchParams.get("conversionStatus") || ""; // "pending" | "converted"
     const category = searchParams.get("category") || ""; // "STANDARD" | "NON_STANDARD"
 
-    const where: any = {};
+    const where: any = { ...companyFilter(companyId) };
 
     if (category) {
       where.quotationCategory = category as QuotationCategory;
@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { authorized, session, response } = await checkAccess("quotation", "write");
+    const { authorized, session, response, companyId } = await checkAccess("quotation", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -157,7 +157,7 @@ export async function POST(request: NextRequest) {
     const preparedById = userInDb ? session.user.id : null;
 
     // Generate quotation number using shared document numbering utility
-    const quotationNo = await generateDocumentNumber("QUOTATION");
+    const quotationNo = await generateDocumentNumber("QUOTATION", companyId);
 
     // Calculate financial fields
     const subtotal = items.reduce(
@@ -179,6 +179,7 @@ export async function POST(request: NextRequest) {
     // Create quotation with items and terms
     const quotation = await prisma.quotation.create({
       data: {
+        companyId,
         quotationNo,
         customerId,
         quotationType: quotationType || QuotationType.DOMESTIC,
@@ -256,6 +257,11 @@ export async function POST(request: NextRequest) {
             tubeLength: item.tubeLength || null,
             tubeCount: item.tubeCount ? parseInt(item.tubeCount) : null,
             componentPosition: item.componentPosition || null,
+            // Past quote/PO references
+            pastQuote: item.pastQuote || null,
+            pastQuotePrice: item.pastQuotePrice ? parseFloat(item.pastQuotePrice) : null,
+            pastPo: item.pastPo || null,
+            pastPoPrice: item.pastPoPrice ? parseFloat(item.pastPoPrice) : null,
             // Fitting/Flange references
             fittingId: item.fittingId || null,
             flangeId: item.flangeId || null,
@@ -286,6 +292,7 @@ export async function POST(request: NextRequest) {
       tableName: "Quotation",
       recordId: quotation.id,
       newValue: JSON.stringify({ quotationNo: quotation.quotationNo }),
+      companyId,
     }).catch(console.error);
 
     return NextResponse.json(quotation, { status: 201 });

@@ -5,11 +5,14 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
-    const { authorized, response } = await checkAccess("masters", "read");
+    const { authorized, session, response, companyId } = await checkAccess("admin", "read");
     if (!authorized) return response!;
 
     const companies = await prisma.companyMaster.findMany({
       orderBy: { createdAt: "asc" },
+      include: {
+        _count: { select: { users: true, employees: true } },
+      },
     });
     return NextResponse.json({ companies });
   } catch (error) {
@@ -23,7 +26,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { authorized, session, response } = await checkAccess("masters", "write");
+    const { authorized, session, response, companyId } = await checkAccess("admin", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -67,6 +70,7 @@ export async function POST(request: NextRequest) {
       recordId: company.id,
       action: "CREATE",
       userId: session.user?.id,
+      companyId,
     });
 
     return NextResponse.json(company, { status: 201 });

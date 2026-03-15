@@ -3,17 +3,17 @@ import { prisma } from "@/lib/prisma";
 import { StockStatus } from "@prisma/client";
 import { createAuditLog } from "@/lib/audit";
 import { generateDocumentNumber } from "@/lib/document-numbering";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 
 export async function GET(request: NextRequest) {
   try {
-    const { authorized, response } = await checkAccess("qcRelease", "read");
+    const { authorized, response, companyId } = await checkAccess("qcRelease", "read");
     if (!authorized) return response!;
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
 
-    const where: any = {};
+    const where: any = { ...companyFilter(companyId) };
     if (search) {
       where.OR = [
         { releaseNo: { contains: search } },
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { authorized, session, response } = await checkAccess("qcRelease", "write");
+    const { authorized, session, response, companyId } = await checkAccess("qcRelease", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate release number using standardized document numbering
-    const releaseNo = await generateDocumentNumber("QC_RELEASE");
+    const releaseNo = await generateDocumentNumber("QC_RELEASE", companyId);
 
     const qcRelease = await prisma.$transaction(async (tx) => {
       // Re-check for duplicates inside transaction to prevent race conditions
@@ -154,6 +154,7 @@ export async function POST(request: NextRequest) {
       const created = await tx.qCRelease.create({
         data: {
           releaseNo,
+          companyId,
           inspectionId,
           inventoryStockId,
           decision: decision || "ACCEPT",
@@ -192,6 +193,7 @@ export async function POST(request: NextRequest) {
 
     createAuditLog({
       userId: session.user.id,
+      companyId,
       action: "CREATE",
       tableName: "QCRelease",
       recordId: qcRelease.id,

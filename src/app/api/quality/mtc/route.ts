@@ -4,7 +4,7 @@ import { checkAccess } from "@/lib/rbac";
 
 export async function GET(request: NextRequest) {
   try {
-    const { authorized, response } = await checkAccess("mtc", "read");
+    const { authorized, response, companyId } = await checkAccess("mtc", "read");
     if (!authorized) return response!;
 
     const { searchParams } = new URL(request.url);
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { authorized, response } = await checkAccess("mtc", "write");
+    const { authorized, response, companyId } = await checkAccess("mtc", "write");
     if (!authorized) return response!;
 
     const body = await request.json();

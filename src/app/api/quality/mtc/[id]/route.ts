@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { authorized, session, response } = await checkAccess("mtc", "write");
+    const { authorized, session, response, companyId } = await checkAccess("mtc", "write");
     if (!authorized) return response!;
 
     const { id } = await params;
@@ -62,6 +62,7 @@ export async function PATCH(
 
     createAuditLog({
       userId: session.user.id,
+      companyId,
       action: "UPDATE",
       tableName: "MTCDocument",
       recordId: id,

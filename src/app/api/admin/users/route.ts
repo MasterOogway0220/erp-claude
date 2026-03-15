@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
 export async function GET(request: NextRequest) {
   try {
-    const { authorized, response } = await checkAccess("admin", "read");
+    const { authorized, response, companyId } = await checkAccess("admin", "read");
     if (!authorized) return response!;
 
     const users = await prisma.user.findMany({
+      where: { ...companyFilter(companyId) },
       select: {
         id: true,
         email: true,
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { authorized, response } = await checkAccess("admin", "write");
+    const { authorized, response, companyId } = await checkAccess("admin", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -68,6 +69,7 @@ export async function POST(request: NextRequest) {
         passwordHash,
         role: role || "SALES",
         phone: phone || null,
+        ...(companyId ? { companyId } : {}),
       },
       select: {
         id: true,

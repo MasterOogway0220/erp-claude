@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
 import { numberToWords } from "@/lib/amount-in-words";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 
 // Valid quotation status transitions
 const VALID_QUOTATION_TRANSITIONS: Record<string, string[]> = {
@@ -25,11 +25,11 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { authorized, response } = await checkAccess("quotation", "read");
+    const { authorized, response, companyId } = await checkAccess("quotation", "read");
     if (!authorized) return response!;
 
-    const quotation = await prisma.quotation.findUnique({
-      where: { id },
+    const quotation = await prisma.quotation.findFirst({
+      where: { id, ...companyFilter(companyId) },
       include: {
         customer: true,
         buyer: true,
@@ -101,14 +101,14 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const { authorized, session, response } = await checkAccess("quotation", "write");
+    const { authorized, session, response, companyId } = await checkAccess("quotation", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
     const { status, approvalRemarks, lossReason, lossCompetitor, lossNotes } = body;
 
-    const existing = await prisma.quotation.findUnique({
-      where: { id },
+    const existing = await prisma.quotation.findFirst({
+      where: { id, ...companyFilter(companyId) },
       select: { status: true, quotationNo: true, version: true },
     });
 
@@ -218,6 +218,7 @@ export async function PATCH(
         ...(lossReason ? { lossReason } : {}),
         ...(lossCompetitor ? { lossCompetitor } : {}),
       }),
+      companyId,
     });
 
     return NextResponse.json(updated);
@@ -237,11 +238,11 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const { authorized, session, response } = await checkAccess("quotation", "delete");
+    const { authorized, session, response, companyId } = await checkAccess("quotation", "delete");
     if (!authorized) return response!;
 
-    const existing = await prisma.quotation.findUnique({
-      where: { id },
+    const existing = await prisma.quotation.findFirst({
+      where: { id, ...companyFilter(companyId) },
       select: { status: true, quotationNo: true },
     });
 
@@ -270,6 +271,7 @@ export async function DELETE(
       tableName: "Quotation",
       recordId: id,
       oldValue: existing.quotationNo,
+      companyId,
     }).catch(console.error);
 
     return NextResponse.json({ success: true });
@@ -292,11 +294,11 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const { authorized, session, response } = await checkAccess("quotation", "write");
+    const { authorized, session, response, companyId } = await checkAccess("quotation", "write");
     if (!authorized) return response!;
 
-    const existing = await prisma.quotation.findUnique({
-      where: { id },
+    const existing = await prisma.quotation.findFirst({
+      where: { id, ...companyFilter(companyId) },
       select: {
         status: true, quotationNo: true, customerId: true,
         quotationType: true, quotationCategory: true, version: true,
@@ -453,6 +455,10 @@ export async function PUT(
               tubeLength: item.tubeLength || null,
               tubeCount: item.tubeCount ? parseInt(item.tubeCount) : null,
               componentPosition: item.componentPosition || null,
+              pastQuote: item.pastQuote || null,
+              pastQuotePrice: item.pastQuotePrice ? parseFloat(item.pastQuotePrice) : null,
+              pastPo: item.pastPo || null,
+              pastPoPrice: item.pastPoPrice ? parseFloat(item.pastPoPrice) : null,
               fittingId: item.fittingId || null,
               flangeId: item.flangeId || null,
             })),
@@ -543,6 +549,7 @@ export async function PUT(
       recordId: id,
       oldValue: existing.status !== "DRAFT" ? `Edited in ${existing.status} status` : undefined,
       newValue: JSON.stringify(changeDetails),
+      companyId,
     }).catch(console.error);
 
     return NextResponse.json(updated);

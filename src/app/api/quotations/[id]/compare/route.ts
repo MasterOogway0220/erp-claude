@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 
 function toNumber(val: any): number | null {
   if (val === null || val === undefined) return null;
@@ -17,7 +17,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { authorized, response } = await checkAccess("quotation", "read");
+    const { authorized, response, companyId } = await checkAccess("quotation", "read");
     if (!authorized) return response!;
 
     const { searchParams } = new URL(request.url);
@@ -25,7 +25,7 @@ export async function GET(
 
     // Fetch the current quotation
     const quotation = await prisma.quotation.findUnique({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
       include: {
         items: { orderBy: { sNo: "asc" } },
         terms: { orderBy: { termNo: "asc" } },
@@ -48,6 +48,7 @@ export async function GET(
         where: {
           quotationNo: quotation.quotationNo,
           version: quotation.version - 1,
+          ...companyFilter(companyId),
         },
         select: { id: true },
       });
@@ -61,7 +62,7 @@ export async function GET(
     }
 
     const compareQuotation = await prisma.quotation.findUnique({
-      where: { id: compareId },
+      where: { id: compareId, ...companyFilter(companyId) },
       include: {
         items: { orderBy: { sNo: "asc" } },
         terms: { orderBy: { termNo: "asc" } },

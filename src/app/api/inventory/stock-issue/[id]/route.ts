@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 
 export async function GET(
   request: NextRequest,
@@ -9,11 +9,11 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { authorized, response } = await checkAccess("stockIssue", "read");
+    const { authorized, response, companyId } = await checkAccess("stockIssue", "read");
     if (!authorized) return response!;
 
     const stockIssue = await prisma.stockIssue.findUnique({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
       include: {
         salesOrder: {
           select: {
@@ -73,7 +73,7 @@ export async function PATCH(
     // Determine required permission based on target status
     const requiresApproval = newStatus === "AUTHORIZED" || newStatus === "REJECTED";
     const permissionLevel = requiresApproval ? "approve" : "write";
-    const { authorized, session, response } = await checkAccess("stockIssue", permissionLevel);
+    const { authorized, session, response, companyId } = await checkAccess("stockIssue", permissionLevel);
     if (!authorized) return response!;
 
     const stockIssue = await prisma.stockIssue.findUnique({
@@ -147,6 +147,7 @@ export async function PATCH(
 
     createAuditLog({
       userId: session.user.id,
+      companyId,
       action: "UPDATE",
       tableName: "StockIssue",
       recordId: id,

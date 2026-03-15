@@ -2,17 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
 import { generateDocumentNumber } from "@/lib/document-numbering";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 
 export async function GET(request: NextRequest) {
   try {
-    const { authorized, session, response } = await checkAccess("packingList", "read");
+    const { authorized, session, response, companyId } = await checkAccess("packingList", "read");
     if (!authorized) return response!;
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
 
-    const where: any = {};
+    const where: any = { ...companyFilter(companyId) };
 
     if (search) {
       where.OR = [
@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { authorized, session, response } = await checkAccess("packingList", "write");
+    const { authorized, session, response, companyId } = await checkAccess("packingList", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -129,12 +129,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const plNo = await generateDocumentNumber("PACKING_LIST");
+    const plNo = await generateDocumentNumber("PACKING_LIST", companyId);
 
     const packingList = await prisma.packingList.create({
       data: {
         plNo,
         salesOrderId,
+        ...(companyId && { companyId }),
         warehouseId: warehouseId || null,
         remarks: remarks || null,
         items: {
@@ -184,6 +185,7 @@ export async function POST(request: NextRequest) {
       tableName: "PackingList",
       recordId: packingList.id,
       newValue: JSON.stringify({ plNo: packingList.plNo }),
+      companyId,
     }).catch(console.error);
 
     return NextResponse.json(packingList, { status: 201 });

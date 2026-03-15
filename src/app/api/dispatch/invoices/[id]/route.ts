@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 
 // Valid invoice status transitions
@@ -18,11 +18,11 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { authorized, response } = await checkAccess("invoice", "read");
+    const { authorized, response, companyId } = await checkAccess("invoice", "read");
     if (!authorized) return response!;
 
     const invoice = await prisma.invoice.findUnique({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
       include: {
         items: {
           orderBy: { sNo: "asc" },
@@ -71,7 +71,7 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const { authorized, session, response } = await checkAccess("invoice", "write");
+    const { authorized, session, response, companyId } = await checkAccess("invoice", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -123,6 +123,7 @@ export async function PATCH(
         fieldName: "status",
         oldValue: body._previousStatus || undefined,
         newValue: status,
+        companyId,
       }).catch(console.error);
     }
 

@@ -3,18 +3,18 @@ import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
 import { generateDocumentNumber } from "@/lib/document-numbering";
 import { PRStatus } from "@prisma/client";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 
 export async function GET(request: NextRequest) {
   try {
-    const { authorized, session, response } = await checkAccess("purchaseRequisition", "read");
+    const { authorized, session, response, companyId } = await checkAccess("purchaseRequisition", "read");
     if (!authorized) return response!;
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
     const status = searchParams.get("status") as PRStatus | null;
 
-    const where: any = {};
+    const where: any = { ...companyFilter(companyId) };
 
     if (search) {
       where.OR = [
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { authorized, session, response } = await checkAccess("purchaseRequisition", "write");
+    const { authorized, session, response, companyId } = await checkAccess("purchaseRequisition", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -73,12 +73,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate PR number using shared utility
-    const prNo = await generateDocumentNumber("PURCHASE_REQUISITION");
+    const prNo = await generateDocumentNumber("PURCHASE_REQUISITION", companyId);
 
     // Create PR with items
     const purchaseRequisition = await prisma.purchaseRequisition.create({
       data: {
         prNo,
+        companyId,
         salesOrderId: salesOrderId || null,
         suggestedVendorId: suggestedVendorId || null,
         requisitionType: requisitionType || null,
@@ -113,6 +114,7 @@ export async function POST(request: NextRequest) {
       tableName: "PurchaseRequisition",
       recordId: purchaseRequisition.id,
       newValue: JSON.stringify({ prNo: purchaseRequisition.prNo }),
+      companyId,
     }).catch(console.error);
 
     return NextResponse.json(purchaseRequisition, { status: 201 });

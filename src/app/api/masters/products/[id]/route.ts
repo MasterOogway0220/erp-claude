@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 
 export async function GET(
@@ -9,11 +9,11 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { authorized, response } = await checkAccess("masters", "read");
+    const { authorized, response, companyId } = await checkAccess("masters", "read");
     if (!authorized) return response!;
 
     const product = await prisma.productSpecMaster.findUnique({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
       include: {
         dimensionalStandard: true,
       },
@@ -39,14 +39,14 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const { authorized, session, response } = await checkAccess("masters", "write");
+    const { authorized, session, response, companyId } = await checkAccess("masters", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
     const { product, category, specification, grade, material, additionalSpec, ends, length, dimensionalStandardId } = body;
 
     const updated = await prisma.productSpecMaster.update({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
       data: {
         product,
         category: category !== undefined ? (category || null) : undefined,
@@ -66,6 +66,7 @@ export async function PATCH(
       tableName: "ProductSpecMaster",
       recordId: id,
       newValue: JSON.stringify({ product: updated.product }),
+      companyId,
     }).catch(console.error);
 
     return NextResponse.json(updated);
@@ -84,11 +85,11 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const { authorized, session, response } = await checkAccess("masters", "delete");
+    const { authorized, session, response, companyId } = await checkAccess("masters", "delete");
     if (!authorized) return response!;
 
     const product = await prisma.productSpecMaster.findUnique({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
       select: { product: true, material: true },
     });
 
@@ -111,7 +112,7 @@ export async function DELETE(
     }
 
     await prisma.productSpecMaster.delete({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
     });
 
     createAuditLog({
@@ -120,6 +121,7 @@ export async function DELETE(
       tableName: "ProductSpecMaster",
       recordId: id,
       oldValue: `${product.product} - ${product.material || ""}`,
+      companyId,
     }).catch(console.error);
 
     return NextResponse.json({ success: true });

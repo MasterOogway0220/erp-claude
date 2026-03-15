@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 import { generateLocationTag } from "@/lib/location-tag";
@@ -10,11 +10,11 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { authorized, response } = await checkAccess("masters", "read");
+    const { authorized, response, companyId } = await checkAccess("masters", "read");
     if (!authorized) return response!;
 
     const locations = await prisma.warehouseLocation.findMany({
-      where: { warehouseId: id },
+      where: { warehouseId: id, warehouse: { ...companyFilter(companyId) } },
       include: {
         _count: { select: { inventoryStocks: true } },
       },
@@ -34,7 +34,7 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const { authorized, session, response } = await checkAccess("masters", "write");
+    const { authorized, session, response, companyId } = await checkAccess("masters", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -77,6 +77,7 @@ export async function POST(
       recordId: location.id,
       action: "CREATE",
       userId: session.user?.id,
+      companyId,
     });
 
     return NextResponse.json(location, { status: 201 });

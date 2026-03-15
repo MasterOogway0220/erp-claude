@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(request: NextRequest) {
   try {
-    const { authorized, response } = await checkAccess("reports", "read");
+    const { authorized, response, companyId } = await checkAccess("reports", "read");
     if (!authorized) return response!;
 
     // ---- Sales Metrics ----
@@ -20,23 +20,23 @@ export async function GET(request: NextRequest) {
       openSOCount,
     ] = await Promise.all([
       prisma.invoice.aggregate({
-        where: { status: "PAID" },
+        where: { status: "PAID", ...companyFilter(companyId) },
         _sum: { totalAmount: true },
       }),
-      prisma.salesOrder.count(),
-      prisma.quotation.count({ where: { status: { in: ["DRAFT", "SENT", "APPROVED", "PENDING_APPROVAL"] } } }),
-      prisma.quotation.count(),
-      prisma.quotation.count({ where: { status: "WON" } }),
-      prisma.purchaseOrder.count({ where: { status: { in: ["OPEN", "SENT_TO_VENDOR", "PARTIALLY_RECEIVED"] } } }),
+      prisma.salesOrder.count({ where: { ...companyFilter(companyId) } }),
+      prisma.quotation.count({ where: { status: { in: ["DRAFT", "SENT", "APPROVED", "PENDING_APPROVAL"] }, ...companyFilter(companyId) } }),
+      prisma.quotation.count({ where: { ...companyFilter(companyId) } }),
+      prisma.quotation.count({ where: { status: "WON", ...companyFilter(companyId) } }),
+      prisma.purchaseOrder.count({ where: { status: { in: ["OPEN", "SENT_TO_VENDOR", "PARTIALLY_RECEIVED"] }, ...companyFilter(companyId) } }),
       prisma.salesOrderItem.aggregate({
-        where: { salesOrder: { status: { in: ["OPEN", "PARTIALLY_DISPATCHED"] } } },
+        where: { salesOrder: { status: { in: ["OPEN", "PARTIALLY_DISPATCHED"] }, ...companyFilter(companyId) } },
         _sum: { amount: true },
       }),
       prisma.purchaseOrder.aggregate({
-        where: { status: { in: ["OPEN", "SENT_TO_VENDOR", "PARTIALLY_RECEIVED"] } },
+        where: { status: { in: ["OPEN", "SENT_TO_VENDOR", "PARTIALLY_RECEIVED"] }, ...companyFilter(companyId) },
         _sum: { totalAmount: true },
       }),
-      prisma.salesOrder.count({ where: { status: { in: ["OPEN", "PARTIALLY_DISPATCHED"] } } }),
+      prisma.salesOrder.count({ where: { status: { in: ["OPEN", "PARTIALLY_DISPATCHED"] }, ...companyFilter(companyId) } }),
     ]);
 
     const revenue = revenueAgg._sum.totalAmount ?? 0;
@@ -49,11 +49,11 @@ export async function GET(request: NextRequest) {
 
     // ---- Inventory Metrics ----
     const [totalStock, underInspection, accepted, inventoryQtyAgg] = await Promise.all([
-      prisma.inventoryStock.count(),
-      prisma.inventoryStock.count({ where: { status: "UNDER_INSPECTION" } }),
-      prisma.inventoryStock.count({ where: { status: "ACCEPTED" } }),
+      prisma.inventoryStock.count({ where: { ...companyFilter(companyId) } }),
+      prisma.inventoryStock.count({ where: { status: "UNDER_INSPECTION", ...companyFilter(companyId) } }),
+      prisma.inventoryStock.count({ where: { status: "ACCEPTED", ...companyFilter(companyId) } }),
       prisma.inventoryStock.aggregate({
-        where: { status: "ACCEPTED" },
+        where: { status: "ACCEPTED", ...companyFilter(companyId) },
         _sum: { quantityMtr: true },
       }),
     ]);
@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
     // Calculate inventory value by tracing stock -> GRN Item -> GRN -> PO -> PO Items
     // Match each stock item to its corresponding PO item by product + sizeLabel to get unitRate
     const acceptedStockWithPO = await prisma.inventoryStock.findMany({
-      where: { status: { in: ["ACCEPTED", "RESERVED"] } },
+      where: { status: { in: ["ACCEPTED", "RESERVED"] }, ...companyFilter(companyId) },
       select: {
         id: true,
         quantityMtr: true,
@@ -118,10 +118,10 @@ export async function GET(request: NextRequest) {
     // ---- Quality Metrics ----
     const [totalNCRs, openNCRs, totalInspections, passedInspections] =
       await Promise.all([
-        prisma.nCR.count(),
-        prisma.nCR.count({ where: { status: "OPEN" } }),
-        prisma.inspection.count(),
-        prisma.inspection.count({ where: { overallResult: "PASS" } }),
+        prisma.nCR.count({ where: { ...companyFilter(companyId) } }),
+        prisma.nCR.count({ where: { status: "OPEN", ...companyFilter(companyId) } }),
+        prisma.inspection.count({ where: { ...companyFilter(companyId) } }),
+        prisma.inspection.count({ where: { overallResult: "PASS", ...companyFilter(companyId) } }),
       ]);
 
     const inspectionPassRate =
@@ -135,10 +135,11 @@ export async function GET(request: NextRequest) {
     const todayEnd = new Date();
     todayEnd.setHours(23, 59, 59, 999);
     const todayDispatches = await prisma.dispatchNote.count({
-      where: { dispatchDate: { gte: todayStart, lte: todayEnd } },
+      where: { dispatchDate: { gte: todayStart, lte: todayEnd }, ...companyFilter(companyId) },
     });
 
     const dispatchNotes = await prisma.dispatchNote.findMany({
+      where: { ...companyFilter(companyId) },
       select: {
         dispatchDate: true,
         salesOrder: {
@@ -182,7 +183,7 @@ export async function GET(request: NextRequest) {
     // Group accepted stock by product+sizeLabel, find ones with low quantity
     const stockByProduct = await prisma.inventoryStock.groupBy({
       by: ["product", "sizeLabel"],
-      where: { status: "ACCEPTED" },
+      where: { status: "ACCEPTED", ...companyFilter(companyId) },
       _sum: { quantityMtr: true },
       _count: { id: true },
     });
@@ -203,17 +204,18 @@ export async function GET(request: NextRequest) {
     // ---- Finance Metrics ----
     const [, paymentTotals] = await Promise.all([
       prisma.invoice.aggregate({
-        where: { status: { in: ["SENT", "PARTIALLY_PAID"] } },
+        where: { status: { in: ["SENT", "PARTIALLY_PAID"] }, ...companyFilter(companyId) },
         _sum: { totalAmount: true },
       }),
       prisma.paymentReceipt.aggregate({
+        where: { ...companyFilter(companyId) },
         _sum: { amountReceived: true },
       }),
     ]);
 
     // Calculate actual outstanding by subtracting payments from unpaid invoices
     const unpaidInvoices = await prisma.invoice.findMany({
-      where: { status: { in: ["SENT", "PARTIALLY_PAID"] } },
+      where: { status: { in: ["SENT", "PARTIALLY_PAID"] }, ...companyFilter(companyId) },
       select: {
         totalAmount: true,
         paymentReceipts: {

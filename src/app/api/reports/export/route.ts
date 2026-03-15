@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(request: NextRequest) {
   try {
-    const { authorized, response } = await checkAccess("reports", "read");
+    const { authorized, response, companyId } = await checkAccess("reports", "read");
     if (!authorized) return response!;
 
     const { searchParams } = new URL(request.url);
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     switch (reportType) {
       case "sales": {
         const salesOrders = await prisma.salesOrder.findMany({
-          where: dateFrom || dateTo ? { soDate: dateFilter } : undefined,
+          where: dateFrom || dateTo ? { soDate: dateFilter, ...companyFilter(companyId) } : { ...companyFilter(companyId) },
           include: {
             customer: { select: { name: true } },
             items: true,
@@ -53,6 +53,7 @@ export async function GET(request: NextRequest) {
 
       case "inventory": {
         const stocks = await prisma.inventoryStock.findMany({
+          where: { ...companyFilter(companyId) },
           orderBy: { createdAt: "desc" },
         });
         data = stocks.map((s) => ({
@@ -81,7 +82,7 @@ export async function GET(request: NextRequest) {
 
       case "invoices": {
         const invoices = await prisma.invoice.findMany({
-          where: dateFrom || dateTo ? { invoiceDate: dateFilter } : undefined,
+          where: dateFrom || dateTo ? { invoiceDate: dateFilter, ...companyFilter(companyId) } : { ...companyFilter(companyId) },
           include: { customer: { select: { name: true } } },
           orderBy: { invoiceDate: "desc" },
         });
@@ -115,7 +116,7 @@ export async function GET(request: NextRequest) {
 
       case "purchase-orders": {
         const pos = await prisma.purchaseOrder.findMany({
-          where: dateFrom || dateTo ? { poDate: dateFilter } : undefined,
+          where: dateFrom || dateTo ? { poDate: dateFilter, ...companyFilter(companyId) } : { ...companyFilter(companyId) },
           include: { vendor: { select: { name: true } } },
           orderBy: { poDate: "desc" },
         });
@@ -141,7 +142,7 @@ export async function GET(request: NextRequest) {
 
       case "inventory-ageing": {
         const ageingStocks = await prisma.inventoryStock.findMany({
-          where: { status: { in: ["ACCEPTED", "UNDER_INSPECTION", "HOLD"] } },
+          where: { status: { in: ["ACCEPTED", "UNDER_INSPECTION", "HOLD"] }, ...companyFilter(companyId) },
           orderBy: { createdAt: "asc" },
         });
         const now = new Date();
@@ -180,7 +181,7 @@ export async function GET(request: NextRequest) {
 
       case "ncr": {
         const ncrs = await prisma.nCR.findMany({
-          where: dateFrom || dateTo ? { ncrDate: dateFilter } : undefined,
+          where: dateFrom || dateTo ? { ncrDate: dateFilter, ...companyFilter(companyId) } : { ...companyFilter(companyId) },
           include: { vendor: { select: { name: true } } },
           orderBy: { ncrDate: "desc" },
         });

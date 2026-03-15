@@ -2,17 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
 import { generateDocumentNumber } from "@/lib/document-numbering";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 
 export async function GET(request: NextRequest) {
   try {
-    const { authorized, response } = await checkAccess("stockIssue", "read");
+    const { authorized, response, companyId } = await checkAccess("stockIssue", "read");
     if (!authorized) return response!;
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
 
-    const where: any = {};
+    const where: any = { ...companyFilter(companyId) };
     if (search) {
       where.OR = [
         { issueNo: { contains: search } },
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { authorized, session, response } = await checkAccess("stockIssue", "write");
+    const { authorized, session, response, companyId } = await checkAccess("stockIssue", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -104,10 +104,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const issueNo = await generateDocumentNumber("STOCK_ISSUE");
+    const issueNo = await generateDocumentNumber("STOCK_ISSUE", companyId);
 
     const stockIssue = await prisma.stockIssue.create({
       data: {
+        companyId,
         issueNo,
         salesOrderId,
         issuedById: session.user.id,
@@ -142,6 +143,7 @@ export async function POST(request: NextRequest) {
 
     createAuditLog({
       userId: session.user.id,
+      companyId,
       action: "CREATE",
       tableName: "StockIssue",
       recordId: stockIssue.id,

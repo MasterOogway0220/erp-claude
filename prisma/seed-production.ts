@@ -76,8 +76,8 @@ async function seedProduction() {
     let sequencesExisting = 0;
 
     for (const seq of sequences) {
-      const existing = await prisma.documentSequence.findUnique({
-        where: { documentType: seq.documentType },
+      const existing = await prisma.documentSequence.findFirst({
+        where: { documentType: seq.documentType, companyId: null },
       });
 
       if (!existing) {

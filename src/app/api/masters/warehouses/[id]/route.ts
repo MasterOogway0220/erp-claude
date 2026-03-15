@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 
@@ -9,11 +9,11 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { authorized, response } = await checkAccess("masters", "read");
+    const { authorized, response, companyId } = await checkAccess("masters", "read");
     if (!authorized) return response!;
 
-    const warehouse = await prisma.warehouseMaster.findUnique({
-      where: { id },
+    const warehouse = await prisma.warehouseMaster.findFirst({
+      where: { id, ...companyFilter(companyId) },
       include: {
         addresses: { orderBy: { isDefault: "desc" } },
         locations: {
@@ -42,7 +42,7 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const { authorized, session, response } = await checkAccess("masters", "write");
+    const { authorized, session, response, companyId } = await checkAccess("masters", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -106,6 +106,7 @@ export async function PATCH(
       recordId: id,
       action: "UPDATE",
       userId: session.user?.id,
+      companyId,
     });
 
     return NextResponse.json(warehouse);

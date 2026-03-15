@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import {
   analyzeSalesOrderShortfall,
   handleAutoGeneratePR,
@@ -12,7 +12,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { authorized, response } = await checkAccess("purchase_requisition", "read");
+    const { authorized, response, companyId } = await checkAccess("purchase_requisition", "read");
     if (!authorized) return response!;
 
     const analysis = await analyzeSalesOrderShortfall(id);
@@ -33,7 +33,7 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const { authorized, session, response } = await checkAccess("purchase_requisition", "write");
+    const { authorized, session, response, companyId } = await checkAccess("purchase_requisition", "write");
     if (!authorized) return response!;
 
     const body = await request.json().catch(() => ({}));

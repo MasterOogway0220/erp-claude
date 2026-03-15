@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 
 /**
  * Valid Sales Order status transitions
@@ -31,11 +31,11 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { authorized, session, response } = await checkAccess("salesOrder", "read");
+    const { authorized, session, response, companyId } = await checkAccess("salesOrder", "read");
     if (!authorized) return response!;
 
     const salesOrder = await prisma.salesOrder.findUnique({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
       include: {
         customer: true,
         quotation: {
@@ -85,7 +85,7 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const { authorized, session, response } = await checkAccess("salesOrder", "write");
+    const { authorized, session, response, companyId } = await checkAccess("salesOrder", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -147,6 +147,7 @@ export async function PATCH(
     if (status) {
       createAuditLog({
         userId: session.user.id,
+        companyId,
         action: "UPDATE",
         tableName: "SalesOrder",
         recordId: id,
@@ -160,6 +161,7 @@ export async function PATCH(
     if (poAcceptanceStatus) {
       createAuditLog({
         userId: session.user.id,
+        companyId,
         action: "UPDATE",
         tableName: "SalesOrder",
         recordId: id,
@@ -173,6 +175,7 @@ export async function PATCH(
     if (poReviewRemarks !== undefined) {
       createAuditLog({
         userId: session.user.id,
+        companyId,
         action: "UPDATE",
         tableName: "SalesOrder",
         recordId: id,
@@ -197,7 +200,7 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const { authorized, session, response } = await checkAccess("salesOrder", "write");
+    const { authorized, session, response, companyId } = await checkAccess("salesOrder", "write");
     if (!authorized) return response!;
 
     const existing = await prisma.salesOrder.findUnique({
@@ -329,6 +332,7 @@ export async function PUT(
 
     createAuditLog({
       userId: session.user.id,
+      companyId,
       action: "UPDATE",
       tableName: "SalesOrder",
       recordId: id,

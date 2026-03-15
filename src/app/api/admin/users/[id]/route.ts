@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
@@ -9,11 +9,11 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { authorized, response } = await checkAccess("admin", "read");
+    const { authorized, response, companyId } = await checkAccess("admin", "read");
     if (!authorized) return response!;
 
-    const user = await prisma.user.findUnique({
-      where: { id },
+    const user = await prisma.user.findFirst({
+      where: { id, ...companyFilter(companyId) },
       select: {
         id: true,
         email: true,
@@ -47,11 +47,20 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const { authorized, response, session } = await checkAccess("admin", "write");
+    const { authorized, response, session, companyId } = await checkAccess("admin", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
     const { name, role, phone, isActive, password } = body;
+
+    // Verify user belongs to same company
+    const targetUser = await prisma.user.findFirst({
+      where: { id, ...companyFilter(companyId) },
+      select: { id: true },
+    });
+    if (!targetUser) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
 
     // Cannot deactivate yourself
     if (isActive === false && id === session.user.id) {

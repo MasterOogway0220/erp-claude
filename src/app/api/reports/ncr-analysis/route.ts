@@ -1,30 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(request: NextRequest) {
   try {
-    const { authorized, response } = await checkAccess("reports", "read");
+    const { authorized, response, companyId } = await checkAccess("reports", "read");
     if (!authorized) return response!;
 
     // Total NCRs and breakdown by status
     const [totalNCRs, openNCRs, closedNCRs, caInProgressNCRs, verifiedNCRs, overdueNCRs] = await Promise.all([
-      prisma.nCR.count(),
-      prisma.nCR.count({ where: { status: "OPEN" } }),
-      prisma.nCR.count({ where: { status: "CLOSED" } }),
-      prisma.nCR.count({ where: { status: "CORRECTIVE_ACTION_IN_PROGRESS" } }),
-      prisma.nCR.count({ where: { status: "VERIFIED" } }),
+      prisma.nCR.count({ where: { ...companyFilter(companyId) } }),
+      prisma.nCR.count({ where: { status: "OPEN", ...companyFilter(companyId) } }),
+      prisma.nCR.count({ where: { status: "CLOSED", ...companyFilter(companyId) } }),
+      prisma.nCR.count({ where: { status: "CORRECTIVE_ACTION_IN_PROGRESS", ...companyFilter(companyId) } }),
+      prisma.nCR.count({ where: { status: "VERIFIED", ...companyFilter(companyId) } }),
       prisma.nCR.count({
         where: {
           targetClosureDate: { lt: new Date() },
           status: { notIn: ["CLOSED", "VERIFIED"] },
+          ...companyFilter(companyId),
         },
       }),
     ]);
 
     // Average closure days for closed NCRs
     const closedNCRsForAvg = await prisma.nCR.findMany({
-      where: { status: { in: ["CLOSED", "VERIFIED"] }, closedDate: { not: null } },
+      where: { status: { in: ["CLOSED", "VERIFIED"] }, closedDate: { not: null }, ...companyFilter(companyId) },
       select: { ncrDate: true, closedDate: true },
     });
 
@@ -42,7 +43,7 @@ export async function GET(request: NextRequest) {
     // By vendor (top vendors by NCR count)
     const vendorGroups = await prisma.nCR.groupBy({
       by: ["vendorId"],
-      where: { vendorId: { not: null } },
+      where: { vendorId: { not: null }, ...companyFilter(companyId) },
       _count: { id: true },
       orderBy: { _count: { id: "desc" } },
       take: 10,
@@ -69,6 +70,7 @@ export async function GET(request: NextRequest) {
     // By nonConformanceType
     const typeGroups = await prisma.nCR.groupBy({
       by: ["nonConformanceType"],
+      where: { ...companyFilter(companyId) },
       _count: { id: true },
       orderBy: { _count: { id: "desc" } },
     });
@@ -85,7 +87,7 @@ export async function GET(request: NextRequest) {
     twelveMonthsAgo.setHours(0, 0, 0, 0);
 
     const ncrsForTrend = await prisma.nCR.findMany({
-      where: { ncrDate: { gte: twelveMonthsAgo } },
+      where: { ncrDate: { gte: twelveMonthsAgo }, ...companyFilter(companyId) },
       select: { ncrDate: true },
     });
 

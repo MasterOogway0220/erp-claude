@@ -2,18 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
 import { generateDocumentNumber } from "@/lib/document-numbering";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 
 export async function GET(request: NextRequest) {
   try {
-    const { authorized, response } = await checkAccess("ncr", "read");
+    const { authorized, response, companyId } = await checkAccess("ncr", "read");
     if (!authorized) return response!;
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
     const status = searchParams.get("status") || "";
 
-    const where: any = {};
+    const where: any = { ...companyFilter(companyId) };
 
     if (search) {
       where.OR = [
@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { authorized, session, response } = await checkAccess("ncr", "write");
+    const { authorized, session, response, companyId } = await checkAccess("ncr", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -96,11 +96,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const ncrNo = await generateDocumentNumber("NCR");
+    const ncrNo = await generateDocumentNumber("NCR", companyId);
 
     const ncr = await prisma.nCR.create({
       data: {
         ncrNo,
+        companyId,
         grnItemId: grnItemId || null,
         inventoryStockId: inventoryStockId || null,
         heatNo: heatNo || null,
@@ -129,6 +130,7 @@ export async function POST(request: NextRequest) {
 
     createAuditLog({
       userId: session.user.id,
+      companyId,
       action: "CREATE",
       tableName: "NCR",
       recordId: ncr.id,

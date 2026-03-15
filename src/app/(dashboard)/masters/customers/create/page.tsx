@@ -70,11 +70,9 @@ interface DispatchAddress {
 }
 
 interface CustomerFormData {
-  // Contact Person
   contactPerson: string;
   contactPersonEmail: string;
   contactPersonPhone: string;
-  // Company Details
   companyType: string;
   name: string;
   email: string;
@@ -83,22 +81,25 @@ interface CustomerFormData {
   gstNo: string;
   gstType: string;
   panNo: string;
+  tanNo: string;
   industrySegment: string;
-  // Address
   addressLine1: string;
   addressLine2: string;
   city: string;
   pincode: string;
   state: string;
   country: string;
-  // Financial
   openingBalance: string;
   creditLimit: string;
   creditDays: string;
   paymentTerms: string;
   defaultCurrency: string;
   currency: string;
-  // Dispatch Addresses
+  bankName: string;
+  bankBranchName: string;
+  bankAccountNo: string;
+  bankIfsc: string;
+  bankAccountType: string;
   dispatchAddresses: DispatchAddress[];
 }
 
@@ -126,6 +127,7 @@ const defaultForm: CustomerFormData = {
   gstNo: "",
   gstType: "",
   panNo: "",
+  tanNo: "",
   industrySegment: "",
   addressLine1: "",
   addressLine2: "",
@@ -139,14 +141,38 @@ const defaultForm: CustomerFormData = {
   paymentTerms: "100% within 30 Days",
   defaultCurrency: "INR",
   currency: "INR",
+  bankName: "",
+  bankBranchName: "",
+  bankAccountNo: "",
+  bankIfsc: "",
+  bankAccountType: "",
   dispatchAddresses: [],
 };
+
+// Helper to fetch address from pincode
+async function fetchAddressFromPincode(pincode: string): Promise<{ city: string; state: string; country: string } | null> {
+  if (pincode.length !== 6 || !/^\d{6}$/.test(pincode)) return null;
+  try {
+    const res = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
+    const data = await res.json();
+    if (data?.[0]?.Status === "Success" && data[0].PostOffice?.length > 0) {
+      const po = data[0].PostOffice[0];
+      return { city: po.District || "", state: po.State || "", country: po.Country || "India" };
+    }
+    toast.error("Pincode not found");
+    return null;
+  } catch {
+    toast.error("Failed to fetch address");
+    return null;
+  }
+}
 
 export default function CustomerCreatePage() {
   const router = useRouter();
   const [formData, setFormData] = useState<CustomerFormData>(defaultForm);
   const [saving, setSaving] = useState(false);
   const [fetchingPincode, setFetchingPincode] = useState(false);
+  const [fetchingDispatchPincode, setFetchingDispatchPincode] = useState<number | null>(null);
 
   const update = (field: keyof CustomerFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -156,22 +182,16 @@ export default function CustomerCreatePage() {
     update("pincode", value);
     if (value.length !== 6 || !/^\d{6}$/.test(value)) return;
     setFetchingPincode(true);
-    try {
-      const res = await fetch(`https://api.postalpincode.in/pincode/${value}`);
-      const data = await res.json();
-      if (data?.[0]?.Status === "Success" && data[0].PostOffice?.length > 0) {
-        const po = data[0].PostOffice[0];
-        setFormData((prev) => ({
-          ...prev,
-          city: po.District || prev.city,
-          state: po.State || prev.state,
-          country: po.Country || "India",
-        }));
-      } else {
-        toast.error("Pincode not found");
-      }
-    } catch { toast.error("Failed to fetch address"); }
-    finally { setFetchingPincode(false); }
+    const result = await fetchAddressFromPincode(value);
+    if (result) {
+      setFormData((prev) => ({
+        ...prev,
+        city: result.city || prev.city,
+        state: result.state || prev.state,
+        country: result.country || "India",
+      }));
+    }
+    setFetchingPincode(false);
   }, []);
 
   const handleGstinChange = useCallback(async (value: string) => {
@@ -219,6 +239,29 @@ export default function CustomerCreatePage() {
     update("dispatchAddresses", updated);
   };
 
+  const handleDispatchPincodeChange = useCallback(async (index: number, value: string) => {
+    setFormData((prev) => {
+      const updated = [...prev.dispatchAddresses];
+      updated[index] = { ...updated[index], pincode: value };
+      return { ...prev, dispatchAddresses: updated };
+    });
+    if (value.length !== 6 || !/^\d{6}$/.test(value)) return;
+    setFetchingDispatchPincode(index);
+    const result = await fetchAddressFromPincode(value);
+    if (result) {
+      setFormData((prev) => {
+        const updated = [...prev.dispatchAddresses];
+        updated[index] = {
+          ...updated[index],
+          city: result.city || updated[index].city,
+          state: result.state || updated[index].state,
+        };
+        return { ...prev, dispatchAddresses: updated };
+      });
+    }
+    setFetchingDispatchPincode(null);
+  }, []);
+
   const handleSave = async () => {
     if (!formData.name.trim()) {
       toast.error("Company name is required");
@@ -260,12 +303,12 @@ export default function CustomerCreatePage() {
         </Button>
       </PageHeader>
 
-      {/* Row 1: Contact Person (full width) */}
+      {/* Row 1: Contact Person */}
       <Card>
-        <CardHeader>
+        <CardHeader className="py-3 px-4">
           <CardTitle className="text-base">Contact Person</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-4 pb-4 pt-0">
           <div className="grid grid-cols-3 gap-4">
             <div className="space-y-1.5">
               <Label>Name</Label>
@@ -283,29 +326,31 @@ export default function CustomerCreatePage() {
         </CardContent>
       </Card>
 
-      {/* Row 2: Company Details | Statutory Details */}
-      <div className="grid grid-cols-2 gap-6">
+      {/* Row 2: Company Details + Statutory Details */}
+      <div className="grid grid-cols-2 gap-4">
         <Card>
-          <CardHeader>
+          <CardHeader className="py-3 px-4">
             <CardTitle className="text-base">Company Details</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-1.5">
-              <Label>Company Type</Label>
-              <div className="flex gap-6">
-                {[{ value: "BUYER", label: "Buyer" }, { value: "SUPPLIER", label: "Supplier" }, { value: "BOTH", label: "Both" }].map((opt) => (
-                  <label key={opt.value} className="flex items-center gap-2 cursor-pointer">
-                    <input type="radio" name="companyType" value={opt.value} checked={formData.companyType === opt.value} onChange={(e) => update("companyType", e.target.value)} className="h-4 w-4 text-primary" />
-                    <span className="text-sm">{opt.label}</span>
-                  </label>
-                ))}
+          <CardContent className="px-4 pb-4 pt-0 space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Company Name *</Label>
+                <Input value={formData.name} onChange={(e) => update("name", e.target.value)} placeholder="Company name" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Company Type</Label>
+                <Select value={formData.companyType} onValueChange={(v) => update("companyType", v)}>
+                  <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="BUYER">Buyer</SelectItem>
+                    <SelectItem value="SUPPLIER">Supplier</SelectItem>
+                    <SelectItem value="BOTH">Both</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-            <div className="space-y-1.5">
-              <Label>Company Name *</Label>
-              <Input value={formData.name} onChange={(e) => update("name", e.target.value)} placeholder="Company name" />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Company Email</Label>
                 <Input type="email" value={formData.email} onChange={(e) => update("email", e.target.value)} placeholder="company@email.com" />
@@ -315,7 +360,7 @@ export default function CustomerCreatePage() {
                 <Input value={formData.phone} onChange={(e) => update("phone", e.target.value)} placeholder="+91 22 23634200" />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Reference Code</Label>
                 <Input value={formData.companyReferenceCode} onChange={(e) => update("companyReferenceCode", e.target.value)} placeholder="Internal reference" />
@@ -329,53 +374,62 @@ export default function CustomerCreatePage() {
         </Card>
 
         <Card>
-          <CardHeader>
+          <CardHeader className="py-3 px-4">
             <CardTitle className="text-base">Statutory Details</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-1.5">
-              <Label>GST Number</Label>
-              <Input value={formData.gstNo} onChange={(e) => handleGstinChange(e.target.value)} placeholder="22AAAAA0000A1Z5" className="font-mono" maxLength={15} />
+          <CardContent className="px-4 pb-4 pt-0 space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>GST Number</Label>
+                <Input value={formData.gstNo} onChange={(e) => handleGstinChange(e.target.value)} placeholder="22AAAAA0000A1Z5" className="font-mono" maxLength={15} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>GST Type</Label>
+                <Select value={formData.gstType || "NONE"} onValueChange={(v) => update("gstType", v === "NONE" ? "" : v)}>
+                  <SelectTrigger><SelectValue placeholder="Select GST type" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NONE">Not specified</SelectItem>
+                    <SelectItem value="REGULAR">Regular</SelectItem>
+                    <SelectItem value="COMPOSITION">Composition</SelectItem>
+                    <SelectItem value="UNREGISTERED">Unregistered</SelectItem>
+                    <SelectItem value="SEZ">SEZ</SelectItem>
+                    <SelectItem value="EXPORT">Export</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="space-y-1.5">
-              <Label>GST Type</Label>
-              <Select value={formData.gstType || "NONE"} onValueChange={(v) => update("gstType", v === "NONE" ? "" : v)}>
-                <SelectTrigger><SelectValue placeholder="Select GST type" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="NONE">Not specified</SelectItem>
-                  <SelectItem value="REGULAR">Regular</SelectItem>
-                  <SelectItem value="COMPOSITION">Composition</SelectItem>
-                  <SelectItem value="UNREGISTERED">Unregistered</SelectItem>
-                  <SelectItem value="SEZ">SEZ</SelectItem>
-                  <SelectItem value="EXPORT">Export</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>PAN Number</Label>
-              <Input value={formData.panNo} onChange={(e) => update("panNo", e.target.value.toUpperCase())} placeholder="AAAAA0000A" maxLength={10} className="font-mono" />
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-1.5">
+                <Label>PAN Number</Label>
+                <Input value={formData.panNo} onChange={(e) => update("panNo", e.target.value.toUpperCase())} placeholder="AAAAA0000A" maxLength={10} className="font-mono" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>TAN Number</Label>
+                <Input value={formData.tanNo} onChange={(e) => update("tanNo", e.target.value.toUpperCase())} placeholder="AAAA00000A" maxLength={10} className="font-mono" />
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Row 3: Address | Financial Details */}
-      <div className="grid grid-cols-2 gap-6">
+      {/* Row 3: Address + Financial Details */}
+      <div className="grid grid-cols-2 gap-4">
         <Card>
-          <CardHeader>
+          <CardHeader className="py-3 px-4">
             <CardTitle className="text-base">Address</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-1.5">
-              <Label>Address Line 1</Label>
-              <Input value={formData.addressLine1} onChange={(e) => update("addressLine1", e.target.value)} placeholder="Street address" />
+          <CardContent className="px-4 pb-4 pt-0 space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Address Line 1</Label>
+                <Input value={formData.addressLine1} onChange={(e) => update("addressLine1", e.target.value)} placeholder="Street address" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Address Line 2</Label>
+                <Input value={formData.addressLine2} onChange={(e) => update("addressLine2", e.target.value)} placeholder="Area, landmark" />
+              </div>
             </div>
-            <div className="space-y-1.5">
-              <Label>Address Line 2</Label>
-              <Input value={formData.addressLine2} onChange={(e) => update("addressLine2", e.target.value)} placeholder="Area, landmark" />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5"><Label>City</Label><Input value={formData.city} onChange={(e) => update("city", e.target.value)} placeholder="Mumbai" /></div>
+            <div className="grid grid-cols-4 gap-3">
               <div className="space-y-1.5">
                 <Label>Pincode</Label>
                 <div className="relative">
@@ -383,8 +437,7 @@ export default function CustomerCreatePage() {
                   {fetchingPincode && <Loader2 className="w-4 h-4 animate-spin absolute right-2.5 top-2.5 text-muted-foreground" />}
                 </div>
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5"><Label>City</Label><Input value={formData.city} onChange={(e) => update("city", e.target.value)} placeholder="Mumbai" /></div>
               <div className="space-y-1.5">
                 <Label>State</Label>
                 <Select value={formData.state || "NONE"} onValueChange={(v) => update("state", v === "NONE" ? "" : v)}>
@@ -401,11 +454,11 @@ export default function CustomerCreatePage() {
         </Card>
 
         <Card>
-          <CardHeader>
+          <CardHeader className="py-3 px-4">
             <CardTitle className="text-base">Financial Details</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+          <CardContent className="px-4 pb-4 pt-0 space-y-3">
+            <div className="grid grid-cols-3 gap-3">
               <div className="space-y-1.5">
                 <Label>Opening Balance</Label>
                 <Input type="number" step="0.01" value={formData.openingBalance} onChange={(e) => update("openingBalance", e.target.value)} />
@@ -414,35 +467,74 @@ export default function CustomerCreatePage() {
                 <Label>Credit Limit (Rs.)</Label>
                 <Input type="number" step="0.01" min="0" value={formData.creditLimit} onChange={(e) => update("creditLimit", e.target.value)} placeholder="No limit" />
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>Credit Days</Label>
                 <Input type="number" step="1" min="0" value={formData.creditDays} onChange={(e) => update("creditDays", e.target.value)} placeholder="e.g., 30" />
               </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Payment Terms</Label>
                 <Input value={formData.paymentTerms} onChange={(e) => update("paymentTerms", e.target.value)} placeholder="e.g., 100% within 30 Days" />
               </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Default Currency</Label>
-              <Select value={formData.defaultCurrency} onValueChange={(v) => { update("defaultCurrency", v); update("currency", v); }}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="INR">INR - Indian Rupee</SelectItem>
-                  <SelectItem value="USD">USD - US Dollar</SelectItem>
-                  <SelectItem value="EUR">EUR - Euro</SelectItem>
-                  <SelectItem value="GBP">GBP - British Pound</SelectItem>
-                  <SelectItem value="AED">AED - UAE Dirham</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="space-y-1.5">
+                <Label>Default Currency</Label>
+                <Select value={formData.defaultCurrency} onValueChange={(v) => { update("defaultCurrency", v); update("currency", v); }}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="INR">INR - Indian Rupee</SelectItem>
+                    <SelectItem value="USD">USD - US Dollar</SelectItem>
+                    <SelectItem value="EUR">EUR - Euro</SelectItem>
+                    <SelectItem value="GBP">GBP - British Pound</SelectItem>
+                    <SelectItem value="AED">AED - UAE Dirham</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Dispatch Addresses (full width) */}
+      {/* Row 4: Bank Details */}
+      <Card>
+        <CardHeader className="py-3 px-4">
+          <CardTitle className="text-base">Bank Details</CardTitle>
+        </CardHeader>
+        <CardContent className="px-4 pb-4 pt-0">
+          <div className="grid grid-cols-5 gap-3">
+            <div className="space-y-1.5">
+              <Label>Bank Name</Label>
+              <Input value={formData.bankName} onChange={(e) => update("bankName", e.target.value)} placeholder="e.g., State Bank of India" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Branch</Label>
+              <Input value={formData.bankBranchName} onChange={(e) => update("bankBranchName", e.target.value)} placeholder="e.g., Fort, Mumbai" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Account No.</Label>
+              <Input value={formData.bankAccountNo} onChange={(e) => update("bankAccountNo", e.target.value)} placeholder="Account number" className="font-mono" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>IFSC Code</Label>
+              <Input value={formData.bankIfsc} onChange={(e) => update("bankIfsc", e.target.value.toUpperCase())} placeholder="SBIN0000001" maxLength={11} className="font-mono" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Account Type</Label>
+              <Select value={formData.bankAccountType || "NONE"} onValueChange={(v) => update("bankAccountType", v === "NONE" ? "" : v)}>
+                <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="NONE">Select</SelectItem>
+                  <SelectItem value="CURRENT">Current</SelectItem>
+                  <SelectItem value="SAVINGS">Savings</SelectItem>
+                  <SelectItem value="OD">OD / CC</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Dispatch Addresses */}
       <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between text-base">
@@ -489,82 +581,71 @@ export default function CustomerCreatePage() {
                   </div>
                 </CardHeader>
                 <CardContent className="py-3 px-4 space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-4 gap-3">
                     <div className="space-y-1.5">
                       <Label className="text-xs">Label</Label>
                       <Input
                         value={addr.label}
-                        onChange={(e) =>
-                          updateDispatchAddress(i, "label", e.target.value)
-                        }
-                        placeholder="e.g., Site Office, Warehouse"
+                        onChange={(e) => updateDispatchAddress(i, "label", e.target.value)}
+                        placeholder="e.g., Site Office"
                       />
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-xs">Consignee Name</Label>
                       <Input
                         value={addr.consigneeName}
-                        onChange={(e) =>
-                          updateDispatchAddress(i, "consigneeName", e.target.value)
-                        }
+                        onChange={(e) => updateDispatchAddress(i, "consigneeName", e.target.value)}
                         placeholder="Consignee name"
                       />
                     </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Address Line 1</Label>
+                      <Input
+                        value={addr.addressLine1}
+                        onChange={(e) => updateDispatchAddress(i, "addressLine1", e.target.value)}
+                        placeholder="Street address"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Address Line 2</Label>
+                      <Input
+                        value={addr.addressLine2}
+                        onChange={(e) => updateDispatchAddress(i, "addressLine2", e.target.value)}
+                        placeholder="Area, landmark"
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Address Line 1</Label>
-                    <Input
-                      value={addr.addressLine1}
-                      onChange={(e) =>
-                        updateDispatchAddress(i, "addressLine1", e.target.value)
-                      }
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Address Line 2</Label>
-                    <Input
-                      value={addr.addressLine2}
-                      onChange={(e) =>
-                        updateDispatchAddress(i, "addressLine2", e.target.value)
-                      }
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 gap-3">
+                  <div className="grid grid-cols-5 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Pincode</Label>
+                      <div className="relative">
+                        <Input
+                          value={addr.pincode}
+                          onChange={(e) => handleDispatchPincodeChange(i, e.target.value)}
+                          placeholder="400004"
+                          maxLength={6}
+                        />
+                        {fetchingDispatchPincode === i && <Loader2 className="w-4 h-4 animate-spin absolute right-2.5 top-2.5 text-muted-foreground" />}
+                      </div>
+                    </div>
                     <div className="space-y-1.5">
                       <Label className="text-xs">City</Label>
                       <Input
                         value={addr.city}
-                        onChange={(e) =>
-                          updateDispatchAddress(i, "city", e.target.value)
-                        }
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Pincode</Label>
-                      <Input
-                        value={addr.pincode}
-                        onChange={(e) =>
-                          updateDispatchAddress(i, "pincode", e.target.value)
-                        }
+                        onChange={(e) => updateDispatchAddress(i, "city", e.target.value)}
                       />
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-xs">State</Label>
                       <Select
                         value={addr.state || "NONE"}
-                        onValueChange={(v) =>
-                          updateDispatchAddress(i, "state", v === "NONE" ? "" : v)
-                        }
+                        onValueChange={(v) => updateDispatchAddress(i, "state", v === "NONE" ? "" : v)}
                       >
-                        <SelectTrigger>
-                          <SelectValue placeholder="State" />
-                        </SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder="State" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="NONE">Select</SelectItem>
                           {INDIAN_STATES.map((s) => (
-                            <SelectItem key={s} value={s}>
-                              {s}
-                            </SelectItem>
+                            <SelectItem key={s} value={s}>{s}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -573,41 +654,31 @@ export default function CustomerCreatePage() {
                       <Label className="text-xs">Place of Supply</Label>
                       <Select
                         value={addr.placeOfSupply || "NONE"}
-                        onValueChange={(v) =>
-                          updateDispatchAddress(
-                            i,
-                            "placeOfSupply",
-                            v === "NONE" ? "" : v
-                          )
-                        }
+                        onValueChange={(v) => updateDispatchAddress(i, "placeOfSupply", v === "NONE" ? "" : v)}
                       >
-                        <SelectTrigger>
-                          <SelectValue placeholder="PoS" />
-                        </SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder="PoS" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="NONE">Select</SelectItem>
                           {INDIAN_STATES.map((s) => (
-                            <SelectItem key={s} value={s}>
-                              {s}
-                            </SelectItem>
+                            <SelectItem key={s} value={s}>{s}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id={`isDefault-${i}`}
-                      checked={addr.isDefault}
-                      onChange={(e) =>
-                        updateDispatchAddress(i, "isDefault", e.target.checked)
-                      }
-                      className="h-4 w-4"
-                    />
-                    <Label htmlFor={`isDefault-${i}`} className="text-xs cursor-pointer">
-                      Set as default dispatch address
-                    </Label>
+                    <div className="flex items-end pb-1">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id={`isDefault-${i}`}
+                          checked={addr.isDefault}
+                          onChange={(e) => updateDispatchAddress(i, "isDefault", e.target.checked)}
+                          className="h-4 w-4"
+                        />
+                        <Label htmlFor={`isDefault-${i}`} className="text-xs cursor-pointer">
+                          Default
+                        </Label>
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

@@ -2,18 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
 import { generateDocumentNumber } from "@/lib/document-numbering";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 
 export async function GET(request: NextRequest) {
   try {
-    const { authorized, response } = await checkAccess("inspection", "read");
+    const { authorized, response, companyId } = await checkAccess("inspection", "read");
     if (!authorized) return response!;
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
     const result = searchParams.get("result") || "";
 
-    const where: any = {};
+    const where: any = { ...companyFilter(companyId) };
 
     if (search) {
       where.OR = [
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { authorized, session, response } = await checkAccess("inspection", "write");
+    const { authorized, session, response, companyId } = await checkAccess("inspection", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -102,12 +102,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const inspectionNo = await generateDocumentNumber("INSPECTION");
+    const inspectionNo = await generateDocumentNumber("INSPECTION", companyId);
 
     const inspection = await prisma.$transaction(async (tx) => {
       const created = await tx.inspection.create({
         data: {
           inspectionNo,
+          companyId,
           grnItemId: grnItemId || null,
           inventoryStockId: inventoryStockId || null,
           inspectorId: session.user.id,
@@ -149,7 +150,7 @@ export async function POST(request: NextRequest) {
 
     // Auto-create NCR for rejected material
     if (overallResult === "FAIL") {
-      const ncrNo = await generateDocumentNumber("NCR");
+      const ncrNo = await generateDocumentNumber("NCR", companyId);
       // Fetch heat number from inventory stock if available
       let heatNo: string | null = null;
       if (inventoryStockId) {
@@ -161,6 +162,7 @@ export async function POST(request: NextRequest) {
         await prisma.nCR.create({
           data: {
             ncrNo,
+            companyId,
             nonConformanceType: "INCOMING_MATERIAL",
             description: `Auto-generated NCR for inspection ${inspection.inspectionNo} - Material failed quality check`,
             status: "OPEN",
@@ -175,6 +177,7 @@ export async function POST(request: NextRequest) {
         await prisma.nCR.create({
           data: {
             ncrNo,
+            companyId,
             nonConformanceType: "INCOMING_MATERIAL",
             description: `Auto-generated NCR for inspection ${inspection.inspectionNo} - Material failed quality check`,
             status: "OPEN",
@@ -209,6 +212,7 @@ export async function POST(request: NextRequest) {
 
     createAuditLog({
       userId: session.user.id,
+      companyId,
       action: "CREATE",
       tableName: "Inspection",
       recordId: inspection.id,

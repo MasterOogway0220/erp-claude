@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 
 export async function GET(
   request: NextRequest,
@@ -8,11 +8,11 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { authorized, response } = await checkAccess("dispatchNote", "read");
+    const { authorized, response, companyId } = await checkAccess("dispatchNote", "read");
     if (!authorized) return response!;
 
     const dispatchNote = await prisma.dispatchNote.findUnique({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
       include: {
         packingList: {
           include: {

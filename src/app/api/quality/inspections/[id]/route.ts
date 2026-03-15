@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 
 export async function GET(
   request: NextRequest,
@@ -9,11 +9,11 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { authorized, response } = await checkAccess("inspection", "read");
+    const { authorized, response, companyId } = await checkAccess("inspection", "read");
     if (!authorized) return response!;
 
-    const inspection = await prisma.inspection.findUnique({
-      where: { id },
+    const inspection = await prisma.inspection.findFirst({
+      where: { id, ...companyFilter(companyId) },
       include: {
         grnItem: {
           select: {
@@ -75,7 +75,7 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const { authorized, session, response } = await checkAccess("inspection", "write");
+    const { authorized, session, response, companyId } = await checkAccess("inspection", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -178,6 +178,7 @@ export async function PATCH(
     if (parameters && parameters.length > 0) {
       createAuditLog({
         userId: session.user.id,
+        companyId,
         action: "UPDATE",
         tableName: "Inspection",
         recordId: id,

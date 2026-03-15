@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 
 export async function POST(
   request: NextRequest,
@@ -8,12 +8,12 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const { authorized, session, response } = await checkAccess("purchaseOrder", "write");
+    const { authorized, session, response, companyId } = await checkAccess("purchaseOrder", "write");
     if (!authorized) return response!;
 
     // Get the original PO
     const originalPo = await prisma.purchaseOrder.findUnique({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
       include: {
         items: true,
       },
@@ -39,6 +39,7 @@ export async function POST(
     const amendedPo = await prisma.purchaseOrder.create({
       data: {
         poNo: `${originalPo.poNo}-R${originalPo.version + 1}`,
+        companyId,
         vendorId: originalPo.vendorId,
         prId: originalPo.prId,
         salesOrderId: originalPo.salesOrderId,
@@ -92,6 +93,7 @@ export async function POST(
           reason: changeReason,
         }),
         userId: session.user.id,
+        companyId,
       },
     });
 

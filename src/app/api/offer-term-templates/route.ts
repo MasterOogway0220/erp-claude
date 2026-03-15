@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(request: NextRequest) {
   try {
-    const { authorized, response } = await checkAccess("masters", "read");
+    const { authorized, response, companyId } = await checkAccess("masters", "read");
     if (!authorized) return response!;
 
     const quotationType = request.nextUrl.searchParams.get("quotationType");
@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
 
     const templates = await prisma.offerTermTemplate.findMany({
       where: {
+        ...companyFilter(companyId),
         ...(!includeInactive ? { isActive: true } : {}),
         ...(quotationType ? { quotationType } : {}),
       },
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { authorized, session, response } = await checkAccess("masters", "write");
+    const { authorized, session, response, companyId } = await checkAccess("masters", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -46,13 +47,14 @@ export async function POST(request: NextRequest) {
     // Get max sortOrder for the given quotationType
     const qt = body.quotationType || "DOMESTIC";
     const maxSort = await prisma.offerTermTemplate.findFirst({
-      where: { quotationType: qt },
+      where: { quotationType: qt, ...companyFilter(companyId) },
       orderBy: { sortOrder: "desc" },
       select: { sortOrder: true },
     });
 
     const template = await prisma.offerTermTemplate.create({
       data: {
+        companyId,
         termName: body.termName,
         termDefaultValue: body.termDefaultValue || null,
         sortOrder: body.sortOrder ?? (maxSort ? maxSort.sortOrder + 1 : 1),
@@ -66,6 +68,7 @@ export async function POST(request: NextRequest) {
       recordId: template.id,
       action: "CREATE",
       userId: session.user?.id,
+      companyId,
     });
 
     return NextResponse.json(template, { status: 201 });
@@ -80,7 +83,7 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const { authorized, session, response } = await checkAccess("masters", "write");
+    const { authorized, session, response, companyId } = await checkAccess("masters", "write");
     if (!authorized) return response!;
 
     const { id } = await request.json();
@@ -93,7 +96,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     await prisma.offerTermTemplate.delete({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
     });
 
     await createAuditLog({
@@ -101,6 +104,7 @@ export async function DELETE(request: NextRequest) {
       recordId: id,
       action: "DELETE",
       userId: session.user?.id,
+      companyId,
     });
 
     return NextResponse.json({ success: true });
@@ -115,7 +119,7 @@ export async function DELETE(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const { authorized, session, response } = await checkAccess("masters", "write");
+    const { authorized, session, response, companyId } = await checkAccess("masters", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -128,7 +132,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const template = await prisma.offerTermTemplate.update({
-      where: { id: body.id },
+      where: { id: body.id, ...companyFilter(companyId) },
       data: {
         termName: body.termName,
         termDefaultValue: body.termDefaultValue,
@@ -143,6 +147,7 @@ export async function PATCH(request: NextRequest) {
       recordId: body.id,
       action: "UPDATE",
       userId: session.user?.id,
+      companyId,
     });
 
     return NextResponse.json(template);

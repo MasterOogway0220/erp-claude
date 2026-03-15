@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 
 export async function GET(request: NextRequest) {
   try {
-    const { authorized, response } = await checkAccess("masters", "read");
+    const { authorized, response, companyId } = await checkAccess("masters", "read");
     if (!authorized) return response!;
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
 
-    const where: any = {};
+    const where: any = { ...companyFilter(companyId) };
     if (search) {
       where.OR = [
         { code: { contains: search } },
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { authorized, session, response } = await checkAccess("masters", "write");
+    const { authorized, session, response, companyId } = await checkAccess("masters", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -61,6 +61,7 @@ export async function POST(request: NextRequest) {
 
     const warehouse = await prisma.warehouseMaster.create({
       data: {
+        companyId,
         code,
         name,
         gstNo: (primaryAddr?.gstNo || gstNo) || null,
@@ -88,7 +89,7 @@ export async function POST(request: NextRequest) {
       include: { addresses: true, locations: true },
     });
 
-    await createAuditLog({ tableName: "WAREHOUSE", recordId: warehouse.id, action: "CREATE", userId: session!.user.id });
+    await createAuditLog({ tableName: "WAREHOUSE", recordId: warehouse.id, action: "CREATE", userId: session!.user.id, companyId });
 
     return NextResponse.json(warehouse, { status: 201 });
   } catch (error) {

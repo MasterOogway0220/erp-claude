@@ -50,18 +50,39 @@ export function getCurrentFinancialYear(): string {
 }
 
 export async function generateDocumentNumber(
-  documentType: DocumentType
+  documentType: DocumentType,
+  companyId?: string | null
 ): Promise<string> {
   const currentFY = getCurrentFinancialYear();
   const prefix = PREFIXES[documentType];
 
   return await prisma.$transaction(async (tx) => {
-    const sequence = await tx.documentSequence.findUnique({
-      where: { documentType },
+    // Find sequence for this company+documentType combination
+    let sequence = await tx.documentSequence.findFirst({
+      where: {
+        documentType,
+        companyId: companyId || null,
+      },
     });
 
     if (!sequence) {
-      throw new Error(`Document sequence not found for type: ${documentType}`);
+      // Try legacy sequence without companyId
+      sequence = await tx.documentSequence.findFirst({
+        where: { documentType, companyId: null },
+      });
+    }
+
+    if (!sequence) {
+      // Auto-create sequence for this company
+      sequence = await tx.documentSequence.create({
+        data: {
+          documentType,
+          prefix,
+          currentNumber: 0,
+          financialYear: currentFY,
+          companyId: companyId || null,
+        },
+      });
     }
 
     let nextNumber: number;
@@ -70,7 +91,7 @@ export async function generateDocumentNumber(
       // Financial year changed, reset counter
       nextNumber = 1;
       await tx.documentSequence.update({
-        where: { documentType },
+        where: { id: sequence.id },
         data: {
           currentNumber: 1,
           financialYear: currentFY,
@@ -79,7 +100,7 @@ export async function generateDocumentNumber(
     } else {
       nextNumber = sequence.currentNumber + 1;
       await tx.documentSequence.update({
-        where: { documentType },
+        where: { id: sequence.id },
         data: { currentNumber: nextNumber },
       });
     }

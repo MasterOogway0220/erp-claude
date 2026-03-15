@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
+import bcrypt from "bcryptjs";
 
 export async function GET(request: NextRequest) {
   try {
-    const { authorized, response } = await checkAccess("masters", "read");
+    const { authorized, response, companyId } = await checkAccess("masters", "read");
     if (!authorized) return response!;
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
 
-    const where: any = {};
+    const where: any = { ...companyFilter(companyId) };
     if (search) {
       where.OR = [
         { name: { contains: search } },
@@ -23,7 +24,7 @@ export async function GET(request: NextRequest) {
     const raw = await prisma.employeeMaster.findMany({
       where,
       include: {
-        linkedUser: { select: { id: true, name: true, email: true } },
+        linkedUser: { select: { id: true, name: true, email: true, role: true } },
       },
       orderBy: { name: "asc" },
     });
@@ -36,9 +37,9 @@ export async function GET(request: NextRequest) {
       designation: e.designation,
       email: e.email,
       mobile: e.mobile,
-      telephone: e.telephone,
       userId: e.linkedUserId,
       user: e.linkedUser,
+      role: e.linkedUser?.role || null,
       moduleAccess: e.moduleAccess ?? [],
       isActive: e.isActive,
       createdAt: e.createdAt,
@@ -57,53 +58,74 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { authorized, session, response } = await checkAccess("masters", "write");
+    const { authorized, session, response, companyId } = await checkAccess("masters", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
 
     if (!body.name) {
-      return NextResponse.json(
-        { error: "Employee name is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Employee name is required" }, { status: 400 });
+    }
+    if (!body.email) {
+      return NextResponse.json({ error: "Email is required" }, { status: 400 });
+    }
+    if (!body.password || body.password.length < 6) {
+      return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
+    }
+    if (!body.role) {
+      return NextResponse.json({ error: "Role is required" }, { status: 400 });
     }
 
-    // Auto-generate employee code
-    const count = await prisma.employeeMaster.count();
+    // Check if email already exists as a user
+    const existingUser = await prisma.user.findUnique({ where: { email: body.email } });
+    if (existingUser) {
+      return NextResponse.json({ error: "A user with this email already exists" }, { status: 400 });
+    }
+
+    // Auto-generate employee code (scoped to company)
+    const count = await prisma.employeeMaster.count({
+      where: { ...companyFilter(companyId) },
+    });
     const employeeCode = `EMP${(count + 1).toString().padStart(4, "0")}`;
 
+    // Hash password and create user account
+    const passwordHash = await bcrypt.hash(body.password, 10);
+    const user = await prisma.user.create({
+      data: {
+        email: body.email,
+        name: body.name,
+        passwordHash,
+        role: body.role,
+        phone: body.mobile || null,
+        companyId: companyId || null,
+      },
+    });
+
+    // Create employee linked to the new user
     const employee = await prisma.employeeMaster.create({
       data: {
+        companyId,
         employeeCode,
         name: body.name,
         department: body.department || null,
         designation: body.designation || null,
-        email: body.email || null,
+        email: body.email,
         mobile: body.mobile || null,
-        telephone: body.telephone || null,
-        linkedUserId: body.linkedUserId || null,
+        linkedUserId: user.id,
         moduleAccess: Array.isArray(body.moduleAccess) ? body.moduleAccess : [],
-        isActive: body.isActive ?? true,
+        isActive: true,
       },
       include: {
-        linkedUser: { select: { id: true, name: true, email: true } },
+        linkedUser: { select: { id: true, name: true, email: true, role: true } },
       },
     });
-
-    // Update linked user's role if provided
-    if (body.linkedUserId && body.userRole) {
-      await prisma.user.update({
-        where: { id: body.linkedUserId },
-        data: { role: body.userRole },
-      });
-    }
 
     await createAuditLog({
       tableName: "EmployeeMaster",
       recordId: employee.id,
       action: "CREATE",
       userId: session.user?.id,
+      companyId,
     });
 
     return NextResponse.json(employee, { status: 201 });

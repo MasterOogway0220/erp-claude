@@ -2,18 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
 import { generateDocumentNumber } from "@/lib/document-numbering";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { validateTraceability } from "@/lib/validators/business-rules";
 
 export async function GET(request: NextRequest) {
   try {
-    const { authorized, session, response } = await checkAccess("grn", "read");
+    const { authorized, session, response, companyId } = await checkAccess("grn", "read");
     if (!authorized) return response!;
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
 
-    const where: any = {};
+    const where: any = { ...companyFilter(companyId) };
 
     if (search) {
       where.OR = [
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { authorized, session, response } = await checkAccess("grn", "write");
+    const { authorized, session, response, companyId } = await checkAccess("grn", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -126,11 +126,12 @@ export async function POST(request: NextRequest) {
       console.warn(`Excess receipt detected for PO ${po.poNo}: Total received ${previouslyReceived + currentReceiving} vs PO qty ${totalPOQty}`);
     }
 
-    const grnNo = await generateDocumentNumber("GRN");
+    const grnNo = await generateDocumentNumber("GRN", companyId);
 
     const grn = await prisma.$transaction(async (tx) => {
       const createdGrn = await tx.goodsReceiptNote.create({
         data: {
+          companyId,
           grnNo,
           poId,
           vendorId: vendorId || po.vendorId,
@@ -181,6 +182,7 @@ export async function POST(request: NextRequest) {
         const warehouseLocationId = warehouseLocationMap.get(i) || null;
         await tx.inventoryStock.create({
           data: {
+            companyId,
             form: grnItem.product,
             product: grnItem.product,
             specification: grnItem.specification,
@@ -248,6 +250,7 @@ export async function POST(request: NextRequest) {
 
     createAuditLog({
       userId: session.user.id,
+      companyId,
       action: "CREATE",
       tableName: "GoodsReceiptNote",
       recordId: grn.id,

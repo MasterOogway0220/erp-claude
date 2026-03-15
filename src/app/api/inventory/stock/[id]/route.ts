@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
 import { generateDocumentNumber } from "@/lib/document-numbering";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 
 export async function GET(
   request: NextRequest,
@@ -10,11 +10,11 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { authorized, response } = await checkAccess("inventory", "read");
+    const { authorized, response, companyId } = await checkAccess("inventory", "read");
     if (!authorized) return response!;
 
     const stock = await prisma.inventoryStock.findUnique({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
       include: {
         grnItem: {
           include: {
@@ -81,7 +81,7 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const { authorized, session, response } = await checkAccess("inventory", "write");
+    const { authorized, session, response, companyId } = await checkAccess("inventory", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -145,6 +145,7 @@ export async function PATCH(
         // Create new stock record for rejected portion
         const rejectedStock = await tx.inventoryStock.create({
           data: {
+            companyId,
             form: existingStock.form,
             product: existingStock.product,
             specification: existingStock.specification,
@@ -172,7 +173,7 @@ export async function PATCH(
         });
 
         // Auto-create NCR for rejected portion
-        const ncrNo = await generateDocumentNumber("NCR");
+        const ncrNo = await generateDocumentNumber("NCR", companyId);
         await tx.nCR.create({
           data: {
             ncrNo,
@@ -192,6 +193,7 @@ export async function PATCH(
 
       createAuditLog({
         userId: session.user.id,
+        companyId,
         action: "UPDATE",
         tableName: "InventoryStock",
         recordId: id,
@@ -224,6 +226,7 @@ export async function PATCH(
     if (status && existingForAudit) {
       createAuditLog({
         userId: session.user.id,
+        companyId,
         action: "UPDATE",
         tableName: "InventoryStock",
         recordId: id,
@@ -235,7 +238,7 @@ export async function PATCH(
 
     // Auto-create NCR if status changed to REJECTED
     if (status === "REJECTED") {
-      const ncrNo = await generateDocumentNumber("NCR");
+      const ncrNo = await generateDocumentNumber("NCR", companyId);
 
       const stockWithGrn = await prisma.inventoryStock.findUnique({
         where: { id },
@@ -264,6 +267,7 @@ export async function PATCH(
 
       createAuditLog({
         userId: session.user.id,
+        companyId,
         action: "CREATE",
         tableName: "NCR",
         recordId: ncr.id,

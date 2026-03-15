@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(
@@ -8,7 +8,7 @@ export async function GET(
 ) {
   try {
     const { heatNo: heatNoParam } = await params;
-    const { authorized, response } = await checkAccess("reports", "read");
+    const { authorized, response, companyId } = await checkAccess("reports", "read");
     if (!authorized) return response!;
 
     const heatNo = decodeURIComponent(heatNoParam);
@@ -16,6 +16,7 @@ export async function GET(
     const stocks = await prisma.inventoryStock.findMany({
       where: {
         heatNo: { equals: heatNo },
+        ...companyFilter(companyId),
       },
       include: {
         grnItem: {

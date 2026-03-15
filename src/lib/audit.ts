@@ -8,6 +8,7 @@ export async function createAuditLog(params: {
   oldValue?: string;
   newValue?: string;
   userId?: string;
+  companyId?: string | null;
 }) {
   try {
     await prisma.auditLog.create({
@@ -19,6 +20,7 @@ export async function createAuditLog(params: {
         oldValue: params.oldValue || null,
         newValue: params.newValue || null,
         userId: params.userId || null,
+        companyId: params.companyId || null,
       },
     });
   } catch (error) {

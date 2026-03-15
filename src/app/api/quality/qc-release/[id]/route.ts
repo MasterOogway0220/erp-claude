@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 
 export async function GET(
   request: NextRequest,
@@ -8,11 +8,11 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { authorized, response } = await checkAccess("qcRelease", "read");
+    const { authorized, response, companyId } = await checkAccess("qcRelease", "read");
     if (!authorized) return response!;
 
-    const qcRelease = await prisma.qCRelease.findUnique({
-      where: { id },
+    const qcRelease = await prisma.qCRelease.findFirst({
+      where: { id, ...companyFilter(companyId) },
       include: {
         inspection: {
           select: {

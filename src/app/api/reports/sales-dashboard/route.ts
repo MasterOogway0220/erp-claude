@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(request: NextRequest) {
   try {
-    const { authorized, response } = await checkAccess("reports", "read");
+    const { authorized, response, companyId } = await checkAccess("reports", "read");
     if (!authorized) return response!;
 
     // Parse date range from query params
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     const toDate = toParam ? new Date(toParam + "T23:59:59.999Z") : undefined;
 
     // Build date filter for invoices
-    const invoiceDateFilter: any = { status: "PAID" };
+    const invoiceDateFilter: any = { status: "PAID", ...companyFilter(companyId) };
     if (fromDate || toDate) {
       invoiceDateFilter.invoiceDate = {};
       if (fromDate) invoiceDateFilter.invoiceDate.gte = fromDate;
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Build date filter for sales orders
-    const soDateFilter: any = {};
+    const soDateFilter: any = { ...companyFilter(companyId) };
     if (fromDate || toDate) {
       soDateFilter.soDate = {};
       if (fromDate) soDateFilter.soDate.gte = fromDate;
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Build date filter for quotations
-    const quotationDateFilter: any = {};
+    const quotationDateFilter: any = { ...companyFilter(companyId) };
     if (fromDate || toDate) {
       quotationDateFilter.createdAt = {};
       if (fromDate) quotationDateFilter.createdAt.gte = fromDate;
@@ -49,9 +49,9 @@ export async function GET(request: NextRequest) {
     // Count totals
     const [totalQuotations, totalSalesOrders, wonQuotations] =
       await Promise.all([
-        prisma.quotation.count({ where: quotationDateFilter.createdAt ? { createdAt: quotationDateFilter.createdAt } : undefined }),
-        prisma.salesOrder.count({ where: soDateFilter.soDate ? { soDate: soDateFilter.soDate } : undefined }),
-        prisma.quotation.count({ where: { status: "WON", ...(quotationDateFilter.createdAt ? { createdAt: quotationDateFilter.createdAt } : {}) } }),
+        prisma.quotation.count({ where: quotationDateFilter.createdAt ? { createdAt: quotationDateFilter.createdAt, ...companyFilter(companyId) } : { ...companyFilter(companyId) } }),
+        prisma.salesOrder.count({ where: soDateFilter.soDate ? { soDate: soDateFilter.soDate, ...companyFilter(companyId) } : { ...companyFilter(companyId) } }),
+        prisma.quotation.count({ where: { status: "WON", ...companyFilter(companyId), ...(quotationDateFilter.createdAt ? { createdAt: quotationDateFilter.createdAt } : {}) } }),
       ]);
 
     const conversionRate =
@@ -71,6 +71,7 @@ export async function GET(request: NextRequest) {
     const invoicesForTrend = await prisma.invoice.findMany({
       where: {
         status: "PAID",
+        ...companyFilter(companyId),
         invoiceDate: { gte: trendStart, ...(toDate ? { lte: toDate } : {}) },
       },
       select: {
@@ -102,7 +103,7 @@ export async function GET(request: NextRequest) {
 
     // Recent 10 sales orders with customer (filtered by date range)
     const recentOrders = await prisma.salesOrder.findMany({
-      where: soDateFilter.soDate ? { soDate: soDateFilter.soDate } : undefined,
+      where: soDateFilter.soDate ? { soDate: soDateFilter.soDate, ...companyFilter(companyId) } : { ...companyFilter(companyId) },
       take: 10,
       orderBy: { soDate: "desc" },
       include: {

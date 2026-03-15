@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { authorized, session, response } = await checkAccess("masters", "write");
+    const { authorized, session, response, companyId } = await checkAccess("admin", "write");
     if (!authorized) return response!;
 
     const { id } = await params;
@@ -52,6 +52,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       recordId: id,
       action: "UPDATE",
       userId: session.user?.id,
+      companyId,
     });
 
     return NextResponse.json(company);
@@ -63,13 +64,30 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
 export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { authorized, session, response } = await checkAccess("masters", "delete");
+    const { authorized, session, response, companyId } = await checkAccess("admin", "delete");
     if (!authorized) return response!;
 
     const { id } = await params;
-    const existing = await prisma.companyMaster.findUnique({ where: { id } });
-    if (!existing) {
+
+    // Check for linked data before deleting
+    const company = await prisma.companyMaster.findUnique({
+      where: { id },
+      include: {
+        _count: { select: { users: true, employees: true, quotations: true, salesOrders: true } },
+      },
+    });
+
+    if (!company) {
       return NextResponse.json({ error: "Company not found" }, { status: 404 });
+    }
+
+    const totalLinked = company._count.users + company._count.employees +
+      company._count.quotations + company._count.salesOrders;
+
+    if (totalLinked > 0) {
+      return NextResponse.json({
+        error: `Cannot delete "${company.companyName}". It has ${company._count.users} users, ${company._count.employees} employees, ${company._count.quotations} quotations linked.`,
+      }, { status: 400 });
     }
 
     await prisma.companyMaster.delete({ where: { id } });
@@ -79,6 +97,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
       recordId: id,
       action: "DELETE",
       userId: session.user?.id,
+      companyId,
     });
 
     return NextResponse.json({ success: true });

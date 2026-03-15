@@ -15,16 +15,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Save, User, Shield, LayoutGrid } from "lucide-react";
+import { ArrowLeft, Save, User, LayoutGrid } from "lucide-react";
 import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
-
-interface SystemUser {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-}
 
 interface Employee {
   id: string;
@@ -34,9 +27,8 @@ interface Employee {
   designation: string | null;
   email: string | null;
   mobile: string | null;
-  telephone: string | null;
-  userId: string | null;
   moduleAccess: string[];
+  role: string | null;
   isActive: boolean;
 }
 
@@ -44,11 +36,10 @@ interface EmployeeFormData {
   name: string;
   designation: string;
   email: string;
+  password: string;
   mobile: string;
-  telephone: string;
   department: string;
-  userId: string;
-  userRole: string;
+  role: string;
   moduleAccess: string[];
 }
 
@@ -56,6 +47,7 @@ const DEPARTMENTS = ["Purchase", "Sales", "Quality", "Warehouse", "Accounts"];
 const USER_ROLES = ["SUPER_ADMIN", "SALES", "PURCHASE", "QC", "STORES", "ACCOUNTS", "MANAGEMENT"];
 
 const MODULE_GROUPS = [
+  { group: "Masters", key: "masters", description: "Employees, vendors, customers" },
   { group: "Quotation", key: "quotation", description: "Create and manage quotations" },
   { group: "Sales", key: "sales", description: "Sales orders and customer management" },
   { group: "Purchase", key: "purchase", description: "Purchase requisitions and orders" },
@@ -71,10 +63,9 @@ export default function EditEmployeePage() {
   const id = params.id as string;
 
   const [employee, setEmployee] = useState<Employee | null>(null);
-  const [users, setUsers] = useState<SystemUser[]>([]);
   const [formData, setFormData] = useState<EmployeeFormData>({
-    name: "", designation: "", email: "", mobile: "",
-    telephone: "", department: "", userId: "", userRole: "", moduleAccess: [],
+    name: "", designation: "", email: "", password: "", mobile: "",
+    department: "", role: "", moduleAccess: [],
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -82,21 +73,10 @@ export default function EditEmployeePage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [empRes, usersRes] = await Promise.all([
-          fetch("/api/masters/employees"),
-          fetch("/api/admin/users"),
-        ]);
-
-        let fetchedUsers: SystemUser[] = [];
-        if (usersRes.ok) {
-          const usersData = await usersRes.json();
-          fetchedUsers = usersData.users || [];
-          setUsers(fetchedUsers);
-        }
-
-        if (!empRes.ok) throw new Error("Failed to fetch employees");
-        const empData = await empRes.json();
-        const found = (empData.employees || []).find((e: Employee) => e.id === id);
+        const res = await fetch("/api/masters/employees");
+        if (!res.ok) throw new Error("Failed to fetch employees");
+        const data = await res.json();
+        const found = (data.employees || []).find((e: Employee) => e.id === id);
 
         if (!found) {
           toast.error("Employee not found");
@@ -105,16 +85,14 @@ export default function EditEmployeePage() {
         }
 
         setEmployee(found);
-        const linkedUser = fetchedUsers.find((u) => u.id === found.userId);
         setFormData({
           name: found.name,
           designation: found.designation || "",
           email: found.email || "",
+          password: "",
           mobile: found.mobile || "",
-          telephone: found.telephone || "",
           department: found.department || "",
-          userId: found.userId || "",
-          userRole: linkedUser?.role || "",
+          role: found.role || "",
           moduleAccess: Array.isArray(found.moduleAccess) ? found.moduleAccess : [],
         });
       } catch {
@@ -140,9 +118,11 @@ export default function EditEmployeePage() {
   };
 
   const toggleAll = () => {
-    const allKeys = MODULE_GROUPS.map((m) => m.key);
-    const allSelected = allKeys.every((k) => formData.moduleAccess.includes(k));
-    setFormData((prev) => ({ ...prev, moduleAccess: allSelected ? [] : allKeys }));
+    setFormData((prev) => {
+      const allKeys = MODULE_GROUPS.map((m) => m.key);
+      const allSelected = allKeys.every((k) => prev.moduleAccess.includes(k));
+      return { ...prev, moduleAccess: allSelected ? [] : allKeys };
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -151,20 +131,25 @@ export default function EditEmployeePage() {
     if (!formData.designation.trim()) { toast.error("Designation is required"); return; }
     if (!formData.email.trim()) { toast.error("Email is required"); return; }
     if (!formData.mobile.trim()) { toast.error("Mobile is required"); return; }
+    if (!formData.role) { toast.error("Role is required"); return; }
+    if (formData.password && formData.password.length < 6) {
+      toast.error("Password must be at least 6 characters"); return;
+    }
 
     setSaving(true);
     try {
-      const payload = {
+      const payload: Record<string, unknown> = {
         name: formData.name,
         designation: formData.designation,
         email: formData.email,
         mobile: formData.mobile,
-        telephone: formData.telephone || null,
         department: formData.department || null,
-        linkedUserId: formData.userId || null,
-        userRole: formData.userId && formData.userRole ? formData.userRole : undefined,
+        role: formData.role,
         moduleAccess: formData.moduleAccess,
       };
+      if (formData.password) {
+        payload.password = formData.password;
+      }
 
       const res = await fetch(`/api/masters/employees/${id}`, {
         method: "PATCH",
@@ -220,7 +205,7 @@ export default function EditEmployeePage() {
           </Card>
         )}
 
-        {/* Employee Details */}
+        {/* Employee Details - Single Row */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
@@ -228,16 +213,15 @@ export default function EditEmployeePage() {
               Employee Details
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Row 1: Name, Email, Mobile */}
-            <div className="grid grid-cols-3 gap-4">
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
               <div className="space-y-1.5">
                 <Label htmlFor="name">Name *</Label>
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={(e) => update("name", e.target.value)}
-                  placeholder="Enter employee name"
+                  placeholder="Employee name"
                 />
               </div>
               <div className="space-y-1.5">
@@ -251,6 +235,16 @@ export default function EditEmployeePage() {
                 />
               </div>
               <div className="space-y-1.5">
+                <Label htmlFor="password">New Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => update("password", e.target.value)}
+                  placeholder="Leave blank to keep"
+                />
+              </div>
+              <div className="space-y-1.5">
                 <Label htmlFor="mobile">Mobile *</Label>
                 <Input
                   id="mobile"
@@ -259,17 +253,13 @@ export default function EditEmployeePage() {
                   placeholder="+91 9876543210"
                 />
               </div>
-            </div>
-
-            {/* Row 2: Designation, Department, Telephone */}
-            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-1.5">
                 <Label htmlFor="designation">Designation *</Label>
                 <Input
                   id="designation"
                   value={formData.designation}
                   onChange={(e) => update("designation", e.target.value)}
-                  placeholder="e.g. Manager, Executive"
+                  placeholder="e.g. Manager"
                 />
               </div>
               <div className="space-y-1.5">
@@ -279,7 +269,7 @@ export default function EditEmployeePage() {
                   onValueChange={(v) => update("department", v === "__none__" ? "" : v)}
                 >
                   <SelectTrigger id="department">
-                    <SelectValue placeholder="Select department" />
+                    <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__none__">-- None --</SelectItem>
@@ -289,41 +279,53 @@ export default function EditEmployeePage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="telephone">Telephone</Label>
-                <Input
-                  id="telephone"
-                  value={formData.telephone}
-                  onChange={(e) => update("telephone", e.target.value)}
-                  placeholder="022-12345678"
-                />
-              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Module Access */}
+        {/* Module Access & Role */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <LayoutGrid className="w-4 h-4" />
-              Module Access
+              Module Access & Role
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4 pb-4 border-b">
+              <div className="space-y-1.5">
+                <Label htmlFor="role">Role *</Label>
+                <Select value={formData.role || "__none__"} onValueChange={(v) => update("role", v === "__none__" ? "" : v)}>
+                  <SelectTrigger id="role">
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">-- Select Role --</SelectItem>
+                    {USER_ROLES.map((role) => (
+                      <SelectItem key={role} value={role}>{role}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             <div className="flex items-center gap-2 mb-4 pb-3 border-b">
-              <Checkbox id="select-all" checked={allSelected} onCheckedChange={toggleAll} />
+              <Checkbox
+                id="select-all"
+                checked={allSelected}
+                onCheckedChange={() => toggleAll()}
+              />
               <Label htmlFor="select-all" className="font-medium cursor-pointer">
                 {allSelected ? "Deselect All" : "Select All Modules"}
               </Label>
             </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-4">
               {MODULE_GROUPS.map((mod) => {
                 const checked = formData.moduleAccess.includes(mod.key);
                 return (
-                  <div
+                  <label
                     key={mod.key}
-                    onClick={() => toggleModule(mod.key)}
+                    htmlFor={`mod-${mod.key}`}
                     className={`flex flex-col gap-1.5 rounded-lg border p-3 cursor-pointer transition-colors select-none ${
                       checked
                         ? "border-primary bg-primary/5"
@@ -333,71 +335,15 @@ export default function EditEmployeePage() {
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium">{mod.group}</span>
                       <Checkbox
+                        id={`mod-${mod.key}`}
                         checked={checked}
                         onCheckedChange={() => toggleModule(mod.key)}
-                        onClick={(e) => e.stopPropagation()}
                       />
                     </div>
                     <p className="text-xs text-muted-foreground leading-tight">{mod.description}</p>
-                  </div>
+                  </label>
                 );
               })}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* System Access */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Shield className="w-4 h-4" />
-              System Access
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="userId">User Account</Label>
-                <Select
-                  value={formData.userId || "__none__"}
-                  onValueChange={(v) => {
-                    const selectedUser = users.find((u) => u.id === v);
-                    setFormData((prev) => ({
-                      ...prev,
-                      userId: v === "__none__" ? "" : v,
-                      userRole: v === "__none__" ? "" : (selectedUser?.role || ""),
-                    }));
-                  }}
-                >
-                  <SelectTrigger id="userId">
-                    <SelectValue placeholder="None" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none__">None</SelectItem>
-                    {users.map((user) => (
-                      <SelectItem key={user.id} value={user.id}>
-                        {user.name} ({user.email})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {formData.userId && formData.userId !== "__none__" && (
-                <div className="space-y-1.5">
-                  <Label htmlFor="userRole">User Role</Label>
-                  <Select value={formData.userRole} onValueChange={(v) => update("userRole", v)}>
-                    <SelectTrigger id="userRole">
-                      <SelectValue placeholder="Select role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {USER_ROLES.map((role) => (
-                        <SelectItem key={role} value={role}>{role}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
             </div>
           </CardContent>
         </Card>

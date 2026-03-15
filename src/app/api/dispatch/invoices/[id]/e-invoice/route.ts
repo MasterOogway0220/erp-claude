@@ -8,7 +8,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { authorized, response } = await checkAccess("invoice", "read");
+    const { authorized, response, companyId } = await checkAccess("invoice", "read");
     if (!authorized) return response!;
 
     const eInvoiceJson = await generateEInvoiceJSON(id);

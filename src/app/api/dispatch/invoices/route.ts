@@ -4,11 +4,11 @@ import { createAuditLog } from "@/lib/audit";
 import { generateDocumentNumber } from "@/lib/document-numbering";
 import { numberToWords } from "@/lib/amount-in-words";
 import { InvoiceStatus, InvoiceType } from "@prisma/client";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 
 export async function GET(request: NextRequest) {
   try {
-    const { authorized, session, response } = await checkAccess("invoice", "read");
+    const { authorized, session, response, companyId } = await checkAccess("invoice", "read");
     if (!authorized) return response!;
 
     const { searchParams } = new URL(request.url);
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status") as InvoiceStatus | null;
     const invoiceType = searchParams.get("invoiceType") as InvoiceType | null;
 
-    const where: any = {};
+    const where: any = { ...companyFilter(companyId) };
 
     if (search) {
       where.OR = [
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { authorized, session, response } = await checkAccess("invoice", "write");
+    const { authorized, session, response, companyId } = await checkAccess("invoice", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
     else if (invoiceType === "EXPORT") docType = "INVOICE_EXPORT";
     else docType = "INVOICE_DOMESTIC";
 
-    const invoiceNo = await generateDocumentNumber(docType);
+    const invoiceNo = await generateDocumentNumber(docType, companyId);
 
     // Calculate subtotal from items
     const subtotal = items.reduce(
@@ -207,6 +207,7 @@ export async function POST(request: NextRequest) {
         dispatchNoteId: dispatchNoteId || null,
         salesOrderId,
         customerId,
+        ...(companyId && { companyId }),
         warehouseId: warehouseId || null,
         originalInvoiceId: originalInvoiceId || null,
         subtotal,
@@ -256,6 +257,7 @@ export async function POST(request: NextRequest) {
       tableName: "Invoice",
       recordId: invoice.id,
       newValue: JSON.stringify({ invoiceNo: invoice.invoiceNo }),
+      companyId,
     }).catch(console.error);
 
     return NextResponse.json(invoice, { status: 201 });
