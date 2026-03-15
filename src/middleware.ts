@@ -18,5 +18,6 @@ export const config = {
     "/dispatch/:path*",
     "/reports/:path*",
     "/admin/:path*",
+    "/superadmin/:path*",
   ],
 };

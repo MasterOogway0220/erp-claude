@@ -17,6 +17,7 @@ const labelMap: Record<string, string> = {
   dispatch: "Dispatch & Finance",
   reports: "Reports",
   admin: "Admin",
+  superadmin: "Master Control",
   // Masters sub-pages
   products: "Product Specifications",
   sizes: "Sizes",

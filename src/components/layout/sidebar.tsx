@@ -225,6 +225,7 @@ const navSections: NavSection[] = [
         iconColorClass: "text-gray-500",
         roles: ["SUPER_ADMIN", "ADMIN"],
         children: [
+          { title: "Master Control", href: "/superadmin", roles: ["SUPER_ADMIN"] },
           { title: "User Management", href: "/admin" },
           { title: "Traceability", href: "/admin/traceability" },
         ],

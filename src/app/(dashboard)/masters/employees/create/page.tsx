@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Save, User, LayoutGrid } from "lucide-react";
+import { ArrowLeft, Save, User, LayoutGrid, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 
 interface EmployeeFormData {
@@ -58,6 +58,7 @@ export default function CreateEmployeePage() {
   const router = useRouter();
   const [formData, setFormData] = useState<EmployeeFormData>(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const update = (field: keyof EmployeeFormData, value: string) =>
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -170,13 +171,24 @@ export default function CreateEmployeePage() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="password">Password *</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => update("password", e.target.value)}
-                  placeholder="Min 6 characters"
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={(e) => update("password", e.target.value)}
+                    placeholder="Min 6 characters"
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    onClick={() => setShowPassword(!showPassword)}
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="mobile">Mobile *</Label>
