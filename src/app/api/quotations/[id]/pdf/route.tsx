@@ -6,6 +6,10 @@ import { wrapHtmlForPrint } from "@/lib/pdf/print-wrapper";
 import { generateStandardQuotationHtml } from "@/lib/pdf/quotation-standard-template";
 import { generateNonStandardQuotationHtml } from "@/lib/pdf/quotation-nonstandard-template";
 
+// Vercel serverless: increase memory and timeout for Chromium PDF generation
+export const maxDuration = 30;
+export const dynamic = "force-dynamic";
+
 const DEFAULT_COMPANY = {
   companyName: "NPS Piping Solutions",
   regAddressLine1:

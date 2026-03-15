@@ -5,7 +5,7 @@ import { execSync } from "child_process";
  *
  * Browser resolution order:
  * 1. CHROMIUM_EXECUTABLE_PATH env var (explicit override — use on Hostinger/VPS)
- * 2. @sparticuz/chromium (AWS Lambda / serverless)
+ * 2. @sparticuz/chromium (Vercel / AWS Lambda / serverless)
  * 3. System-installed chromium or google-chrome (auto-detected)
  * 4. macOS Chrome (local dev)
  */
@@ -40,6 +40,7 @@ export async function renderHtmlToPdf(
     "--disable-gpu",
     "--disable-dev-shm-usage",
     "--single-process",
+    "--font-render-hinting=none",
   ];
 
   let args: string[] = defaultArgs;
@@ -48,32 +49,30 @@ export async function renderHtmlToPdf(
   if (process.env.CHROMIUM_EXECUTABLE_PATH) {
     // 1. Explicit env var — highest priority (Hostinger / VPS / custom setups)
     executablePath = process.env.CHROMIUM_EXECUTABLE_PATH;
-  } else if (process.env.NODE_ENV === "production") {
-    // 2. Try @sparticuz/chromium for Lambda, fall back to system browser
+  } else {
+    // 2. Try @sparticuz/chromium (works on Vercel, Lambda, and serverless)
     try {
       const chromium = (await import("@sparticuz/chromium")).default;
+      chromium.setHeadlessMode = true;
+      chromium.setGraphicsMode = false;
       args = chromium.args;
       executablePath = await chromium.executablePath();
     } catch {
-      const systemBrowser = findSystemBrowser();
-      if (systemBrowser) {
-        executablePath = systemBrowser;
+      // 3. Fallback: system browser or macOS Chrome
+      if (process.platform === "darwin") {
+        executablePath =
+          "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
       } else {
-        throw new Error(
-          "No browser found. Install chromium (apt-get install chromium-browser) " +
-          "or set CHROMIUM_EXECUTABLE_PATH env var."
-        );
+        const systemBrowser = findSystemBrowser();
+        if (systemBrowser) {
+          executablePath = systemBrowser;
+        } else {
+          throw new Error(
+            "No browser found. Install chromium (apt-get install chromium-browser) " +
+            "or set CHROMIUM_EXECUTABLE_PATH env var."
+          );
+        }
       }
-    }
-  } else {
-    // 3. Local development
-    if (process.platform === "darwin") {
-      executablePath =
-        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
-    } else {
-      const systemBrowser = findSystemBrowser();
-      executablePath =
-        systemBrowser || "/usr/bin/google-chrome";
     }
   }
 

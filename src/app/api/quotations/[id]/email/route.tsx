@@ -7,6 +7,10 @@ import { generateStandardQuotationHtml } from "@/lib/pdf/quotation-standard-temp
 import { generateNonStandardQuotationHtml } from "@/lib/pdf/quotation-nonstandard-template";
 import nodemailer from "nodemailer";
 
+// Vercel serverless: increase timeout for PDF generation + email send
+export const maxDuration = 60;
+export const dynamic = "force-dynamic";
+
 const DEFAULT_COMPANY = {
   companyName: "NPS Piping Solutions",
   regAddressLine1:
