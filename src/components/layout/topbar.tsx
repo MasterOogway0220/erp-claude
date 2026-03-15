@@ -149,7 +149,7 @@ export function TopBar() {
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex h-14 items-center justify-between bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 px-3 md:px-6 shadow-[0_1px_3px_0_rgba(0,0,0,0.05)]">
+      <header className="sticky top-0 z-30 flex h-14 items-center justify-between bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/80 px-3 md:px-6 border-b border-border/40">
         {/* Left: Hamburger (mobile only) */}
         <div className="flex items-center gap-2">
           <Button
@@ -163,19 +163,19 @@ export function TopBar() {
         </div>
 
         {/* Right: Company Switcher + Notifications + User */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           {/* Company Switcher (SUPER_ADMIN only) */}
           {isSuperAdmin && companies.length > 0 && (
             <>
-              <div className="flex items-center gap-2 mr-2">
-                <Building2 className="h-4 w-4 text-muted-foreground" />
+              <div className="flex items-center gap-2 mr-2 rounded-md border border-border/50 bg-muted/30 px-2 py-0.5">
+                <Building2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                 <Select
                   value={activeCompanyId || "__none__"}
                   onValueChange={(v) => {
                     if (v !== "__none__") switchCompany(v);
                   }}
                 >
-                  <SelectTrigger className="h-8 w-[200px] text-xs">
+                  <SelectTrigger className="h-7 w-[180px] text-xs border-0 bg-transparent shadow-none focus:ring-0 px-1">
                     <SelectValue placeholder="Select Company" />
                   </SelectTrigger>
                   <SelectContent>
@@ -206,14 +206,14 @@ export function TopBar() {
           <Button
             variant="ghost"
             size="icon"
-            className="relative h-9 w-9 text-muted-foreground hover:text-foreground"
+            className="relative h-8 w-8 text-muted-foreground hover:text-foreground transition-colors"
             title="Notifications"
           >
-            <Bell className="h-[18px] w-[18px]" />
-            <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-blue-500 ring-2 ring-background" />
+            <Bell className="h-4 w-4" />
+            <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-blue-500 ring-2 ring-background" />
           </Button>
 
-          <Separator orientation="vertical" className="mx-1.5 h-6" />
+          <Separator orientation="vertical" className="mx-1 h-5" />
 
           {/* User dropdown */}
           <DropdownMenu>
@@ -238,13 +238,13 @@ export function TopBar() {
                 <ChevronDown className="hidden md:block h-3.5 w-3.5 text-muted-foreground" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <div className="px-3 py-2.5">
-                <p className="text-sm font-medium">{user?.name}</p>
-                <p className="text-xs text-muted-foreground">{user?.email}</p>
+            <DropdownMenuContent align="end" className="w-56 mt-1">
+              <div className="px-3 py-3">
+                <p className="text-sm font-medium leading-none">{user?.name}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{user?.email}</p>
                 <Badge
                   variant="secondary"
-                  className="mt-1.5 text-[10px] font-medium px-1.5 py-0"
+                  className="mt-2 text-[10px] font-medium px-1.5 py-0"
                 >
                   {formatRole(user?.role)}
                 </Badge>

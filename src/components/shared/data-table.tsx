@@ -117,12 +117,12 @@ export function DataTable<T extends Record<string, any>>({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 animate-fade-in">
       {/* Top bar: search + result count */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {searchKey && (
-          <div className="relative max-w-sm">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <div className="relative w-full max-w-xs">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/60" />
             <Input
               placeholder={searchPlaceholder}
               value={search}
@@ -130,44 +130,44 @@ export function DataTable<T extends Record<string, any>>({
                 setSearch(e.target.value);
                 setPage(0);
               }}
-              className="pl-9"
+              className="pl-9 h-9 rounded-md bg-muted/30 border-border/60 text-sm placeholder:text-muted-foreground/50 focus-visible:bg-background focus-visible:ring-1 focus-visible:ring-ring/30 focus-visible:ring-offset-0 transition-colors"
             />
           </div>
         )}
-        <p className="text-sm text-muted-foreground tabular-nums">
-          {sorted.length} {sorted.length === 1 ? "result" : "results"}
-          {search && ` for "${search}"`}
+        <p className="text-xs text-muted-foreground tabular-nums shrink-0">
+          {sorted.length} {sorted.length === 1 ? "record" : "records"}
+          {search && ` matching "${search}"`}
         </p>
       </div>
 
       {/* Table */}
-      <div className="rounded-lg border overflow-hidden">
+      <div className="rounded-md border border-border/60 overflow-hidden bg-card">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="bg-muted/50 hover:bg-muted/50">
+              <TableRow className="bg-muted/40 hover:bg-muted/40 border-b border-border/60">
                 {columns.map((col) => (
                   <TableHead
                     key={col.key}
-                    className={`font-semibold text-xs uppercase tracking-wider text-muted-foreground h-10 ${
+                    className={`font-semibold text-[11px] uppercase tracking-wide text-muted-foreground/70 h-9 px-4 ${
                       col.sortable
                         ? "cursor-pointer select-none hover:text-foreground transition-colors"
                         : ""
                     }`}
                     onClick={() => col.sortable && handleSort(col.key)}
                   >
-                    <span className="flex items-center gap-1.5">
+                    <span className="flex items-center gap-1">
                       {col.header}
                       {col.sortable && (
-                        <span className="text-muted-foreground/50">
+                        <span className="opacity-40 group-hover:opacity-70">
                           {sortKey === col.key ? (
                             sortDir === "asc" ? (
-                              <ArrowUp className="h-3.5 w-3.5 text-foreground" />
+                              <ArrowUp className="h-3 w-3 text-foreground opacity-100" />
                             ) : (
-                              <ArrowDown className="h-3.5 w-3.5 text-foreground" />
+                              <ArrowDown className="h-3 w-3 text-foreground opacity-100" />
                             )
                           ) : (
-                            <ArrowUpDown className="h-3.5 w-3.5" />
+                            <ArrowUpDown className="h-3 w-3" />
                           )}
                         </span>
                       )}
@@ -178,19 +178,21 @@ export function DataTable<T extends Record<string, any>>({
             </TableHeader>
             <TableBody>
               {paged.length === 0 ? (
-                <TableRow>
+                <TableRow className="hover:bg-transparent">
                   <TableCell
                     colSpan={columns.length}
-                    className="h-40"
+                    className="h-48"
                   >
-                    <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                      <Inbox className="h-10 w-10 stroke-[1.25]" />
-                      <div className="text-center">
-                        <p className="font-medium">No results found</p>
-                        <p className="text-sm">
+                    <div className="flex flex-col items-center justify-center gap-3 text-muted-foreground/60">
+                      <div className="rounded-full bg-muted/50 p-3">
+                        <Inbox className="h-8 w-8 stroke-[1.25]" />
+                      </div>
+                      <div className="text-center space-y-0.5">
+                        <p className="text-sm font-medium text-muted-foreground">No results found</p>
+                        <p className="text-xs text-muted-foreground/60">
                           {search
                             ? "Try adjusting your search to find what you are looking for."
-                            : "There are no records to display."}
+                            : "There are no records to display yet."}
                         </p>
                       </div>
                     </div>
@@ -200,12 +202,12 @@ export function DataTable<T extends Record<string, any>>({
                 paged.map((row, i) => (
                   <TableRow
                     key={i}
-                    className={`transition-colors ${
-                      i % 2 === 0 ? "bg-background" : "bg-muted/20"
-                    } hover:bg-accent/40`}
+                    className={`transition-colors duration-100 border-border/40 ${
+                      i % 2 === 0 ? "bg-card" : "bg-muted/15"
+                    } hover:bg-accent/30`}
                   >
                     {columns.map((col) => (
-                      <TableCell key={col.key} className="py-2.5">
+                      <TableCell key={col.key} className="py-3 px-4 text-sm">
                         {col.cell
                           ? col.cell(row)
                           : String(row[col.key] ?? "")}
@@ -221,63 +223,66 @@ export function DataTable<T extends Record<string, any>>({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-muted-foreground tabular-nums">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pt-1">
+          <p className="text-xs text-muted-foreground/70 tabular-nums">
             Showing{" "}
-            <span className="font-medium text-foreground">
+            <span className="font-medium text-muted-foreground">
               {page * pageSize + 1}
             </span>
-            {" - "}
-            <span className="font-medium text-foreground">
+            {"\u2013"}
+            <span className="font-medium text-muted-foreground">
               {Math.min((page + 1) * pageSize, sorted.length)}
             </span>{" "}
             of{" "}
-            <span className="font-medium text-foreground">
+            <span className="font-medium text-muted-foreground">
               {sorted.length}
-            </span>{" "}
-            records
+            </span>
           </p>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5">
             {/* First page */}
             <Button
-              variant="outline"
+              variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className="h-7 w-7"
               onClick={() => setPage(0)}
               disabled={page === 0}
               title="First page"
             >
-              <ChevronsLeft className="h-4 w-4" />
+              <ChevronsLeft className="h-3.5 w-3.5" />
             </Button>
 
             {/* Previous page */}
             <Button
-              variant="outline"
+              variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className="h-7 w-7"
               onClick={() => setPage(page - 1)}
               disabled={page === 0}
               title="Previous page"
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-3.5 w-3.5" />
             </Button>
 
             {/* Page numbers */}
-            <div className="hidden sm:flex items-center gap-1 mx-1">
+            <div className="hidden sm:flex items-center gap-0.5 mx-0.5">
               {getPageNumbers().map((p, idx) =>
                 p === "ellipsis" ? (
                   <span
                     key={`ellipsis-${idx}`}
-                    className="px-1 text-sm text-muted-foreground"
+                    className="px-1 text-xs text-muted-foreground/50"
                   >
                     ...
                   </span>
                 ) : (
                   <Button
                     key={p}
-                    variant={page === p ? "default" : "outline"}
+                    variant={page === p ? "default" : "ghost"}
                     size="icon"
-                    className="h-8 w-8 text-xs"
+                    className={`h-7 w-7 text-xs ${
+                      page === p
+                        ? ""
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
                     onClick={() => setPage(p)}
                   >
                     {p + 1}
@@ -287,32 +292,32 @@ export function DataTable<T extends Record<string, any>>({
             </div>
 
             {/* Mobile page indicator */}
-            <span className="sm:hidden text-sm text-muted-foreground mx-2 tabular-nums">
+            <span className="sm:hidden text-xs text-muted-foreground mx-2 tabular-nums">
               {page + 1} / {totalPages}
             </span>
 
             {/* Next page */}
             <Button
-              variant="outline"
+              variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className="h-7 w-7"
               onClick={() => setPage(page + 1)}
               disabled={page >= totalPages - 1}
               title="Next page"
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-3.5 w-3.5" />
             </Button>
 
             {/* Last page */}
             <Button
-              variant="outline"
+              variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className="h-7 w-7"
               onClick={() => setPage(totalPages - 1)}
               disabled={page >= totalPages - 1}
               title="Last page"
             >
-              <ChevronsRight className="h-4 w-4" />
+              <ChevronsRight className="h-3.5 w-3.5" />
             </Button>
           </div>
         </div>

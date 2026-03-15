@@ -314,23 +314,23 @@ export function Sidebar() {
   // Brand header
   // ------------------------------------------
   const brandSection = (
-    <div className="flex h-16 shrink-0 items-center justify-between border-b border-border/60 px-4">
+    <div className="flex h-14 shrink-0 items-center justify-between border-b border-border/40 px-4">
       {!isCollapsed ? (
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground text-xs font-extrabold tracking-tight shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground text-[10px] font-bold tracking-tight">
             NPS
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-semibold leading-none tracking-tight text-foreground">
+            <span className="text-[13px] font-semibold leading-none tracking-[-0.01em] text-foreground">
               Piping Solutions
             </span>
-            <span className="text-[10px] text-muted-foreground leading-tight mt-0.5">
-              Enterprise Resource Planning
+            <span className="text-[10px] text-muted-foreground/60 leading-tight mt-1">
+              ERP System
             </span>
           </div>
         </div>
       ) : (
-        <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground text-[10px] font-extrabold tracking-tight shadow-sm">
+        <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground text-[10px] font-bold tracking-tight">
           NPS
         </div>
       )}
@@ -339,19 +339,19 @@ export function Sidebar() {
         variant="ghost"
         size="icon"
         className={cn(
-          "h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground hidden md:flex",
+          "h-6 w-6 shrink-0 text-muted-foreground/60 hover:text-foreground hover:bg-accent/50 hidden md:flex",
           isCollapsed && "hidden"
         )}
         onClick={toggle}
       >
-        <ChevronLeft className="h-4 w-4" />
+        <ChevronLeft className="h-3.5 w-3.5" />
       </Button>
       {/* Collapsed expand */}
       {isCollapsed && (
         <Button
           variant="ghost"
           size="icon"
-          className="h-7 w-7 mx-auto hidden md:flex text-muted-foreground hover:text-foreground absolute right-1 top-4"
+          className="h-6 w-6 mx-auto hidden md:flex text-muted-foreground/60 hover:text-foreground hover:bg-accent/50 absolute right-1 top-4"
           onClick={toggle}
         >
           <ChevronRight className="h-3.5 w-3.5" />
@@ -373,26 +373,24 @@ export function Sidebar() {
   // Navigation content
   // ------------------------------------------
   const navigationContent = (
-    <ScrollArea className="flex-1 relative">
-      {/* Top fade */}
-      <div className="pointer-events-none sticky top-0 z-10 h-3 bg-gradient-to-b from-background to-transparent" />
-      <nav className={cn("px-3 pb-4", isCollapsed ? "px-2" : "px-3")}>
+    <ScrollArea className="flex-1 relative [&_[data-radix-scroll-area-viewport]]:scrollbar-thin [&_[data-radix-scroll-area-viewport]]:scrollbar-track-transparent [&_[data-radix-scroll-area-viewport]]:scrollbar-thumb-border/40">
+      <nav className={cn("py-3", isCollapsed ? "px-2" : "px-3")}>
         {filteredSections.map((section, sectionIdx) => (
-          <div key={section.label}>
+          <div key={section.label} className={cn(sectionIdx > 0 && "mt-2")}>
             {/* Section label */}
             {!isCollapsed && (
-              <div className="mb-1.5 mt-4 first:mt-1">
-                <span className="px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+              <div className={cn("mb-1 px-3", sectionIdx === 0 ? "pt-0" : "pt-3")}>
+                <span className="text-[10px] font-medium uppercase tracking-[0.1em] text-muted-foreground/50">
                   {section.label}
                 </span>
               </div>
             )}
             {isCollapsed && sectionIdx > 0 && (
-              <Separator className="my-2 mx-auto w-6" />
+              <Separator className="my-3 mx-auto w-5 opacity-30" />
             )}
 
             {/* Items */}
-            <div className="space-y-0.5">
+            <div className="space-y-px">
               {section.items.map((item) => (
                 <NavGroup
                   key={item.title}
@@ -409,8 +407,6 @@ export function Sidebar() {
           </div>
         ))}
       </nav>
-      {/* Bottom fade */}
-      <div className="pointer-events-none sticky bottom-0 z-10 h-3 bg-gradient-to-t from-background to-transparent" />
     </ScrollArea>
   );
 
@@ -418,21 +414,21 @@ export function Sidebar() {
   // User section (bottom)
   // ------------------------------------------
   const userSection = (
-    <div className="shrink-0 border-t border-border/60">
+    <div className="shrink-0 border-t border-border/40">
       {!isCollapsed ? (
         <div className="flex items-center gap-3 px-4 py-3">
           <Avatar size="sm">
-            <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-semibold">
+            <AvatarFallback className="bg-muted text-muted-foreground text-[10px] font-medium">
               {initials}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium leading-none truncate text-foreground">
+            <p className="text-[13px] font-medium leading-none truncate text-foreground">
               {user?.name || "User"}
             </p>
             <Badge
               variant="secondary"
-              className="mt-1 h-4 text-[9px] px-1.5 py-0 font-medium"
+              className="mt-1.5 h-4 text-[9px] px-1.5 py-0 font-normal opacity-70"
             >
               {user?.role || "---"}
             </Badge>
@@ -502,8 +498,8 @@ export function Sidebar() {
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          "relative hidden md:flex flex-col h-screen sticky top-0 border-r border-border/60 bg-background transition-all duration-300 ease-in-out",
-          isCollapsed ? "w-[60px]" : "w-64"
+          "relative hidden md:flex flex-col h-screen sticky top-0 border-r border-border/40 bg-background transition-[width] duration-200 ease-in-out",
+          isCollapsed ? "w-[60px]" : "w-60"
         )}
       >
         {sidebarContent}
@@ -515,9 +511,9 @@ export function Sidebar() {
           className="fixed inset-0 z-50 md:hidden"
           onClick={() => setMobileOpen(false)}
         >
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-[2px] animate-in fade-in duration-200" />
           <aside
-            className="fixed inset-y-0 left-0 w-64 flex flex-col bg-background shadow-2xl animate-in slide-in-from-left-full duration-300"
+            className="fixed inset-y-0 left-0 w-60 flex flex-col bg-background shadow-xl animate-in slide-in-from-left duration-200 ease-out"
             onClick={(e) => e.stopPropagation()}
           >
             {sidebarContent}
@@ -555,24 +551,27 @@ function NavGroup({
       <Link
         href={item.href}
         className={cn(
-          "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
-          "hover:bg-accent/50 hover:text-accent-foreground",
+          "group relative flex items-center gap-2.5 rounded-md px-3 py-[7px] text-[13px] font-medium transition-colors duration-150",
+          "hover:bg-accent/60",
           isActive
-            ? "bg-primary/[0.08] text-primary font-semibold"
-            : "text-muted-foreground",
-          isCollapsed && "justify-center px-0 py-2.5 mx-auto w-10 h-10"
+            ? "bg-accent/50 text-foreground"
+            : "text-muted-foreground hover:text-foreground",
+          isCollapsed && "justify-center px-0 py-2 mx-auto w-10 h-10 rounded-md"
         )}
       >
         {/* Active left indicator */}
         {isActive && (
           <span
             className={cn(
-              "absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-r-full bg-primary transition-all duration-200",
-              isCollapsed && "left-0 h-4 w-[2px]"
+              "absolute left-0 top-1/2 -translate-y-1/2 h-4 w-[3px] rounded-r-full bg-primary",
+              isCollapsed && "h-3.5 w-[2px]"
             )}
           />
         )}
-        <span className={cn(item.iconColorClass, isActive && "text-primary")}>
+        <span className={cn(
+          "shrink-0 [&>svg]:h-[18px] [&>svg]:w-[18px]",
+          isActive ? "text-primary" : item.iconColorClass
+        )}>
           {item.icon}
         </span>
         {!isCollapsed && <span>{item.title}</span>}
@@ -600,18 +599,21 @@ function NavGroup({
         <TooltipTrigger asChild>
           <div
             className={cn(
-              "relative flex items-center justify-center rounded-lg py-2.5 mx-auto w-10 h-10 text-sm font-medium transition-all duration-200 cursor-pointer",
-              "hover:bg-accent/50 hover:text-accent-foreground",
+              "relative flex items-center justify-center rounded-md py-2 mx-auto w-10 h-10 text-sm font-medium transition-colors duration-150 cursor-pointer",
+              "hover:bg-accent/60",
               isActive
-                ? "bg-primary/[0.08] text-primary"
-                : "text-muted-foreground"
+                ? "bg-accent/50 text-foreground"
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
             {isActive && (
-              <span className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-[2px] rounded-r-full bg-primary" />
+              <span className="absolute left-0 top-1/2 -translate-y-1/2 h-3.5 w-[2px] rounded-r-full bg-primary" />
             )}
             <span
-              className={cn(item.iconColorClass, isActive && "text-primary")}
+              className={cn(
+                "shrink-0 [&>svg]:h-[18px] [&>svg]:w-[18px]",
+                isActive ? "text-primary" : item.iconColorClass
+              )}
             >
               {item.icon}
             </span>
@@ -620,9 +622,9 @@ function NavGroup({
         <TooltipContent
           side="right"
           align="start"
-          className="flex flex-col gap-1.5 p-3 max-h-80 overflow-y-auto"
+          className="flex flex-col gap-0.5 p-2 max-h-80 overflow-y-auto min-w-[160px]"
         >
-          <p className="text-xs font-semibold text-foreground mb-1">
+          <p className="text-[11px] font-semibold text-foreground mb-1 px-1.5">
             {item.title}
           </p>
           {item.children?.map((child) => (
@@ -630,7 +632,7 @@ function NavGroup({
               key={child.title}
               href={child.href}
               className={cn(
-                "text-xs py-0.5 transition-colors hover:text-foreground",
+                "text-[11px] px-1.5 py-1 rounded transition-colors duration-150 hover:bg-accent/60 hover:text-foreground",
                 pathname.startsWith(child.href)
                   ? "text-primary font-medium"
                   : "text-muted-foreground"
@@ -650,21 +652,24 @@ function NavGroup({
       <button
         onClick={() => onToggle(item.title)}
         className={cn(
-          "group relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
-          "hover:bg-accent/50 hover:text-accent-foreground",
-          isActive ? "text-foreground" : "text-muted-foreground"
+          "group relative flex w-full items-center gap-2.5 rounded-md px-3 py-[7px] text-[13px] font-medium transition-colors duration-150",
+          "hover:bg-accent/60",
+          isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
         )}
       >
         {isActive && (
-          <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-r-full bg-primary transition-all duration-200" />
+          <span className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-[3px] rounded-r-full bg-primary" />
         )}
-        <span className={cn(item.iconColorClass, isActive && "text-primary")}>
+        <span className={cn(
+          "shrink-0 [&>svg]:h-[18px] [&>svg]:w-[18px]",
+          isActive ? "text-primary" : item.iconColorClass
+        )}>
           {item.icon}
         </span>
         <span className="flex-1 text-left">{item.title}</span>
         <ChevronDown
           className={cn(
-            "h-3.5 w-3.5 text-muted-foreground/60 transition-transform duration-200",
+            "h-3.5 w-3.5 text-muted-foreground/40 transition-transform duration-200",
             isOpen ? "rotate-0" : "-rotate-90"
           )}
         />
@@ -673,11 +678,11 @@ function NavGroup({
       {/* Sub-items */}
       <div
         className={cn(
-          "overflow-hidden transition-all duration-200 ease-in-out",
-          isOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+          "overflow-hidden transition-[max-height,opacity] duration-200 ease-in-out",
+          isOpen ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
         )}
       >
-        <div className="ml-[18px] space-y-0.5 py-1 pl-4">
+        <div className="ml-[21px] border-l border-border/40 space-y-px py-1 pl-3">
           {item.children?.map((child) => {
             const childActive = pathname.startsWith(child.href);
             return (
@@ -685,22 +690,13 @@ function NavGroup({
                 key={child.title}
                 href={child.href}
                 className={cn(
-                  "group flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] transition-all duration-150",
-                  "hover:bg-accent/50 hover:text-accent-foreground",
+                  "group flex items-center rounded-md px-2 py-[5px] text-[12px] transition-colors duration-150",
+                  "hover:bg-accent/50 hover:text-foreground",
                   childActive
-                    ? "text-primary font-medium bg-primary/[0.06]"
+                    ? "text-primary font-medium bg-accent/40"
                     : "text-muted-foreground"
                 )}
               >
-                {/* Dot indicator */}
-                <span
-                  className={cn(
-                    "inline-block h-1.5 w-1.5 shrink-0 rounded-full transition-colors duration-150",
-                    childActive
-                      ? "bg-primary"
-                      : "bg-muted-foreground/30 group-hover:bg-muted-foreground/50"
-                  )}
-                />
                 <span className="truncate">{child.title}</span>
               </Link>
             );

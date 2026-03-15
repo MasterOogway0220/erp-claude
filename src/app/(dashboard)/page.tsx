@@ -95,7 +95,7 @@ export default function DashboardPage() {
       title: "Open SO Value",
       value: formatCurrency(metrics?.salesMetrics?.openSOValue),
       description: "Total value of open sales orders",
-      icon: <IndianRupee className="h-6 w-6 text-emerald-600" />,
+      icon: <IndianRupee className="h-5 w-5 text-emerald-600" />,
       bgColor: "bg-emerald-100 dark:bg-emerald-900/40",
       borderAccent: "border-l-emerald-500",
     },
@@ -103,7 +103,7 @@ export default function DashboardPage() {
       title: "Active Quotations",
       value: metrics?.salesMetrics?.quotationCount ?? "0",
       description: "Quotations currently in pipeline",
-      icon: <FileText className="h-6 w-6 text-blue-600" />,
+      icon: <FileText className="h-5 w-5 text-blue-600" />,
       bgColor: "bg-blue-100 dark:bg-blue-900/40",
       borderAccent: "border-l-blue-500",
     },
@@ -111,7 +111,7 @@ export default function DashboardPage() {
       title: "Purchase Orders",
       value: metrics?.salesMetrics?.poCount ?? "0",
       description: "Orders pending vendor delivery",
-      icon: <Package className="h-6 w-6 text-orange-600" />,
+      icon: <Package className="h-5 w-5 text-orange-600" />,
       bgColor: "bg-orange-100 dark:bg-orange-900/40",
       borderAccent: "border-l-orange-500",
     },
@@ -119,7 +119,7 @@ export default function DashboardPage() {
       title: "Outstanding Receivables",
       value: formatCurrency(metrics?.financialMetrics?.outstandingReceivables),
       description: "Total unpaid invoice amount",
-      icon: <ReceiptText className="h-6 w-6 text-amber-600" />,
+      icon: <ReceiptText className="h-5 w-5 text-amber-600" />,
       bgColor: "bg-amber-100 dark:bg-amber-900/40",
       borderAccent: "border-l-amber-500",
     },
@@ -175,19 +175,16 @@ export default function DashboardPage() {
       label: "Create Quotation",
       href: "/quotations/create",
       icon: <ScrollText className="h-4 w-4" />,
-      color: "bg-emerald-600 hover:bg-emerald-700 text-white",
     },
     {
       label: "New GRN",
       href: "/inventory/grn/create",
       icon: <Package className="h-4 w-4" />,
-      color: "bg-orange-600 hover:bg-orange-700 text-white",
     },
     {
       label: "New Inspection",
       href: "/quality/inspections/create",
       icon: <ClipboardCheck className="h-4 w-4" />,
-      color: "bg-purple-600 hover:bg-purple-700 text-white",
     },
   ];
 
@@ -199,54 +196,52 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-7xl space-y-8">
+    <div className="mx-auto max-w-7xl space-y-6">
       {/* Welcome Section */}
-      <div className="rounded-xl border bg-gradient-to-r from-slate-50 to-slate-100/60 dark:from-slate-900/50 dark:to-slate-800/30 p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              {greeting()}, {user?.name ?? "User"}
-            </h1>
-            <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
-              <CalendarDays className="h-4 w-4" />
-              <span>{formattedDate}</span>
-              <span className="text-muted-foreground/50">|</span>
-              <span>{formattedTime}</span>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            {greeting()}, {user?.name ?? "User"}
+          </h1>
+          <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
+            <CalendarDays className="h-3.5 w-3.5" />
+            <span>{formattedDate}</span>
+            <span className="text-muted-foreground/40">|</span>
+            <span>{formattedTime}</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-6">
+          {quickStats.map((stat) => (
+            <div key={stat.label} className="text-center">
+              <div className="text-lg font-semibold tabular-nums text-foreground">{stat.value}</div>
+              <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{stat.label}</div>
             </div>
-          </div>
-          <div className="flex items-center gap-6">
-            {quickStats.map((stat) => (
-              <div key={stat.label} className="text-center">
-                <div className="text-lg font-semibold text-foreground">{stat.value}</div>
-                <div className="text-xs text-muted-foreground">{stat.label}</div>
-              </div>
-            ))}
-          </div>
+          ))}
         </div>
       </div>
 
       {/* Hero Metric Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {heroCards.map((card) => (
           <Card
             key={card.title}
-            className={`border-l-4 ${card.borderAccent} transition-shadow hover:shadow-md`}
+            className={`border-l-[3px] ${card.borderAccent} shadow-sm hover:shadow transition-shadow`}
           >
             <CardContent className="p-5">
               <div className="flex items-start justify-between">
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-muted-foreground">
+                <div className="space-y-1.5">
+                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                     {card.title}
                   </p>
-                  <p className="text-3xl font-bold tracking-tight">
+                  <p className="text-2xl font-bold tabular-nums tracking-tight">
                     {card.value}
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground/80">
                     {card.description}
                   </p>
                 </div>
                 <div
-                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${card.bgColor}`}
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${card.bgColor}`}
                 >
                   {card.icon}
                 </div>
@@ -257,22 +252,22 @@ export default function DashboardPage() {
       </div>
 
       {/* Secondary Metric Cards */}
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
         {compactCards.map((card) => (
           <Card
             key={card.title}
-            className="transition-shadow hover:shadow-md"
+            className="shadow-sm hover:shadow transition-shadow"
           >
-            <CardContent className="p-5">
+            <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted/60">
                   {card.icon}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-2xl font-bold tracking-tight">
+                  <p className="text-xl font-bold tabular-nums tracking-tight">
                     {card.value}
                   </p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider">
                     {card.title}
                   </p>
                 </div>
@@ -284,17 +279,17 @@ export default function DashboardPage() {
 
       {/* Quick Actions */}
       <div>
-        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Quick Actions
         </h3>
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-2">
           {quickActions.map((action) => (
             <Link
               key={action.label}
               href={action.href}
-              className={`inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium shadow-sm transition-colors ${action.color}`}
+              className="inline-flex items-center gap-2 rounded-md border border-border/60 bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-muted/60 transition-colors"
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-3.5 w-3.5 text-muted-foreground" />
               {action.label}
             </Link>
           ))}
@@ -303,14 +298,14 @@ export default function DashboardPage() {
 
       {/* Low Stock Alerts */}
       {metrics?.lowStockAlerts?.length > 0 && (
-        <Card>
+        <Card className="shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/40">
-                <AlertTriangle className="h-5 w-5 text-red-600" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/40">
+                <AlertTriangle className="h-4 w-4 text-red-600" />
               </div>
               <div>
-                <CardTitle className="text-base font-semibold">
+                <CardTitle className="text-sm font-semibold">
                   Low Stock Alerts
                 </CardTitle>
                 <p className="text-xs text-muted-foreground">

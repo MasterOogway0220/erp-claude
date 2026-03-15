@@ -145,4 +145,67 @@
   body {
     @apply bg-background text-foreground;
   }
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Focus-visible: clean primary ring */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-ring/40 ring-offset-2 ring-offset-background;
+  }
+
+  /* Selection highlight */
+  ::selection {
+    background: oklch(0.45 0.2 260 / 0.15);
+    color: oklch(0.15 0.015 260);
+  }
+  .dark ::selection {
+    background: oklch(0.65 0.20 260 / 0.25);
+    color: oklch(0.94 0.008 260);
+  }
+
+  /* Scrollbar: thin, subtle, auto-fade */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: oklch(0.75 0.01 260) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background-color: oklch(0.75 0.01 260);
+    border-radius: 3px;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: oklch(0.60 0.015 260);
+  }
+  .dark *::-webkit-scrollbar-thumb {
+    background-color: oklch(0.35 0.02 260);
+  }
+  .dark *::-webkit-scrollbar-thumb:hover {
+    background-color: oklch(0.45 0.02 260);
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 150ms ease-out both;
+  }
+  .animate-slide-up {
+    animation: slideUp 200ms ease-out both;
+  }
 }
