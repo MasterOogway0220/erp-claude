@@ -2,13 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkAccess } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
-import { renderHtmlToPdf } from "@/lib/pdf/render-pdf";
 import { generateStandardQuotationHtml } from "@/lib/pdf/quotation-standard-template";
 import { generateNonStandardQuotationHtml } from "@/lib/pdf/quotation-nonstandard-template";
 import nodemailer from "nodemailer";
 
-// Vercel serverless: increase timeout for PDF generation + email send
-export const maxDuration = 60;
+// Vercel serverless: increase timeout for email send
+export const maxDuration = 30;
 export const dynamic = "force-dynamic";
 
 const DEFAULT_COMPANY = {
@@ -71,39 +70,12 @@ export async function POST(
     const companyInfo = company || DEFAULT_COMPANY;
 
     const isNonStandard = quotation.quotationCategory === "NON_STANDARD";
+    const generateHtml = isNonStandard
+      ? generateNonStandardQuotationHtml
+      : generateStandardQuotationHtml;
 
-    // Generate PDF attachment(s)
-    const attachments: { filename: string; content: Buffer }[] = [];
-    const baseName = quotation.quotationNo.replace(/\//g, "-");
-
-    try {
-      const landscape = false;
-      const generateHtml = isNonStandard
-        ? generateNonStandardQuotationHtml
-        : generateStandardQuotationHtml;
-
-      // Generate Quoted PDF
-      const quotedHtml = generateHtml(quotation as any, companyInfo as any, "QUOTED");
-      const quotedBuf = await renderHtmlToPdf(quotedHtml, landscape);
-      attachments.push({
-        filename: `${baseName}.pdf`,
-        content: quotedBuf,
-      });
-
-      // Generate Unquoted PDF
-      const unquotedHtml = generateHtml(quotation as any, companyInfo as any, "UNQUOTED");
-      const unquotedBuf = await renderHtmlToPdf(unquotedHtml, landscape);
-      attachments.push({
-        filename: `${baseName}-UNQUOTED.pdf`,
-        content: unquotedBuf,
-      });
-    } catch (pdfError) {
-      console.error("Error generating PDF for email attachment:", pdfError);
-      return NextResponse.json(
-        { error: "Failed to generate PDF attachment" },
-        { status: 500 }
-      );
-    }
+    // Generate the quotation HTML (QUOTED version) to embed inline in the email
+    const quotationHtml = generateHtml(quotation as any, companyInfo as any, "QUOTED");
 
     // Create email transporter
     const transporter = nodemailer.createTransport({
@@ -124,19 +96,27 @@ export async function POST(
 
     const isRevision = quotation.version > 0;
     const emailHtml = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2>${isRevision ? "Revised Quotation" : "Quotation"}: ${quotation.quotationNo}${isRevision ? ` (Rev.${quotation.version})` : ""}</h2>
+      <div style="font-family: Arial, sans-serif; max-width: 700px; margin: 0 auto;">
+        <h2 style="color: #1e293b;">${isRevision ? "Revised Quotation" : "Quotation"}: ${quotation.quotationNo}${isRevision ? ` (Rev.${quotation.version})` : ""}</h2>
         <p>Dear ${quotation.customer.contactPerson || "Sir/Madam"},</p>
-        <p>${message || (isRevision ? "Please find attached our revised quotation for your reference. This revision supersedes all previous versions." : "Please find attached our quotation for your reference.")}</p>
+        <p>${message || (isRevision ? "Please find below our revised quotation for your reference. This revision supersedes all previous versions." : "Please find below our quotation for your reference.")}</p>
 
-        <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
-          <h3 style="margin-top: 0;">Quotation Summary</h3>
-          <p><strong>Customer:</strong> ${quotation.customer.name}</p>
-          ${isRevision ? `<p><strong>Revision:</strong> Rev.${quotation.version}</p>` : ""}
-          <p><strong>Date:</strong> ${new Date(quotation.quotationDate).toLocaleDateString()}</p>
-          <p><strong>Total Items:</strong> ${quotation.items.length}</p>
-          <p><strong>Total Amount:</strong> ${quotation.currency} ${totalAmount.toFixed(2)}</p>
-          ${quotation.validUpto ? `<p><strong>Valid Until:</strong> ${new Date(quotation.validUpto).toLocaleDateString()}</p>` : ""}
+        <div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin: 20px 0; border: 1px solid #e2e8f0;">
+          <h3 style="margin-top: 0; color: #334155;">Quotation Summary</h3>
+          <table style="font-size: 14px; color: #475569;">
+            <tr><td style="padding: 3px 12px 3px 0; font-weight: 600;">Customer:</td><td>${quotation.customer.name}</td></tr>
+            ${isRevision ? `<tr><td style="padding: 3px 12px 3px 0; font-weight: 600;">Revision:</td><td>Rev.${quotation.version}</td></tr>` : ""}
+            <tr><td style="padding: 3px 12px 3px 0; font-weight: 600;">Date:</td><td>${new Date(quotation.quotationDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</td></tr>
+            <tr><td style="padding: 3px 12px 3px 0; font-weight: 600;">Total Items:</td><td>${quotation.items.length}</td></tr>
+            <tr><td style="padding: 3px 12px 3px 0; font-weight: 600;">Total Amount:</td><td>${quotation.currency} ${totalAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</td></tr>
+            ${quotation.validUpto ? `<tr><td style="padding: 3px 12px 3px 0; font-weight: 600;">Valid Until:</td><td>${new Date(quotation.validUpto).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</td></tr>` : ""}
+          </table>
+        </div>
+
+        <p>Please find the detailed quotation below:</p>
+
+        <div style="margin: 24px 0; border: 1px solid #e2e8f0; border-radius: 4px; overflow: hidden;">
+          ${quotationHtml}
         </div>
 
         <p>Should you have any queries, please feel free to contact us.</p>
@@ -144,26 +124,26 @@ export async function POST(
         <p>Best regards,<br>
         <strong>${quotation.preparedBy?.name || "Sales Team"}</strong><br>
         ${companyInfo.companyName}<br>
-        ${quotation.preparedBy?.email || companyInfo.email || ""}</p>
+        ${quotation.preparedBy?.email || companyInfo.email || ""}<br>
+        ${companyInfo.telephoneNo || ""}</p>
 
-        <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
-        <p style="font-size: 12px; color: #666;">
-          This is an automated email. Please do not reply directly to this message.
+        <hr style="margin: 30px 0; border: none; border-top: 1px solid #e2e8f0;">
+        <p style="font-size: 11px; color: #94a3b8;">
+          This is a computer generated quotation. For any discrepancies, please contact us directly.
         </p>
       </div>
     `;
 
-    // Build mail options — omit cc if empty to avoid SMTP errors
+    // Build mail options
     const mailOptions: nodemailer.SendMailOptions = {
       from:
         process.env.SMTP_FROM ||
-        `"${companyInfo.companyName}" <noreply@npspipe.com>`,
+        `"${companyInfo.companyName}" <${process.env.SMTP_USER || "noreply@npspipe.com"}>`,
       to,
       subject:
         subject ||
         `${isRevision ? "Revised Quotation" : "Quotation"} ${quotation.quotationNo}${isRevision ? ` Rev.${quotation.version}` : ""} - ${quotation.customer.name}`,
       html: emailHtml,
-      attachments,
     };
     if (cc && cc.trim()) {
       mailOptions.cc = cc;
@@ -194,12 +174,12 @@ export async function POST(
 
       console.error("Error sending email:", sendError?.message || sendError);
       return NextResponse.json(
-        { error: sendError?.message || "Failed to send email" },
+        { error: sendError?.message || "Failed to send email. Please check SMTP configuration." },
         { status: 500 }
       );
     }
 
-    // Email sent successfully — update status first (critical), then log (non-blocking)
+    // Email sent successfully — update status
     await prisma.quotation.update({
       where: { id },
       data: {
@@ -221,7 +201,7 @@ export async function POST(
       });
     }
 
-    // Log email and audit trail — non-blocking, should not prevent success response
+    // Log email and audit trail
     try {
       await prisma.quotationEmailLog.create({
         data: {
