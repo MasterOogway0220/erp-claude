@@ -17,6 +17,9 @@ const prisma = new PrismaClient({ adapter });
 
 const DOCUMENTS_DIR = path.join(__dirname, "..", "documents");
 
+// Shared companyId — set after seedCompanyMaster()
+let NPS_COMPANY_ID = "";
+
 function readExcel(filename: string): Record<string, unknown>[] {
   const filePath = path.join(DOCUMENTS_DIR, filename);
   const wb = XLSX.readFile(filePath);
@@ -282,7 +285,7 @@ async function seedVendors() {
     { name: "Ratnadeep Metal & Tubes Ltd", city: "Mumbai", state: "Maharashtra", productsSupplied: "SS Pipes, CS Pipes" },
   ];
   for (const v of vendors) {
-    await prisma.vendorMaster.create({ data: v });
+    await prisma.vendorMaster.create({ data: { ...v, companyId: NPS_COMPANY_ID } });
   }
   console.log(`  Inserted ${vendors.length} vendors`);
 }
@@ -297,7 +300,7 @@ async function seedCustomers() {
     { name: "Thermax Limited", city: "Pune", state: "Maharashtra", gstNo: "27AAACT1234M1Z0", contactPerson: "Mr. Joshi", email: "purchase@thermaxglobal.com", paymentTerms: "Net 30" },
   ];
   for (const c of customers) {
-    await prisma.customerMaster.create({ data: c });
+    await prisma.customerMaster.create({ data: { ...c, companyId: NPS_COMPANY_ID } });
   }
   console.log(`  Inserted ${customers.length} customers`);
 }
@@ -319,16 +322,8 @@ async function seedAdminUser() {
 
 async function seedCompanyAdmin() {
   console.log("Seeding NPS Company Admin...");
-  const company = await prisma.companyMaster.findFirst({
-    where: { companyName: "NPS Piping Solutions" },
-  });
-  if (!company) {
-    console.log("  Skipping: NPS Piping Solutions company not found");
-    return;
-  }
-  const existing = await prisma.user.findUnique({ where: { email: "admin@npipe.com" } });
-  if (existing) {
-    console.log("  NPS admin already exists, skipping");
+  if (!NPS_COMPANY_ID) {
+    console.log("  Skipping: NPS company not seeded yet");
     return;
   }
   const passwordHash = await bcrypt.hash("Npipe@123", 10);
@@ -338,7 +333,7 @@ async function seedCompanyAdmin() {
       name: "NPS Admin",
       passwordHash,
       role: "ADMIN",
-      companyId: company.id,
+      companyId: NPS_COMPANY_ID,
       isActive: true,
     },
   });
@@ -379,6 +374,7 @@ async function seedDocumentSequences() {
         currentNumber: 0,
         financialYear,
         resetMonth: 4,
+        companyId: NPS_COMPANY_ID,
       },
     });
   }
@@ -436,6 +432,7 @@ async function seedInventory() {
         location: getVal(r, "Location") || null,
         notes: getVal(r, "Notes") || null,
         status: StockStatus.ACCEPTED,
+        companyId: NPS_COMPANY_ID,
       },
     });
     count++;
@@ -445,7 +442,7 @@ async function seedInventory() {
 
 async function seedCompanyMaster() {
   console.log("Seeding Company Master...");
-  await prisma.companyMaster.create({
+  const company = await prisma.companyMaster.create({
     data: {
       companyName: "NPS Piping Solutions",
       companyType: "Trading",
@@ -463,7 +460,8 @@ async function seedCompanyMaster() {
       fyStartMonth: 4,
     },
   });
-  console.log("  Company master created");
+  NPS_COMPANY_ID = company.id;
+  console.log("  Company master created (id:", company.id, ")");
 }
 
 async function seedFinancialYears() {
@@ -527,12 +525,12 @@ async function seedOfferTermTemplates() {
 
   for (let i = 0; i < domesticTerms.length; i++) {
     await prisma.offerTermTemplate.create({
-      data: { ...domesticTerms[i], sortOrder: i + 1, quotationType: "DOMESTIC", isActive: true },
+      data: { ...domesticTerms[i], sortOrder: i + 1, quotationType: "DOMESTIC", isActive: true, companyId: NPS_COMPANY_ID },
     });
   }
   for (let i = 0; i < exportTerms.length; i++) {
     await prisma.offerTermTemplate.create({
-      data: { ...exportTerms[i], sortOrder: i + 1, quotationType: "EXPORT", isActive: true },
+      data: { ...exportTerms[i], sortOrder: i + 1, quotationType: "EXPORT", isActive: true, companyId: NPS_COMPANY_ID },
     });
   }
   console.log(`  Inserted ${domesticTerms.length} domestic + ${exportTerms.length} export offer term templates`);
