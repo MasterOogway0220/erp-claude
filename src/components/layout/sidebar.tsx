@@ -105,7 +105,7 @@ const navSections: NavSection[] = [
         title: "Quotations",
         icon: <FileText className="h-5 w-5" />,
         iconColorClass: "text-indigo-500",
-        roles: ["SALES", "MANAGEMENT", "SUPER_ADMIN"],
+        roles: ["SALES", "MANAGEMENT", "ADMIN", "SUPER_ADMIN"],
         moduleKey: "quotation",
         children: [
           { title: "Quotation List", href: "/quotations" },
@@ -116,7 +116,7 @@ const navSections: NavSection[] = [
         title: "Sales",
         icon: <ShoppingCart className="h-5 w-5" />,
         iconColorClass: "text-emerald-500",
-        roles: ["SALES", "MANAGEMENT", "SUPER_ADMIN"],
+        roles: ["SALES", "MANAGEMENT", "ADMIN", "SUPER_ADMIN"],
         moduleKey: "sales",
         children: [
           { title: "Client P.O. Register", href: "/client-purchase-orders" },
@@ -131,7 +131,7 @@ const navSections: NavSection[] = [
         title: "Purchase",
         icon: <Package className="h-5 w-5" />,
         iconColorClass: "text-orange-500",
-        roles: ["PURCHASE", "MANAGEMENT", "SUPER_ADMIN"],
+        roles: ["PURCHASE", "MANAGEMENT", "ADMIN", "SUPER_ADMIN"],
         moduleKey: "purchase",
         children: [
           { title: "Dashboard", href: "/purchase/dashboard" },
@@ -147,7 +147,7 @@ const navSections: NavSection[] = [
         title: "Inventory",
         icon: <Warehouse className="h-5 w-5" />,
         iconColorClass: "text-cyan-500",
-        roles: ["STORES", "MANAGEMENT", "SUPER_ADMIN"],
+        roles: ["STORES", "MANAGEMENT", "ADMIN", "SUPER_ADMIN"],
         moduleKey: "inventory",
         children: [
           { title: "Stock View", href: "/inventory" },
@@ -160,7 +160,7 @@ const navSections: NavSection[] = [
         title: "Quality",
         icon: <ClipboardCheck className="h-5 w-5" />,
         iconColorClass: "text-violet-500",
-        roles: ["QC", "MANAGEMENT", "SUPER_ADMIN"],
+        roles: ["QC", "MANAGEMENT", "ADMIN", "SUPER_ADMIN"],
         moduleKey: "quality",
         children: [
           { title: "Inspections", href: "/quality" },
@@ -181,7 +181,7 @@ const navSections: NavSection[] = [
         title: "Dispatch & Finance",
         icon: <Truck className="h-5 w-5" />,
         iconColorClass: "text-rose-500",
-        roles: ["STORES", "ACCOUNTS", "MANAGEMENT", "SUPER_ADMIN"],
+        roles: ["STORES", "ACCOUNTS", "MANAGEMENT", "ADMIN", "SUPER_ADMIN"],
         moduleKeys: ["dispatch", "finance"],
         children: [
           { title: "Packing Lists", href: "/dispatch" },
@@ -202,7 +202,7 @@ const navSections: NavSection[] = [
         title: "Reports",
         icon: <BarChart3 className="h-5 w-5" />,
         iconColorClass: "text-teal-500",
-        roles: ["SALES", "MANAGEMENT", "SUPER_ADMIN"],
+        roles: ["SALES", "MANAGEMENT", "ADMIN", "SUPER_ADMIN"],
         moduleKey: "reports",
         children: [
           { title: "All Reports", href: "/reports" },
