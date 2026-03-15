@@ -280,7 +280,7 @@ export default function PurchaseOrderDetailPage() {
     handleApprovalAction("reject", rejectionRemarks);
   };
 
-  const canApprove = user?.role === "MANAGEMENT" || user?.role === "SUPER_ADMIN";
+  const canApprove = user?.role === "MANAGEMENT" || user?.role === "ADMIN" || user?.role === "SUPER_ADMIN";
   const canSubmitForApproval = user?.role === "PURCHASE" || user?.role === "SUPER_ADMIN" || user?.role === "MANAGEMENT";
 
   if (loading) {

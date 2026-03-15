@@ -173,7 +173,7 @@ export default function NCRDetailPage() {
     }
   };
 
-  const canVerify = user?.role === "MANAGEMENT" || user?.role === "SUPER_ADMIN";
+  const canVerify = user?.role === "MANAGEMENT" || user?.role === "ADMIN" || user?.role === "SUPER_ADMIN";
 
   const handleCloseNCR = async () => {
     if (!capaData.rootCause.trim()) {

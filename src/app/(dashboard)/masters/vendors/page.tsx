@@ -92,7 +92,7 @@ export default function VendorsPage() {
   const [approvalVendor, setApprovalVendor] = useState<Vendor | null>(null);
   const [approvalRemarks, setApprovalRemarks] = useState("");
 
-  const canApprove = user?.role === "MANAGEMENT" || user?.role === "SUPER_ADMIN";
+  const canApprove = user?.role === "MANAGEMENT" || user?.role === "ADMIN" || user?.role === "SUPER_ADMIN";
 
   const { data, isLoading } = useQuery({
     queryKey: ["vendors", search],

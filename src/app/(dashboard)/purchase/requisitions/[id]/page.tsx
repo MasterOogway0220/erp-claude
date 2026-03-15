@@ -75,7 +75,7 @@ export default function PRDetailPage({
     }
   };
 
-  const isApprover = user?.role === "MANAGEMENT" || user?.role === "SUPER_ADMIN";
+  const isApprover = user?.role === "MANAGEMENT" || user?.role === "ADMIN" || user?.role === "SUPER_ADMIN";
 
   const updateStatus = async (newStatus: string) => {
     setUpdating(true);
