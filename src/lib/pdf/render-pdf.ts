@@ -53,8 +53,8 @@ export async function renderHtmlToPdf(
     // 2. Try @sparticuz/chromium (works on Vercel, Lambda, and serverless)
     try {
       const chromium = (await import("@sparticuz/chromium")).default;
-      chromium.setHeadlessMode = true;
-      chromium.setGraphicsMode = false;
+      if (typeof chromium.setHeadlessMode === "function") chromium.setHeadlessMode(true);
+      if (typeof chromium.setGraphicsMode === "function") chromium.setGraphicsMode(false);
       args = chromium.args;
       executablePath = await chromium.executablePath();
     } catch {
