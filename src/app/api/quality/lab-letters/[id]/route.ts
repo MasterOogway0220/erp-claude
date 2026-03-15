@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkAccess, companyFilter } from "@/lib/rbac";
+import { createAuditLog } from "@/lib/audit";
 
 export async function GET(
   request: NextRequest,
@@ -17,6 +18,15 @@ export async function GET(
         generatedBy: {
           select: { id: true, name: true },
         },
+        tpiAgency: {
+          select: { id: true, name: true, code: true, contactPerson: true, phone: true, email: true },
+        },
+        inventoryStock: {
+          select: { id: true, heatNo: true, product: true, sizeLabel: true, make: true, quantityMtr: true, pieces: true, status: true },
+        },
+        company: {
+          select: { id: true, companyName: true, regAddressLine1: true, regCity: true, regState: true, regPincode: true, telephoneNo: true, email: true },
+        },
       },
     });
 
@@ -32,6 +42,43 @@ export async function GET(
     console.error("Error fetching lab letter:", error);
     return NextResponse.json(
       { error: "Failed to fetch lab letter" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const { authorized, session, response, companyId } = await checkAccess("labLetter", "write");
+    if (!authorized) return response!;
+
+    const body = await request.json();
+
+    const labLetter = await prisma.labLetter.update({
+      where: { id },
+      data: {
+        status: body.status ?? undefined,
+        remarks: body.remarks ?? undefined,
+      },
+    });
+
+    await createAuditLog({
+      tableName: "LabLetter",
+      recordId: id,
+      action: "UPDATE",
+      userId: session.user.id,
+      companyId,
+    }).catch(console.error);
+
+    return NextResponse.json(labLetter);
+  } catch (error) {
+    console.error("Error updating lab letter:", error);
+    return NextResponse.json(
+      { error: "Failed to update lab letter" },
       { status: 500 }
     );
   }

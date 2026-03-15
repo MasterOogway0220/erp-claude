@@ -934,29 +934,43 @@ function UnitsPanel() {
 }
 
 // ─── MATERIAL CODES ──────────────────────────────────────────────────────────
+// Lightweight panel — for the full Item/Material Entry module, see /masters/material-codes
 
 interface MaterialCode {
   id: string;
   code: string;
+  clientItemCode: string | null;
   description: string | null;
   productType: string | null;
   materialGrade: string | null;
   size: string | null;
   schedule: string | null;
+  standard: string | null;
+  unit: string | null;
+  rate: string | null;
   timesQuoted: number;
   timesOrdered: number;
 }
 
 interface MaterialCodeForm {
   code: string;
+  clientItemCode: string;
   description: string;
   productType: string;
   materialGrade: string;
   size: string;
   schedule: string;
+  standard: string;
+  unit: string;
+  rate: string;
 }
 
-const emptyMCForm: MaterialCodeForm = { code: "", description: "", productType: "", materialGrade: "", size: "", schedule: "" };
+const emptyMCForm: MaterialCodeForm = {
+  code: "", clientItemCode: "", description: "", productType: "",
+  materialGrade: "", size: "", schedule: "", standard: "", unit: "", rate: "",
+};
+
+const MC_UNITS = ["MTR", "NOS", "KG", "SET", "LOT", "PCS", "TON"];
 
 function MaterialCodesPanel() {
   const [materialCodes, setMaterialCodes] = useState<MaterialCode[]>([]);
@@ -986,8 +1000,11 @@ function MaterialCodesPanel() {
   const openEdit = (item: MaterialCode) => {
     setEditingItem(item);
     setFormData({
-      code: item.code, description: item.description || "", productType: item.productType || "",
-      materialGrade: item.materialGrade || "", size: item.size || "", schedule: item.schedule || "",
+      code: item.code, clientItemCode: item.clientItemCode || "",
+      description: item.description || "", productType: item.productType || "",
+      materialGrade: item.materialGrade || "", size: item.size || "",
+      schedule: item.schedule || "", standard: item.standard || "",
+      unit: item.unit || "", rate: item.rate || "",
     });
     setIsDialogOpen(true);
   };
@@ -995,7 +1012,7 @@ function MaterialCodesPanel() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.code.trim()) { toast.error("Code is required"); return; }
+    if (!formData.code.trim()) { toast.error("Item Code is required"); return; }
     setSaving(true);
     try {
       if (editingItem) {
@@ -1003,13 +1020,13 @@ function MaterialCodesPanel() {
           method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(formData),
         });
         if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || "Failed to update"); }
-        toast.success("Material code updated");
+        toast.success("Item code updated");
       } else {
         const res = await fetch("/api/masters/material-codes", {
           method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(formData),
         });
         if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || "Failed to create"); }
-        toast.success("Material code created");
+        toast.success("Item code created");
       }
       closeDialog();
       fetchMaterialCodes();
@@ -1021,44 +1038,62 @@ function MaterialCodesPanel() {
   };
 
   const columns: Column<MaterialCode>[] = [
-    { key: "code", header: "Code", sortable: true, cell: (row) => <span className="font-mono text-sm font-medium">{row.code}</span> },
+    { key: "code", header: "Item Code", sortable: true, cell: (row) => (
+      <div>
+        <span className="font-mono text-sm font-medium">{row.code}</span>
+        {row.clientItemCode && <div className="text-xs text-muted-foreground">Client: {row.clientItemCode}</div>}
+      </div>
+    )},
     { key: "description", header: "Description", cell: (row) => row.description || "—" },
-    { key: "productType", header: "Product Type", sortable: true, cell: (row) => row.productType || "—" },
-    { key: "materialGrade", header: "Material Grade", sortable: true, cell: (row) => row.materialGrade || "—" },
+    { key: "materialGrade", header: "Grade", sortable: true, cell: (row) => row.materialGrade || "—" },
     { key: "size", header: "Size", cell: (row) => row.size || "—" },
     { key: "schedule", header: "Schedule", cell: (row) => row.schedule || "—" },
-    { key: "timesQuoted", header: "Times Quoted", sortable: true, cell: (row) => <span className="text-muted-foreground">{row.timesQuoted ?? 0}</span> },
-    { key: "timesOrdered", header: "Times Ordered", sortable: true, cell: (row) => <span className="text-muted-foreground">{row.timesOrdered ?? 0}</span> },
-    { key: "actions", header: "Actions", cell: (row) => <Button variant="ghost" size="icon" onClick={() => openEdit(row)}><Pencil className="h-4 w-4" /></Button> },
+    { key: "standard", header: "Standard", cell: (row) => row.standard || "—" },
+    { key: "unit", header: "Unit", cell: (row) => row.unit || "—" },
+    { key: "timesQuoted", header: "Quoted", sortable: true, cell: (row) => <span className="text-muted-foreground">{row.timesQuoted ?? 0}</span> },
+    { key: "timesOrdered", header: "Ordered", sortable: true, cell: (row) => <span className="text-muted-foreground">{row.timesOrdered ?? 0}</span> },
+    { key: "actions", header: "", cell: (row) => <Button variant="ghost" size="icon" onClick={() => openEdit(row)}><Pencil className="h-4 w-4" /></Button> },
   ];
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">
+          For the full Item/Material Entry module, go to{" "}
+          <a href="/masters/material-codes" className="text-primary underline underline-offset-2">
+            Masters &rarr; Item / Material Codes
+          </a>
+        </p>
         <Button onClick={openCreate}>
-          <Plus className="h-4 w-4 mr-2" />Add Material Code
+          <Plus className="h-4 w-4 mr-2" />Add Item Code
         </Button>
       </div>
       {loading ? (
-        <div className="rounded-lg border p-8 text-center text-muted-foreground">Loading material codes...</div>
+        <div className="rounded-lg border p-8 text-center text-muted-foreground">Loading item codes...</div>
       ) : (
-        <DataTable columns={columns} data={materialCodes} searchKey="code" searchPlaceholder="Search by code..." pageSize={20} />
+        <DataTable columns={columns} data={materialCodes} searchKey="code" searchPlaceholder="Search by code, grade..." pageSize={20} />
       )}
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl">
           <form onSubmit={handleSubmit}>
             <DialogHeader>
-              <DialogTitle>{editingItem ? "Edit" : "Add"} Material Code</DialogTitle>
+              <DialogTitle>{editingItem ? "Edit" : "Add"} Item / Material Code</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label>Code *</Label>
-                <Input value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} placeholder="e.g., MC-PIPE-CS-001" required />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label>Item Code *</Label>
+                  <Input value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })} placeholder="e.g., MC-PIPE-CS-001" className="font-mono" required />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Client Item Code</Label>
+                  <Input value={formData.clientItemCode} onChange={(e) => setFormData({ ...formData, clientItemCode: e.target.value })} placeholder="Client's code" />
+                </div>
               </div>
               <div className="grid gap-2">
-                <Label>Description</Label>
-                <Input value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="e.g., Carbon Steel Seamless Pipe" />
+                <Label>Product Description</Label>
+                <Input value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="As mentioned in Client PO" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
@@ -1070,14 +1105,33 @@ function MaterialCodesPanel() {
                   <Input value={formData.materialGrade} onChange={(e) => setFormData({ ...formData, materialGrade: e.target.value })} placeholder="e.g., ASTM A106 Gr. B" />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div className="grid gap-2">
                   <Label>Size</Label>
-                  <Input value={formData.size} onChange={(e) => setFormData({ ...formData, size: e.target.value })} placeholder='e.g., 2" NB' />
+                  <Input value={formData.size} onChange={(e) => setFormData({ ...formData, size: e.target.value })} placeholder='OD, NB, Thickness' />
                 </div>
                 <div className="grid gap-2">
                   <Label>Schedule</Label>
                   <Input value={formData.schedule} onChange={(e) => setFormData({ ...formData, schedule: e.target.value })} placeholder="e.g., SCH 40" />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Standard</Label>
+                  <Input value={formData.standard} onChange={(e) => setFormData({ ...formData, standard: e.target.value })} placeholder="ASTM / ASME" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label>Unit</Label>
+                  <Select value={formData.unit} onValueChange={(v) => setFormData({ ...formData, unit: v })}>
+                    <SelectTrigger><SelectValue placeholder="Select unit" /></SelectTrigger>
+                    <SelectContent>
+                      {MC_UNITS.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label>Rate (₹)</Label>
+                  <Input type="number" step="0.01" min="0" value={formData.rate} onChange={(e) => setFormData({ ...formData, rate: e.target.value })} placeholder="Default rate" className="font-mono" />
                 </div>
               </div>
             </div>

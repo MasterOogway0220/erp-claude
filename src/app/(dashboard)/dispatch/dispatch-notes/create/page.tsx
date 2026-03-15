@@ -27,6 +27,7 @@ import { ArrowLeft, Save } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { PageLoading } from "@/components/shared/page-loading";
+import { DispatchAddressSelect, DispatchAddress } from "@/components/shared/dispatch-address-select";
 
 interface PackingList {
   id: string;
@@ -83,6 +84,7 @@ function CreateDispatchNotePage() {
     lrNo: "",
     lrDate: "",
     transporterId: "",
+    dispatchAddressId: "" as string | null,
     destination: "",
     ewayBillNo: "",
     remarks: "",
@@ -165,6 +167,7 @@ function CreateDispatchNotePage() {
           packingListId: formData.packingListId,
           salesOrderId: selectedPL.salesOrder?.id,
           warehouseId: formData.warehouseId || null,
+          dispatchAddressId: formData.dispatchAddressId || null,
           vehicleNo: formData.vehicleNo || null,
           lrNo: formData.lrNo || null,
           lrDate: formData.lrDate ? new Date(formData.lrDate).toISOString() : null,
@@ -316,15 +319,33 @@ function CreateDispatchNotePage() {
               </div>
             </div>
 
+            {/* Dispatch Address Selection */}
+            {selectedPL && (
+              <DispatchAddressSelect
+                customerId={selectedPL.salesOrder?.customer?.id || null}
+                value={formData.dispatchAddressId}
+                onChange={(addressId, address) => {
+                  setFormData((prev) => ({
+                    ...prev,
+                    dispatchAddressId: addressId,
+                    // Auto-fill destination from address city/state for transport reference
+                    destination: address
+                      ? [address.city, address.state].filter(Boolean).join(", ")
+                      : prev.destination,
+                  }));
+                }}
+              />
+            )}
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Destination</Label>
+                <Label>Destination (for transport)</Label>
                 <Input
                   value={formData.destination}
                   onChange={(e) =>
                     setFormData({ ...formData, destination: e.target.value })
                   }
-                  placeholder="Delivery destination"
+                  placeholder="Auto-filled from address or enter manually"
                 />
               </div>
               <div className="space-y-2">

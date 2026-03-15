@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkAccess } from "@/lib/rbac";
+import { checkAuth } from "@/lib/rbac";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 
@@ -13,7 +13,7 @@ const UPLOAD_DIR =
 
 export async function POST(request: NextRequest) {
   try {
-    const { authorized, response } = await checkAccess("masters", "write");
+    const { authorized, response } = await checkAuth();
     if (!authorized) return response!;
 
     const formData = await request.formData();

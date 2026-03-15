@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Edit, SplitSquareHorizontal } from "lucide-react";
+import { ArrowLeft, Edit, SplitSquareHorizontal, Plus, Trash2, Save } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -35,6 +35,9 @@ export default function StockDetailPage() {
   const [updateData, setUpdateData] = useState({ status: "", location: "", rackNo: "", notes: "" });
   const [partialData, setPartialData] = useState({ acceptedQty: "", acceptedPcs: "", rejectedQty: "", rejectedPcs: "", rejectionNotes: "" });
   const [submitting, setSubmitting] = useState(false);
+  const [pipeRows, setPipeRows] = useState<any[]>([]);
+  const [pipeEditing, setPipeEditing] = useState(false);
+  const [pipeSaving, setPipeSaving] = useState(false);
 
   useEffect(() => { if (params.id) fetchStock(params.id as string); }, [params.id]);
 
@@ -89,6 +92,77 @@ export default function StockDetailPage() {
     const total = stock ? Number(stock.quantityMtr) : 0;
     const rejected = Math.max(0, total - accepted);
     setPartialData({ ...partialData, acceptedQty: val, rejectedQty: rejected.toFixed(3) });
+  };
+
+  const initPipeRows = (details: any[]) => {
+    if (details && details.length > 0) {
+      setPipeRows(details.map((d: any) => ({
+        id: d.id, pipeNo: d.pipeNo, length: d.length ? Number(d.length) : "",
+        heatNo: d.heatNo || "", make: d.make || "", mtcNo: d.mtcNo || "",
+        mtcDate: d.mtcDate ? d.mtcDate.split("T")[0] : "", bundleNo: d.bundleNo || "",
+        quantity: d.quantity || 1, remarks: d.remarks || "",
+      })));
+    } else {
+      setPipeRows([]);
+    }
+    setPipeEditing(false);
+  };
+
+  useEffect(() => {
+    if (stock?.pipeDetails) initPipeRows(stock.pipeDetails);
+  }, [stock?.pipeDetails]);
+
+  const addPipeRow = () => {
+    const nextNo = pipeRows.length > 0 ? Math.max(...pipeRows.map((r) => r.pipeNo)) + 1 : 1;
+    setPipeRows([...pipeRows, {
+      pipeNo: nextNo, length: "", heatNo: stock?.heatNo || "", make: stock?.make || "",
+      mtcNo: stock?.mtcNo || "", mtcDate: stock?.mtcDate ? stock.mtcDate.split("T")[0] : "",
+      bundleNo: "", quantity: 1, remarks: "",
+    }]);
+  };
+
+  const addMultiplePipeRows = () => {
+    const count = stock?.pieces || 5;
+    const startNo = pipeRows.length > 0 ? Math.max(...pipeRows.map((r) => r.pipeNo)) + 1 : 1;
+    const newRows = Array.from({ length: count }, (_, i) => ({
+      pipeNo: startNo + i, length: "", heatNo: stock?.heatNo || "", make: stock?.make || "",
+      mtcNo: stock?.mtcNo || "", mtcDate: stock?.mtcDate ? stock.mtcDate.split("T")[0] : "",
+      bundleNo: "", quantity: 1, remarks: "",
+    }));
+    setPipeRows([...pipeRows, ...newRows]);
+  };
+
+  const removePipeRow = (index: number) => {
+    setPipeRows(pipeRows.filter((_, i) => i !== index));
+  };
+
+  const updatePipeRow = (index: number, field: string, value: any) => {
+    const updated = [...pipeRows];
+    updated[index] = { ...updated[index], [field]: value };
+    setPipeRows(updated);
+  };
+
+  const savePipeDetails = async () => {
+    setPipeSaving(true);
+    try {
+      const response = await fetch(`/api/inventory/stock/${params.id}/pipe-details`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pipes: pipeRows }),
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || "Failed to save");
+      }
+      const data = await response.json();
+      initPipeRows(data.pipeDetails);
+      toast.success(`Saved ${data.pipeDetails.length} pipe detail(s)`);
+      fetchStock(params.id as string);
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setPipeSaving(false);
+    }
   };
 
   if (loading) return <PageLoading />;
@@ -219,13 +293,138 @@ export default function StockDetailPage() {
         </Card>
       </div>
 
-      <Tabs defaultValue="inspections" className="space-y-4">
+      <Tabs defaultValue="pipe-details" className="space-y-4">
         <TabsList>
+          <TabsTrigger value="pipe-details">Pipe Details ({stock.pipeDetails?.length || 0})</TabsTrigger>
           <TabsTrigger value="inspections">Inspections ({stock.inspections?.length || 0})</TabsTrigger>
           <TabsTrigger value="reservations">Reservations ({stock.stockReservations?.length || 0})</TabsTrigger>
           <TabsTrigger value="ncr">NCRs ({stock.ncrs?.length || 0})</TabsTrigger>
           <TabsTrigger value="mtc">MTCs ({stock.mtcDocuments?.length || 0})</TabsTrigger>
+          <TabsTrigger value="lab-reports">Lab Reports ({stock.labReports?.length || 0})</TabsTrigger>
         </TabsList>
+        <TabsContent value="pipe-details">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+              <CardTitle>Pipe Material Details</CardTitle>
+              <div className="flex gap-2">
+                {!pipeEditing ? (
+                  <Button size="sm" variant="outline" onClick={() => setPipeEditing(true)}>
+                    <Edit className="w-4 h-4 mr-2" />Edit
+                  </Button>
+                ) : (
+                  <>
+                    <Button size="sm" variant="outline" onClick={addPipeRow}>
+                      <Plus className="w-4 h-4 mr-2" />Add Row
+                    </Button>
+                    {pipeRows.length === 0 && (
+                      <Button size="sm" variant="outline" onClick={addMultiplePipeRows}>
+                        <Plus className="w-4 h-4 mr-2" />Add {stock.pieces || 5} Rows
+                      </Button>
+                    )}
+                    <Button size="sm" variant="outline" onClick={() => initPipeRows(stock.pipeDetails)}>Cancel</Button>
+                    <Button size="sm" onClick={savePipeDetails} disabled={pipeSaving}>
+                      <Save className="w-4 h-4 mr-2" />{pipeSaving ? "Saving..." : "Save"}
+                    </Button>
+                  </>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              {pipeRows.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[70px]">Pipe No</TableHead>
+                        <TableHead className="w-[100px]">Length</TableHead>
+                        <TableHead>Heat No</TableHead>
+                        <TableHead>Make</TableHead>
+                        <TableHead>MTC No</TableHead>
+                        <TableHead className="w-[130px]">MTC Date</TableHead>
+                        <TableHead>Bundle No</TableHead>
+                        <TableHead className="w-[70px]">Qty</TableHead>
+                        <TableHead>Remarks</TableHead>
+                        {pipeEditing && <TableHead className="w-[50px]" />}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {pipeRows.map((row, idx) => (
+                        <TableRow key={idx}>
+                          <TableCell>
+                            {pipeEditing ? (
+                              <Input type="number" value={row.pipeNo} onChange={(e) => updatePipeRow(idx, "pipeNo", parseInt(e.target.value) || 0)} className="h-8 w-16" />
+                            ) : <span className="font-mono">{row.pipeNo}</span>}
+                          </TableCell>
+                          <TableCell>
+                            {pipeEditing ? (
+                              <Input type="number" step="0.001" value={row.length} onChange={(e) => updatePipeRow(idx, "length", e.target.value)} className="h-8 w-24" placeholder="0.000" />
+                            ) : <span>{row.length ? Number(row.length).toFixed(3) : "—"}</span>}
+                          </TableCell>
+                          <TableCell>
+                            {pipeEditing ? (
+                              <Input value={row.heatNo} onChange={(e) => updatePipeRow(idx, "heatNo", e.target.value)} className="h-8" />
+                            ) : <span>{row.heatNo || "—"}</span>}
+                          </TableCell>
+                          <TableCell>
+                            {pipeEditing ? (
+                              <Input value={row.make} onChange={(e) => updatePipeRow(idx, "make", e.target.value)} className="h-8" />
+                            ) : <span>{row.make || "—"}</span>}
+                          </TableCell>
+                          <TableCell>
+                            {pipeEditing ? (
+                              <Input value={row.mtcNo} onChange={(e) => updatePipeRow(idx, "mtcNo", e.target.value)} className="h-8" />
+                            ) : <span>{row.mtcNo || "—"}</span>}
+                          </TableCell>
+                          <TableCell>
+                            {pipeEditing ? (
+                              <Input type="date" value={row.mtcDate} onChange={(e) => updatePipeRow(idx, "mtcDate", e.target.value)} className="h-8" />
+                            ) : <span>{row.mtcDate ? format(new Date(row.mtcDate), "dd MMM yyyy") : "—"}</span>}
+                          </TableCell>
+                          <TableCell>
+                            {pipeEditing ? (
+                              <Input value={row.bundleNo} onChange={(e) => updatePipeRow(idx, "bundleNo", e.target.value)} className="h-8" />
+                            ) : <span>{row.bundleNo || "—"}</span>}
+                          </TableCell>
+                          <TableCell>
+                            {pipeEditing ? (
+                              <Input type="number" value={row.quantity} onChange={(e) => updatePipeRow(idx, "quantity", parseInt(e.target.value) || 1)} className="h-8 w-16" />
+                            ) : <span>{row.quantity}</span>}
+                          </TableCell>
+                          <TableCell>
+                            {pipeEditing ? (
+                              <Input value={row.remarks} onChange={(e) => updatePipeRow(idx, "remarks", e.target.value)} className="h-8" placeholder="Optional" />
+                            ) : <span className="text-sm text-muted-foreground">{row.remarks || "—"}</span>}
+                          </TableCell>
+                          {pipeEditing && (
+                            <TableCell>
+                              <Button variant="ghost" size="sm" onClick={() => removePipeRow(idx)} className="h-8 w-8 p-0 text-red-500 hover:text-red-700">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </TableCell>
+                          )}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  {!pipeEditing && pipeRows.length > 0 && (
+                    <div className="mt-3 text-sm text-muted-foreground">
+                      Total pipes: <strong>{pipeRows.length}</strong> | Total length: <strong>{pipeRows.reduce((sum, r) => sum + (Number(r.length) || 0), 0).toFixed(3)} Mtr</strong>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground mb-4">No individual pipe details recorded yet</p>
+                  {!pipeEditing && (
+                    <Button variant="outline" onClick={() => { setPipeEditing(true); addMultiplePipeRows(); }}>
+                      <Plus className="w-4 h-4 mr-2" />Add Pipe Details ({stock.pieces || 5} pipes)
+                    </Button>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
         <TabsContent value="inspections">
           <Card><CardContent className="pt-6">
             {stock.inspections?.length > 0 ? (
@@ -286,6 +485,28 @@ export default function StockDetailPage() {
                   </TableRow>
                 ))}</TableBody></Table>
             ) : <div className="text-center text-muted-foreground py-8">No MTC documents</div>}
+          </CardContent></Card>
+        </TabsContent>
+        <TabsContent value="lab-reports">
+          <Card><CardContent className="pt-6">
+            {stock.labReports?.length > 0 ? (
+              <Table><TableHeader><TableRow><TableHead>Report No.</TableHead><TableHead>Type</TableHead><TableHead>Result</TableHead><TableHead>Lab</TableHead><TableHead>Date</TableHead><TableHead>Document</TableHead></TableRow></TableHeader>
+                <TableBody>{stock.labReports.map((lr: any) => (
+                  <TableRow key={lr.id}>
+                    <TableCell><Link href={`/quality/lab-reports/${lr.id}`} className="text-blue-600 hover:underline font-mono">{lr.reportNo}</Link></TableCell>
+                    <TableCell>{{ CHEMICAL: "Chemical", MECHANICAL: "Mechanical", HYDRO: "Hydro", IMPACT: "Impact", IGC: "IGC" }[lr.reportType as string] || lr.reportType}</TableCell>
+                    <TableCell><Badge className={lr.result === "PASS" ? "bg-green-500" : lr.result === "FAIL" ? "bg-red-500" : "bg-yellow-500"}>{lr.result || "PENDING"}</Badge></TableCell>
+                    <TableCell>{lr.labName || "—"}</TableCell>
+                    <TableCell>{format(new Date(lr.reportDate), "dd MMM yyyy")}</TableCell>
+                    <TableCell>{lr.filePath ? <a href={lr.filePath} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">{lr.fileName || "View"}</a> : "—"}</TableCell>
+                  </TableRow>
+                ))}</TableBody></Table>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground mb-4">No lab reports linked to this stock</p>
+                <Link href="/quality/lab-reports/create"><Button variant="outline" size="sm">Upload Lab Report</Button></Link>
+              </div>
+            )}
           </CardContent></Card>
         </TabsContent>
       </Tabs>

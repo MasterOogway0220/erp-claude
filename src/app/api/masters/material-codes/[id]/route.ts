@@ -14,7 +14,7 @@ export async function GET(
     const { id } = await params;
 
     const materialCode = await prisma.materialCodeMaster.findUnique({
-      where: { id, ...companyFilter(companyId) },
+      where: { id },
     });
 
     if (!materialCode) {
@@ -46,14 +46,21 @@ export async function PATCH(
     const body = await request.json();
 
     const materialCode = await prisma.materialCodeMaster.update({
-      where: { id, ...companyFilter(companyId) },
+      where: { id },
       data: {
         code: body.code ?? undefined,
+        clientItemCode: body.clientItemCode ?? undefined,
         description: body.description ?? undefined,
         productType: body.productType ?? undefined,
         materialGrade: body.materialGrade ?? undefined,
         size: body.size ?? undefined,
+        odSize: body.odSize ?? undefined,
+        nbSize: body.nbSize ?? undefined,
+        thickness: body.thickness ?? undefined,
         schedule: body.schedule ?? undefined,
+        standard: body.standard ?? undefined,
+        unit: body.unit ?? undefined,
+        rate: body.rate !== undefined ? (body.rate ? parseFloat(body.rate) : null) : undefined,
       },
     });
 
@@ -69,7 +76,7 @@ export async function PATCH(
   } catch (error: any) {
     if (error?.code === "P2002") {
       return NextResponse.json(
-        { error: "Material code already exists" },
+        { error: "Item code already exists" },
         { status: 400 }
       );
     }
@@ -92,7 +99,7 @@ export async function DELETE(
     const { id } = await params;
 
     const materialCode = await prisma.materialCodeMaster.findUnique({
-      where: { id, ...companyFilter(companyId) },
+      where: { id },
       select: {
         code: true,
         _count: { select: { quotationItems: true } },
@@ -106,13 +113,13 @@ export async function DELETE(
     if (materialCode._count.quotationItems > 0) {
       return NextResponse.json(
         {
-          error: `Cannot delete material code "${materialCode.code}". It is used in ${materialCode._count.quotationItems} quotation item(s).`,
+          error: `Cannot delete item "${materialCode.code}". It is used in ${materialCode._count.quotationItems} quotation item(s).`,
         },
         { status: 400 }
       );
     }
 
-    await prisma.materialCodeMaster.delete({ where: { id, ...companyFilter(companyId) } });
+    await prisma.materialCodeMaster.delete({ where: { id } });
 
     await createAuditLog({
       tableName: "MaterialCodeMaster",

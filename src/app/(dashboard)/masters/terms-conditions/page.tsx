@@ -6,7 +6,6 @@ import { DataTable, Column } from "@/components/shared/data-table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -174,7 +173,7 @@ function PaymentTermsTab() {
               </div>
               <div className="grid gap-2">
                 <Label>Description</Label>
-                <Textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={2} />
+                <Input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
               </div>
               <div className="grid gap-2">
                 <Label>Credit Days *</Label>
@@ -284,7 +283,7 @@ function DeliveryTermsTab() {
             <div className="grid gap-4 py-4">
               <div className="grid gap-2"><Label>Code</Label><Input value={form.code} onChange={e => setForm({ ...form, code: e.target.value })} placeholder='e.g., "EXW"' /></div>
               <div className="grid gap-2"><Label>Name *</Label><Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder='e.g., "Ex-Works"' required /></div>
-              <div className="grid gap-2"><Label>Description</Label><Textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={2} /></div>
+              <div className="grid gap-2"><Label>Description</Label><Input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></div>
               <div className="grid gap-2"><Label>Incoterms</Label><Input value={form.incoterms} onChange={e => setForm({ ...form, incoterms: e.target.value })} placeholder='e.g., "EXW", "FOB", "CIF"' /></div>
               <div className="grid gap-2"><Label>Status</Label><StatusRadio value={form.isActive} onChange={v => setForm({ ...form, isActive: v })} /></div>
             </div>
@@ -534,8 +533,8 @@ function InspectionAgenciesTab() {
                 <div className="grid gap-2"><Label>Phone</Label><Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} /></div>
               </div>
               <div className="grid gap-2"><Label>Email</Label><Input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></div>
-              <div className="grid gap-2"><Label>Address</Label><Textarea value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} rows={2} /></div>
-              <div className="grid gap-2"><Label>Accreditation Details</Label><Textarea value={form.accreditationDetails} onChange={e => setForm({ ...form, accreditationDetails: e.target.value })} rows={2} /></div>
+              <div className="grid gap-2"><Label>Address</Label><Input value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} /></div>
+              <div className="grid gap-2"><Label>Accreditation Details</Label><Input value={form.accreditationDetails} onChange={e => setForm({ ...form, accreditationDetails: e.target.value })} /></div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label>Approved Status</Label>

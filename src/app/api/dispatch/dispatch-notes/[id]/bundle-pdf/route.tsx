@@ -110,6 +110,7 @@ export async function GET(
             customer: true,
           },
         },
+        dispatchAddress: true,
         transporter: true,
       },
     });
@@ -122,6 +123,7 @@ export async function GET(
     }
 
     const customer = dispatchNote.salesOrder?.customer;
+    const dispatchAddr = (dispatchNote as any).dispatchAddress;
     const plItems = dispatchNote.packingList?.items || [];
 
     // Collect all MTCs and inspections from the inventory stock items
@@ -192,9 +194,13 @@ export async function GET(
             <span class="mono">${customer?.gstNo || "---"}</span>
           </div>
           <div class="info-item">
-            <label>Address</label>
-            <span>${[customer?.addressLine1, customer?.addressLine2, customer?.city, customer?.state, customer?.pincode].filter(Boolean).join(", ") || "---"}</span>
+            <label>${dispatchAddr ? "Dispatch Address" : "Address"}</label>
+            <span>${dispatchAddr
+              ? [dispatchAddr.companyName, dispatchAddr.addressLine1, dispatchAddr.addressLine2, dispatchAddr.city, dispatchAddr.state, dispatchAddr.pincode ? `PIN: ${dispatchAddr.pincode}` : null].filter(Boolean).join(", ")
+              : [customer?.addressLine1, customer?.addressLine2, customer?.city, customer?.state, customer?.pincode].filter(Boolean).join(", ") || "---"}</span>
           </div>
+          ${dispatchAddr?.contactPerson ? `<div class="info-item"><label>Site Contact</label><span>${dispatchAddr.contactPerson}${dispatchAddr.contactNumber ? ` (${dispatchAddr.contactNumber})` : ""}</span></div>` : ""}
+          ${dispatchAddr?.gstNo ? `<div class="info-item"><label>Dispatch GST</label><span class="mono">${dispatchAddr.gstNo}</span></div>` : ""}
           <div class="info-item">
             <label>Contact</label>
             <span>${customer?.contactPerson || "---"}${customer?.phone ? ` | ${customer.phone}` : ""}</span>

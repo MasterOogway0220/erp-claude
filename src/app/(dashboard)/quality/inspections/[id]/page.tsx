@@ -15,7 +15,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft } from "lucide-react";
+import {
+  ArrowLeft,
+  Image as ImageIcon,
+  FileText,
+  ShieldCheck,
+  ExternalLink,
+  Download,
+} from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -26,6 +33,84 @@ const inspectionResultColors: Record<string, string> = {
   FAIL: "bg-red-500",
   HOLD: "bg-yellow-500",
 };
+
+// ---------------------------------------------------------------------------
+// Document List Component
+// ---------------------------------------------------------------------------
+
+function DocumentList({
+  title,
+  icon,
+  paths,
+  isImage,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  paths: string[];
+  isImage?: boolean;
+}) {
+  if (!paths || paths.length === 0) return null;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        {icon}
+        <h4 className="text-sm font-medium">{title}</h4>
+        <Badge variant="secondary" className="text-xs">
+          {paths.length}
+        </Badge>
+      </div>
+      {isImage ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          {paths.map((path, index) => (
+            <a
+              key={index}
+              href={path}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="relative group rounded-lg border overflow-hidden aspect-square bg-muted hover:ring-2 hover:ring-primary/50 transition-all"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={path}
+                alt={`Inspection image ${index + 1}`}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                <ExternalLink className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" />
+              </div>
+            </a>
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-1.5">
+          {paths.map((filePath, index) => {
+            const fileName = filePath.split("/").pop() || `Document ${index + 1}`;
+            // Strip timestamp prefix for display
+            const displayName = fileName.replace(/^\d+_/, "");
+            return (
+              <a
+                key={index}
+                href={filePath}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm hover:bg-accent/50 transition-colors"
+              >
+                <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <span className="truncate flex-1">{displayName}</span>
+                <Download className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              </a>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main Component
+// ---------------------------------------------------------------------------
 
 export default function InspectionDetailPage() {
   const router = useRouter();
@@ -59,6 +144,11 @@ export default function InspectionDetailPage() {
   const stock = inspection.inventoryStock;
   const grnItem = inspection.grnItem;
   const grn = grnItem?.grn;
+
+  const imagePaths: string[] = Array.isArray(inspection.imagePaths) ? inspection.imagePaths : [];
+  const reportPaths: string[] = Array.isArray(inspection.reportPaths) ? inspection.reportPaths : [];
+  const tpiSignOffPaths: string[] = Array.isArray(inspection.tpiSignOffPaths) ? inspection.tpiSignOffPaths : [];
+  const hasDocuments = imagePaths.length > 0 || reportPaths.length > 0 || tpiSignOffPaths.length > 0 || inspection.reportPath;
 
   return (
     <div className="space-y-6">
@@ -135,6 +225,26 @@ export default function InspectionDetailPage() {
                   {inspection.overallResult}
                 </Badge>
               </div>
+              {inspection.tpiAgency && (
+                <div>
+                  <div className="text-sm text-muted-foreground">TPI Agency</div>
+                  <div className="flex items-center gap-1.5">
+                    <ShieldCheck className="h-4 w-4 text-violet-500" />
+                    <span>{inspection.tpiAgency.name}</span>
+                    <Badge variant="outline" className="text-xs">
+                      {inspection.tpiAgency.code}
+                    </Badge>
+                  </div>
+                </div>
+              )}
+              {inspection.inspectionType && (
+                <div>
+                  <div className="text-sm text-muted-foreground">Inspection Type</div>
+                  <Badge variant="outline">
+                    {inspection.inspectionType.replace(/_/g, " ")}
+                  </Badge>
+                </div>
+              )}
             </div>
             {inspection.remarks && (
               <>
@@ -187,6 +297,44 @@ export default function InspectionDetailPage() {
         </Card>
       </div>
 
+      {/* Documents & Images Section */}
+      {hasDocuments && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-muted-foreground" />
+              Inspection Documents & Images
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Inspection Images */}
+              <DocumentList
+                title="Inspection Images"
+                icon={<ImageIcon className="h-5 w-5 text-blue-500" />}
+                paths={imagePaths}
+                isImage
+              />
+
+              {/* Inspection Reports */}
+              <DocumentList
+                title="Inspection Reports"
+                icon={<FileText className="h-5 w-5 text-emerald-500" />}
+                paths={reportPaths.length > 0 ? reportPaths : (inspection.reportPath ? [inspection.reportPath] : [])}
+              />
+
+              {/* TPI Sign-off Documents */}
+              <DocumentList
+                title="TPI Sign-off Documents"
+                icon={<ShieldCheck className="h-5 w-5 text-violet-500" />}
+                paths={tpiSignOffPaths}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Inspection Parameters */}
       <Card>
         <CardHeader>
           <CardTitle>Inspection Parameters</CardTitle>

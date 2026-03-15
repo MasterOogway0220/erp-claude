@@ -8,7 +8,7 @@ export function useCurrentUser() {
 
   return {
     user: session?.user as
-      | { id: string; email: string; name: string; role: UserRole; companyId: string | null }
+      | { id: string; email: string; name: string; role: UserRole; companyId: string | null; moduleAccess: string[] }
       | undefined,
     isLoading: status === "loading",
     isAuthenticated: status === "authenticated",

@@ -30,6 +30,24 @@ const MODULE_ACCESS: Record<string, Record<RBACAction, UserRole[]>> = {
     delete: ["SALES", "SUPER_ADMIN"],
     approve: ["MANAGEMENT", "SUPER_ADMIN"],
   },
+  clientPO: {
+    read: ["SALES", "PURCHASE", "STORES", "MANAGEMENT", "SUPER_ADMIN"],
+    write: ["SALES", "SUPER_ADMIN"],
+    delete: ["SALES", "SUPER_ADMIN"],
+    approve: ["MANAGEMENT", "SUPER_ADMIN"],
+  },
+  poAcceptance: {
+    read: ["SALES", "PURCHASE", "STORES", "MANAGEMENT", "SUPER_ADMIN"],
+    write: ["SALES", "SUPER_ADMIN"],
+    delete: ["SALES", "SUPER_ADMIN"],
+    approve: ["MANAGEMENT", "SUPER_ADMIN"],
+  },
+  customerContacts: {
+    read: ["SALES", "PURCHASE", "STORES", "QC", "ACCOUNTS", "MANAGEMENT", "SUPER_ADMIN"],
+    write: ["SALES", "SUPER_ADMIN"],
+    delete: ["SALES", "SUPER_ADMIN"],
+    approve: ["SUPER_ADMIN"],
+  },
   purchaseRequisition: {
     read: ["PURCHASE", "SALES", "MANAGEMENT", "SUPER_ADMIN"],
     write: ["PURCHASE", "SALES", "SUPER_ADMIN"],
@@ -66,6 +84,12 @@ const MODULE_ACCESS: Record<string, Record<RBACAction, UserRole[]>> = {
     delete: ["QC", "SUPER_ADMIN"],
     approve: ["MANAGEMENT", "SUPER_ADMIN"],
   },
+  inspectionOffer: {
+    read: ["QC", "SALES", "STORES", "MANAGEMENT", "SUPER_ADMIN"],
+    write: ["QC", "SALES", "SUPER_ADMIN"],
+    delete: ["QC", "SUPER_ADMIN"],
+    approve: ["MANAGEMENT", "SUPER_ADMIN"],
+  },
   qcRelease: {
     read: ["QC", "STORES", "MANAGEMENT", "SUPER_ADMIN"],
     write: ["QC", "SUPER_ADMIN"],
@@ -84,8 +108,20 @@ const MODULE_ACCESS: Record<string, Record<RBACAction, UserRole[]>> = {
     delete: ["QC", "SUPER_ADMIN"],
     approve: ["MANAGEMENT", "SUPER_ADMIN"],
   },
+  qualityRequirement: {
+    read: ["QC", "STORES", "PURCHASE", "MANAGEMENT", "SUPER_ADMIN"],
+    write: ["QC", "SUPER_ADMIN"],
+    delete: ["QC", "SUPER_ADMIN"],
+    approve: ["MANAGEMENT", "SUPER_ADMIN"],
+  },
   labLetter: {
     read: ["QC", "MANAGEMENT", "SUPER_ADMIN"],
+    write: ["QC", "SUPER_ADMIN"],
+    delete: ["QC", "SUPER_ADMIN"],
+    approve: ["MANAGEMENT", "SUPER_ADMIN"],
+  },
+  labReport: {
+    read: ["QC", "STORES", "PURCHASE", "MANAGEMENT", "SUPER_ADMIN"],
     write: ["QC", "SUPER_ADMIN"],
     delete: ["QC", "SUPER_ADMIN"],
     approve: ["MANAGEMENT", "SUPER_ADMIN"],
@@ -135,6 +171,18 @@ const MODULE_ACCESS: Record<string, Record<RBACAction, UserRole[]>> = {
   dispatch: {
     read: ["STORES", "SALES", "ACCOUNTS", "MANAGEMENT", "SUPER_ADMIN"],
     write: ["STORES", "SUPER_ADMIN"],
+    delete: ["STORES", "SUPER_ADMIN"],
+    approve: ["MANAGEMENT", "SUPER_ADMIN"],
+  },
+  alerts: {
+    read: ["SALES", "PURCHASE", "QC", "STORES", "ACCOUNTS", "MANAGEMENT", "SUPER_ADMIN"],
+    write: ["SALES", "PURCHASE", "QC", "STORES", "ACCOUNTS", "MANAGEMENT", "SUPER_ADMIN"],
+    delete: ["SUPER_ADMIN"],
+    approve: ["SUPER_ADMIN"],
+  },
+  warehouseIntimation: {
+    read: ["STORES", "SALES", "PURCHASE", "MANAGEMENT", "SUPER_ADMIN"],
+    write: ["STORES", "SALES", "SUPER_ADMIN"],
     delete: ["STORES", "SUPER_ADMIN"],
     approve: ["MANAGEMENT", "SUPER_ADMIN"],
   },

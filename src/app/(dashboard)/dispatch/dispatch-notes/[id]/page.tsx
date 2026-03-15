@@ -15,7 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Download, FileText } from "lucide-react";
+import { ArrowLeft, Download, FileText, BookOpen } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -92,6 +92,14 @@ export default function DispatchNoteDetailPage() {
           >
             <Download className="w-4 h-4 mr-2" />
             Download Bundle PDF
+          </Button>
+          <Button
+            onClick={() =>
+              router.push(`/dispatch/dispatch-notes/${dn.id}/dossier`)
+            }
+          >
+            <BookOpen className="w-4 h-4 mr-2" />
+            Dispatch Dossier
           </Button>
           {(!dn.invoices || dn.invoices.length === 0) && (
             <Button

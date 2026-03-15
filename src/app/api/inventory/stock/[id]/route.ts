@@ -55,6 +55,17 @@ export async function GET(
             },
           },
         },
+        pipeDetails: {
+          orderBy: { pipeNo: "asc" },
+        },
+        labReports: {
+          orderBy: { createdAt: "desc" },
+          select: {
+            id: true, reportNo: true, reportType: true, heatNo: true,
+            itemCode: true, result: true, reportDate: true, labName: true,
+            filePath: true, fileName: true,
+          },
+        },
       },
     });
 

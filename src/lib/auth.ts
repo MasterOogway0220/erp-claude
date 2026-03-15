@@ -12,6 +12,7 @@ declare module "next-auth" {
       name: string;
       role: UserRole;
       companyId: string | null;
+      moduleAccess: string[];
     };
   }
 
@@ -21,6 +22,7 @@ declare module "next-auth" {
     name: string;
     role: UserRole;
     companyId: string | null;
+    moduleAccess: string[];
   }
 }
 
@@ -29,6 +31,7 @@ declare module "next-auth/jwt" {
     id: string;
     role: UserRole;
     companyId: string | null;
+    moduleAccess: string[];
   }
 }
 
@@ -47,6 +50,7 @@ export const authOptions: NextAuthOptions = {
 
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
+          include: { employee: { select: { moduleAccess: true } } },
         });
 
         if (!user || !user.isActive) {
@@ -68,12 +72,17 @@ export const authOptions: NextAuthOptions = {
           data: { lastLogin: new Date() },
         });
 
+        const moduleAccess = Array.isArray(user.employee?.moduleAccess)
+          ? (user.employee.moduleAccess as string[])
+          : [];
+
         return {
           id: user.id,
           email: user.email,
           name: user.name,
           role: user.role,
           companyId: user.companyId,
+          moduleAccess,
         };
       },
     }),
@@ -88,6 +97,7 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         token.role = user.role;
         token.companyId = user.companyId;
+        token.moduleAccess = user.moduleAccess;
       }
       return token;
     },
@@ -96,6 +106,7 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id;
         session.user.role = token.role;
         session.user.companyId = token.companyId;
+        session.user.moduleAccess = token.moduleAccess;
       }
       return session;
     },

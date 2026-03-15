@@ -27,6 +27,7 @@ import {
   Warehouse,
   ClipboardCheck,
   Truck,
+  Bell,
   BarChart3,
   Settings,
   ChevronLeft,
@@ -46,6 +47,8 @@ interface NavItem {
   icon: React.ReactNode;
   iconColorClass?: string;
   roles?: UserRole[];
+  moduleKey?: string;
+  moduleKeys?: string[];
   children?: { title: string; href: string; roles?: UserRole[] }[];
 }
 
@@ -69,19 +72,28 @@ const navSections: NavSection[] = [
         iconColorClass: "text-blue-500",
       },
       {
+        title: "Alerts",
+        href: "/alerts",
+        icon: <Bell className="h-5 w-5" />,
+        iconColorClass: "text-amber-500",
+      },
+      {
         title: "Masters",
         icon: <Database className="h-5 w-5" />,
         iconColorClass: "text-slate-500",
         roles: ["SUPER_ADMIN", "SALES", "PURCHASE"],
+        moduleKey: "masters",
         children: [
           { title: "Company", href: "/masters/company", roles: ["SUPER_ADMIN"] },
           { title: "Employees", href: "/masters/employees" },
           { title: "Customers", href: "/masters/customers" },
           { title: "Warehouses", href: "/masters/warehouses" },
           { title: "Products", href: "/masters/products" },
+          { title: "Item / Material Codes", href: "/masters/material-codes" },
           { title: "Testing Types", href: "/masters/testing" },
           { title: "Terms & Conditions", href: "/masters/terms-conditions" },
           { title: "Offer Terms", href: "/masters/offer-terms" },
+          { title: "Customer Contacts", href: "/masters/customer-contacts" },
         ],
       },
     ],
@@ -94,6 +106,7 @@ const navSections: NavSection[] = [
         icon: <FileText className="h-5 w-5" />,
         iconColorClass: "text-indigo-500",
         roles: ["SALES", "MANAGEMENT", "SUPER_ADMIN"],
+        moduleKey: "quotation",
         children: [
           { title: "Quotation List", href: "/quotations" },
           { title: "Create Quotation", href: "/quotations/create" },
@@ -104,8 +117,13 @@ const navSections: NavSection[] = [
         icon: <ShoppingCart className="h-5 w-5" />,
         iconColorClass: "text-emerald-500",
         roles: ["SALES", "MANAGEMENT", "SUPER_ADMIN"],
+        moduleKey: "sales",
         children: [
+          { title: "Client P.O. Register", href: "/client-purchase-orders" },
+          { title: "Register Client P.O.", href: "/client-purchase-orders/create" },
+          { title: "P.O. Acceptance", href: "/po-acceptance" },
           { title: "Sales Orders", href: "/sales" },
+          { title: "Order Tracking", href: "/po-tracking" },
           { title: "Customer PO Review", href: "/sales" },
         ],
       },
@@ -114,6 +132,7 @@ const navSections: NavSection[] = [
         icon: <Package className="h-5 w-5" />,
         iconColorClass: "text-orange-500",
         roles: ["PURCHASE", "MANAGEMENT", "SUPER_ADMIN"],
+        moduleKey: "purchase",
         children: [
           { title: "Purchase Requisitions", href: "/purchase" },
           { title: "Purchase Orders", href: "/purchase/orders/create" },
@@ -125,10 +144,12 @@ const navSections: NavSection[] = [
         icon: <Warehouse className="h-5 w-5" />,
         iconColorClass: "text-cyan-500",
         roles: ["STORES", "MANAGEMENT", "SUPER_ADMIN"],
+        moduleKey: "inventory",
         children: [
           { title: "Stock View", href: "/inventory" },
           { title: "New GRN", href: "/inventory/grn/create" },
           { title: "Stock Issue", href: "/inventory/stock-issue/create" },
+          { title: "Warehouse Intimation", href: "/warehouse/intimation" },
         ],
       },
       {
@@ -136,6 +157,7 @@ const navSections: NavSection[] = [
         icon: <ClipboardCheck className="h-5 w-5" />,
         iconColorClass: "text-violet-500",
         roles: ["QC", "MANAGEMENT", "SUPER_ADMIN"],
+        moduleKey: "quality",
         children: [
           { title: "Inspections", href: "/quality" },
           { title: "New Inspection", href: "/quality/inspections/create" },
@@ -143,6 +165,9 @@ const navSections: NavSection[] = [
           { title: "MTC Repository", href: "/quality/mtc" },
           { title: "NCR Register", href: "/quality/ncr" },
           { title: "Lab Letters", href: "/quality/lab-letters/create" },
+          { title: "Lab Reports", href: "/quality/lab-reports/create" },
+          { title: "Inspection Offers", href: "/quality/inspection-offers" },
+          { title: "Quality Requirements", href: "/quality/requirements" },
         ],
       },
       {
@@ -150,6 +175,7 @@ const navSections: NavSection[] = [
         icon: <Truck className="h-5 w-5" />,
         iconColorClass: "text-rose-500",
         roles: ["STORES", "ACCOUNTS", "MANAGEMENT", "SUPER_ADMIN"],
+        moduleKeys: ["dispatch", "finance"],
         children: [
           { title: "Packing Lists", href: "/dispatch" },
           { title: "Dispatch Notes", href: "/dispatch?tab=dispatch-notes" },
@@ -169,9 +195,11 @@ const navSections: NavSection[] = [
         title: "Reports",
         icon: <BarChart3 className="h-5 w-5" />,
         iconColorClass: "text-teal-500",
-        roles: ["MANAGEMENT", "SUPER_ADMIN"],
+        roles: ["SALES", "MANAGEMENT", "SUPER_ADMIN"],
+        moduleKey: "reports",
         children: [
           { title: "All Reports", href: "/reports" },
+          { title: "Client Status Report", href: "/reports/client-status" },
           { title: "Sales Dashboard", href: "/reports/sales" },
           { title: "Quotation Analysis", href: "/reports/quotation-analysis" },
           { title: "Buyer Performance", href: "/reports/buyer-performance" },
@@ -204,14 +232,28 @@ const navSections: NavSection[] = [
 
 function filterSections(
   sections: NavSection[],
-  userRole: UserRole | undefined
+  userRole: UserRole | undefined,
+  moduleAccess: string[] | undefined
 ): NavSection[] {
+  const isSuperAdmin = userRole === "SUPER_ADMIN";
+  const hasModuleFilter = moduleAccess && moduleAccess.length > 0;
+
   return sections
     .map((section) => ({
       ...section,
       items: section.items.filter((item) => {
-        if (!item.roles) return true;
-        return userRole && item.roles.includes(userRole);
+        // Role check
+        if (item.roles && !(userRole && item.roles.includes(userRole))) {
+          return false;
+        }
+        // Module access check — SUPER_ADMIN sees everything, items without moduleKey always show
+        if (!isSuperAdmin && hasModuleFilter) {
+          const keys = item.moduleKeys || (item.moduleKey ? [item.moduleKey] : []);
+          if (keys.length > 0) {
+            return keys.some((k) => moduleAccess.includes(k));
+          }
+        }
+        return true;
       }),
     }))
     .filter((section) => section.items.length > 0);
@@ -231,7 +273,8 @@ export function Sidebar() {
   const [openGroup, setOpenGroup] = useState<string | null>(null);
 
   const userRole = user?.role;
-  const filteredSections = filterSections(navSections, userRole);
+  const moduleAccess = user?.moduleAccess;
+  const filteredSections = filterSections(navSections, userRole, moduleAccess);
 
   const initials = user?.name
     ? user.name

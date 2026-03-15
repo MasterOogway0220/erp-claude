@@ -8,6 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
   Search,
   ArrowRight,
   ShoppingCart,
@@ -50,6 +58,14 @@ interface TraceabilityData {
     quantityMtr: number;
     pieces: number;
     location: string | null;
+    pipeDetails?: {
+      id: string;
+      pipeNo: number;
+      length: number | null;
+      bundleNo: string | null;
+      heatNo: string | null;
+      make: string | null;
+    }[];
   } | null;
   reservation: {
     id: string;
@@ -556,6 +572,51 @@ export default function TraceabilityPage() {
               </StageCard>
             </div>
           </div>
+
+          {/* Pipe Details section */}
+          {data.stock && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Pipe Details</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {data.stock.pipeDetails && data.stock.pipeDetails.length > 0 ? (
+                  <div className="rounded-md border overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[80px]">Pipe No</TableHead>
+                          <TableHead className="w-[120px]">Length (m)</TableHead>
+                          <TableHead className="w-[120px]">Bundle No</TableHead>
+                          <TableHead className="w-[140px]">Heat No</TableHead>
+                          <TableHead className="w-[140px]">Make</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {data.stock.pipeDetails.map((pipe) => (
+                          <TableRow key={pipe.id}>
+                            <TableCell className="font-mono">{pipe.pipeNo}</TableCell>
+                            <TableCell>
+                              {pipe.length != null
+                                ? Number(pipe.length).toFixed(3)
+                                : "-"}
+                            </TableCell>
+                            <TableCell>{pipe.bundleNo || "-"}</TableCell>
+                            <TableCell className="font-mono">{pipe.heatNo || "-"}</TableCell>
+                            <TableCell>{pipe.make || "-"}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    No pipe details recorded
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Summary section */}
           <Card>

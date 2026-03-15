@@ -28,6 +28,7 @@ export async function GET(
             customer: true,
           },
         },
+        dispatchAddress: true,
         transporter: true,
         invoices: {
           select: {

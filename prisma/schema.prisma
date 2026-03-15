@@ -143,6 +143,14 @@ enum POAcceptanceStatus {
   HOLD
 }
 
+enum ClientPOStatus {
+  DRAFT
+  REGISTERED
+  PARTIALLY_FULFILLED
+  FULLY_FULFILLED
+  CANCELLED
+}
+
 enum AuditAction {
   CREATE
   UPDATE
@@ -175,10 +183,46 @@ enum MTCType {
   MTC_3_2
 }
 
+enum MPRStatus {
+  PENDING
+  IN_PROGRESS
+  MATERIAL_READY
+  DISPATCHED
+  CANCELLED
+}
+
+enum MPRPriority {
+  NORMAL
+  URGENT
+  CRITICAL
+}
+
+enum MPRItemStatus {
+  PENDING
+  PREPARING
+  READY
+  ISSUED
+}
+
+enum MPRCheckStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  NA
+}
+
 enum ReservationStatus {
   RESERVED
   RELEASED
   DISPATCHED
+}
+
+enum LabReportType {
+  CHEMICAL
+  MECHANICAL
+  HYDRO
+  IMPACT
+  IGC
 }
 
 enum CompanyType {
@@ -204,6 +248,13 @@ enum EmailLogStatus {
   FAILED
 }
 
+enum ContactDepartment {
+  FOLLOW_UP
+  QUALITY_INSPECTION
+  ACCOUNTS
+  OTHER
+}
+
 enum ProductCategory {
   PIPES
   FITTINGS
@@ -213,43 +264,69 @@ enum ProductCategory {
   GASKETS
 }
 
+enum AlertType {
+  INSPECTION_DUE
+  LAB_TESTING_PENDING
+  DELIVERY_DEADLINE
+  MATERIAL_PREPARATION
+}
+
+enum AlertSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AlertStatus {
+  UNREAD
+  READ
+  DISMISSED
+}
+
 // ==================== USER & AUTH ====================
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
+  id           String    @id @default(cuid())
+  email        String    @unique
   name         String
   passwordHash String
-  role         UserRole @default(SALES)
+  role         UserRole  @default(SALES)
   companyId    String?
-  isActive     Boolean  @default(true)
+  isActive     Boolean   @default(true)
   lastLogin    DateTime?
   ipAddress    String?
   phone        String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   // Relations
-  company             CompanyMaster?      @relation(fields: [companyId], references: [id])
-  preparedQuotations  Quotation[]         @relation("PreparedBy")
-  approvedQuotations  Quotation[]         @relation("ApprovedBy")
-  ownedQuotations     Quotation[]         @relation("DealOwner")
-  approvedPRs         PurchaseRequisition[] @relation("PRApprovedBy")
-  requestedPRs        PurchaseRequisition[] @relation("PRRequestedBy")
-  receivedGRNs        GoodsReceiptNote[]  @relation("ReceivedBy")
-  inspections         Inspection[]        @relation("InspectorUser")
-  closedNCRs          NCR[]               @relation("NCRClosedBy")
-  responsibleNCRs     NCR[]               @relation("NCRResponsiblePerson")
-  verifiedNCRs        NCR[]               @relation("NCRVerifiedBy")
-  generatedLabLetters LabLetter[]         @relation("LabLetterGeneratedBy")
-  auditLogs           AuditLog[]
-  employee            EmployeeMaster?
-  issuedStockIssues   StockIssue[]        @relation("IssuedBy")
-  authorizedStockIssues StockIssue[]      @relation("AuthorizedBy")
-  qcReleases          QCRelease[]         @relation("ReleasedBy")
-  emailsSent          QuotationEmailLog[] @relation("EmailSentBy")
-  invoiceEmailsSent   InvoiceEmailLog[]   @relation("InvoiceEmailSentBy")
-  approvedVendors     VendorMaster[]      @relation("VendorApprovedBy")
+  company                 CompanyMaster?        @relation(fields: [companyId], references: [id])
+  preparedQuotations      Quotation[]           @relation("PreparedBy")
+  approvedQuotations      Quotation[]           @relation("ApprovedBy")
+  ownedQuotations         Quotation[]           @relation("DealOwner")
+  approvedPRs             PurchaseRequisition[] @relation("PRApprovedBy")
+  requestedPRs            PurchaseRequisition[] @relation("PRRequestedBy")
+  receivedGRNs            GoodsReceiptNote[]    @relation("ReceivedBy")
+  inspections             Inspection[]          @relation("InspectorUser")
+  closedNCRs              NCR[]                 @relation("NCRClosedBy")
+  responsibleNCRs         NCR[]                 @relation("NCRResponsiblePerson")
+  verifiedNCRs            NCR[]                 @relation("NCRVerifiedBy")
+  generatedLabLetters     LabLetter[]           @relation("LabLetterGeneratedBy")
+  auditLogs               AuditLog[]
+  employee                EmployeeMaster?
+  issuedStockIssues       StockIssue[]          @relation("IssuedBy")
+  authorizedStockIssues   StockIssue[]          @relation("AuthorizedBy")
+  qcReleases              QCRelease[]           @relation("ReleasedBy")
+  emailsSent              QuotationEmailLog[]   @relation("EmailSentBy")
+  invoiceEmailsSent       InvoiceEmailLog[]     @relation("InvoiceEmailSentBy")
+  approvedVendors         VendorMaster[]        @relation("VendorApprovedBy")
+  createdClientPOs        ClientPurchaseOrder[] @relation("CPOCreatedBy")
+  createdPOAcceptances    POAcceptance[]        @relation("POACreatedBy")
+  createdMPRs             WarehouseIntimation[] @relation("MPRCreatedBy")
+  assignedMPRs            WarehouseIntimation[] @relation("MPRAssignedTo")
+  createdInspectionOffers InspectionOffer[]     @relation("IOCreatedBy")
+  uploadedLabReports      LabReport[]           @relation("LabReportUploadedBy")
 
   @@index([email])
   @@index([companyId])
@@ -258,78 +335,81 @@ model User {
 // ==================== MASTER DATA ====================
 
 model CustomerMaster {
-  id                   String       @id @default(cuid())
-  companyId            String?
-  name                 String
-  addressLine1         String?
-  addressLine2         String?
-  city                 String?
-  state                String?
-  country              String       @default("India")
-  pincode              String?
-  gstNo                String?
-  contactPerson        String?
-  email                String?
-  phone                String?
-  paymentTerms         String?
-  currency             String       @default("INR")
-  isActive             Boolean      @default(true)
-  companyType          CompanyType  @default(BUYER)
-  gstType              GSTType?
-  contactPersonEmail   String?
-  contactPersonPhone   String?
-  openingBalance       Decimal      @default(0) @db.Decimal(14, 2)
-  creditLimit          Decimal?     @db.Decimal(14, 2)
-  creditDays           Int?
+  id                    String      @id @default(cuid())
+  companyId             String?
+  name                  String
+  addressLine1          String?
+  addressLine2          String?
+  city                  String?
+  state                 String?
+  country               String      @default("India")
+  pincode               String?
+  gstNo                 String?
+  contactPerson         String?
+  email                 String?
+  phone                 String?
+  paymentTerms          String?
+  currency              String      @default("INR")
+  isActive              Boolean     @default(true)
+  companyType           CompanyType @default(BUYER)
+  gstType               GSTType?
+  contactPersonEmail    String?
+  contactPersonPhone    String?
+  openingBalance        Decimal     @default(0) @db.Decimal(14, 2)
+  creditLimit           Decimal?    @db.Decimal(14, 2)
+  creditDays            Int?
   defaultPaymentTermsId String?
-  defaultCurrency      String       @default("INR")
-  companyReferenceCode String?
-  pan                  String?
-  tanNo                String?
-  industrySegment      String?
-  bankName             String?
-  bankBranchName       String?
-  bankAccountNo        String?
-  bankIfsc             String?
-  bankAccountType      String?
-  createdAt            DateTime     @default(now())
-  updatedAt            DateTime     @updatedAt
+  defaultCurrency       String      @default("INR")
+  companyReferenceCode  String?
+  pan                   String?
+  tanNo                 String?
+  industrySegment       String?
+  bankName              String?
+  bankBranchName        String?
+  bankAccountNo         String?
+  bankIfsc              String?
+  bankAccountType       String?
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
 
   // Relations
-  company              CompanyMaster?      @relation(fields: [companyId], references: [id])
+  company              CompanyMaster?            @relation(fields: [companyId], references: [id])
   quotations           Quotation[]
   salesOrders          SalesOrder[]
   invoices             Invoice[]
   paymentReceipts      PaymentReceipt[]
-  defaultPaymentTerms  PaymentTermsMaster? @relation(fields: [defaultPaymentTermsId], references: [id])
+  defaultPaymentTerms  PaymentTermsMaster?       @relation(fields: [defaultPaymentTermsId], references: [id])
   dispatchAddresses    CustomerDispatchAddress[]
   buyers               BuyerMaster[]
   tags                 CustomerTag[]
-  linkedVendor         VendorMaster?       @relation("LinkedCustomerVendor")
+  linkedVendor         VendorMaster?             @relation("LinkedCustomerVendor")
+  clientPurchaseOrders ClientPurchaseOrder[]
+  customerContacts     CustomerContact[]
+  inspectionOffers     InspectionOffer[]
 
   @@index([companyId])
   @@index([companyType])
 }
 
 model VendorMaster {
-  id               String   @id @default(cuid())
+  id               String    @id @default(cuid())
   companyId        String?
   name             String
   addressLine1     String?
   addressLine2     String?
   city             String?
   state            String?
-  country          String   @default("India")
+  country          String    @default("India")
   pincode          String?
-  approvedStatus   Boolean  @default(false)
+  approvedStatus   Boolean   @default(false)
   productsSupplied String?
   avgLeadTimeDays  Int?
-  performanceScore Decimal? @db.Decimal(3, 1)
+  performanceScore Decimal?  @db.Decimal(3, 1)
   contactPerson    String?
   email            String?
   phone            String?
-  isActive         Boolean  @default(true)
-  linkedCustomerId String?  @unique
+  isActive         Boolean   @default(true)
+  linkedCustomerId String?   @unique
   gstNo            String?
   gstType          GSTType?
   bankAccountNo    String?
@@ -338,13 +418,13 @@ model VendorMaster {
   bankBranchName   String?
   bankAccountType  String?
   tanNo            String?
-  vendorRating     Decimal? @db.Decimal(3, 1)
+  vendorRating     Decimal?  @db.Decimal(3, 1)
   approvalDate     DateTime?
   approvedById     String?
   approvalRemarks  String?
   pan              String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   // Relations
   company              CompanyMaster?        @relation(fields: [companyId], references: [id])
@@ -359,7 +439,7 @@ model VendorMaster {
 }
 
 model ProductSpecMaster {
-  id                    String                    @id @default(cuid())
+  id                    String           @id @default(cuid())
   product               String
   category              ProductCategory?
   specification         String?
@@ -369,10 +449,10 @@ model ProductSpecMaster {
   ends                  String?
   length                String?
   dimensionalStandardId String?
-  createdAt             DateTime                  @default(now())
-  updatedAt             DateTime                  @updatedAt
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
 
-  dimensionalStandard   DimensionalStandardMaster? @relation(fields: [dimensionalStandardId], references: [id])
+  dimensionalStandard DimensionalStandardMaster? @relation(fields: [dimensionalStandardId], references: [id])
 
   @@index([category])
   @@index([dimensionalStandardId])
@@ -393,11 +473,11 @@ model SizeMaster {
   // Relations
   quotationItems QuotationItem[]
 
-  @@map("PipeSizeMaster")
   @@index([pipeType])
   @@index([sizeLabel])
   @@index([nps])
   @@index([nps, schedule])
+  @@map("PipeSizeMaster")
 }
 
 model TestingMaster {
@@ -417,17 +497,17 @@ model LengthMaster {
 }
 
 model TaxMaster {
-  id              String    @id @default(cuid())
-  name            String
-  code            String?
-  percentage      Decimal   @db.Decimal(5, 2)
-  taxType         String?
-  hsnCode         String?
-  effectiveFrom   DateTime?
-  effectiveTo     DateTime?
-  isActive        Boolean   @default(true)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id            String    @id @default(cuid())
+  name          String
+  code          String?
+  percentage    Decimal   @db.Decimal(5, 2)
+  taxType       String?
+  hsnCode       String?
+  effectiveFrom DateTime?
+  effectiveTo   DateTime?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
 
 model CurrencyMaster {
@@ -492,6 +572,38 @@ model InspectionAgencyMaster {
   isActive             Boolean  @default(true)
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
+
+  // Relations
+  qualityRequirements QualityRequirement[]
+  inspections         Inspection[]
+  inspectionOffers    InspectionOffer[]    @relation("IOTpiAgency")
+  labLetters          LabLetter[]
+}
+
+model QualityRequirement {
+  id                   String   @id @default(cuid())
+  companyId            String?
+  parameter            String // Quality parameter name (e.g., "Hardness", "Chemical Composition")
+  value                String?  @db.Text // Required value/specification
+  colourCodingRequired Boolean  @default(false)
+  inspectionRequired   Boolean  @default(false)
+  tpiAgencyId          String? // Third-Party Inspection Agency
+  testingRequired      Boolean  @default(false)
+  testType             String? // HYDRO, CHEMICAL, MECHANICAL, IGC, IMPACT
+  inspectionLocation   String? // WAREHOUSE, LAB
+  qapDocumentPath      String? // Uploaded QAP document path
+  remarks              String?  @db.Text
+  isActive             Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  // Relations
+  company   CompanyMaster?          @relation(fields: [companyId], references: [id])
+  tpiAgency InspectionAgencyMaster? @relation(fields: [tpiAgencyId], references: [id])
+
+  @@index([companyId])
+  @@index([parameter])
+  @@index([tpiAgencyId])
 }
 
 model CertificationTypeMaster {
@@ -509,7 +621,7 @@ model DimensionalStandardMaster {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  products  ProductSpecMaster[]
+  products ProductSpecMaster[]
 }
 
 model TransporterMaster {
@@ -528,96 +640,97 @@ model TransporterMaster {
 // ==================== QUOTATION ====================
 
 model Quotation {
-  id                    String            @id @default(cuid())
-  companyId             String?
-  quotationNo           String
-  quotationDate         DateTime          @default(now())
-  customerId            String
-  quotationType         QuotationType     @default(DOMESTIC)
-  quotationCategory     QuotationCategory @default(STANDARD)
-  status                QuotationStatus   @default(DRAFT)
-  version               Int               @default(0)
-  parentQuotationId     String?
-  validUpto             DateTime?
-  currency              String            @default("INR")
-  paymentTermsId        String?
-  deliveryTermsId       String?
-  deliveryPeriod        String?
-  preparedById          String?
-  approvedById          String?
-  approvalDate          DateTime?
-  approvalRemarks       String?
-  sentDate              DateTime?
-  sentTo                String?
-  buyerId               String?
-  preparedByEmployeeId  String?
-  subtotal              Decimal?          @db.Decimal(14, 2)
-  taxRate               Decimal?          @db.Decimal(5, 2)
-  taxAmount             Decimal?          @db.Decimal(14, 2)
-  grandTotal            Decimal?          @db.Decimal(14, 2)
-  amountInWords         String?
+  id                   String            @id @default(cuid())
+  companyId            String?
+  quotationNo          String
+  quotationDate        DateTime          @default(now())
+  customerId           String
+  quotationType        QuotationType     @default(DOMESTIC)
+  quotationCategory    QuotationCategory @default(STANDARD)
+  status               QuotationStatus   @default(DRAFT)
+  version              Int               @default(0)
+  parentQuotationId    String?
+  validUpto            DateTime?
+  currency             String            @default("INR")
+  paymentTermsId       String?
+  deliveryTermsId      String?
+  deliveryPeriod       String?
+  preparedById         String?
+  approvedById         String?
+  approvalDate         DateTime?
+  approvalRemarks      String?
+  sentDate             DateTime?
+  sentTo               String?
+  buyerId              String?
+  preparedByEmployeeId String?
+  subtotal             Decimal?          @db.Decimal(14, 2)
+  taxRate              Decimal?          @db.Decimal(5, 2)
+  taxAmount            Decimal?          @db.Decimal(14, 2)
+  grandTotal           Decimal?          @db.Decimal(14, 2)
+  amountInWords        String?
 
   // Revision tracking
-  revisionTrigger       String?
-  revisionSubReason     String?
-  revisionNotes         String?           @db.Text
-  customerReference     String?
+  revisionTrigger   String?
+  revisionSubReason String?
+  revisionNotes     String? @db.Text
+  customerReference String?
 
   // Client inquiry reference
-  inquiryNo             String?
-  inquiryDate           DateTime?
+  inquiryNo   String?
+  inquiryDate DateTime?
 
   // Change tracking
-  changeSnapshot        Json?
+  changeSnapshot Json?
 
   // Expiry management
-  expiryNotified7d      Boolean           @default(false)
-  expiryNotified3d      Boolean           @default(false)
-  expiryNotified1d      Boolean           @default(false)
+  expiryNotified7d Boolean @default(false)
+  expiryNotified3d Boolean @default(false)
+  expiryNotified1d Boolean @default(false)
 
   // Loss tracking
-  lossReason            String?
-  lossCompetitor        String?
-  lossNotes             String?           @db.Text
+  lossReason     String?
+  lossCompetitor String?
+  lossNotes      String? @db.Text
 
   // Deal management (TranZact parity)
-  dealOwnerId           String?
-  nextActionDate        DateTime?
-  kindAttention         String?           @db.VarChar(200)
+  dealOwnerId    String?
+  nextActionDate DateTime?
+  kindAttention  String?   @db.VarChar(200)
 
   // Discount & financial calculations
-  additionalDiscount    Decimal?          @db.Decimal(10, 2)  // percentage discount
-  discountAmount        Decimal?          @db.Decimal(14, 2)  // calculated: subtotal * additionalDiscount / 100
-  totalAfterDiscount    Decimal?          @db.Decimal(14, 2)  // subtotal - discountAmount
-  rcmEnabled            Boolean           @default(false)
-  roundOff              Boolean           @default(false)
-  roundOffAmount        Decimal?          @db.Decimal(10, 2)
-  advanceToPay          Decimal?          @db.Decimal(14, 2)
+  additionalDiscount Decimal? @db.Decimal(10, 2) // percentage discount
+  discountAmount     Decimal? @db.Decimal(14, 2) // calculated: subtotal * additionalDiscount / 100
+  totalAfterDiscount Decimal? @db.Decimal(14, 2) // subtotal - discountAmount
+  rcmEnabled         Boolean  @default(false)
+  roundOff           Boolean  @default(false)
+  roundOffAmount     Decimal? @db.Decimal(10, 2)
+  advanceToPay       Decimal? @db.Decimal(14, 2)
 
   // Place of supply (GST compliance)
-  placeOfSupplyCity     String?
-  placeOfSupplyState    String?
-  placeOfSupplyCountry  String?           @default("India")
+  placeOfSupplyCity    String?
+  placeOfSupplyState   String?
+  placeOfSupplyCountry String? @default("India")
 
-  createdAt             DateTime          @default(now())
-  updatedAt             DateTime          @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  company            CompanyMaster?      @relation(fields: [companyId], references: [id])
-  customer           CustomerMaster      @relation(fields: [customerId], references: [id])
-  parentQuotation    Quotation?          @relation("QuotationRevisions", fields: [parentQuotationId], references: [id])
-  childQuotations    Quotation[]         @relation("QuotationRevisions")
-  preparedBy         User?               @relation("PreparedBy", fields: [preparedById], references: [id])
-  approvedBy         User?               @relation("ApprovedBy", fields: [approvedById], references: [id])
-  dealOwner          User?               @relation("DealOwner", fields: [dealOwnerId], references: [id])
-  buyer              BuyerMaster?        @relation(fields: [buyerId], references: [id])
-  preparedByEmployee EmployeeMaster?     @relation(fields: [preparedByEmployeeId], references: [id])
-  paymentTerms       PaymentTermsMaster? @relation(fields: [paymentTermsId], references: [id])
-  deliveryTerms      DeliveryTermsMaster? @relation(fields: [deliveryTermsId], references: [id])
-  items              QuotationItem[]
-  terms              QuotationTerm[]
-  salesOrders        SalesOrder[]
-  emailLogs          QuotationEmailLog[]
+  company              CompanyMaster?        @relation(fields: [companyId], references: [id])
+  customer             CustomerMaster        @relation(fields: [customerId], references: [id])
+  parentQuotation      Quotation?            @relation("QuotationRevisions", fields: [parentQuotationId], references: [id])
+  childQuotations      Quotation[]           @relation("QuotationRevisions")
+  preparedBy           User?                 @relation("PreparedBy", fields: [preparedById], references: [id])
+  approvedBy           User?                 @relation("ApprovedBy", fields: [approvedById], references: [id])
+  dealOwner            User?                 @relation("DealOwner", fields: [dealOwnerId], references: [id])
+  buyer                BuyerMaster?          @relation(fields: [buyerId], references: [id])
+  preparedByEmployee   EmployeeMaster?       @relation(fields: [preparedByEmployeeId], references: [id])
+  paymentTerms         PaymentTermsMaster?   @relation(fields: [paymentTermsId], references: [id])
+  deliveryTerms        DeliveryTermsMaster?  @relation(fields: [deliveryTermsId], references: [id])
+  items                QuotationItem[]
+  terms                QuotationTerm[]
+  salesOrders          SalesOrder[]
+  clientPurchaseOrders ClientPurchaseOrder[]
+  emailLogs            QuotationEmailLog[]
 
   @@unique([quotationNo, version])
   @@index([quotationNo])
@@ -647,8 +760,8 @@ model QuotationEmailLog {
   status       EmailLogStatus
   errorMessage String?        @db.Text
 
-  quotation    Quotation      @relation(fields: [quotationId], references: [id])
-  sentBy       User?          @relation("EmailSentBy", fields: [sentById], references: [id])
+  quotation Quotation @relation(fields: [quotationId], references: [id])
+  sentBy    User?     @relation("EmailSentBy", fields: [sentById], references: [id])
 
   @@index([quotationId])
   @@index([sentById])
@@ -701,15 +814,16 @@ model QuotationItem {
   pastPo         String?
   pastPoPrice    Decimal? @db.Decimal(12, 2)
 
-  fittingId     String?
-  flangeId      String?
+  fittingId String?
+  flangeId  String?
 
   // Relations
-  quotation    Quotation          @relation(fields: [quotationId], references: [id], onDelete: Cascade)
-  pipeSize     SizeMaster?        @relation(fields: [sizeId], references: [id])
-  materialCode MaterialCodeMaster? @relation(fields: [materialCodeId], references: [id])
-  fitting      FittingMaster?     @relation(fields: [fittingId], references: [id])
-  flange       FlangeMaster?      @relation(fields: [flangeId], references: [id])
+  quotation     Quotation           @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  pipeSize      SizeMaster?         @relation(fields: [sizeId], references: [id])
+  materialCode  MaterialCodeMaster? @relation(fields: [materialCodeId], references: [id])
+  fitting       FittingMaster?      @relation(fields: [fittingId], references: [id])
+  flange        FlangeMaster?       @relation(fields: [flangeId], references: [id])
+  clientPOItems ClientPOItem[]
 
   @@index([quotationId])
   @@index([materialCodeId])
@@ -737,34 +851,34 @@ model QuotationTerm {
 // ==================== COMPANY & EMPLOYEE ====================
 
 model CompanyMaster {
-  id               String   @id @default(cuid())
-  companyName      String
-  companyType      String?
-  regAddressLine1  String?
-  regAddressLine2  String?
-  regCity          String?
-  regPincode       String?
-  regState         String?
-  regCountry       String   @default("India")
-  whAddressLine1   String?
-  whAddressLine2   String?
-  whCity           String?
-  whPincode        String?
-  whState          String?
-  whCountry        String   @default("India")
-  panNo            String?
-  tanNo            String?
-  gstNo            String?
-  cinNo            String?
-  telephoneNo      String?
-  email            String?
-  website          String?
-  companyLogoUrl   String?
-  fyStartMonth     Int      @default(4)
-  fyStartDate      DateTime?
-  fyEndDate        DateTime?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id              String    @id @default(cuid())
+  companyName     String
+  companyType     String?
+  regAddressLine1 String?
+  regAddressLine2 String?
+  regCity         String?
+  regPincode      String?
+  regState        String?
+  regCountry      String    @default("India")
+  whAddressLine1  String?
+  whAddressLine2  String?
+  whCity          String?
+  whPincode       String?
+  whState         String?
+  whCountry       String    @default("India")
+  panNo           String?
+  tanNo           String?
+  gstNo           String?
+  cinNo           String?
+  telephoneNo     String?
+  email           String?
+  website         String?
+  companyLogoUrl  String?
+  fyStartMonth    Int       @default(4)
+  fyStartDate     DateTime?
+  fyEndDate       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   // Reverse relations (multi-tenancy)
   users                User[]
@@ -790,6 +904,13 @@ model CompanyMaster {
   auditLogs            AuditLog[]
   documentSequences    DocumentSequence[]
   offerTermTemplates   OfferTermTemplate[]
+  clientPurchaseOrders ClientPurchaseOrder[]
+  poAcceptances        POAcceptance[]
+  qualityRequirements  QualityRequirement[]
+  warehouseIntimations WarehouseIntimation[]
+  inspectionOffers     InspectionOffer[]
+  labReports           LabReport[]
+  alerts               Alert[]
 }
 
 model FinancialYear {
@@ -821,7 +942,7 @@ model EmployeeMaster {
 
   // Relations
   company            CompanyMaster? @relation(fields: [companyId], references: [id])
-  linkedUser         User?       @relation(fields: [linkedUserId], references: [id])
+  linkedUser         User?          @relation(fields: [linkedUserId], references: [id])
   quotationsPrepared Quotation[]
 
   @@index([companyId])
@@ -849,23 +970,30 @@ model BuyerMaster {
 }
 
 model CustomerDispatchAddress {
-  id             String   @id @default(cuid())
-  customerId     String
-  label          String?
-  addressLine1   String?
-  addressLine2   String?
-  city           String?
-  pincode        String?
-  state          String?
-  country        String   @default("India")
-  consigneeName  String?
-  placeOfSupply  String?
-  isDefault      Boolean  @default(false)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id            String   @id @default(cuid())
+  customerId    String
+  label         String? // e.g., "Site Office - Mumbai", "Plant - Pune"
+  companyName   String? // Company name at site (if different from customer)
+  addressLine1  String?
+  addressLine2  String?
+  city          String?
+  pincode       String?
+  state         String?
+  country       String   @default("India")
+  contactPerson String? // Site contact person
+  contactNumber String? // Site contact phone
+  gstNo         String? // GST No. if different from billing
+  consigneeName String?
+  placeOfSupply String?
+  isDefault     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   // Relations
-  customer CustomerMaster @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customer      CustomerMaster @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  salesOrders   SalesOrder[]
+  dispatchNotes DispatchNote[]
+  invoices      Invoice[]
 
   @@index([customerId])
 }
@@ -873,9 +1001,9 @@ model CustomerDispatchAddress {
 // ==================== TAGS ====================
 
 model Tag {
-  id        String        @id @default(cuid())
-  name      String        @unique
-  createdAt DateTime      @default(now())
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
 
   // Relations
   customers CustomerTag[]
@@ -897,35 +1025,46 @@ model CustomerTag {
 // ==================== MATERIAL CODE ====================
 
 model MaterialCodeMaster {
-  id              String   @id @default(cuid())
-  code            String   @unique
-  description     String?
-  productType     String?
-  materialGrade   String?
-  size            String?
-  schedule        String?
+  id              String    @id @default(cuid())
+  code            String    @unique // Internal Item / Material Code
+  clientItemCode  String? // Client's item code (if different)
+  description     String?   @db.Text // Product description as per Client PO
+  productType     String? // e.g., Seamless Pipe, ERW Pipe
+  materialGrade   String? // e.g., SS316L, ASTM A106 GR B
+  size            String? // Combined size label (e.g., 2" NB x 3.91mm)
+  odSize          String? // Outer Diameter
+  nbSize          String? // Nominal Bore
+  thickness       String? // Wall thickness
+  schedule        String? // SCH 40, SCH 80, etc.
+  standard        String? // ASTM / ASME / API / IS etc.
+  unit            String? // Default UOM: MTR / NOS / KG / SET / LOT
+  rate            Decimal?  @db.Decimal(14, 2) // Last known / default rate
   firstQuotedDate DateTime?
-  lastQuotedPrice Decimal? @db.Decimal(12, 2)
-  timesQuoted     Int      @default(0)
-  timesOrdered    Int      @default(0)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  lastQuotedPrice Decimal?  @db.Decimal(12, 2)
+  timesQuoted     Int       @default(0)
+  timesOrdered    Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   // Relations
   quotationItems QuotationItem[]
+
+  @@index([clientItemCode])
+  @@index([materialGrade])
+  @@index([productType])
 }
 
 // ==================== FITTING MASTER ====================
 
 model FittingMaster {
   id            String   @id @default(cuid())
-  type          String   // Elbow, Tee, Reducer, Cap, Coupling, Union, etc.
-  size          String   // NPS e.g. 1/2", 2", 4"
-  schedule      String?  // 40, 80, 160, XXS
-  materialGrade String   // ASTM A234 WPB, ASTM A403 WP304, etc.
-  standard      String?  // ASME B16.9, ASME B16.11, MSS SP75
-  endType       String?  // BW, SW, Threaded
-  rating        String?  // 2000#, 3000#, 6000# (for SW/Threaded)
+  type          String // Elbow, Tee, Reducer, Cap, Coupling, Union, etc.
+  size          String // NPS e.g. 1/2", 2", 4"
+  schedule      String? // 40, 80, 160, XXS
+  materialGrade String // ASTM A234 WPB, ASTM A403 WP304, etc.
+  standard      String? // ASME B16.9, ASME B16.11, MSS SP75
+  endType       String? // BW, SW, Threaded
+  rating        String? // 2000#, 3000#, 6000# (for SW/Threaded)
   description   String?  @db.Text
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
@@ -945,12 +1084,12 @@ model FittingMaster {
 
 model FlangeMaster {
   id            String   @id @default(cuid())
-  type          String   // Weld Neck, Slip On, Blind, Socket Weld, Lap Joint, Threaded
-  size          String   // NPS
-  rating        String   // 150, 300, 600, 900, 1500, 2500
+  type          String // Weld Neck, Slip On, Blind, Socket Weld, Lap Joint, Threaded
+  size          String // NPS
+  rating        String // 150, 300, 600, 900, 1500, 2500
   materialGrade String
-  standard      String?  // ASME B16.5, ASME B16.47
-  facing        String?  // RF, FF, RTJ
+  standard      String? // ASME B16.5, ASME B16.47
+  facing        String? // RF, FF, RTJ
   schedule      String?
   description   String?  @db.Text
   isActive      Boolean  @default(true)
@@ -980,7 +1119,7 @@ model OfferTermTemplate {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  company          CompanyMaster? @relation(fields: [companyId], references: [id])
+  company CompanyMaster? @relation(fields: [companyId], references: [id])
 
   @@index([companyId])
 }
@@ -989,7 +1128,7 @@ model OfferTermTemplate {
 
 model TechnicalExchangeDetail {
   id           String   @id @default(cuid())
-  category     String   // Quality, Testing, Documentation, Packaging, Marking, Inspection
+  category     String // Quality, Testing, Documentation, Packaging, Marking, Inspection
   paramName    String
   defaultValue String?
   isMandatory  Boolean  @default(false)
@@ -1016,6 +1155,7 @@ model SalesOrder {
   projectName        String?
   deliverySchedule   String?
   paymentTerms       String?
+  dispatchAddressId  String?
   poAcceptanceStatus POAcceptanceStatus @default(PENDING)
   poReviewRemarks    String?
   status             SOStatus           @default(OPEN)
@@ -1023,20 +1163,24 @@ model SalesOrder {
   updatedAt          DateTime           @updatedAt
 
   // Relations
-  company              CompanyMaster?        @relation(fields: [companyId], references: [id])
-  customer             CustomerMaster        @relation(fields: [customerId], references: [id])
-  quotation            Quotation?            @relation(fields: [quotationId], references: [id])
+  company              CompanyMaster?           @relation(fields: [companyId], references: [id])
+  customer             CustomerMaster           @relation(fields: [customerId], references: [id])
+  quotation            Quotation?               @relation(fields: [quotationId], references: [id])
+  dispatchAddress      CustomerDispatchAddress? @relation(fields: [dispatchAddressId], references: [id])
   items                SalesOrderItem[]
   purchaseRequisitions PurchaseRequisition[]
-  purchaseOrders       PurchaseOrder[]       @relation("POSalesOrder")
+  purchaseOrders       PurchaseOrder[]          @relation("POSalesOrder")
   packingLists         PackingList[]
   dispatchNotes        DispatchNote[]
   invoices             Invoice[]
   stockIssues          StockIssue[]
+  warehouseIntimations WarehouseIntimation[]
+  inspectionOffers     InspectionOffer[]
 
   @@index([companyId])
   @@index([soNo])
   @@index([customerId])
+  @@index([dispatchAddressId])
 }
 
 model SalesOrderItem {
@@ -1056,17 +1200,18 @@ model SalesOrderItem {
   deliveryDate   DateTime?
   unitWeight     Decimal?  @db.Decimal(10, 4)
   totalWeightMT  Decimal?  @db.Decimal(12, 4)
-  heatNo            String?
-  qtyDispatched     Decimal   @default(0) @db.Decimal(10, 3)
-  itemStatus        String    @default("OPEN")
-  fittingId         String?
-  flangeId          String?
+  heatNo         String?
+  qtyDispatched  Decimal   @default(0) @db.Decimal(10, 3)
+  itemStatus     String    @default("OPEN")
+  fittingId      String?
+  flangeId       String?
 
   // Relations
-  salesOrder        SalesOrder        @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
-  stockReservations StockReservation[]
-  fitting           FittingMaster?    @relation(fields: [fittingId], references: [id])
-  flange            FlangeMaster?     @relation(fields: [flangeId], references: [id])
+  salesOrder               SalesOrder                @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
+  stockReservations        StockReservation[]
+  fitting                  FittingMaster?            @relation(fields: [fittingId], references: [id])
+  flange                   FlangeMaster?             @relation(fields: [flangeId], references: [id])
+  warehouseIntimationItems WarehouseIntimationItem[]
 
   @@index([salesOrderId])
   @@index([fittingId])
@@ -1090,31 +1235,127 @@ model StockReservation {
   @@index([inventoryStockId])
 }
 
+// ==================== CLIENT PURCHASE ORDER ====================
+
+model ClientPurchaseOrder {
+  id               String    @id @default(cuid())
+  companyId        String?
+  cpoNo            String    @unique
+  cpoDate          DateTime  @default(now())
+  customerId       String
+  quotationId      String
+  clientPoNumber   String
+  clientPoDate     DateTime?
+  projectName      String?
+  contactPerson    String?
+  paymentTerms     String?
+  deliveryTerms    String?
+  deliverySchedule String?
+  currency         String    @default("INR")
+  subtotal         Decimal?  @db.Decimal(14, 2)
+
+  // Additional Charges
+  freight                   Decimal? @db.Decimal(14, 2)
+  freightTaxApplicable      Boolean  @default(false)
+  tpiCharges                Decimal? @db.Decimal(14, 2)
+  tpiTaxApplicable          Boolean  @default(false)
+  testingCharges            Decimal? @db.Decimal(14, 2)
+  testingTaxApplicable      Boolean  @default(false)
+  packingForwarding         Decimal? @db.Decimal(14, 2)
+  packingTaxApplicable      Boolean  @default(false)
+  insurance                 Decimal? @db.Decimal(14, 2)
+  insuranceTaxApplicable    Boolean  @default(false)
+  otherCharges              Decimal? @db.Decimal(14, 2)
+  otherChargesTaxApplicable Boolean  @default(false)
+
+  // GST Calculation
+  additionalChargesTotal Decimal? @db.Decimal(14, 2)
+  taxableAmount          Decimal? @db.Decimal(14, 2)
+  gstRate                Decimal? @db.Decimal(5, 2)
+  cgst                   Decimal? @db.Decimal(14, 2)
+  sgst                   Decimal? @db.Decimal(14, 2)
+  igst                   Decimal? @db.Decimal(14, 2)
+  supplierState          String?
+  clientState            String?
+  isInterState           Boolean  @default(false)
+  roundOff               Decimal? @db.Decimal(10, 2)
+
+  grandTotal  Decimal?       @db.Decimal(14, 2)
+  remarks     String?        @db.Text
+  status      ClientPOStatus @default(REGISTERED)
+  createdById String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  // Relations
+  company          CompanyMaster?    @relation(fields: [companyId], references: [id])
+  customer         CustomerMaster    @relation(fields: [customerId], references: [id])
+  quotation        Quotation         @relation(fields: [quotationId], references: [id])
+  createdBy        User?             @relation("CPOCreatedBy", fields: [createdById], references: [id])
+  items            ClientPOItem[]
+  poAcceptance     POAcceptance?
+  inspectionOffers InspectionOffer[]
+
+  @@index([companyId])
+  @@index([cpoNo])
+  @@index([customerId])
+  @@index([quotationId])
+}
+
+model ClientPOItem {
+  id                    String    @id @default(cuid())
+  clientPurchaseOrderId String
+  quotationItemId       String
+  sNo                   Int
+  product               String?
+  material              String?
+  additionalSpec        String?
+  sizeLabel             String?
+  od                    Decimal?  @db.Decimal(10, 3)
+  wt                    Decimal?  @db.Decimal(10, 3)
+  ends                  String?
+  uom                   String?
+  hsnCode               String?
+  qtyQuoted             Decimal   @db.Decimal(10, 3)
+  qtyOrdered            Decimal   @db.Decimal(10, 3)
+  unitRate              Decimal   @db.Decimal(12, 2)
+  amount                Decimal   @db.Decimal(14, 2)
+  deliveryDate          DateTime?
+  remark                String?
+
+  // Relations
+  clientPurchaseOrder ClientPurchaseOrder @relation(fields: [clientPurchaseOrderId], references: [id], onDelete: Cascade)
+  quotationItem       QuotationItem       @relation(fields: [quotationItemId], references: [id])
+
+  @@index([clientPurchaseOrderId])
+  @@index([quotationItemId])
+}
+
 // ==================== PURCHASE ====================
 
 model PurchaseRequisition {
-  id                String    @id @default(cuid())
+  id                String          @id @default(cuid())
   companyId         String?
-  prNo              String    @unique
-  prDate            DateTime  @default(now())
+  prNo              String          @unique
+  prDate            DateTime        @default(now())
   salesOrderId      String?
   requiredByDate    DateTime?
   suggestedVendorId String?
   requisitionType   RequisitionType @default(AGAINST_SO)
-  status            PRStatus  @default(DRAFT)
+  status            PRStatus        @default(DRAFT)
   approvedById      String?
   approvalDate      DateTime?
   requestedById     String?
   approvalRemarks   String?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
 
   // Relations
-  company         CompanyMaster? @relation(fields: [companyId], references: [id])
-  salesOrder      SalesOrder?    @relation(fields: [salesOrderId], references: [id])
-  suggestedVendor VendorMaster?  @relation("PRVendor", fields: [suggestedVendorId], references: [id])
-  approvedBy      User?          @relation("PRApprovedBy", fields: [approvedById], references: [id])
-  requestedBy     User?          @relation("PRRequestedBy", fields: [requestedById], references: [id])
+  company         CompanyMaster?  @relation(fields: [companyId], references: [id])
+  salesOrder      SalesOrder?     @relation(fields: [salesOrderId], references: [id])
+  suggestedVendor VendorMaster?   @relation("PRVendor", fields: [suggestedVendorId], references: [id])
+  approvedBy      User?           @relation("PRApprovedBy", fields: [approvedById], references: [id])
+  requestedBy     User?           @relation("PRRequestedBy", fields: [requestedById], references: [id])
   items           PRItem[]
   purchaseOrders  PurchaseOrder[]
 
@@ -1176,6 +1417,7 @@ model PurchaseOrder {
   goodsReceiptNotes   GoodsReceiptNote[]
   mtcDocuments        MTCDocument[]
   ncrs                NCR[]
+  labReports          LabReport[]
 
   @@index([companyId])
   @@index([poNo])
@@ -1210,28 +1452,29 @@ model POItem {
 // ==================== INVENTORY & GRN ====================
 
 model GoodsReceiptNote {
-  id           String   @id @default(cuid())
-  companyId    String?
-  grnNo        String   @unique
-  grnDate      DateTime @default(now())
-  poId         String
-  vendorId     String
-  receivedById String
-  remarks      String?
-  challanNo           String?
-  challanDate         DateTime?
-  vehicleNo           String?
-  transporterName     String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id              String    @id @default(cuid())
+  companyId       String?
+  grnNo           String    @unique
+  grnDate         DateTime  @default(now())
+  poId            String
+  vendorId        String
+  receivedById    String
+  remarks         String?
+  challanNo       String?
+  challanDate     DateTime?
+  vehicleNo       String?
+  transporterName String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   // Relations
   company       CompanyMaster? @relation(fields: [companyId], references: [id])
-  purchaseOrder PurchaseOrder @relation(fields: [poId], references: [id])
-  vendor        VendorMaster  @relation(fields: [vendorId], references: [id])
-  receivedBy    User          @relation("ReceivedBy", fields: [receivedById], references: [id])
+  purchaseOrder PurchaseOrder  @relation(fields: [poId], references: [id])
+  vendor        VendorMaster   @relation(fields: [vendorId], references: [id])
+  receivedBy    User           @relation("ReceivedBy", fields: [receivedById], references: [id])
   items         GRNItem[]
   mtcDocuments  MTCDocument[]
+  labReports    LabReport[]
 
   @@index([companyId])
   @@index([grnNo])
@@ -1272,29 +1515,29 @@ model GRNItem {
 }
 
 model InventoryStock {
-  id             String      @id @default(cuid())
-  companyId      String?
-  form           String?
-  product        String?
-  specification  String?
-  additionalSpec String?
-  dimensionStd   String?
-  sizeLabel      String?
-  od             Decimal?    @db.Decimal(10, 3)
-  wt             Decimal?    @db.Decimal(10, 3)
-  ends           String?
-  length         String?
-  heatNo         String?
-  make           String?
-  quantityMtr    Decimal     @db.Decimal(10, 3)
-  pieces         Int         @default(0)
-  mtcNo          String?
-  mtcDate        DateTime?
-  mtcType        MTCType?
-  tpiAgency      String?
-  location       String?
-  rackNo         String?
-  notes          String?
+  id                  String      @id @default(cuid())
+  companyId           String?
+  form                String?
+  product             String?
+  specification       String?
+  additionalSpec      String?
+  dimensionStd        String?
+  sizeLabel           String?
+  od                  Decimal?    @db.Decimal(10, 3)
+  wt                  Decimal?    @db.Decimal(10, 3)
+  ends                String?
+  length              String?
+  heatNo              String?
+  make                String?
+  quantityMtr         Decimal     @db.Decimal(10, 3)
+  pieces              Int         @default(0)
+  mtcNo               String?
+  mtcDate             DateTime?
+  mtcType             MTCType?
+  tpiAgency           String?
+  location            String?
+  rackNo              String?
+  notes               String?
   status              StockStatus @default(UNDER_INSPECTION)
   grnItemId           String?
   reservedForSO       String?
@@ -1303,16 +1546,20 @@ model InventoryStock {
   updatedAt           DateTime    @updatedAt
 
   // Relations
-  company            CompanyMaster?      @relation(fields: [companyId], references: [id])
-  grnItem            GRNItem?            @relation(fields: [grnItemId], references: [id])
-  warehouseLocation  WarehouseLocation?  @relation(fields: [warehouseLocationId], references: [id])
-  stockReservations  StockReservation[]
-  inspections        Inspection[]
-  mtcDocuments       MTCDocument[]
-  ncrs               NCR[]
-  packingListItems   PackingListItem[]
-  stockIssueItems    StockIssueItem[]
-  qcReleases         QCRelease[]
+  company                  CompanyMaster?            @relation(fields: [companyId], references: [id])
+  grnItem                  GRNItem?                  @relation(fields: [grnItemId], references: [id])
+  warehouseLocation        WarehouseLocation?        @relation(fields: [warehouseLocationId], references: [id])
+  stockReservations        StockReservation[]
+  inspections              Inspection[]
+  mtcDocuments             MTCDocument[]
+  ncrs                     NCR[]
+  packingListItems         PackingListItem[]
+  stockIssueItems          StockIssueItem[]
+  qcReleases               QCRelease[]
+  pipeDetails              PipeMaterialDetail[]
+  labReports               LabReport[]
+  labLetters               LabLetter[]
+  warehouseIntimationItems WarehouseIntimationItem[]
 
   @@index([companyId])
   @@index([heatNo])
@@ -1320,6 +1567,29 @@ model InventoryStock {
   @@index([sizeLabel])
   @@index([grnItemId])
   @@index([warehouseLocationId])
+}
+
+model PipeMaterialDetail {
+  id               String    @id @default(cuid())
+  inventoryStockId String
+  pipeNo           Int
+  length           Decimal?  @db.Decimal(10, 3)
+  heatNo           String?
+  make             String?
+  mtcNo            String?
+  mtcDate          DateTime?
+  bundleNo         String?
+  quantity         Int       @default(1)
+  remarks          String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  // Relations
+  inventoryStock InventoryStock @relation(fields: [inventoryStockId], references: [id], onDelete: Cascade)
+
+  @@unique([inventoryStockId, pipeNo])
+  @@index([inventoryStockId])
+  @@index([heatNo])
 }
 
 // ==================== QUALITY CONTROL ====================
@@ -1336,14 +1606,19 @@ model Inspection {
   overallResult    InspectionResult @default(HOLD)
   remarks          String?
   reportPath       String?
+  tpiAgencyId      String?
+  imagePaths       Json? // Array of inspection image file paths
+  reportPaths      Json? // Array of inspection report file paths
+  tpiSignOffPaths  Json? // Array of TPI sign-off document paths
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
   // Relations
-  company        CompanyMaster?        @relation(fields: [companyId], references: [id])
-  grnItem        GRNItem?              @relation(fields: [grnItemId], references: [id])
-  inventoryStock InventoryStock?       @relation(fields: [inventoryStockId], references: [id])
-  inspector      User                  @relation("InspectorUser", fields: [inspectorId], references: [id])
+  company        CompanyMaster?          @relation(fields: [companyId], references: [id])
+  grnItem        GRNItem?                @relation(fields: [grnItemId], references: [id])
+  inventoryStock InventoryStock?         @relation(fields: [inventoryStockId], references: [id])
+  inspector      User                    @relation("InspectorUser", fields: [inspectorId], references: [id])
+  tpiAgency      InspectionAgencyMaster? @relation(fields: [tpiAgencyId], references: [id])
   parameters     InspectionParameter[]
   qcReleases     QCRelease[]
 
@@ -1351,6 +1626,7 @@ model Inspection {
   @@index([inspectionNo])
   @@index([grnItemId])
   @@index([inventoryStockId])
+  @@index([tpiAgencyId])
 }
 
 model InspectionParameter {
@@ -1370,16 +1646,73 @@ model InspectionParameter {
   @@index([inspectionId])
 }
 
+model InspectionOffer {
+  id                     String    @id @default(cuid())
+  companyId              String?
+  offerNo                String    @unique
+  offerDate              DateTime  @default(now())
+  clientPurchaseOrderId  String?
+  salesOrderId           String?
+  customerId             String
+  poNumber               String?
+  projectName            String?
+  inspectionLocation     String?
+  proposedInspectionDate DateTime?
+  tpiAgencyId            String?
+  quantityReady          String?
+  remarks                String?   @db.Text
+  status                 String    @default("DRAFT")
+  createdById            String?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  // Relations
+  company             CompanyMaster?          @relation(fields: [companyId], references: [id])
+  customer            CustomerMaster          @relation(fields: [customerId], references: [id])
+  clientPurchaseOrder ClientPurchaseOrder?    @relation(fields: [clientPurchaseOrderId], references: [id])
+  salesOrder          SalesOrder?             @relation(fields: [salesOrderId], references: [id])
+  tpiAgency           InspectionAgencyMaster? @relation("IOTpiAgency", fields: [tpiAgencyId], references: [id])
+  createdBy           User?                   @relation("IOCreatedBy", fields: [createdById], references: [id])
+  items               InspectionOfferItem[]
+
+  @@index([companyId])
+  @@index([offerNo])
+  @@index([customerId])
+  @@index([clientPurchaseOrderId])
+}
+
+model InspectionOfferItem {
+  id                 String  @id @default(cuid())
+  inspectionOfferId  String
+  sNo                Int
+  product            String?
+  material           String?
+  sizeLabel          String?
+  heatNo             String?
+  specification      String?
+  quantity           String?
+  quantityReady      String?
+  uom                String?
+  colourCodeRequired Boolean @default(false)
+  colourCode         String?
+  remark             String?
+
+  // Relations
+  inspectionOffer InspectionOffer @relation(fields: [inspectionOfferId], references: [id], onDelete: Cascade)
+
+  @@index([inspectionOfferId])
+}
+
 model MTCDocument {
-  id               String            @id @default(cuid())
-  mtcNo            String
-  heatNo           String?
-  filePath         String?
-  uploadDate       DateTime          @default(now())
-  poId             String?
-  grnId            String?
+  id                 String   @id @default(cuid())
+  mtcNo              String
+  heatNo             String?
+  filePath           String?
+  uploadDate         DateTime @default(now())
+  poId               String?
+  grnId              String?
   inventoryStockId   String?
-  verificationStatus String?          @default("PENDING")
+  verificationStatus String?  @default("PENDING")
   remarks            String?
 
   // Relations
@@ -1392,38 +1725,38 @@ model MTCDocument {
 }
 
 model NCR {
-  id                 String          @id @default(cuid())
-  companyId          String?
-  ncrNo              String          @unique
-  ncrDate            DateTime        @default(now())
-  grnItemId          String?
-  inventoryStockId   String?
-  heatNo             String?
-  poId               String?
-  vendorId           String?
-  nonConformanceType String?
-  description        String?
-  rootCause          String?
-  correctiveAction   String?
-  preventiveAction   String?
-  disposition           NCRDisposition?
-  status                NCRStatus       @default(OPEN)
-  closedDate            DateTime?
-  closedById            String?
-  evidencePaths         Json?
-  targetClosureDate     DateTime?
-  responsiblePersonId   String?
-  verifiedById          String?
-  verifiedDate          DateTime?
-  createdAt             DateTime        @default(now())
-  updatedAt             DateTime        @updatedAt
+  id                  String          @id @default(cuid())
+  companyId           String?
+  ncrNo               String          @unique
+  ncrDate             DateTime        @default(now())
+  grnItemId           String?
+  inventoryStockId    String?
+  heatNo              String?
+  poId                String?
+  vendorId            String?
+  nonConformanceType  String?
+  description         String?
+  rootCause           String?
+  correctiveAction    String?
+  preventiveAction    String?
+  disposition         NCRDisposition?
+  status              NCRStatus       @default(OPEN)
+  closedDate          DateTime?
+  closedById          String?
+  evidencePaths       Json?
+  targetClosureDate   DateTime?
+  responsiblePersonId String?
+  verifiedById        String?
+  verifiedDate        DateTime?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
 
   // Relations
-  company        CompanyMaster?  @relation(fields: [companyId], references: [id])
-  grnItem        GRNItem?        @relation(fields: [grnItemId], references: [id])
-  inventoryStock InventoryStock? @relation(fields: [inventoryStockId], references: [id])
-  purchaseOrder  PurchaseOrder?  @relation(fields: [poId], references: [id])
-  vendor         VendorMaster?   @relation(fields: [vendorId], references: [id])
+  company           CompanyMaster?  @relation(fields: [companyId], references: [id])
+  grnItem           GRNItem?        @relation(fields: [grnItemId], references: [id])
+  inventoryStock    InventoryStock? @relation(fields: [inventoryStockId], references: [id])
+  purchaseOrder     PurchaseOrder?  @relation(fields: [poId], references: [id])
+  vendor            VendorMaster?   @relation(fields: [vendorId], references: [id])
   closedBy          User?           @relation("NCRClosedBy", fields: [closedById], references: [id])
   responsiblePerson User?           @relation("NCRResponsiblePerson", fields: [responsiblePersonId], references: [id])
   verifiedBy        User?           @relation("NCRVerifiedBy", fields: [verifiedById], references: [id])
@@ -1434,23 +1767,44 @@ model NCR {
 }
 
 model LabLetter {
-  id            String   @id @default(cuid())
-  companyId     String?
-  letterNo      String
-  letterDate    DateTime @default(now())
-  heatNo        String?
-  specification String?
-  sizeLabel     String?
-  testIds       Json?
-  generatedPath String?
-  generatedById String?
+  id                 String   @id @default(cuid())
+  companyId          String?
+  letterNo           String   @unique
+  letterDate         DateTime @default(now())
+  labName            String?
+  labAddress         String?  @db.Text
+  inventoryStockId   String?
+  poNumber           String?
+  clientName         String?
+  productDescription String?  @db.Text
+  itemCode           String?
+  heatNo             String?
+  make               String?
+  specification      String?
+  sizeLabel          String?
+  quantity           String?
+  unit               String?
+  testIds            Json?
+  testNames          Json?
+  witnessRequired    Boolean  @default(false)
+  tpiAgencyId        String?
+  tpiAgencyName      String?
+  status             String   @default("DRAFT")
+  generatedPath      String?
+  generatedById      String?
+  remarks            String?  @db.Text
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
-  // Relations
-  company     CompanyMaster? @relation(fields: [companyId], references: [id])
-  generatedBy User? @relation("LabLetterGeneratedBy", fields: [generatedById], references: [id])
+  company        CompanyMaster?          @relation(fields: [companyId], references: [id])
+  inventoryStock InventoryStock?         @relation(fields: [inventoryStockId], references: [id])
+  tpiAgency      InspectionAgencyMaster? @relation(fields: [tpiAgencyId], references: [id])
+  generatedBy    User?                   @relation("LabLetterGeneratedBy", fields: [generatedById], references: [id])
 
   @@index([companyId])
   @@index([heatNo])
+  @@index([status])
+  @@index([inventoryStockId])
 }
 
 // ==================== WAREHOUSE ====================
@@ -1473,12 +1827,13 @@ model WarehouseMaster {
   updatedAt    DateTime @updatedAt
 
   // Relations
-  company       CompanyMaster?      @relation(fields: [companyId], references: [id])
-  locations     WarehouseLocation[]
-  addresses     WarehouseAddress[]
-  dispatchNotes DispatchNote[]
-  invoices      Invoice[]
-  packingLists  PackingList[]
+  company              CompanyMaster?        @relation(fields: [companyId], references: [id])
+  locations            WarehouseLocation[]
+  addresses            WarehouseAddress[]
+  dispatchNotes        DispatchNote[]
+  invoices             Invoice[]
+  packingLists         PackingList[]
+  warehouseIntimations WarehouseIntimation[]
 
   @@index([companyId])
 }
@@ -1498,29 +1853,29 @@ model WarehouseAddress {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  warehouse    WarehouseMaster @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  warehouse WarehouseMaster @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
 
   @@index([warehouseId])
 }
 
 model WarehouseLocation {
-  id                  String   @id @default(cuid())
-  warehouseId         String
-  zone                String?
-  rack                String?
-  bay                 String?
-  shelf               String?
-  locationType        String   @default("GENERAL")
-  capacity            String?
-  locationTag         String?  @unique
-  preservationMethod  String?
-  storageConditions   String?  @db.Text
-  isActive            Boolean  @default(true)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  warehouseId        String
+  zone               String?
+  rack               String?
+  bay                String?
+  shelf              String?
+  locationType       String   @default("GENERAL")
+  capacity           String?
+  locationTag        String?  @unique
+  preservationMethod String?
+  storageConditions  String?  @db.Text
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   // Relations
-  warehouse      WarehouseMaster  @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  warehouse       WarehouseMaster  @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
   inventoryStocks InventoryStock[]
 
   @@index([warehouseId])
@@ -1542,11 +1897,11 @@ model StockIssue {
   updatedAt      DateTime         @updatedAt
 
   // Relations
-  company     CompanyMaster?  @relation(fields: [companyId], references: [id])
-  salesOrder  SalesOrder      @relation(fields: [salesOrderId], references: [id])
-  issuedBy    User            @relation("IssuedBy", fields: [issuedById], references: [id])
-  authorizedBy User?          @relation("AuthorizedBy", fields: [authorizedById], references: [id])
-  items       StockIssueItem[]
+  company      CompanyMaster?   @relation(fields: [companyId], references: [id])
+  salesOrder   SalesOrder       @relation(fields: [salesOrderId], references: [id])
+  issuedBy     User             @relation("IssuedBy", fields: [issuedById], references: [id])
+  authorizedBy User?            @relation("AuthorizedBy", fields: [authorizedById], references: [id])
+  items        StockIssueItem[]
 
   @@index([companyId])
   @@index([issueNo])
@@ -1554,14 +1909,14 @@ model StockIssue {
 }
 
 model StockIssueItem {
-  id               String   @id @default(cuid())
+  id               String  @id @default(cuid())
   stockIssueId     String
   inventoryStockId String
   heatNo           String?
   sizeLabel        String?
   material         String?
-  quantityMtr      Decimal  @db.Decimal(10, 3)
-  pieces           Int      @default(0)
+  quantityMtr      Decimal @db.Decimal(10, 3)
+  pieces           Int     @default(0)
   location         String?
 
   // Relations
@@ -1598,6 +1953,42 @@ model QCRelease {
   @@index([inventoryStockId])
 }
 
+model LabReport {
+  id               String        @id @default(cuid())
+  companyId        String?
+  reportNo         String        @unique
+  reportDate       DateTime      @default(now())
+  reportType       LabReportType
+  heatNo           String
+  itemCode         String?
+  poId             String?
+  inventoryStockId String?
+  grnId            String?
+  filePath         String?
+  fileName         String?
+  labName          String?
+  testDate         DateTime?
+  result           String?
+  remarks          String?       @db.Text
+  uploadedById     String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  // Relations
+  company        CompanyMaster?    @relation(fields: [companyId], references: [id])
+  purchaseOrder  PurchaseOrder?    @relation(fields: [poId], references: [id])
+  inventoryStock InventoryStock?   @relation(fields: [inventoryStockId], references: [id])
+  grn            GoodsReceiptNote? @relation(fields: [grnId], references: [id])
+  uploadedBy     User?             @relation("LabReportUploadedBy", fields: [uploadedById], references: [id])
+
+  @@index([companyId])
+  @@index([heatNo])
+  @@index([itemCode])
+  @@index([poId])
+  @@index([reportType])
+  @@index([inventoryStockId])
+}
+
 // ==================== DISPATCH & FINANCE ====================
 
 model PackingList {
@@ -1612,9 +2003,9 @@ model PackingList {
   updatedAt    DateTime @updatedAt
 
   // Relations
-  company       CompanyMaster?   @relation(fields: [companyId], references: [id])
-  salesOrder    SalesOrder       @relation(fields: [salesOrderId], references: [id])
-  warehouse     WarehouseMaster? @relation(fields: [warehouseId], references: [id])
+  company       CompanyMaster?    @relation(fields: [companyId], references: [id])
+  salesOrder    SalesOrder        @relation(fields: [salesOrderId], references: [id])
+  warehouse     WarehouseMaster?  @relation(fields: [warehouseId], references: [id])
   items         PackingListItem[]
   dispatchNotes DispatchNote[]
 
@@ -1645,33 +2036,36 @@ model PackingListItem {
 }
 
 model DispatchNote {
-  id            String   @id @default(cuid())
-  companyId     String?
-  dnNo          String   @unique
-  dispatchDate  DateTime @default(now())
-  packingListId String
-  salesOrderId  String
-  warehouseId   String?
-  vehicleNo     String?
-  lrNo          String?
-  lrDate              DateTime?
-  transporterId String?
-  destination   String?
-  ewayBillNo    String?
-  remarks       String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                String    @id @default(cuid())
+  companyId         String?
+  dnNo              String    @unique
+  dispatchDate      DateTime  @default(now())
+  packingListId     String
+  salesOrderId      String
+  warehouseId       String?
+  dispatchAddressId String?
+  vehicleNo         String?
+  lrNo              String?
+  lrDate            DateTime?
+  transporterId     String?
+  destination       String?
+  ewayBillNo        String?
+  remarks           String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   // Relations
-  company     CompanyMaster?     @relation(fields: [companyId], references: [id])
-  packingList PackingList        @relation(fields: [packingListId], references: [id])
-  salesOrder  SalesOrder         @relation(fields: [salesOrderId], references: [id])
-  warehouse   WarehouseMaster?   @relation(fields: [warehouseId], references: [id])
-  transporter TransporterMaster? @relation(fields: [transporterId], references: [id])
-  invoices    Invoice[]
+  company         CompanyMaster?           @relation(fields: [companyId], references: [id])
+  packingList     PackingList              @relation(fields: [packingListId], references: [id])
+  salesOrder      SalesOrder               @relation(fields: [salesOrderId], references: [id])
+  warehouse       WarehouseMaster?         @relation(fields: [warehouseId], references: [id])
+  dispatchAddress CustomerDispatchAddress? @relation(fields: [dispatchAddressId], references: [id])
+  transporter     TransporterMaster?       @relation(fields: [transporterId], references: [id])
+  invoices        Invoice[]
 
   @@index([companyId])
   @@index([dnNo])
+  @@index([dispatchAddressId])
 }
 
 model Invoice {
@@ -1684,6 +2078,7 @@ model Invoice {
   salesOrderId      String
   customerId        String
   warehouseId       String?
+  dispatchAddressId String?
   originalInvoiceId String?
   subtotal          Decimal       @db.Decimal(14, 2)
   cgst              Decimal       @default(0) @db.Decimal(14, 2)
@@ -1691,11 +2086,11 @@ model Invoice {
   igst              Decimal       @default(0) @db.Decimal(14, 2)
   totalAmount       Decimal       @db.Decimal(14, 2)
   currency          String        @default("INR")
-  tcsAmount           Decimal   @default(0) @db.Decimal(14, 2)
-  roundOff            Decimal   @default(0) @db.Decimal(10, 2)
-  amountInWords       String?
-  placeOfSupply       String?
-  customerGstin       String?
+  tcsAmount         Decimal       @default(0) @db.Decimal(14, 2)
+  roundOff          Decimal       @default(0) @db.Decimal(10, 2)
+  amountInWords     String?
+  placeOfSupply     String?
+  customerGstin     String?
   dueDate           DateTime?
   eWayBillNo        String?
   status            InvoiceStatus @default(DRAFT)
@@ -1703,13 +2098,14 @@ model Invoice {
   updatedAt         DateTime      @updatedAt
 
   // Relations
-  company         CompanyMaster?   @relation(fields: [companyId], references: [id])
-  dispatchNote    DispatchNote?    @relation(fields: [dispatchNoteId], references: [id])
-  salesOrder      SalesOrder       @relation(fields: [salesOrderId], references: [id])
-  customer        CustomerMaster   @relation(fields: [customerId], references: [id])
-  warehouse       WarehouseMaster? @relation(fields: [warehouseId], references: [id])
-  originalInvoice Invoice?         @relation("CreditDebitNoteLink", fields: [originalInvoiceId], references: [id])
-  linkedNotes     Invoice[]        @relation("CreditDebitNoteLink")
+  company         CompanyMaster?           @relation(fields: [companyId], references: [id])
+  dispatchNote    DispatchNote?            @relation(fields: [dispatchNoteId], references: [id])
+  salesOrder      SalesOrder               @relation(fields: [salesOrderId], references: [id])
+  customer        CustomerMaster           @relation(fields: [customerId], references: [id])
+  warehouse       WarehouseMaster?         @relation(fields: [warehouseId], references: [id])
+  dispatchAddress CustomerDispatchAddress? @relation(fields: [dispatchAddressId], references: [id])
+  originalInvoice Invoice?                 @relation("CreditDebitNoteLink", fields: [originalInvoiceId], references: [id])
+  linkedNotes     Invoice[]                @relation("CreditDebitNoteLink")
   items           InvoiceItem[]
   paymentReceipts PaymentReceipt[]
   emailLogs       InvoiceEmailLog[]
@@ -1727,7 +2123,7 @@ model InvoiceItem {
   description String?
   heatNo      String?
   sizeLabel   String?
-  uom                 String?
+  uom         String?
   quantity    Decimal  @db.Decimal(10, 3)
   unitRate    Decimal  @db.Decimal(12, 2)
   amount      Decimal  @db.Decimal(14, 2)
@@ -1752,8 +2148,8 @@ model InvoiceEmailLog {
   status       EmailLogStatus
   errorMessage String?        @db.Text
 
-  invoice      Invoice        @relation(fields: [invoiceId], references: [id])
-  sentBy       User?          @relation("InvoiceEmailSentBy", fields: [sentById], references: [id])
+  invoice Invoice @relation(fields: [invoiceId], references: [id])
+  sentBy  User?   @relation("InvoiceEmailSentBy", fields: [sentById], references: [id])
 
   @@index([invoiceId])
   @@index([sentById])
@@ -1787,6 +2183,153 @@ model PaymentReceipt {
   @@index([invoiceId])
 }
 
+// ==================== CUSTOMER CONTACTS (COMPANY DIRECTORY) ====================
+
+model CustomerContact {
+  id          String            @id @default(cuid())
+  customerId  String
+  contactName String
+  designation String?
+  email       String?
+  phone       String?
+  department  ContactDepartment
+  isActive    Boolean           @default(true)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  // Relations
+  customer CustomerMaster @relation(fields: [customerId], references: [id])
+
+  @@index([customerId])
+  @@index([department])
+}
+
+// ==================== PO ACCEPTANCE ====================
+
+model POAcceptance {
+  id                    String   @id @default(cuid())
+  companyId             String?
+  acceptanceNo          String   @unique
+  clientPurchaseOrderId String   @unique
+  acceptanceDate        DateTime
+  committedDeliveryDate DateTime
+  remarks               String?  @db.Text
+  attachmentUrl         String?
+
+  // Contact details (stored inline for document integrity)
+  followUpName  String?
+  followUpEmail String?
+  followUpPhone String?
+  qualityName   String?
+  qualityEmail  String?
+  qualityPhone  String?
+  accountsName  String?
+  accountsEmail String?
+  accountsPhone String?
+
+  status      String   @default("DRAFT")
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  company             CompanyMaster?      @relation(fields: [companyId], references: [id])
+  clientPurchaseOrder ClientPurchaseOrder @relation(fields: [clientPurchaseOrderId], references: [id])
+  createdBy           User                @relation("POACreatedBy", fields: [createdById], references: [id])
+
+  @@index([companyId])
+  @@index([clientPurchaseOrderId])
+  @@index([acceptanceNo])
+}
+
+// ==================== WAREHOUSE INTIMATION (MPR) ====================
+
+model WarehouseIntimation {
+  id             String      @id @default(cuid())
+  companyId      String?
+  mprNo          String      @unique
+  mprDate        DateTime    @default(now())
+  salesOrderId   String
+  warehouseId    String?
+  priority       MPRPriority @default(NORMAL)
+  requiredByDate DateTime?
+  status         MPRStatus   @default(PENDING)
+  remarks        String?     @db.Text
+  createdById    String
+  assignedToId   String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  // Relations
+  company    CompanyMaster?            @relation(fields: [companyId], references: [id])
+  salesOrder SalesOrder                @relation(fields: [salesOrderId], references: [id])
+  warehouse  WarehouseMaster?          @relation(fields: [warehouseId], references: [id])
+  createdBy  User                      @relation("MPRCreatedBy", fields: [createdById], references: [id])
+  assignedTo User?                     @relation("MPRAssignedTo", fields: [assignedToId], references: [id])
+  items      WarehouseIntimationItem[]
+
+  @@index([companyId])
+  @@index([salesOrderId])
+  @@index([warehouseId])
+  @@index([status])
+  @@index([mprNo])
+}
+
+model WarehouseIntimationItem {
+  id                    String         @id @default(cuid())
+  warehouseIntimationId String
+  sNo                   Int
+  salesOrderItemId      String?
+  product               String?
+  material              String?
+  sizeLabel             String?
+  additionalSpec        String?
+  requiredQty           Decimal        @db.Decimal(10, 3)
+  preparedQty           Decimal        @default(0) @db.Decimal(10, 3)
+  inspectionStatus      MPRCheckStatus @default(PENDING)
+  testingStatus         MPRCheckStatus @default(PENDING)
+  itemStatus            MPRItemStatus  @default(PENDING)
+  inventoryStockId      String?
+  heatNo                String?
+  remarks               String?
+
+  // Relations
+  warehouseIntimation WarehouseIntimation @relation(fields: [warehouseIntimationId], references: [id], onDelete: Cascade)
+  salesOrderItem      SalesOrderItem?     @relation(fields: [salesOrderItemId], references: [id])
+  inventoryStock      InventoryStock?     @relation(fields: [inventoryStockId], references: [id])
+
+  @@index([warehouseIntimationId])
+  @@index([salesOrderItemId])
+  @@index([inventoryStockId])
+}
+
+// ==================== ALERTS ====================
+
+model Alert {
+  id             String        @id @default(cuid())
+  companyId      String?
+  type           AlertType
+  title          String
+  message        String        @db.Text
+  severity       AlertSeverity @default(MEDIUM)
+  status         AlertStatus   @default(UNREAD)
+  relatedModule  String?
+  relatedId      String?
+  dueDate        DateTime?
+  assignedToRole UserRole?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  // Relations
+  company CompanyMaster? @relation(fields: [companyId], references: [id])
+
+  @@index([companyId])
+  @@index([status])
+  @@index([type])
+  @@index([severity])
+  @@index([assignedToRole])
+}
+
 // ==================== SYSTEM TABLES ====================
 
 model AuditLog {
@@ -1813,15 +2356,15 @@ model AuditLog {
 }
 
 model DocumentSequence {
-  id            String         @id @default(cuid())
+  id            String  @id @default(cuid())
   companyId     String?
   documentType  String
   prefix        String
-  currentNumber Int            @default(0)
+  currentNumber Int     @default(0)
   financialYear String
-  resetMonth    Int            @default(4)
+  resetMonth    Int     @default(4)
 
-  company       CompanyMaster? @relation(fields: [companyId], references: [id])
+  company CompanyMaster? @relation(fields: [companyId], references: [id])
 
   @@unique([companyId, documentType])
   @@index([companyId])

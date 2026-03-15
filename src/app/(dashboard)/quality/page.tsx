@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { DataTable, Column } from "@/components/shared/data-table";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import {
   FileWarning,
   FileText,
   FlaskConical,
+  TestTube2,
   Plus,
   Search,
 } from "lucide-react";
@@ -46,14 +47,31 @@ const verificationStatusColors: Record<string, string> = {
   DISCREPANT: "bg-red-500",
 };
 
-export default function QualityPage() {
+const labReportResultColors: Record<string, string> = {
+  PASS: "bg-green-500",
+  FAIL: "bg-red-500",
+  PENDING: "bg-yellow-500",
+};
+
+const REPORT_TYPE_LABELS: Record<string, string> = {
+  CHEMICAL: "Chemical",
+  MECHANICAL: "Mechanical",
+  HYDRO: "Hydro",
+  IMPACT: "Impact",
+  IGC: "IGC",
+};
+
+function QualityPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const defaultTab = searchParams.get("tab") || "inspections";
   const [inspections, setInspections] = useState<any[]>([]);
   const [ncrs, setNcrs] = useState<any[]>([]);
   const [mtcs, setMtcs] = useState<any[]>([]);
   const [mtcSearch, setMtcSearch] = useState("");
   const [labLetters, setLabLetters] = useState<any[]>([]);
   const [qcReleases, setQcReleases] = useState<any[]>([]);
+  const [labReports, setLabReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -62,6 +80,7 @@ export default function QualityPage() {
     fetchMTCs();
     fetchLabLetters();
     fetchQCReleases();
+    fetchLabReports();
   }, []);
 
   const fetchInspections = async () => {
@@ -150,6 +169,18 @@ export default function QualityPage() {
     }
   };
 
+  const fetchLabReports = async () => {
+    try {
+      const response = await fetch("/api/quality/lab-reports");
+      if (response.ok) {
+        const data = await response.json();
+        setLabReports(data.labReports || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch lab reports:", error);
+    }
+  };
+
   const inspectionColumns: Column<any>[] = [
     {
       key: "inspectionNo",
@@ -193,6 +224,11 @@ export default function QualityPage() {
       key: "inspector",
       header: "Inspector",
       cell: (row) => (row.inspector as any)?.name || "—",
+    },
+    {
+      key: "tpiAgency",
+      header: "TPI Agency",
+      cell: (row) => (row.tpiAgency as any)?.name || "—",
     },
   ];
 
@@ -389,9 +425,18 @@ export default function QualityPage() {
       cell: (row) => (row.specification as string) || "—",
     },
     {
-      key: "sizeLabel",
-      header: "Size",
-      cell: (row) => (row.sizeLabel as string) || "—",
+      key: "clientName",
+      header: "Client",
+      cell: (row) => (row.clientName as string) || "—",
+    },
+    {
+      key: "status",
+      header: "Status",
+      cell: (row) => {
+        const s = row.status as string;
+        const labels: Record<string, string> = { DRAFT: "Draft", SENT: "Sent", RESULTS_PENDING: "Pending", COMPLETED: "Done" };
+        return <Badge variant="secondary">{labels[s] || s}</Badge>;
+      },
     },
     {
       key: "letterDate",
@@ -400,14 +445,75 @@ export default function QualityPage() {
     },
   ];
 
+  const labReportColumns: Column<any>[] = [
+    {
+      key: "reportNo",
+      header: "Report No.",
+      cell: (row) => (
+        <Link
+          href={`/quality/lab-reports/${row.id}`}
+          className="font-mono text-sm text-blue-600 hover:underline"
+        >
+          {row.reportNo as string}
+        </Link>
+      ),
+    },
+    {
+      key: "reportType",
+      header: "Type",
+      cell: (row) => REPORT_TYPE_LABELS[row.reportType as string] || (row.reportType as string),
+    },
+    {
+      key: "heatNo",
+      header: "Heat No.",
+      cell: (row) => <span className="font-mono text-sm">{row.heatNo as string}</span>,
+    },
+    {
+      key: "itemCode",
+      header: "Item Code",
+      cell: (row) => (row.itemCode as string) || "—",
+    },
+    {
+      key: "purchaseOrder",
+      header: "PO",
+      cell: (row) => {
+        const po = row.purchaseOrder as any;
+        return po ? (
+          <Link href={`/purchase/orders/${po.id}`} className="text-blue-600 hover:underline text-sm">
+            {po.poNo}
+          </Link>
+        ) : "—";
+      },
+    },
+    {
+      key: "result",
+      header: "Result",
+      cell: (row) => (
+        <Badge className={labReportResultColors[row.result as string] || "bg-gray-500"}>
+          {(row.result as string) || "PENDING"}
+        </Badge>
+      ),
+    },
+    {
+      key: "reportDate",
+      header: "Date",
+      cell: (row) => format(new Date(row.reportDate as string), "dd MMM yyyy"),
+    },
+    {
+      key: "uploadedBy",
+      header: "Uploaded By",
+      cell: (row) => (row.uploadedBy as any)?.name || "—",
+    },
+  ];
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Quality Control"
-        description="Inspections, MTC repository, NCR register, and lab letters"
+        description="Inspections, MTC repository, NCR register, lab reports, and lab letters"
       />
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Inspections</CardTitle>
@@ -446,15 +552,25 @@ export default function QualityPage() {
             <div className="text-2xl font-bold">{labLetters.length}</div>
           </CardContent>
         </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Lab Reports</CardTitle>
+            <TestTube2 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{labReports.length}</div>
+          </CardContent>
+        </Card>
       </div>
 
-      <Tabs defaultValue="inspections" className="space-y-4">
+      <Tabs defaultValue={defaultTab} className="space-y-4">
         <TabsList>
           <TabsTrigger value="inspections">Inspections</TabsTrigger>
           <TabsTrigger value="qc-release">QC Release</TabsTrigger>
           <TabsTrigger value="mtc">MTC Repository</TabsTrigger>
           <TabsTrigger value="ncr">NCR Register</TabsTrigger>
           <TabsTrigger value="lab-letters">Lab Letters</TabsTrigger>
+          <TabsTrigger value="lab-reports">Lab Reports</TabsTrigger>
         </TabsList>
 
         <TabsContent value="inspections">
@@ -584,7 +700,37 @@ export default function QualityPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="lab-reports">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Lab Test Reports</CardTitle>
+                <Button onClick={() => router.push("/quality/lab-reports/create")}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Upload Lab Report
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <DataTable
+                columns={labReportColumns}
+                data={labReports}
+                searchKey="reportNo"
+                searchPlaceholder="Search by report number, heat number..."
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function QualityPage() {
+  return (
+    <Suspense>
+      <QualityPageInner />
+    </Suspense>
   );
 }

@@ -6,6 +6,8 @@ import { ChevronRight, Home } from "lucide-react";
 
 const labelMap: Record<string, string> = {
   // Top-level modules
+  alerts: "Alerts & Notifications",
+  "client-purchase-orders": "Client P.O. Register",
   masters: "Masters",
   quotations: "Quotations",
   sales: "Sales Orders",
@@ -40,6 +42,7 @@ const labelMap: Record<string, string> = {
   compare: "Compare",
   review: "Customer PO Review",
   "reserve-stock": "Reserve Stock",
+  "po-tracking": "Order Tracking",
   // Purchase sub-pages
   requisitions: "Requisitions",
   orders: "Orders",
@@ -50,6 +53,9 @@ const labelMap: Record<string, string> = {
   "lab-letters": "Lab Letters",
   mtc: "MTC Repository",
   ncr: "NCR Register",
+  requirements: "Quality Requirements",
+  "inspection-offers": "Inspection Offers",
+  "lab-reports": "Lab Reports",
   // Dispatch sub-pages
   "dispatch-notes": "Dispatch Notes",
   "packing-lists": "Packing Lists",
@@ -63,6 +69,9 @@ const labelMap: Record<string, string> = {
   stock: "Stock",
   "stock-issue": "Stock Issue",
   "heat-lifecycle": "Heat Lifecycle",
+  // Warehouse sub-pages
+  warehouse: "Warehouse",
+  intimation: "Intimation",
   // Reports sub-pages
   "buyer-performance": "Buyer Performance",
   "vendor-performance": "Vendor Performance",
@@ -72,6 +81,11 @@ const labelMap: Record<string, string> = {
   "inventory-ageing": "Inventory Ageing",
   "ncr-analysis": "NCR Analysis",
   "on-time-delivery": "On-Time Delivery",
+  "client-status": "Client Status Report",
+  // PO Acceptance
+  "po-acceptance": "P.O. Acceptance",
+  "customer-contacts": "Customer Contacts",
+  dossier: "Dispatch Dossier",
   // Admin sub-pages
   traceability: "Traceability",
 };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -24,8 +24,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Plus,
+  Trash2,
+  Upload,
+  Image as ImageIcon,
+  FileText,
+  ShieldCheck,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 
 interface InspectionParam {
   parameterName: string;
@@ -35,6 +48,17 @@ interface InspectionParam {
   tolerance: string;
   resultValue: string;
   remarks: string;
+}
+
+interface UploadedFile {
+  filePath: string;
+  fileName: string;
+}
+
+interface TPIAgency {
+  id: string;
+  name: string;
+  code: string;
 }
 
 const DEFAULT_PARAMETERS: InspectionParam[] = [
@@ -52,6 +76,166 @@ const DEFAULT_PARAMETERS: InspectionParam[] = [
   { parameterName: "Hydrostatic Test", parameterType: "PASS_FAIL", result: "", standardValue: "As per spec", tolerance: "", resultValue: "", remarks: "" },
 ];
 
+// ---------------------------------------------------------------------------
+// File Upload Hook
+// ---------------------------------------------------------------------------
+
+function useFileUploader() {
+  const [uploading, setUploading] = useState(false);
+
+  const uploadFile = async (file: File): Promise<UploadedFile | null> => {
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      toast.error(`File "${file.name}" exceeds 10MB limit`);
+      return null;
+    }
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      if (!res.ok) throw new Error("Upload failed");
+      const result = await res.json();
+      return { filePath: result.filePath, fileName: file.name };
+    } catch {
+      toast.error(`Failed to upload "${file.name}"`);
+      return null;
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return { uploading, uploadFile };
+}
+
+// ---------------------------------------------------------------------------
+// FileUploadSection Component
+// ---------------------------------------------------------------------------
+
+function FileUploadSection({
+  title,
+  description,
+  icon,
+  accept,
+  files,
+  onAdd,
+  onRemove,
+  uploading,
+  inputId,
+}: {
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  accept: string;
+  files: UploadedFile[];
+  onAdd: (files: FileList) => void;
+  onRemove: (index: number) => void;
+  uploading: boolean;
+  inputId: string;
+}) {
+  const isImage = accept.includes("image");
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {icon}
+          <div>
+            <p className="text-sm font-medium">{title}</p>
+            <p className="text-xs text-muted-foreground">{description}</p>
+          </div>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={uploading}
+          onClick={() => document.getElementById(inputId)?.click()}
+        >
+          <Upload className="h-3.5 w-3.5 mr-1.5" />
+          {uploading ? "Uploading..." : "Upload"}
+        </Button>
+        <input
+          id={inputId}
+          type="file"
+          className="hidden"
+          accept={accept}
+          multiple
+          onChange={(e) => {
+            if (e.target.files && e.target.files.length > 0) {
+              onAdd(e.target.files);
+              e.target.value = "";
+            }
+          }}
+        />
+      </div>
+
+      {files.length > 0 && (
+        <div className={isImage ? "grid grid-cols-3 gap-2" : "space-y-1.5"}>
+          {files.map((file, index) => (
+            <div
+              key={index}
+              className={
+                isImage
+                  ? "relative group rounded-lg border overflow-hidden aspect-square bg-muted"
+                  : "flex items-center justify-between rounded-md border px-3 py-2 text-sm"
+              }
+            >
+              {isImage ? (
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={file.filePath}
+                    alt={file.fileName}
+                    className="w-full h-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => onRemove(index)}
+                    className="absolute top-1 right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <span className="truncate">{file.fileName}</span>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 shrink-0 text-destructive hover:text-destructive"
+                    onClick={() => onRemove(index)}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {files.length === 0 && (
+        <div className="rounded-md border border-dashed p-4 text-center text-xs text-muted-foreground">
+          No files uploaded yet
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main Component
+// ---------------------------------------------------------------------------
+
 export default function CreateInspectionPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -64,8 +248,19 @@ export default function CreateInspectionPage() {
     DEFAULT_PARAMETERS.map((p) => ({ ...p }))
   );
 
+  // TPI Agency
+  const [agencies, setAgencies] = useState<TPIAgency[]>([]);
+  const [tpiAgencyId, setTpiAgencyId] = useState("");
+
+  // File uploads
+  const [inspectionImages, setInspectionImages] = useState<UploadedFile[]>([]);
+  const [inspectionReports, setInspectionReports] = useState<UploadedFile[]>([]);
+  const [tpiSignOffDocs, setTpiSignOffDocs] = useState<UploadedFile[]>([]);
+  const { uploading, uploadFile } = useFileUploader();
+
   useEffect(() => {
     fetchStocks();
+    fetchAgencies();
   }, []);
 
   const fetchStocks = async () => {
@@ -77,6 +272,18 @@ export default function CreateInspectionPage() {
       }
     } catch (error) {
       console.error("Failed to fetch stocks:", error);
+    }
+  };
+
+  const fetchAgencies = async () => {
+    try {
+      const res = await fetch("/api/masters/inspection-agencies");
+      if (res.ok) {
+        const data = await res.json();
+        setAgencies(data.agencies || []);
+      }
+    } catch {
+      // Silently fail
     }
   };
 
@@ -129,6 +336,27 @@ export default function CreateInspectionPage() {
     HOLD: "bg-yellow-500",
   };
 
+  // Multi-file upload handlers
+  const handleMultiUpload = async (
+    fileList: FileList,
+    existing: UploadedFile[],
+    setter: React.Dispatch<React.SetStateAction<UploadedFile[]>>
+  ) => {
+    for (const file of Array.from(fileList)) {
+      const result = await uploadFile(file);
+      if (result) {
+        setter((prev) => [...prev, result]);
+      }
+    }
+  };
+
+  const removeFile = (
+    index: number,
+    setter: React.Dispatch<React.SetStateAction<UploadedFile[]>>
+  ) => {
+    setter((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -140,6 +368,12 @@ export default function CreateInspectionPage() {
     const filledParams = parameters.filter((p) => p.parameterName && p.result);
     if (filledParams.length === 0) {
       toast.error("Please fill in at least one inspection parameter with a result");
+      return;
+    }
+
+    // For PASS result, require at least one report
+    if (overallResult === "PASS" && inspectionReports.length === 0) {
+      toast.error("Inspection report is mandatory for PASS result. Please upload at least one report.");
       return;
     }
 
@@ -155,6 +389,11 @@ export default function CreateInspectionPage() {
           overallResult,
           remarks,
           parameters: filledParams,
+          tpiAgencyId: tpiAgencyId || null,
+          reportPath: inspectionReports[0]?.filePath || null,
+          imagePaths: inspectionImages.map((f) => f.filePath),
+          reportPaths: inspectionReports.map((f) => f.filePath),
+          tpiSignOffPaths: tpiSignOffDocs.map((f) => f.filePath),
         }),
       });
 
@@ -186,6 +425,7 @@ export default function CreateInspectionPage() {
       </PageHeader>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Card 1: Stock Selection & Overall Result */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -243,6 +483,32 @@ export default function CreateInspectionPage() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="space-y-2">
+                <Label>TPI Agency</Label>
+                <Select value={tpiAgencyId} onValueChange={setTpiAgencyId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select TPI agency (if applicable)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {agencies.map((agency) => (
+                      <SelectItem key={agency.id} value={agency.id}>
+                        {agency.name} ({agency.code})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {tpiAgencyId && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 text-xs text-muted-foreground"
+                    onClick={() => setTpiAgencyId("")}
+                  >
+                    Clear selection
+                  </Button>
+                )}
+              </div>
             </div>
             <div className="space-y-2">
               <Label>Remarks</Label>
@@ -256,6 +522,59 @@ export default function CreateInspectionPage() {
           </CardContent>
         </Card>
 
+        {/* Card 2: Document Uploads */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Upload className="h-5 w-5 text-muted-foreground" />
+              Inspection Documents & Images
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <FileUploadSection
+                title="Inspection Images"
+                description="Photos of material, defects, markings"
+                icon={<ImageIcon className="h-5 w-5 text-blue-500" />}
+                accept="image/*"
+                files={inspectionImages}
+                onAdd={(fileList) => handleMultiUpload(fileList, inspectionImages, setInspectionImages)}
+                onRemove={(index) => removeFile(index, setInspectionImages)}
+                uploading={uploading}
+                inputId="upload-images"
+              />
+              <FileUploadSection
+                title="Inspection Reports"
+                description="PDF/document reports"
+                icon={<FileText className="h-5 w-5 text-emerald-500" />}
+                accept=".pdf,.doc,.docx,.xls,.xlsx"
+                files={inspectionReports}
+                onAdd={(fileList) => handleMultiUpload(fileList, inspectionReports, setInspectionReports)}
+                onRemove={(index) => removeFile(index, setInspectionReports)}
+                uploading={uploading}
+                inputId="upload-reports"
+              />
+              <FileUploadSection
+                title="TPI Sign-off Documents"
+                description="Third-party inspection approvals"
+                icon={<ShieldCheck className="h-5 w-5 text-violet-500" />}
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                files={tpiSignOffDocs}
+                onAdd={(fileList) => handleMultiUpload(fileList, tpiSignOffDocs, setTpiSignOffDocs)}
+                onRemove={(index) => removeFile(index, setTpiSignOffDocs)}
+                uploading={uploading}
+                inputId="upload-tpi-signoff"
+              />
+            </div>
+            {overallResult === "PASS" && inspectionReports.length === 0 && (
+              <div className="mt-4 rounded-md bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 px-4 py-3 text-sm text-yellow-800 dark:text-yellow-200">
+                Inspection report upload is mandatory for PASS result.
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Card 3: Inspection Parameters */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -379,7 +698,7 @@ export default function CreateInspectionPage() {
           <Button type="button" variant="outline" onClick={() => router.back()}>
             Cancel
           </Button>
-          <Button type="submit" disabled={loading}>
+          <Button type="submit" disabled={loading || uploading}>
             {loading ? "Creating..." : "Create Inspection"}
           </Button>
         </div>

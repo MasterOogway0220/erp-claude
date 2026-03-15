@@ -46,6 +46,20 @@ export async function GET(request: NextRequest) {
             },
           },
         },
+        dispatchAddress: {
+          select: {
+            id: true,
+            label: true,
+            companyName: true,
+            addressLine1: true,
+            city: true,
+            state: true,
+            pincode: true,
+            contactPerson: true,
+            contactNumber: true,
+            gstNo: true,
+          },
+        },
         transporter: {
           select: {
             id: true,
@@ -85,6 +99,7 @@ export async function POST(request: NextRequest) {
       packingListId,
       salesOrderId,
       warehouseId,
+      dispatchAddressId,
       vehicleNo,
       lrNo,
       lrDate,
@@ -165,6 +180,7 @@ export async function POST(request: NextRequest) {
           ...(companyId && { companyId }),
           salesOrderId,
           warehouseId: warehouseId || null,
+          dispatchAddressId: dispatchAddressId || null,
           vehicleNo: vehicleNo || null,
           lrNo: lrNo || null,
           lrDate: lrDate ? new Date(lrDate) : null,
@@ -303,6 +319,7 @@ export async function POST(request: NextRequest) {
             },
           },
         },
+        dispatchAddress: true,
         transporter: {
           select: { id: true, name: true },
         },

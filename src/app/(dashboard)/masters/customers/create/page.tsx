@@ -59,12 +59,16 @@ const INDIAN_STATES = [
 
 interface DispatchAddress {
   label: string;
+  companyName: string;
   consigneeName: string;
   addressLine1: string;
   addressLine2: string;
   city: string;
   pincode: string;
   state: string;
+  contactPerson: string;
+  contactNumber: string;
+  gstNo: string;
   placeOfSupply: string;
   isDefault: boolean;
 }
@@ -105,12 +109,16 @@ interface CustomerFormData {
 
 const emptyDispatchAddress: DispatchAddress = {
   label: "",
+  companyName: "",
   consigneeName: "",
   addressLine1: "",
   addressLine2: "",
   city: "",
   pincode: "",
   state: "",
+  contactPerson: "",
+  contactNumber: "",
+  gstNo: "",
   placeOfSupply: "",
   isDefault: false,
 };
@@ -581,13 +589,22 @@ export default function CustomerCreatePage() {
                   </div>
                 </CardHeader>
                 <CardContent className="py-3 px-4 space-y-3">
-                  <div className="grid grid-cols-4 gap-3">
+                  {/* Row 1: Label, Company Name, Consignee */}
+                  <div className="grid grid-cols-3 gap-3">
                     <div className="space-y-1.5">
                       <Label className="text-xs">Label</Label>
                       <Input
                         value={addr.label}
                         onChange={(e) => updateDispatchAddress(i, "label", e.target.value)}
-                        placeholder="e.g., Site Office"
+                        placeholder="e.g., Site Office - Mumbai"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Company Name (at site)</Label>
+                      <Input
+                        value={addr.companyName}
+                        onChange={(e) => updateDispatchAddress(i, "companyName", e.target.value)}
+                        placeholder="If different from billing"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -598,16 +615,19 @@ export default function CustomerCreatePage() {
                         placeholder="Consignee name"
                       />
                     </div>
+                  </div>
+                  {/* Row 2: Address Lines */}
+                  <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
-                      <Label className="text-xs">Address Line 1</Label>
+                      <Label className="text-xs">Site Address Line 1</Label>
                       <Input
                         value={addr.addressLine1}
                         onChange={(e) => updateDispatchAddress(i, "addressLine1", e.target.value)}
-                        placeholder="Street address"
+                        placeholder="Street address, building"
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs">Address Line 2</Label>
+                      <Label className="text-xs">Site Address Line 2</Label>
                       <Input
                         value={addr.addressLine2}
                         onChange={(e) => updateDispatchAddress(i, "addressLine2", e.target.value)}
@@ -615,19 +635,8 @@ export default function CustomerCreatePage() {
                       />
                     </div>
                   </div>
-                  <div className="grid grid-cols-5 gap-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Pincode</Label>
-                      <div className="relative">
-                        <Input
-                          value={addr.pincode}
-                          onChange={(e) => handleDispatchPincodeChange(i, e.target.value)}
-                          placeholder="400004"
-                          maxLength={6}
-                        />
-                        {fetchingDispatchPincode === i && <Loader2 className="w-4 h-4 animate-spin absolute right-2.5 top-2.5 text-muted-foreground" />}
-                      </div>
-                    </div>
+                  {/* Row 3: City, State, Pincode, PoS */}
+                  <div className="grid grid-cols-4 gap-3">
                     <div className="space-y-1.5">
                       <Label className="text-xs">City</Label>
                       <Input
@@ -651,6 +660,18 @@ export default function CustomerCreatePage() {
                       </Select>
                     </div>
                     <div className="space-y-1.5">
+                      <Label className="text-xs">PIN Code</Label>
+                      <div className="relative">
+                        <Input
+                          value={addr.pincode}
+                          onChange={(e) => handleDispatchPincodeChange(i, e.target.value)}
+                          placeholder="400004"
+                          maxLength={6}
+                        />
+                        {fetchingDispatchPincode === i && <Loader2 className="w-4 h-4 animate-spin absolute right-2.5 top-2.5 text-muted-foreground" />}
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
                       <Label className="text-xs">Place of Supply</Label>
                       <Select
                         value={addr.placeOfSupply || "NONE"}
@@ -664,6 +685,35 @@ export default function CustomerCreatePage() {
                           ))}
                         </SelectContent>
                       </Select>
+                    </div>
+                  </div>
+                  {/* Row 4: Contact Person, Contact Number, GST, Default */}
+                  <div className="grid grid-cols-4 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Contact Person</Label>
+                      <Input
+                        value={addr.contactPerson}
+                        onChange={(e) => updateDispatchAddress(i, "contactPerson", e.target.value)}
+                        placeholder="Site contact name"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Contact Number</Label>
+                      <Input
+                        value={addr.contactNumber}
+                        onChange={(e) => updateDispatchAddress(i, "contactNumber", e.target.value)}
+                        placeholder="+91 XXXXX XXXXX"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">GST No. (if different)</Label>
+                      <Input
+                        value={addr.gstNo}
+                        onChange={(e) => updateDispatchAddress(i, "gstNo", e.target.value.toUpperCase())}
+                        placeholder="27AAAAA0000A1Z5"
+                        maxLength={15}
+                        className="font-mono text-xs"
+                      />
                     </div>
                     <div className="flex items-end pb-1">
                       <div className="flex items-center gap-2">

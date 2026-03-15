@@ -85,6 +85,9 @@ export async function GET(
             },
           },
         },
+        pipeDetails: {
+          orderBy: { pipeNo: "asc" },
+        },
       },
     });
 

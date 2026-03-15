@@ -16,7 +16,13 @@ export type DocumentType =
   | "RECEIPT"
   | "STOCK_ISSUE"
   | "CREDIT_NOTE"
-  | "DEBIT_NOTE";
+  | "DEBIT_NOTE"
+  | "CLIENT_PO"
+  | "PO_ACCEPTANCE"
+  | "WAREHOUSE_INTIMATION"
+  | "INSPECTION_OFFER"
+  | "LAB_REPORT"
+  | "LAB_LETTER";
 
 export const PREFIXES: Record<DocumentType, string> = {
   QUOTATION: "NPS",
@@ -35,6 +41,12 @@ export const PREFIXES: Record<DocumentType, string> = {
   STOCK_ISSUE: "ISS",
   CREDIT_NOTE: "CN",
   DEBIT_NOTE: "DBN",
+  CLIENT_PO: "CPO",
+  PO_ACCEPTANCE: "POA",
+  WAREHOUSE_INTIMATION: "MPR",
+  INSPECTION_OFFER: "IOF",
+  LAB_REPORT: "LR",
+  LAB_LETTER: "LAB",
 };
 
 export function getCurrentFinancialYear(): string {

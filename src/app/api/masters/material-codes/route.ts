@@ -15,15 +15,18 @@ export async function GET(request: NextRequest) {
     if (search) {
       where.OR = [
         { code: { contains: search } },
+        { clientItemCode: { contains: search } },
         { description: { contains: search } },
         { productType: { contains: search } },
+        { materialGrade: { contains: search } },
+        { standard: { contains: search } },
       ];
     }
 
     const materialCodes = await prisma.materialCodeMaster.findMany({
       where,
-      orderBy: { code: "asc" },
-      take: 100,
+      orderBy: { updatedAt: "desc" },
+      take: 200,
     });
 
     return NextResponse.json({ materialCodes });
@@ -43,21 +46,28 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
-    if (!body.code) {
+    if (!body.code?.trim()) {
       return NextResponse.json(
-        { error: "Material code is required" },
+        { error: "Item Code is required" },
         { status: 400 }
       );
     }
 
     const materialCode = await prisma.materialCodeMaster.create({
       data: {
-        code: body.code,
+        code: body.code.trim(),
+        clientItemCode: body.clientItemCode || null,
         description: body.description || null,
         productType: body.productType || null,
         materialGrade: body.materialGrade || null,
         size: body.size || null,
+        odSize: body.odSize || null,
+        nbSize: body.nbSize || null,
+        thickness: body.thickness || null,
         schedule: body.schedule || null,
+        standard: body.standard || null,
+        unit: body.unit || null,
+        rate: body.rate ? parseFloat(body.rate) : null,
       },
     });
 
@@ -73,7 +83,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     if (error?.code === "P2002") {
       return NextResponse.json(
-        { error: "Material code already exists" },
+        { error: "Item code already exists" },
         { status: 400 }
       );
     }
