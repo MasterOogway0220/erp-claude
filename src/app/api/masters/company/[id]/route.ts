@@ -3,6 +3,33 @@ import { checkAccess } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { authorized, response } = await checkAccess("admin", "read");
+    if (!authorized) return response!;
+
+    const { id } = await params;
+    const company = await prisma.companyMaster.findUnique({
+      where: { id },
+      include: {
+        _count: { select: { users: true, employees: true } },
+      },
+    });
+
+    if (!company) {
+      return NextResponse.json({ error: "Company not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ company });
+  } catch (error) {
+    console.error("Error fetching company:", error);
+    return NextResponse.json({ error: "Failed to fetch company" }, { status: 500 });
+  }
+}
+
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { authorized, session, response, companyId } = await checkAccess("admin", "write");

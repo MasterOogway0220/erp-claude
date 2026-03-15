@@ -317,6 +317,34 @@ async function seedAdminUser() {
   console.log("  Admin user created: admin@erp.com");
 }
 
+async function seedCompanyAdmin() {
+  console.log("Seeding NPS Company Admin...");
+  const company = await prisma.companyMaster.findFirst({
+    where: { companyName: "NPS Piping Solutions" },
+  });
+  if (!company) {
+    console.log("  Skipping: NPS Piping Solutions company not found");
+    return;
+  }
+  const existing = await prisma.user.findUnique({ where: { email: "admin@npipe.com" } });
+  if (existing) {
+    console.log("  NPS admin already exists, skipping");
+    return;
+  }
+  const passwordHash = await bcrypt.hash("Npipe@123", 10);
+  await prisma.user.create({
+    data: {
+      email: "admin@npipe.com",
+      name: "NPS Admin",
+      passwordHash,
+      role: "ADMIN",
+      companyId: company.id,
+      isActive: true,
+    },
+  });
+  console.log("  NPS Company Admin created: admin@npipe.com / Npipe@123");
+}
+
 async function seedDocumentSequences() {
   console.log("Seeding Document Sequences...");
   const now = new Date();
@@ -577,6 +605,7 @@ async function main() {
 
   await seedAdminUser();
   await seedCompanyMaster();
+  await seedCompanyAdmin();
   await seedFinancialYears();
   await seedOfferTermTemplates();
   await seedProductSpecs();

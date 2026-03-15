@@ -8,7 +8,16 @@ export async function GET() {
     const { authorized, session, response, companyId } = await checkAccess("admin", "read");
     if (!authorized) return response!;
 
+    const userRole = session.user?.role;
+
+    // ADMIN users only see their own company; SUPER_ADMIN sees all
+    const where: any = {};
+    if (userRole === "ADMIN" && companyId) {
+      where.id = companyId;
+    }
+
     const companies = await prisma.companyMaster.findMany({
+      where,
       orderBy: { createdAt: "asc" },
       include: {
         _count: { select: { users: true, employees: true } },
@@ -28,6 +37,14 @@ export async function POST(request: NextRequest) {
   try {
     const { authorized, session, response, companyId } = await checkAccess("admin", "write");
     if (!authorized) return response!;
+
+    // Only SUPER_ADMIN can create new companies
+    if (session.user?.role !== "SUPER_ADMIN") {
+      return NextResponse.json(
+        { error: "Only Super Admin can create new companies" },
+        { status: 403 }
+      );
+    }
 
     const body = await request.json();
 

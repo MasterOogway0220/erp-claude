@@ -372,7 +372,7 @@ export default function SuperAdminDashboard() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8"
-                              onClick={() => router.push(`/masters/company/${company.id}`)}
+                              onClick={() => router.push(`/masters/company/${company.id}/edit`)}
                               title="View/Edit"
                             >
                               <Pencil className="h-3.5 w-3.5" />
