@@ -134,7 +134,11 @@ const navSections: NavSection[] = [
         roles: ["PURCHASE", "MANAGEMENT", "SUPER_ADMIN"],
         moduleKey: "purchase",
         children: [
+          { title: "Dashboard", href: "/purchase/dashboard" },
           { title: "Purchase Requisitions", href: "/purchase" },
+          { title: "Create PR", href: "/purchase/requisitions/create" },
+          { title: "RFQ Management", href: "/purchase/rfq" },
+          { title: "Comparative Statements", href: "/purchase/comparative-statement" },
           { title: "Purchase Orders", href: "/purchase/orders/create" },
           { title: "Vendor Tracking", href: "/purchase/follow-up" },
         ],

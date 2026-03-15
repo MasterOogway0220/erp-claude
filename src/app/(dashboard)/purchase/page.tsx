@@ -6,7 +6,7 @@ import { DataTable, Column } from "@/components/shared/data-table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Eye, FileText } from "lucide-react";
+import { Plus, Eye, FileText, BarChart3, Send } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -43,6 +43,27 @@ interface PO {
   deliveryDate?: string;
 }
 
+interface RFQ {
+  id: string;
+  rfqNo: string;
+  rfqDate: string;
+  purchaseRequisition?: { prNo: string };
+  vendors: any[];
+  submissionDeadline: string;
+  status: string;
+}
+
+interface CS {
+  id: string;
+  csNo: string;
+  csDate: string;
+  rfq?: { rfqNo: string };
+  purchaseRequisition?: { prNo: string };
+  vendors: any[];
+  status: string;
+  selectedVendor?: { name: string };
+}
+
 const prStatusColors: Record<string, string> = {
   DRAFT: "bg-gray-500",
   PENDING_APPROVAL: "bg-yellow-500",
@@ -61,10 +82,27 @@ const poStatusColors: Record<string, string> = {
   CANCELLED: "bg-red-500",
 };
 
+const rfqStatusColors: Record<string, string> = {
+  DRAFT: "bg-gray-500",
+  SENT: "bg-blue-500",
+  PARTIALLY_RESPONDED: "bg-yellow-500",
+  ALL_RESPONDED: "bg-green-500",
+  CLOSED: "bg-purple-500",
+};
+
+const csStatusColors: Record<string, string> = {
+  DRAFT: "bg-gray-500",
+  PENDING_APPROVAL: "bg-yellow-500",
+  APPROVED: "bg-green-500",
+  REJECTED: "bg-red-500",
+};
+
 export default function PurchasePage() {
   const router = useRouter();
   const [prs, setPRs] = useState<PR[]>([]);
   const [pos, setPOs] = useState<PO[]>([]);
+  const [rfqs, setRfqs] = useState<RFQ[]>([]);
+  const [css, setCss] = useState<CS[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -73,9 +111,11 @@ export default function PurchasePage() {
 
   const fetchData = async () => {
     try {
-      const [prResponse, poResponse] = await Promise.all([
+      const [prResponse, poResponse, rfqResponse, csResponse] = await Promise.all([
         fetch("/api/purchase/requisitions"),
         fetch("/api/purchase/orders"),
+        fetch("/api/purchase/rfq"),
+        fetch("/api/purchase/comparative-statement"),
       ]);
 
       if (prResponse.ok) {
@@ -86,6 +126,16 @@ export default function PurchasePage() {
       if (poResponse.ok) {
         const poData = await poResponse.json();
         setPOs(poData.purchaseOrders || []);
+      }
+
+      if (rfqResponse.ok) {
+        const rfqData = await rfqResponse.json();
+        setRfqs(rfqData.rfqs || []);
+      }
+
+      if (csResponse.ok) {
+        const csData = await csResponse.json();
+        setCss(csData.comparativeStatements || []);
       }
     } catch (error) {
       toast.error("Failed to load purchase data");
@@ -167,6 +217,109 @@ export default function PurchasePage() {
             View
           </Button>
         </div>
+      ),
+    },
+  ];
+
+  const rfqColumns: Column<RFQ>[] = [
+    {
+      key: "rfqNo",
+      header: "RFQ Number",
+      cell: (row) => <span className="font-mono font-medium">{row.rfqNo}</span>,
+    },
+    {
+      key: "rfqDate",
+      header: "Date",
+      cell: (row) => format(new Date(row.rfqDate), "dd MMM yyyy"),
+    },
+    {
+      key: "purchaseRequisition",
+      header: "PR Reference",
+      cell: (row) => (
+        <span className="font-mono text-sm">{row.purchaseRequisition?.prNo || "—"}</span>
+      ),
+    },
+    {
+      key: "vendors",
+      header: "Vendors",
+      cell: (row) => <span>{row.vendors?.length || 0} vendor(s)</span>,
+    },
+    {
+      key: "submissionDeadline",
+      header: "Deadline",
+      cell: (row) =>
+        row.submissionDeadline ? format(new Date(row.submissionDeadline), "dd MMM yyyy") : "—",
+    },
+    {
+      key: "status",
+      header: "Status",
+      cell: (row) => (
+        <Badge className={rfqStatusColors[row.status] || "bg-gray-500"}>
+          {row.status.replace(/_/g, " ")}
+        </Badge>
+      ),
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      cell: (row) => (
+        <Button size="sm" variant="outline" onClick={() => router.push(`/purchase/rfq/${row.id}`)}>
+          <Eye className="w-4 h-4 mr-1" />
+          View
+        </Button>
+      ),
+    },
+  ];
+
+  const csColumns: Column<CS>[] = [
+    {
+      key: "csNo",
+      header: "CS Number",
+      cell: (row) => <span className="font-mono font-medium">{row.csNo}</span>,
+    },
+    {
+      key: "csDate",
+      header: "Date",
+      cell: (row) => format(new Date(row.csDate), "dd MMM yyyy"),
+    },
+    {
+      key: "rfq",
+      header: "RFQ Reference",
+      cell: (row) => <span className="font-mono text-sm">{row.rfq?.rfqNo || "—"}</span>,
+    },
+    {
+      key: "purchaseRequisition",
+      header: "PR Reference",
+      cell: (row) => (
+        <span className="font-mono text-sm">{row.purchaseRequisition?.prNo || "—"}</span>
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      cell: (row) => (
+        <Badge className={csStatusColors[row.status] || "bg-gray-500"}>
+          {row.status.replace(/_/g, " ")}
+        </Badge>
+      ),
+    },
+    {
+      key: "selectedVendor",
+      header: "Selected Vendor",
+      cell: (row) => row.selectedVendor?.name || "—",
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      cell: (row) => (
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => router.push(`/purchase/comparative-statement/${row.id}`)}
+        >
+          <Eye className="w-4 h-4 mr-1" />
+          View
+        </Button>
       ),
     },
   ];
@@ -256,6 +409,10 @@ export default function PurchasePage() {
             <Plus className="w-4 h-4 mr-2" />
             New PR
           </Button>
+          <Button onClick={() => router.push("/purchase/rfq/create")} variant="outline">
+            <Send className="w-4 h-4 mr-2" />
+            New RFQ
+          </Button>
           <Button onClick={() => router.push("/purchase/orders/create")}>
             <Plus className="w-4 h-4 mr-2" />
             New PO
@@ -267,6 +424,12 @@ export default function PurchasePage() {
         <TabsList>
           <TabsTrigger value="requisitions">
             Purchase Requisitions ({prs.length})
+          </TabsTrigger>
+          <TabsTrigger value="rfq">
+            RFQ ({rfqs.length})
+          </TabsTrigger>
+          <TabsTrigger value="comparative">
+            Comparative Statements ({css.length})
           </TabsTrigger>
           <TabsTrigger value="orders">
             Purchase Orders ({pos.length})
@@ -287,6 +450,42 @@ export default function PurchasePage() {
               data={prs}
               searchKey="prNo"
               searchPlaceholder="Search by PR Number..."
+            />
+          )}
+        </TabsContent>
+
+        <TabsContent value="rfq" className="space-y-4">
+          {loading ? (
+            <div className="space-y-3">
+              <div className="h-10 w-48 bg-muted animate-pulse rounded" />
+              <div className="space-y-2">
+                {[...Array(5)].map((_, i) => <div key={i} className="h-12 bg-muted animate-pulse rounded" />)}
+              </div>
+            </div>
+          ) : (
+            <DataTable
+              columns={rfqColumns}
+              data={rfqs}
+              searchKey="rfqNo"
+              searchPlaceholder="Search by RFQ Number..."
+            />
+          )}
+        </TabsContent>
+
+        <TabsContent value="comparative" className="space-y-4">
+          {loading ? (
+            <div className="space-y-3">
+              <div className="h-10 w-48 bg-muted animate-pulse rounded" />
+              <div className="space-y-2">
+                {[...Array(5)].map((_, i) => <div key={i} className="h-12 bg-muted animate-pulse rounded" />)}
+              </div>
+            </div>
+          ) : (
+            <DataTable
+              columns={csColumns}
+              data={css}
+              searchKey="csNo"
+              searchPlaceholder="Search by CS Number..."
             />
           )}
         </TabsContent>
