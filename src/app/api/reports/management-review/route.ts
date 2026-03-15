@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkAccess, companyFilter } from "@/lib/rbac";
+import { checkAuth, companyFilter } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(request: NextRequest) {
   try {
-    const { authorized, response, companyId } = await checkAccess("reports", "read");
+    const { authorized, response, companyId } = await checkAuth();
     if (!authorized) return response!;
 
     // ---- Sales Metrics ----

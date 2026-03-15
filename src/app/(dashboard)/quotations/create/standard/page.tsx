@@ -726,7 +726,7 @@ function StandardQuotationPage() {
           </CardHeader>
           <CardContent className="space-y-5">
             {/* Row 1: Customer | Buyer | Market Type | Quotation No | Rev No | Currency */}
-            <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(5, minmax(0, 1fr)) minmax(60px, 90px)" }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium">Customer <span className="text-destructive">*</span></Label>
                 <div className="flex gap-2">
@@ -975,7 +975,7 @@ function StandardQuotationPage() {
                   </div>
 
                   {/* Row 1: Material Code | Product | Material | Additional Specs | Size */}
-                  <div className="grid grid-cols-5 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                     <div className="space-y-1.5">
                       <Label className="text-sm font-medium">Material Code</Label>
                       <SmartCombobox
@@ -1004,7 +1004,7 @@ function StandardQuotationPage() {
                       />
                     </div>
                     <ProductMaterialSelect
-                      className="col-span-3"
+                      className="sm:col-span-2 lg:col-span-3"
                       product={item.product}
                       material={item.material}
                       additionalSpec={item.additionalSpec}
@@ -1041,9 +1041,9 @@ function StandardQuotationPage() {
                   </div>
 
                   {/* Row 2: OD | WT | Length | Ends | Qty | Unit Rate | Unit Wt | Total Wt */}
-                  <div className="grid grid-cols-8 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
                     {item.itemCategory === "Fitting" ? (
-                      <div className="space-y-1.5 col-span-4">
+                      <div className="space-y-1.5 col-span-2 sm:col-span-4">
                         <Label className="text-sm font-medium">Select Fitting <span className="text-destructive">*</span></Label>
                         <FittingSelect
                           value={item.fittingLabel}
@@ -1072,7 +1072,7 @@ function StandardQuotationPage() {
                         />
                       </div>
                     ) : item.itemCategory === "Flange" ? (
-                      <div className="space-y-1.5 col-span-4">
+                      <div className="space-y-1.5 col-span-2 sm:col-span-4">
                         <Label className="text-sm font-medium">Select Flange <span className="text-destructive">*</span></Label>
                         <FlangeSelect
                           value={item.flangeLabel}
@@ -1194,7 +1194,7 @@ function StandardQuotationPage() {
                   </div>
 
                   {/* Row 3: Past Quote/PO, Remark, Total Amount */}
-                  <div className="grid grid-cols-6 gap-4 pt-2 border-t border-border/30">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 pt-2 border-t border-border/30">
                     <div className="space-y-1.5">
                       <Label className="text-xs text-muted-foreground">Past Quote</Label>
                       <Input

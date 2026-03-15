@@ -153,7 +153,7 @@ export default function WarehouseCreatePage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Add Warehouse" description="Create a new warehouse record">
-        <Button variant="outline" onClick={() => router.push("/masters/warehouses")}>
+        <Button variant="outline" className="mr-auto" onClick={() => router.push("/masters/warehouses")}>
           <ArrowLeft className="h-4 w-4 mr-2" />Back
         </Button>
         <Button onClick={handleSave} disabled={saving}>

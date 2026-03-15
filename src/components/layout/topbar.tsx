@@ -203,15 +203,27 @@ export function TopBar() {
           )}
 
           {/* Notification bell */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="relative h-8 w-8 text-muted-foreground hover:text-foreground transition-colors"
-            title="Notifications"
-          >
-            <Bell className="h-4 w-4" />
-            <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-blue-500 ring-2 ring-background" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative h-8 w-8 text-muted-foreground hover:text-foreground transition-colors"
+                title="Notifications"
+              >
+                <Bell className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-72 mt-1">
+              <DropdownMenuLabel className="font-semibold">Notifications</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
+                <Bell className="h-8 w-8 text-muted-foreground/40 mb-3" />
+                <p className="text-sm font-medium text-muted-foreground">No new notifications</p>
+                <p className="text-xs text-muted-foreground/70 mt-1">You&apos;re all caught up</p>
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           <Separator orientation="vertical" className="mx-1 h-5" />
 

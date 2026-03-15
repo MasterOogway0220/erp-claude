@@ -130,7 +130,7 @@ export default function CreateEmployeePage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Add Employee" description="Create a new employee with login credentials">
-        <Button variant="outline" onClick={() => router.push("/masters/employees")}>
+        <Button variant="outline" className="mr-auto" onClick={() => router.push("/masters/employees")}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
         </Button>
