@@ -728,7 +728,7 @@ function StandardQuotationPage() {
                 <Label>Customer *</Label>
                 <div className="flex gap-2">
                   <Select
-                    value={formData.customerId}
+                    value={formData.customerId || undefined}
                     onValueChange={(value) =>
                       setFormData({ ...formData, customerId: value })
                     }

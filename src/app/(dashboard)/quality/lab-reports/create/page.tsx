@@ -77,6 +77,10 @@ export default function CreateLabReportPage() {
   };
 
   const handleStockSelect = (stockId: string) => {
+    if (stockId === "NONE") {
+      setFormData({ ...formData, inventoryStockId: "", grnId: "" });
+      return;
+    }
     const stock = stocks.find((s) => s.id === stockId);
     if (stock) {
       setFormData({
@@ -144,7 +148,7 @@ export default function CreateLabReportPage() {
 
       const data = await response.json();
       toast.success(`Lab report ${data.labReport.reportNo} created`);
-      router.push("/quality?tab=lab-reports");
+      router.push("/quality/lab-reports");
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -176,7 +180,7 @@ export default function CreateLabReportPage() {
             <div className="space-y-2">
               <Label>Report Type *</Label>
               <Select
-                value={formData.reportType}
+                value={formData.reportType || undefined}
                 onValueChange={(value) => setFormData({ ...formData, reportType: value })}
               >
                 <SelectTrigger>
@@ -273,14 +277,14 @@ export default function CreateLabReportPage() {
               <div className="space-y-2">
                 <Label>Purchase Order</Label>
                 <Select
-                  value={formData.poId}
-                  onValueChange={(value) => setFormData({ ...formData, poId: value })}
+                  value={formData.poId || undefined}
+                  onValueChange={(value) => setFormData({ ...formData, poId: value === "NONE" ? "" : value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select PO (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="NONE">None</SelectItem>
                     {purchaseOrders.map((po: any) => (
                       <SelectItem key={po.id} value={po.id}>
                         {po.poNo} — {po.vendor?.name}
@@ -293,14 +297,14 @@ export default function CreateLabReportPage() {
               <div className="space-y-2">
                 <Label>Inventory Stock (by Heat No.)</Label>
                 <Select
-                  value={formData.inventoryStockId}
+                  value={formData.inventoryStockId || undefined}
                   onValueChange={handleStockSelect}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select stock item (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="NONE">None</SelectItem>
                     {stocks
                       .filter((s) => s.heatNo)
                       .map((s: any) => (

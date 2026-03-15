@@ -81,6 +81,7 @@ interface UserFormData {
 }
 
 const roleColors: Record<string, string> = {
+  SUPER_ADMIN: "bg-red-600",
   ADMIN: "bg-red-500",
   SALES: "bg-blue-500",
   PURCHASE: "bg-green-500",
@@ -96,7 +97,7 @@ const actionColors: Record<string, string> = {
   DELETE: "bg-red-500",
 };
 
-const ROLES = ["SUPER_ADMIN", "SALES", "PURCHASE", "QC", "STORES", "ACCOUNTS", "MANAGEMENT"];
+const ROLES = ["SUPER_ADMIN", "ADMIN", "SALES", "PURCHASE", "QC", "STORES", "ACCOUNTS", "MANAGEMENT"];
 
 const emptyFormData: UserFormData = {
   name: "",

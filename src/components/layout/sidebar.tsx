@@ -81,10 +81,10 @@ const navSections: NavSection[] = [
         title: "Masters",
         icon: <Database className="h-5 w-5" />,
         iconColorClass: "text-slate-500",
-        roles: ["SUPER_ADMIN", "SALES", "PURCHASE"],
+        roles: ["SUPER_ADMIN", "ADMIN", "SALES", "PURCHASE"],
         moduleKey: "masters",
         children: [
-          { title: "Company", href: "/masters/company", roles: ["SUPER_ADMIN"] },
+          { title: "Company", href: "/masters/company", roles: ["SUPER_ADMIN", "ADMIN"] },
           { title: "Employees", href: "/masters/employees" },
           { title: "Customers", href: "/masters/customers" },
           { title: "Warehouses", href: "/masters/warehouses" },
@@ -172,7 +172,7 @@ const navSections: NavSection[] = [
           { title: "Material Spec Master", href: "/quality/mtc/material-specs" },
           { title: "NCR Register", href: "/quality/ncr" },
           { title: "Lab Letters", href: "/quality/lab-letters/create" },
-          { title: "Lab Reports", href: "/quality/lab-reports/create" },
+          { title: "Lab Reports", href: "/quality/lab-reports" },
           { title: "Inspection Offers", href: "/quality/inspection-offers" },
           { title: "Quality Requirements", href: "/quality/requirements" },
         ],
@@ -223,7 +223,7 @@ const navSections: NavSection[] = [
         title: "Admin",
         icon: <Settings className="h-5 w-5" />,
         iconColorClass: "text-gray-500",
-        roles: ["SUPER_ADMIN"],
+        roles: ["SUPER_ADMIN", "ADMIN"],
         children: [
           { title: "User Management", href: "/admin" },
           { title: "Traceability", href: "/admin/traceability" },
@@ -242,7 +242,7 @@ function filterSections(
   userRole: UserRole | undefined,
   moduleAccess: string[] | undefined
 ): NavSection[] {
-  const isSuperAdmin = userRole === "SUPER_ADMIN";
+  const isAdminOrAbove = userRole === "SUPER_ADMIN" || userRole === "ADMIN";
   const hasModuleFilter = moduleAccess && moduleAccess.length > 0;
 
   return sections
@@ -253,8 +253,8 @@ function filterSections(
         if (item.roles && !(userRole && item.roles.includes(userRole))) {
           return false;
         }
-        // Module access check — SUPER_ADMIN sees everything, items without moduleKey always show
-        if (!isSuperAdmin && hasModuleFilter) {
+        // Module access check — SUPER_ADMIN and ADMIN see everything, items without moduleKey always show
+        if (!isAdminOrAbove && hasModuleFilter) {
           const keys = item.moduleKeys || (item.moduleKey ? [item.moduleKey] : []);
           if (keys.length > 0) {
             return keys.some((k) => moduleAccess.includes(k));

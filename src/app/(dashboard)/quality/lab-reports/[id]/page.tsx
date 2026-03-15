@@ -81,7 +81,7 @@ export default function LabReportDetailPage() {
       });
     } catch (error) {
       toast.error("Failed to load lab report");
-      router.push("/quality?tab=lab-reports");
+      router.push("/quality/lab-reports");
     } finally {
       setLoading(false);
     }

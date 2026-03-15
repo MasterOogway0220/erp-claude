@@ -44,7 +44,7 @@ interface EmployeeFormData {
 }
 
 const DEPARTMENTS = ["Purchase", "Sales", "Quality", "Warehouse", "Accounts"];
-const USER_ROLES = ["SUPER_ADMIN", "SALES", "PURCHASE", "QC", "STORES", "ACCOUNTS", "MANAGEMENT"];
+const USER_ROLES = ["SUPER_ADMIN", "ADMIN", "SALES", "PURCHASE", "QC", "STORES", "ACCOUNTS", "MANAGEMENT"];
 
 const MODULE_GROUPS = [
   { group: "Masters", key: "masters", description: "Employees, vendors, customers" },

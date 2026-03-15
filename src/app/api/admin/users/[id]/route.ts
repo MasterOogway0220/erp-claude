@@ -70,6 +70,14 @@ export async function PATCH(
       );
     }
 
+    // ADMIN cannot escalate role to SUPER_ADMIN
+    if (session.user.role === "ADMIN" && role === "SUPER_ADMIN") {
+      return NextResponse.json(
+        { error: "You cannot assign Super Admin role" },
+        { status: 403 }
+      );
+    }
+
     const updateData: any = {};
     if (name !== undefined) updateData.name = name;
     if (role !== undefined) updateData.role = role;
@@ -105,3 +113,6 @@ export async function PATCH(
     );
   }
 }
+
+// Support PUT as alias for PATCH (used by admin page)
+export const PUT = PATCH;

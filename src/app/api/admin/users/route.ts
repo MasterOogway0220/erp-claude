@@ -5,11 +5,22 @@ import bcrypt from "bcryptjs";
 
 export async function GET(request: NextRequest) {
   try {
-    const { authorized, response, companyId } = await checkAccess("admin", "read");
+    const { authorized, session, response, companyId } = await checkAccess("admin", "read");
     if (!authorized) return response!;
 
+    const userRole = session.user?.role;
+
+    // ADMIN users only see users from their own company
+    // SUPER_ADMIN sees users filtered by active company (or all if no company selected)
+    const where: any = { ...companyFilter(companyId) };
+
+    // ADMIN should not see SUPER_ADMIN users
+    if (userRole === "ADMIN") {
+      where.role = { not: "SUPER_ADMIN" };
+    }
+
     const users = await prisma.user.findMany({
-      where: { ...companyFilter(companyId) },
+      where,
       select: {
         id: true,
         email: true,
@@ -18,7 +29,11 @@ export async function GET(request: NextRequest) {
         isActive: true,
         lastLogin: true,
         phone: true,
+        companyId: true,
         createdAt: true,
+        company: {
+          select: { id: true, companyName: true },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -35,7 +50,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { authorized, response, companyId } = await checkAccess("admin", "write");
+    const { authorized, session, response, companyId } = await checkAccess("admin", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -44,6 +59,31 @@ export async function POST(request: NextRequest) {
     if (!email || !name || !password) {
       return NextResponse.json(
         { error: "Email, name, and password are required" },
+        { status: 400 }
+      );
+    }
+
+    if (password.length < 6) {
+      return NextResponse.json(
+        { error: "Password must be at least 6 characters" },
+        { status: 400 }
+      );
+    }
+
+    const userRole = session.user?.role;
+
+    // ADMIN cannot create SUPER_ADMIN users
+    if (userRole === "ADMIN" && role === "SUPER_ADMIN") {
+      return NextResponse.json(
+        { error: "You cannot create a Super Admin user" },
+        { status: 403 }
+      );
+    }
+
+    // ADMIN must assign users to their own company
+    if (userRole === "ADMIN" && !companyId) {
+      return NextResponse.json(
+        { error: "No company assigned. Contact your Super Admin." },
         { status: 400 }
       );
     }
@@ -79,6 +119,7 @@ export async function POST(request: NextRequest) {
         isActive: true,
         lastLogin: true,
         phone: true,
+        companyId: true,
         createdAt: true,
       },
     });
