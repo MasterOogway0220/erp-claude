@@ -41,6 +41,7 @@ export default function DashboardPage() {
   const { user } = useCurrentUser();
   const [metrics, setMetrics] = useState<any>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [metricsLoading, setMetricsLoading] = useState(true);
 
   useEffect(() => {
     fetchMetrics();
@@ -51,16 +52,27 @@ export default function DashboardPage() {
     return () => clearInterval(timer);
   }, []);
 
-  const fetchMetrics = async () => {
-    try {
-      const response = await fetch("/api/reports/management-review");
-      if (response.ok) {
-        const data = await response.json();
-        setMetrics(data);
+  const fetchMetrics = async (retries = 2) => {
+    setMetricsLoading(true);
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        const response = await fetch("/api/reports/management-review");
+        if (response.ok) {
+          const data = await response.json();
+          setMetrics(data);
+          setMetricsLoading(false);
+          return;
+        }
+        // If 401, wait briefly and retry (session may not be ready yet)
+        if (response.status === 401 && attempt < retries) {
+          await new Promise((r) => setTimeout(r, 1000));
+          continue;
+        }
+      } catch (error) {
+        console.error("Failed to fetch metrics:", error);
       }
-    } catch (error) {
-      console.error("Failed to fetch metrics:", error);
     }
+    setMetricsLoading(false);
   };
 
   const formatCurrency = (val: number | null | undefined) => {
