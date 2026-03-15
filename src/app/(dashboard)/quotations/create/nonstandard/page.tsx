@@ -294,33 +294,72 @@ function NonStandardQuotationPage() {
     setFormData((prev) => ({ ...prev, buyerId: "" }));
   }, [formData.customerId]);
 
-  // Track the quotationType that was last used to populate terms
-  const termsLoadedForType = useRef<string | null>(null);
+  // Track the quotationType + customer combo that was last used to populate terms
+  const termsLoadedForKey = useRef<string | null>(null);
 
-  // Set terms from templates when quotationType changes or on initial create
+  // Load terms: customer-specific first, then fall back to global templates
   useEffect(() => {
     if (!templatesData?.templates) return;
 
+    const termsKey = `${formData.quotationType}|${formData.customerId || ""}`;
+
     // In edit mode, skip only the first load (saved terms will be set by the editData effect)
-    if (editData?.quotation?.terms?.length > 0 && termsLoadedForType.current === null) {
-      termsLoadedForType.current = formData.quotationType;
+    if (editData?.quotation?.terms?.length > 0 && termsLoadedForKey.current === null) {
+      termsLoadedForKey.current = termsKey;
       return;
     }
 
-    // Reload terms when quotationType changes or on initial create
-    if (termsLoadedForType.current !== formData.quotationType || termsLoadedForType.current === null) {
-      setTerms(
-        templatesData.templates.map((t: any) => ({
-          termName: t.termName,
-          termValue: t.termDefaultValue || "",
-          isIncluded: true,
-          isCustom: false,
-          isHeadingEditable: false,
-        }))
-      );
-      termsLoadedForType.current = formData.quotationType;
+    // Reload terms when quotationType or customer changes
+    if (termsLoadedForKey.current !== termsKey || termsLoadedForKey.current === null) {
+      if (formData.customerId) {
+        fetch(`/api/masters/customers/${formData.customerId}/terms?quotationType=${formData.quotationType}`)
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.terms?.length > 0) {
+              setTerms(data.terms.map((t: any) => ({
+                termName: t.termName,
+                termValue: t.termValue || "",
+                isIncluded: t.isIncluded ?? true,
+                isCustom: false,
+                isHeadingEditable: false,
+              })));
+            } else {
+              setTerms(
+                templatesData.templates.map((t: any) => ({
+                  termName: t.termName,
+                  termValue: t.termDefaultValue || "",
+                  isIncluded: true,
+                  isCustom: false,
+                  isHeadingEditable: false,
+                }))
+              );
+            }
+          })
+          .catch(() => {
+            setTerms(
+              templatesData.templates.map((t: any) => ({
+                termName: t.termName,
+                termValue: t.termDefaultValue || "",
+                isIncluded: true,
+                isCustom: false,
+                isHeadingEditable: false,
+              }))
+            );
+          });
+      } else {
+        setTerms(
+          templatesData.templates.map((t: any) => ({
+            termName: t.termName,
+            termValue: t.termDefaultValue || "",
+            isIncluded: true,
+            isCustom: false,
+            isHeadingEditable: false,
+          }))
+        );
+      }
+      termsLoadedForKey.current = termsKey;
     }
-  }, [templatesData, formData.quotationType]);
+  }, [templatesData, formData.quotationType, formData.customerId]);
 
   // Build description from structured fields
   const buildDescription = (item: NonStdItem): string => {
@@ -1296,11 +1335,10 @@ function NonStandardQuotationPage() {
                           {term.termName}
                         </p>
                       )}
-                      <Textarea
+                      <Input
                         value={term.termValue}
                         onChange={(e) => updateTermValue(index, e.target.value)}
-                        rows={2}
-                        className={`resize-none ${!term.isIncluded ? "opacity-50" : ""}`}
+                        className={!term.isIncluded ? "opacity-50" : ""}
                         placeholder="Term value..."
                       />
                     </div>

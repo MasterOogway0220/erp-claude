@@ -46,6 +46,9 @@ export async function GET(
         inspector: {
           select: { id: true, name: true, email: true },
         },
+        tpiAgency: {
+          select: { id: true, name: true, code: true },
+        },
         parameters: {
           orderBy: { id: "asc" },
         },
@@ -79,7 +82,7 @@ export async function PATCH(
     if (!authorized) return response!;
 
     const body = await request.json();
-    const { remarks, parameters, reportPath } = body;
+    const { remarks, parameters, reportPath, tpiAgencyId, imagePaths, reportPaths, tpiSignOffPaths } = body;
 
     const existing = await prisma.inspection.findUnique({
       where: { id },
@@ -95,6 +98,10 @@ export async function PATCH(
     const updateData: any = {};
     if (remarks !== undefined) updateData.remarks = remarks;
     if (reportPath !== undefined) updateData.reportPath = reportPath;
+    if (tpiAgencyId !== undefined) updateData.tpiAgencyId = tpiAgencyId || null;
+    if (imagePaths !== undefined) updateData.imagePaths = imagePaths;
+    if (reportPaths !== undefined) updateData.reportPaths = reportPaths;
+    if (tpiSignOffPaths !== undefined) updateData.tpiSignOffPaths = tpiSignOffPaths;
 
     // If parameters are provided, delete existing and recreate
     if (parameters && parameters.length > 0) {
@@ -109,7 +116,9 @@ export async function PATCH(
       updateData.overallResult = overallResult;
 
       // Mandatory attachment: inspection report required for PASS result
-      if (overallResult === "PASS" && !existing.reportPath && !reportPath) {
+      const hasExistingReport = existing.reportPath || (Array.isArray(existing.reportPaths) && (existing.reportPaths as string[]).length > 0);
+      const hasNewReport = reportPath || (Array.isArray(reportPaths) && reportPaths.length > 0);
+      if (overallResult === "PASS" && !hasExistingReport && !hasNewReport) {
         return NextResponse.json(
           { error: "Inspection report attachment is mandatory for PASS result" },
           { status: 400 }
@@ -171,6 +180,7 @@ export async function PATCH(
           select: { id: true, heatNo: true, status: true },
         },
         inspector: { select: { id: true, name: true } },
+        tpiAgency: { select: { id: true, name: true, code: true } },
         parameters: true,
       },
     });

@@ -55,6 +55,9 @@ export async function GET(request: NextRequest) {
         inspector: {
           select: { id: true, name: true },
         },
+        tpiAgency: {
+          select: { id: true, name: true, code: true },
+        },
         parameters: true,
       },
       orderBy: { inspectionDate: "desc" },
@@ -76,7 +79,10 @@ export async function POST(request: NextRequest) {
     if (!authorized) return response!;
 
     const body = await request.json();
-    const { grnItemId, inventoryStockId, inspectionType, remarks, parameters, reportPath } = body;
+    const {
+      grnItemId, inventoryStockId, inspectionType, remarks, parameters,
+      reportPath, tpiAgencyId, imagePaths, reportPaths, tpiSignOffPaths,
+    } = body;
 
     if (!parameters || parameters.length === 0) {
       return NextResponse.json(
@@ -95,7 +101,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Mandatory attachment: inspection report required for PASS result
-    if (overallResult === "PASS" && !reportPath) {
+    const hasReport = reportPath || (Array.isArray(reportPaths) && reportPaths.length > 0);
+    if (overallResult === "PASS" && !hasReport) {
       return NextResponse.json(
         { error: "Inspection report attachment is mandatory for PASS result" },
         { status: 400 }
@@ -116,6 +123,10 @@ export async function POST(request: NextRequest) {
           overallResult,
           remarks: remarks || null,
           reportPath: reportPath || null,
+          tpiAgencyId: tpiAgencyId || null,
+          imagePaths: Array.isArray(imagePaths) && imagePaths.length > 0 ? imagePaths : undefined,
+          reportPaths: Array.isArray(reportPaths) && reportPaths.length > 0 ? reportPaths : undefined,
+          tpiSignOffPaths: Array.isArray(tpiSignOffPaths) && tpiSignOffPaths.length > 0 ? tpiSignOffPaths : undefined,
           parameters: {
             create: parameters.map((p: any) => ({
               parameterName: p.parameterName,
@@ -206,6 +217,7 @@ export async function POST(request: NextRequest) {
           },
         },
         inspector: { select: { id: true, name: true } },
+        tpiAgency: { select: { id: true, name: true, code: true } },
         parameters: true,
       },
     });

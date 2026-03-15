@@ -16,7 +16,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Save, MapPin, Plus, X, Loader2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ArrowLeft, Save, MapPin, Plus, X, Loader2, ListChecks } from "lucide-react";
 import { toast } from "sonner";
 
 const INDIAN_STATES = [
@@ -153,6 +154,10 @@ export default function CustomerEditPage() {
   const [saving, setSaving] = useState(false);
   const [fetchingPincode, setFetchingPincode] = useState(false);
   const [fetchingDispatchPincode, setFetchingDispatchPincode] = useState<number | null>(null);
+  const [termsQuotationType, setTermsQuotationType] = useState("DOMESTIC");
+  const [terms, setTerms] = useState<{ termName: string; termValue: string; isIncluded: boolean; isCustom: boolean }[]>([]);
+  const [termsLoaded, setTermsLoaded] = useState(false);
+  const [savingTerms, setSavingTerms] = useState(false);
 
   useEffect(() => {
     const fetchCustomer = async () => {
@@ -226,6 +231,74 @@ export default function CustomerEditPage() {
     };
     fetchCustomer();
   }, [id, router]);
+
+  // Load customer-specific terms or fall back to global templates
+  useEffect(() => {
+    if (!id) return;
+    const loadTerms = async () => {
+      try {
+        // First try customer-specific terms
+        const custRes = await fetch(`/api/masters/customers/${id}/terms?quotationType=${termsQuotationType}`);
+        const custData = await custRes.json();
+
+        if (custData.terms?.length > 0) {
+          setTerms(custData.terms.map((t: any) => ({
+            termName: t.termName,
+            termValue: t.termValue || "",
+            isIncluded: t.isIncluded ?? true,
+            isCustom: false,
+          })));
+        } else {
+          // Fall back to global offer term templates
+          const tplRes = await fetch(`/api/offer-term-templates?quotationType=${termsQuotationType}`);
+          const tplData = await tplRes.json();
+          setTerms((tplData.templates || []).map((t: any) => ({
+            termName: t.termName,
+            termValue: t.termDefaultValue || "",
+            isIncluded: true,
+            isCustom: false,
+          })));
+        }
+        setTermsLoaded(true);
+      } catch {
+        console.error("Failed to load terms");
+      }
+    };
+    loadTerms();
+  }, [id, termsQuotationType]);
+
+  const saveTerms = async () => {
+    setSavingTerms(true);
+    try {
+      const res = await fetch(`/api/masters/customers/${id}/terms`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quotationType: termsQuotationType, terms }),
+      });
+      if (!res.ok) throw new Error("Failed to save terms");
+      toast.success(`${termsQuotationType} terms saved for this customer`);
+    } catch {
+      toast.error("Failed to save terms");
+    } finally {
+      setSavingTerms(false);
+    }
+  };
+
+  const resetTermsToGlobal = async () => {
+    try {
+      const tplRes = await fetch(`/api/offer-term-templates?quotationType=${termsQuotationType}`);
+      const tplData = await tplRes.json();
+      setTerms((tplData.templates || []).map((t: any) => ({
+        termName: t.termName,
+        termValue: t.termDefaultValue || "",
+        isIncluded: true,
+        isCustom: false,
+      })));
+      toast.success("Terms reset to global defaults");
+    } catch {
+      toast.error("Failed to reset terms");
+    }
+  };
 
   const update = (field: keyof CustomerFormData, value: any) => {
     setFormData((prev) => (prev ? { ...prev, [field]: value } : prev));
@@ -597,6 +670,96 @@ export default function CustomerEditPage() {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Terms & Conditions Configuration */}
+      <Card>
+        <CardHeader className="py-3 px-4">
+          <CardTitle className="flex items-center justify-between text-base">
+            <span className="flex items-center gap-2">
+              <ListChecks className="h-4 w-4" />
+              Default Terms & Conditions
+            </span>
+            <div className="flex items-center gap-2">
+              <Select value={termsQuotationType} onValueChange={setTermsQuotationType}>
+                <SelectTrigger className="w-[140px] h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="DOMESTIC">Domestic</SelectItem>
+                  <SelectItem value="EXPORT">Export</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button type="button" variant="outline" size="sm" onClick={resetTermsToGlobal}>
+                Reset to Global
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => setTerms([...terms, { termName: "", termValue: "", isIncluded: true, isCustom: true }])}>
+                <Plus className="w-4 h-4 mr-1" />
+                Add Term
+              </Button>
+              <Button type="button" size="sm" onClick={saveTerms} disabled={savingTerms}>
+                <Save className="w-4 h-4 mr-1" />
+                {savingTerms ? "Saving..." : "Save Terms"}
+              </Button>
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="px-4 pb-4 pt-0">
+          <p className="text-xs text-muted-foreground mb-3">
+            Configure default T&C for this customer. These will auto-populate when creating quotations for this customer.
+          </p>
+          {terms.length === 0 && (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No terms configured. Using global defaults.
+            </p>
+          )}
+          <div className="space-y-2">
+            {terms.map((term, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <Checkbox
+                  checked={term.isIncluded}
+                  onCheckedChange={(checked) => {
+                    const newTerms = [...terms];
+                    newTerms[i] = { ...newTerms[i], isIncluded: !!checked };
+                    setTerms(newTerms);
+                  }}
+                />
+                <Input
+                  value={term.termName}
+                  onChange={(e) => {
+                    const newTerms = [...terms];
+                    newTerms[i] = { ...newTerms[i], termName: e.target.value };
+                    setTerms(newTerms);
+                  }}
+                  placeholder="Term name"
+                  className="w-[220px]"
+                  disabled={!term.isCustom}
+                />
+                <Input
+                  value={term.termValue}
+                  onChange={(e) => {
+                    const newTerms = [...terms];
+                    newTerms[i] = { ...newTerms[i], termValue: e.target.value };
+                    setTerms(newTerms);
+                  }}
+                  placeholder="Term value"
+                  className="flex-1"
+                />
+                {term.isCustom && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setTerms(terms.filter((_, idx) => idx !== i))}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>

@@ -28,7 +28,10 @@
       "Bash(npx ts-node:*)",
       "Bash(head:*)",
       "Bash(source:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(mkdir:*)",
+      "Bash(md5:*)",
+      "Bash(tail:*)"
     ]
   }
 }
