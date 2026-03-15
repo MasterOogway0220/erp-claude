@@ -60,10 +60,8 @@ export function getCurrentFinancialYear(): string {
   const month = now.getMonth() + 1; // 1-12
   const year = now.getFullYear();
   // Indian FY: April to March
-  // If month >= 4 (April), FY starts this year; otherwise last year
   const fyStartYear = month >= 4 ? year : year - 1;
   const fyEndYear = fyStartYear + 1;
-  // Format: YYYY-YY (e.g., 2025-26)
   return `${fyStartYear}-${(fyEndYear % 100).toString().padStart(2, "0")}`;
 }
 
@@ -74,55 +72,50 @@ export async function generateDocumentNumber(
   const currentFY = getCurrentFinancialYear();
   const prefix = PREFIXES[documentType];
 
-  return await prisma.$transaction(async (tx) => {
-    // Find sequence for this company+documentType combination
-    let sequence = await tx.documentSequence.findFirst({
-      where: {
+  // Find sequence for this company+documentType
+  let sequence = await prisma.documentSequence.findFirst({
+    where: { documentType, companyId: companyId || undefined },
+  });
+
+  if (!sequence) {
+    // Try legacy sequence without companyId
+    sequence = await prisma.documentSequence.findFirst({
+      where: { documentType, companyId: null },
+    });
+  }
+
+  if (!sequence) {
+    // Auto-create sequence
+    sequence = await prisma.documentSequence.create({
+      data: {
         documentType,
+        prefix,
+        currentNumber: 0,
+        financialYear: currentFY,
         companyId: companyId || null,
       },
     });
+  }
 
-    if (!sequence) {
-      // Try legacy sequence without companyId
-      sequence = await tx.documentSequence.findFirst({
-        where: { documentType, companyId: null },
-      });
-    }
+  let nextNumber: number;
 
-    if (!sequence) {
-      // Auto-create sequence for this company
-      sequence = await tx.documentSequence.create({
-        data: {
-          documentType,
-          prefix,
-          currentNumber: 0,
-          financialYear: currentFY,
-          companyId: companyId || null,
-        },
-      });
-    }
+  if (sequence.financialYear !== currentFY) {
+    // Financial year changed, reset counter
+    nextNumber = 1;
+    await prisma.documentSequence.update({
+      where: { id: sequence.id },
+      data: {
+        currentNumber: 1,
+        financialYear: currentFY,
+      },
+    });
+  } else {
+    nextNumber = sequence.currentNumber + 1;
+    await prisma.documentSequence.update({
+      where: { id: sequence.id },
+      data: { currentNumber: nextNumber },
+    });
+  }
 
-    let nextNumber: number;
-
-    if (sequence.financialYear !== currentFY) {
-      // Financial year changed, reset counter
-      nextNumber = 1;
-      await tx.documentSequence.update({
-        where: { id: sequence.id },
-        data: {
-          currentNumber: 1,
-          financialYear: currentFY,
-        },
-      });
-    } else {
-      nextNumber = sequence.currentNumber + 1;
-      await tx.documentSequence.update({
-        where: { id: sequence.id },
-        data: { currentNumber: nextNumber },
-      });
-    }
-
-    return `${prefix}/${currentFY}/${nextNumber.toString().padStart(5, "0")}`;
-  });
+  return `${prefix}/${currentFY}/${nextNumber.toString().padStart(5, "0")}`;
 }
