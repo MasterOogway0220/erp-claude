@@ -33,6 +33,25 @@ interface ProductMaterialSelectProps {
   disabled?: boolean;
 }
 
+// Products that share the same material/spec pool.
+// When any product in a group is selected, materials from ALL products in that group are shown.
+const PRODUCT_GROUPS: string[][] = [
+  ["A.S. EFSW PIPE", "A.S. LSAW PIPE"],
+  ["C.S. EFSW PIPE", "C.S. LSAW PIPE"],
+  ["S.S. EFSW PIPE", "S.S. LSAW PIPE"],
+  ["D.S. EFSW PIPE", "D.S. LSAW PIPE"],
+];
+
+function getProductGroup(product: string): string[] {
+  const p = product.toUpperCase();
+  for (const group of PRODUCT_GROUPS) {
+    if (group.some((g) => g.toUpperCase() === p)) {
+      return group;
+    }
+  }
+  return [product];
+}
+
 // Module-level cache so all instances share one fetch
 let cachedProducts: ProductSpec[] | null = null;
 let fetchPromise: Promise<ProductSpec[]> | null = null;
@@ -86,10 +105,13 @@ export function ProductMaterialSelect({
     new Set(allProducts.map((p) => p.product))
   ).sort();
 
-  // Records matching the selected product (exact, case-insensitive)
+  // Records matching the selected product OR any product in its group (case-insensitive)
+  const productGroup = product ? getProductGroup(product) : [];
   const productMatches = product
-    ? allProducts.filter(
-        (p) => p.product.toLowerCase() === product.toLowerCase()
+    ? allProducts.filter((p) =>
+        productGroup.some(
+          (g) => g.toLowerCase() === p.product.toLowerCase()
+        )
       )
     : [];
 
@@ -121,9 +143,10 @@ export function ProductMaterialSelect({
   // Only auto-fill additionalSpec when there's exactly one unique value (no ambiguity).
   const tryAutoFill = (prod: string, mat: string) => {
     if (!onAutoFill || !prod) return;
+    const group = getProductGroup(prod);
     const matches = allProducts.filter(
       (p) =>
-        p.product.toLowerCase() === prod.toLowerCase() &&
+        group.some((g) => g.toLowerCase() === p.product.toLowerCase()) &&
         (!mat || p.material?.toLowerCase() === mat.toLowerCase())
     );
     if (!matches.length) return;
@@ -210,9 +233,10 @@ export function ProductMaterialSelect({
                 onAdditionalSpecChange(name);
                 // When additional spec is selected, try to auto-fill ends/length
                 if (onAutoFill && product) {
+                  const group = getProductGroup(product);
                   const match = allProducts.find(
                     (p) =>
-                      p.product.toLowerCase() === product.toLowerCase() &&
+                      group.some((g) => g.toLowerCase() === p.product.toLowerCase()) &&
                       (!material || p.material?.toLowerCase() === material.toLowerCase()) &&
                       p.additionalSpec?.toLowerCase() === name.toLowerCase()
                   );
