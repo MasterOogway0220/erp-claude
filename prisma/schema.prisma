@@ -316,6 +316,44 @@ enum PriceBasis {
   DELIVERED
 }
 
+enum MTCCertificateStatus {
+  DRAFT
+  FINALIZED
+  REVISED
+  CANCELLED
+}
+
+enum MTCIssuedAgainst {
+  PURCHASE_ORDER
+  QUOTATION
+}
+
+enum SpecimenForm {
+  R
+  S
+}
+
+enum Orientation {
+  L
+  T
+}
+
+enum HeatTreatmentType {
+  NORMALIZED
+  SOLUTION_ANNEALED
+  QUENCHED
+  QUENCHED_AND_TEMPERED
+  NORMALIZED_AND_TEMPERED
+  ANNEALED
+  STRESS_RELIEVED
+}
+
+enum ConstructionType {
+  SEAMLESS
+  WELDED
+  FORGED
+}
+
 // ==================== USER & AUTH ====================
 
 model User {
@@ -362,6 +400,7 @@ model User {
   rfqsCreated             RFQ[]                  @relation("RFQCreatedBy")
   csApproved              ComparativeStatement[] @relation("CSApprovedBy")
   csPrepared              ComparativeStatement[] @relation("CSPreparedBy")
+  mtcCertificatesCreated  MTCCertificate[]       @relation("MTCCertCreatedBy")
 
   @@index([email])
   @@index([companyId])
@@ -422,6 +461,7 @@ model CustomerMaster {
   customerContacts     CustomerContact[]
   inspectionOffers     InspectionOffer[]
   termDefaults         CustomerTermDefault[]
+  mtcCertificates      MTCCertificate[]          @relation("MTCCertCustomer")
 
   @@index([companyId])
   @@index([companyType])
@@ -785,6 +825,7 @@ model Quotation {
   salesOrders          SalesOrder[]
   clientPurchaseOrders ClientPurchaseOrder[]
   emailLogs            QuotationEmailLog[]
+  mtcCertificates      MTCCertificate[]
 
   @@unique([quotationNo, version])
   @@index([quotationNo])
@@ -967,6 +1008,9 @@ model CompanyMaster {
   alerts                Alert[]
   rfqs                  RFQ[]
   comparativeStatements ComparativeStatement[]
+  mtcCertificates       MTCCertificate[]       @relation("MTCCertCompany")
+  mtcMaterialSpecs      MTCMaterialSpec[]
+  mtcNoteMasters        MTCNoteMaster[]
 }
 
 model FinancialYear {
@@ -1913,6 +1957,209 @@ model InspectionOfferItem {
   inspectionOffer InspectionOffer @relation(fields: [inspectionOfferId], references: [id], onDelete: Cascade)
 
   @@index([inspectionOfferId])
+}
+
+// ==================== MTC MODULE ====================
+
+model MTCMaterialSpec {
+  id                String             @id @default(cuid())
+  companyId         String?
+  materialSpec      String // e.g. "ASTM A234 GR. WPB"
+  description       String? // e.g. "Carbon steel BW fittings"
+  startingMaterial  String? // e.g. "SEAMLESS PIPE", "PLATE", "ROUND BAR"
+  heatTreatment     String? // e.g. "NORMALIZED - 920° C"
+  heatTreatmentType HeatTreatmentType?
+  constructionType  ConstructionType?
+  dimensionStandard String? // e.g. "ASME B16.9", "ASME B16.11"
+  defaultNotes      String?            @db.Text
+  isActive          Boolean            @default(true)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  company              CompanyMaster?          @relation(fields: [companyId], references: [id])
+  chemicalElements     MTCChemicalElement[]
+  mechanicalProperties MTCMechanicalProperty[]
+  impactProperties     MTCImpactProperty[]
+  certificates         MTCCertificate[]
+
+  @@index([companyId])
+  @@index([materialSpec])
+}
+
+model MTCChemicalElement {
+  id             String   @id @default(cuid())
+  materialSpecId String
+  element        String // e.g. "C", "Mn", "P", "S", "Si", "Cr", "Mo", "Ni", "Cu", "V"
+  sortOrder      Int      @default(0)
+  minValue       Decimal? @db.Decimal(8, 4)
+  maxValue       Decimal? @db.Decimal(8, 4)
+  resultMinValue Decimal? @db.Decimal(8, 4) // range for auto-generation
+  resultMaxValue Decimal? @db.Decimal(8, 4)
+
+  materialSpec MTCMaterialSpec @relation(fields: [materialSpecId], references: [id], onDelete: Cascade)
+
+  @@index([materialSpecId])
+}
+
+model MTCMechanicalProperty {
+  id             String   @id @default(cuid())
+  materialSpecId String
+  propertyName   String // e.g. "Yield Strength", "Tensile Strength", "Elongation", "Reduction Area", "Hardness"
+  unit           String? // e.g. "MPa", "%", "HB"
+  sortOrder      Int      @default(0)
+  minValue       Decimal? @db.Decimal(10, 2)
+  maxValue       Decimal? @db.Decimal(10, 2)
+  resultMinValue Decimal? @db.Decimal(10, 2)
+  resultMaxValue Decimal? @db.Decimal(10, 2)
+
+  materialSpec MTCMaterialSpec @relation(fields: [materialSpecId], references: [id], onDelete: Cascade)
+
+  @@index([materialSpecId])
+}
+
+model MTCImpactProperty {
+  id              String   @id @default(cuid())
+  materialSpecId  String
+  testTemperature String? // e.g. "-46°C"
+  specimenSize    String? // e.g. "10 × 10 mm"
+  minEnergy       Decimal? @db.Decimal(10, 2) // minimum energy in Joules
+  resultMinValue  Decimal? @db.Decimal(10, 2)
+  resultMaxValue  Decimal? @db.Decimal(10, 2)
+
+  materialSpec MTCMaterialSpec @relation(fields: [materialSpecId], references: [id], onDelete: Cascade)
+
+  @@index([materialSpecId])
+}
+
+model MTCNoteMaster {
+  id        String   @id @default(cuid())
+  companyId String?
+  noteText  String   @db.Text
+  isDefault Boolean  @default(false)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company CompanyMaster? @relation(fields: [companyId], references: [id])
+
+  @@index([companyId])
+}
+
+model MTCCertificate {
+  id                    String               @id @default(cuid())
+  companyId             String?
+  certificateNo         String               @unique
+  certificateDate       DateTime             @default(now())
+  issuedAgainst         MTCIssuedAgainst     @default(PURCHASE_ORDER)
+  customerId            String?
+  customerName          String? // denormalized for flexibility
+  poNo                  String? // PO/PR number reference
+  poDate                DateTime?
+  quotationId           String?
+  quotationNo           String?
+  projectName           String?
+  otherReference        String?
+  materialSpecId        String?
+  materialSpec          String? // denormalized: e.g. "ASTM A234 GR. WPB"
+  additionalRequirement String? // e.g. "NACE MR0175/MR0103"
+  startingMaterial      String?
+  heatTreatment         String?
+  revision              Int                  @default(0)
+  status                MTCCertificateStatus @default(DRAFT)
+  notes                 String?              @db.Text
+  remarks               String?              @db.Text
+  reviewedBy            String?
+  witnessedBy           String?
+  createdById           String?
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+
+  company         CompanyMaster?       @relation("MTCCertCompany", fields: [companyId], references: [id])
+  customer        CustomerMaster?      @relation("MTCCertCustomer", fields: [customerId], references: [id])
+  materialSpecRef MTCMaterialSpec?     @relation(fields: [materialSpecId], references: [id])
+  quotation       Quotation?           @relation(fields: [quotationId], references: [id])
+  createdBy       User?                @relation("MTCCertCreatedBy", fields: [createdById], references: [id])
+  items           MTCCertificateItem[]
+
+  @@index([companyId])
+  @@index([certificateNo])
+  @@index([customerId])
+  @@index([materialSpecId])
+}
+
+model MTCCertificateItem {
+  id                String        @id @default(cuid())
+  certificateId     String
+  itemNo            String? // e.g. "50" from PO
+  description       String? // e.g. "ELBOW 90D LR, BW R=1.5D"
+  constructionType  String? // SEAMLESS, WELDED, FORGED
+  dimensionStandard String? // ASME B16.9-18
+  sizeOD1           String? // e.g. "2\" NB"
+  sizeWT1           String? // e.g. "SCH 80"
+  sizeOD2           String? // for reducers
+  sizeWT2           String? // for reducers
+  quantity          Int?
+  heatNo            String?
+  rawMaterial       String? // e.g. "F1287"
+  clientItemCode    String?
+  specimenForm      SpecimenForm? // R=Round, S=Strip
+  orientation       Orientation? // L=Longitudinal, T=Transverse
+  sortOrder         Int           @default(0)
+
+  certificate       MTCCertificate        @relation(fields: [certificateId], references: [id], onDelete: Cascade)
+  chemicalResults   MTCChemicalResult[]
+  mechanicalResults MTCMechanicalResult[]
+  impactResults     MTCImpactResult[]
+
+  @@index([certificateId])
+  @@index([heatNo])
+}
+
+model MTCChemicalResult {
+  id                String   @id @default(cuid())
+  certificateItemId String
+  element           String // e.g. "C", "Mn"
+  sortOrder         Int      @default(0)
+  minValue          Decimal? @db.Decimal(8, 4)
+  maxValue          Decimal? @db.Decimal(8, 4)
+  heatResult        Decimal? @db.Decimal(8, 4) // H result (heat analysis)
+  productResult     Decimal? @db.Decimal(8, 4) // P result (product analysis)
+
+  certificateItem MTCCertificateItem @relation(fields: [certificateItemId], references: [id], onDelete: Cascade)
+
+  @@index([certificateItemId])
+}
+
+model MTCMechanicalResult {
+  id                String        @id @default(cuid())
+  certificateItemId String
+  propertyName      String // e.g. "Yield Strength"
+  unit              String?
+  sortOrder         Int           @default(0)
+  minValue          Decimal?      @db.Decimal(10, 2)
+  maxValue          Decimal?      @db.Decimal(10, 2)
+  result            Decimal?      @db.Decimal(10, 2)
+  specimenForm      SpecimenForm?
+  orientation       Orientation?
+
+  certificateItem MTCCertificateItem @relation(fields: [certificateItemId], references: [id], onDelete: Cascade)
+
+  @@index([certificateItemId])
+}
+
+model MTCImpactResult {
+  id                String   @id @default(cuid())
+  certificateItemId String
+  testTemperature   String?
+  specimenSize      String?
+  result1           Decimal? @db.Decimal(10, 2)
+  result2           Decimal? @db.Decimal(10, 2)
+  result3           Decimal? @db.Decimal(10, 2)
+  average           Decimal? @db.Decimal(10, 2)
+
+  certificateItem MTCCertificateItem @relation(fields: [certificateItemId], references: [id], onDelete: Cascade)
+
+  @@index([certificateItemId])
 }
 
 model MTCDocument {
