@@ -184,13 +184,13 @@ export function generateStandardQuotationHtml(
 <meta charset="utf-8">
 <style>
   @page {
-    size: A4 landscape;
-    margin: 8mm 10mm;
+    size: 297mm 230mm; /* wider than A4 landscape height to fit all content */
+    margin: 6mm 8mm;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     font-family: 'Calibri', 'Segoe UI', Arial, sans-serif;
-    font-size: 9pt;
+    font-size: 8.5pt;
     color: #000;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
@@ -200,17 +200,17 @@ export function generateStandardQuotationHtml(
   table.main { border-collapse: collapse; width: 100%; }
   table.main td, table.main th {
     border: 1px solid #000;
-    padding: 2px 4px;
+    padding: 1px 3px;
     vertical-align: middle;
-    font-size: 9pt;
+    font-size: 8.5pt;
   }
 
   /* Header info table */
   table.info { border-collapse: collapse; width: 100%; }
   table.info td {
     border: 1px solid #000;
-    padding: 3px 6px;
-    font-size: 9pt;
+    padding: 2px 5px;
+    font-size: 8.5pt;
     vertical-align: top;
   }
   .info-label { font-weight: normal; }
@@ -222,9 +222,9 @@ export function generateStandardQuotationHtml(
     background-color: #548235 !important;
     color: #fff;
     font-weight: bold;
-    font-size: 8.5pt;
+    font-size: 8pt;
     text-align: center;
-    padding: 4px 3px;
+    padding: 3px 2px;
     border: 1px solid #000;
   }
 
@@ -232,7 +232,7 @@ export function generateStandardQuotationHtml(
   table.main .c { text-align: center; }
   table.main .l { text-align: left; }
   table.main .r { text-align: right; }
-  table.main .small { font-size: 8pt; }
+  table.main .small { font-size: 7.5pt; }
 
   /* Total row */
   .total-row td {
@@ -241,45 +241,45 @@ export function generateStandardQuotationHtml(
   }
 
   /* Terms */
-  table.terms { border-collapse: collapse; width: 100%; margin-top: 6px; }
-  table.terms td { border: none; padding: 1px 4px; font-size: 9pt; vertical-align: top; }
-  .terms-title { font-weight: bold; font-size: 9.5pt; padding: 6px 0 3px 0 !important; text-decoration: underline; }
-  .term-no { width: 22px; text-align: right; padding-right: 6px !important; }
-  .term-name { font-weight: bold; width: 150px; }
+  table.terms { border-collapse: collapse; width: 100%; margin-top: 4px; }
+  table.terms td { border: none; padding: 0.5px 4px; font-size: 8.5pt; vertical-align: top; }
+  .terms-title { font-weight: bold; font-size: 9pt; padding: 4px 0 2px 0 !important; text-decoration: underline; }
+  .term-no { width: 20px; text-align: right; padding-right: 5px !important; }
+  .term-name { font-weight: bold; width: 140px; }
   .term-val { font-weight: normal; }
 
   /* Notes */
-  .notes-title { font-weight: bold; font-size: 9.5pt; padding: 6px 0 3px 0 !important; text-decoration: underline; }
-  .note-row td { font-size: 8.5pt; padding: 1px 4px; border: none; }
+  .notes-title { font-weight: bold; font-size: 9pt; padding: 4px 0 2px 0 !important; text-decoration: underline; }
+  .note-row td { font-size: 8pt; padding: 0.5px 4px; border: none; }
 
   /* Footer */
   .footer-bar {
     border-top: 1.5px solid #000;
     border-bottom: 1.5px solid #000;
-    margin-top: 8px;
-    padding: 3px 0;
+    margin-top: 4px;
+    padding: 2px 0;
     display: flex;
     justify-content: space-between;
-    font-size: 7.5pt;
+    font-size: 7pt;
   }
   .footer-appreciation {
     text-align: center;
-    font-size: 8pt;
+    font-size: 7.5pt;
     font-weight: bold;
-    padding: 5px 0;
+    padding: 3px 0;
     border-bottom: 1px solid #000;
   }
   .footer-address {
     text-align: center;
-    font-size: 8pt;
-    padding: 4px 0;
+    font-size: 7.5pt;
+    padding: 3px 0;
     border-bottom: 1px solid #000;
-    line-height: 1.4;
+    line-height: 1.3;
   }
   .page-no {
     text-align: center;
-    font-size: 8pt;
-    padding: 2px 0;
+    font-size: 7.5pt;
+    padding: 1px 0;
   }
 
   .keep-together { page-break-inside: avoid; }
@@ -288,7 +288,7 @@ export function generateStandardQuotationHtml(
 <body>
 
 <!-- HEADER: Logo row -->
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
   <div style="font-size:10pt;">
     ${company.companyLogoUrl
       ? `<img src="${company.companyLogoUrl}" alt="Logo" style="max-height:50px;">`
@@ -330,7 +330,7 @@ export function generateStandardQuotationHtml(
 </table>
 
 <!-- QUOTATION SHEET HEADING -->
-<div style="text-align:center;font-size:11pt;font-weight:bold;padding:8px 0 4px 0;border:1px solid #000;border-top:none;background:#f9f9f9;">
+<div style="text-align:center;font-size:10pt;font-weight:bold;padding:4px 0 3px 0;border:1px solid #000;border-top:none;background:#f9f9f9;">
   Quotation Sheet${quotation.version && quotation.version > 0 ? ` (Revision ${quotation.version})` : ""}
 </div>
 

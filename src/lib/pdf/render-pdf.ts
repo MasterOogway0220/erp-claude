@@ -84,14 +84,19 @@ export async function renderHtmlToPdf(
   try {
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0" });
-    const pdfBuffer = await page.pdf({
-      format: "A4",
-      landscape,
+    const pdfOptions: any = {
       printBackground: true,
-      margin: landscape
-        ? { top: "5mm", right: "5mm", bottom: "5mm", left: "5mm" }
-        : { top: "10mm", right: "8mm", bottom: "10mm", left: "8mm" },
-    });
+    };
+    if (landscape) {
+      // Custom wider page to fit all content on one page
+      pdfOptions.width = "297mm";
+      pdfOptions.height = "230mm";
+      pdfOptions.margin = { top: "6mm", right: "8mm", bottom: "6mm", left: "8mm" };
+    } else {
+      pdfOptions.format = "A4";
+      pdfOptions.margin = { top: "10mm", right: "8mm", bottom: "10mm", left: "8mm" };
+    }
+    const pdfBuffer = await page.pdf(pdfOptions);
     return Buffer.from(pdfBuffer);
   } finally {
     await browser.close();
