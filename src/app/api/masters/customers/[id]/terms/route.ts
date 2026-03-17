@@ -73,22 +73,34 @@ export async function PUT(
       return NextResponse.json({ error: "Customer not found" }, { status: 404 });
     }
 
-    // Delete existing terms for this quotationType and recreate
-    await prisma.$transaction([
-      prisma.customerTermDefault.deleteMany({
+    // Delete existing terms for this quotationType and recreate (sequential)
+    await prisma.$transaction(async (tx) => {
+      await tx.customerTermDefault.deleteMany({
         where: { customerId: id, quotationType },
-      }),
-      prisma.customerTermDefault.createMany({
-        data: terms.map((t: any, idx: number) => ({
-          customerId: id,
-          termName: t.termName,
-          termValue: t.termValue || "",
-          sortOrder: idx,
-          quotationType,
-          isIncluded: t.isIncluded ?? true,
-        })),
-      }),
-    ]);
+      });
+
+      // Deduplicate by termName to avoid unique constraint violations
+      const seen = new Set<string>();
+      const uniqueTerms = terms.filter((t: any) => {
+        const key = t.termName?.trim();
+        if (!key || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+      if (uniqueTerms.length > 0) {
+        await tx.customerTermDefault.createMany({
+          data: uniqueTerms.map((t: any, idx: number) => ({
+            customerId: id,
+            termName: t.termName.trim(),
+            termValue: t.termValue || "",
+            sortOrder: idx,
+            quotationType,
+            isIncluded: t.isIncluded ?? true,
+          })),
+        });
+      }
+    });
 
     const updated = await prisma.customerTermDefault.findMany({
       where: { customerId: id, quotationType },
