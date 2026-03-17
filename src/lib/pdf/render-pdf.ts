@@ -88,13 +88,15 @@ export async function renderHtmlToPdf(
       printBackground: true,
     };
     if (landscape) {
-      // Custom wider page to fit all content on one page
+      // Custom wider page to fit all content on one page (standard quotation)
       pdfOptions.width = "297mm";
       pdfOptions.height = "230mm";
       pdfOptions.margin = { top: "6mm", right: "8mm", bottom: "6mm", left: "8mm" };
     } else {
-      pdfOptions.format = "A4";
-      pdfOptions.margin = { top: "10mm", right: "8mm", bottom: "10mm", left: "8mm" };
+      // Taller than A4 to fit footer on same page (non-standard quotation)
+      pdfOptions.width = "210mm";
+      pdfOptions.height = "320mm";
+      pdfOptions.margin = { top: "8mm", right: "8mm", bottom: "8mm", left: "8mm" };
     }
     const pdfBuffer = await page.pdf(pdfOptions);
     return Buffer.from(pdfBuffer);

@@ -243,13 +243,13 @@ export function generateNonStandardQuotationHtml(
 <meta charset="utf-8">
 <style>
   @page {
-    size: A4 portrait;
-    margin: 10mm 8mm;
+    size: 210mm 320mm; /* taller than A4 portrait to fit all content on one page */
+    margin: 8mm 8mm;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     font-family: 'Calibri', 'Segoe UI', sans-serif;
-    font-size: 10pt;
+    font-size: 9pt;
     color: #000;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
@@ -263,66 +263,65 @@ export function generateNonStandardQuotationHtml(
 
   /* ZONE 1: Type label */
   .type-label {
-    font-size: 20pt;
+    font-size: 18pt;
     font-weight: bold;
     text-align: center;
     border: 1px solid #000;
-    padding: 6px 12px;
+    padding: 4px 10px;
     vertical-align: middle;
   }
 
-  /* ZONE 2: Info block — 3 sections across 9 columns */
-  /* Cols A-C (1-3): Customer | Cols D-F (4-6): Attention/Buyer | Cols G-I (7-9): NPS info */
+  /* ZONE 2: Info block */
   .info-grid td {
-    height: 15pt;
-    font-size: 10pt;
+    height: 13pt;
+    font-size: 9pt;
     border: 0.5px solid #999;
     padding: 1px 4px;
     vertical-align: top;
   }
   .info-label { font-weight: bold; }
   .info-value { font-weight: normal; }
-  .info-customer-name { font-weight: bold; font-size: 10pt; }
-  .info-small { font-size: 9pt; }
+  .info-customer-name { font-weight: bold; font-size: 9pt; }
+  .info-small { font-size: 8pt; }
 
-  /* Quotation number block (right side, rows 4-5 of Excel) */
+  /* Quotation number block */
   .qtn-row td {
-    font-size: 10pt;
-    height: 15pt;
+    font-size: 9pt;
+    height: 13pt;
     padding: 1px 4px;
   }
   .qtn-row .qtn-label { font-weight: bold; text-align: left; }
   .qtn-row .qtn-value { font-weight: normal; text-align: left; }
 
   /* ZONE 3: Intro line */
-  .intro-row td { font-size: 10pt; padding: 8px 0 6px 0; }
+  .intro-row td { font-size: 9pt; padding: 5px 0 4px 0; }
 
   /* ZONE 4: Table header — grey background */
   .table-header th {
-    font-size: 10pt;
+    font-size: 9pt;
     font-weight: normal;
     text-align: center;
-    height: 15pt;
+    height: 13pt;
     background-color: #D9D9D9 !important;
     border: 0.5px solid #999;
-    padding: 2px 3px;
+    padding: 1px 3px;
   }
   .table-header-sub th {
-    font-size: 10pt;
+    font-size: 9pt;
     font-weight: bold;
     text-align: center;
-    height: 15pt;
+    height: 13pt;
     background-color: #D9D9D9 !important;
     border: 0.5px solid #999;
-    padding: 2px 3px;
+    padding: 1px 3px;
   }
 
   /* Data rows */
   .data-row td {
-    font-size: 10pt;
+    font-size: 9pt;
     border: 0.5px solid #999;
-    padding: 3px 4px;
-    line-height: 1.35;
+    padding: 2px 3px;
+    line-height: 1.25;
   }
   .cell-center { text-align: center; }
   .cell-left { text-align: left; }
@@ -334,40 +333,40 @@ export function generateNonStandardQuotationHtml(
 
   /* Grand Total row */
   .grand-total td {
-    font-size: 10pt;
+    font-size: 9pt;
     font-weight: bold;
     text-align: center;
     border: 0.5px solid #999;
-    padding: 3px 4px;
-    height: 18pt;
+    padding: 2px 3px;
+    height: 15pt;
   }
 
   /* ZONE 6: Offer terms */
   .terms-header td {
-    font-size: 10pt;
+    font-size: 9pt;
     font-weight: bold;
     text-align: left;
-    padding-top: 10px;
-    padding-bottom: 3px;
+    padding-top: 6px;
+    padding-bottom: 2px;
   }
-  .term-row td { font-size: 10pt; height: 13.5pt; padding: 0 4px; }
+  .term-row td { font-size: 9pt; height: 12pt; padding: 0 4px; }
   .term-name { font-weight: bold; text-align: left; }
   .term-value { font-weight: normal; text-align: left; }
 
   /* ZONE 7: Notes */
   .notes-header td {
-    font-size: 10pt;
+    font-size: 9pt;
     font-weight: bold;
     text-align: left;
-    padding-top: 10px;
-    padding-bottom: 3px;
+    padding-top: 6px;
+    padding-bottom: 2px;
   }
-  .note-row td { font-size: 9pt; height: 13.5pt; padding: 0 4px; text-align: left; }
+  .note-row td { font-size: 8pt; height: 12pt; padding: 0 4px; text-align: left; }
 
   /* ZONE 8: Footer */
   .footer-disclaimer td {
-    font-size: 8pt;
-    height: 14pt;
+    font-size: 7.5pt;
+    height: 12pt;
     border-top: 1px solid #000;
     border-bottom: 1px solid #000;
     padding: 2px 4px;
@@ -381,21 +380,21 @@ export function generateNonStandardQuotationHtml(
     border-right: 1px solid #000;
   }
   .footer-appreciation td {
-    font-size: 8pt;
+    font-size: 7.5pt;
     text-align: center;
-    height: 16pt;
+    height: 13pt;
     border-top: 1px solid #000;
     border-bottom: 1px solid #000;
     border-left: 1px solid #000;
     border-right: 1px solid #000;
-    padding-top: 3px;
+    padding-top: 2px;
   }
   .footer-address td {
-    font-size: 9pt;
+    font-size: 8pt;
     text-align: center;
     border: 1px solid #000;
-    padding: 4px;
-    line-height: 1.3;
+    padding: 3px;
+    line-height: 1.2;
     white-space: normal;
   }
 
@@ -573,7 +572,7 @@ export function generateNonStandardQuotationHtml(
     <td colspan="9">YOUR ORDER WILL BE GREATLY APPRECIATED AND WILL RECEIVE OUR PROMPT AND CAREFUL ATTENTION.</td>
   </tr>
   <tr class="footer-address">
-    <td colspan="9">Regd. Address: ${escapeHtml(footerAddress)}.<br>${escapeHtml(footerContact)}</td>
+    <td colspan="9"><b>Regd. Address: ${escapeHtml(footerAddress)}. ${escapeHtml(footerContact)}</b></td>
   </tr>
 </table>
 </body>
