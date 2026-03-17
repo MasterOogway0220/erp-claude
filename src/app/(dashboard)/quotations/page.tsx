@@ -310,11 +310,11 @@ export default function QuotationsPage() {
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => handleDownloadPDF(quotation.id, "quoted")}>
                             <FileText className="h-4 w-4 mr-2" />
-                            Quoted
+                            {quotation.quotationCategory === "NON_STANDARD" ? "Commercial" : "Quoted"}
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleDownloadPDF(quotation.id, "unquoted")}>
                             <FileX className="h-4 w-4 mr-2" />
-                            Unquoted
+                            {quotation.quotationCategory === "NON_STANDARD" ? "Technical" : "Unquoted"}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
