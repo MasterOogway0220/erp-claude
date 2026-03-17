@@ -469,9 +469,9 @@ export default function QuotationDetailPage() {
               <Pencil className="h-4 w-4 mr-2" />
               Edit
             </Button>
-            <Button onClick={handleSubmitForApproval}>
+            <Button onClick={handleSubmitForApproval} disabled={updateMutation.isPending}>
               <Clock className="h-4 w-4 mr-2" />
-              Submit for Approval
+              {updateMutation.isPending ? "Submitting..." : "Submit for Approval"}
             </Button>
             <Button
               variant="destructive"
