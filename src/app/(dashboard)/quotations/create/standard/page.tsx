@@ -586,6 +586,21 @@ function StandardQuotationPage() {
     },
     onSuccess: (data) => {
       toast.success(editId ? "Quotation updated successfully" : `Quotation ${data.quotationNo} created successfully`);
+      // Fire-and-forget: save current terms back to customer master
+      if (formData.customerId) {
+        fetch(`/api/masters/customers/${formData.customerId}/terms`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            quotationType: formData.quotationType,
+            terms: terms.map((t) => ({
+              termName: t.termName,
+              termValue: t.termValue,
+              isIncluded: t.isIncluded,
+            })),
+          }),
+        }).catch((err) => console.log("Failed to save terms to customer master:", err));
+      }
       router.push(`/quotations/${data.id || editId}`);
     },
     onError: (error: Error) => toast.error(error.message),

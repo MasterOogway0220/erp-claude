@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Save, MapPin, Plus, X, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, MapPin, Plus, X, Loader2, ListChecks } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 
 const INDIAN_STATES = [
@@ -181,6 +182,28 @@ export default function CustomerCreatePage() {
   const [saving, setSaving] = useState(false);
   const [fetchingPincode, setFetchingPincode] = useState(false);
   const [fetchingDispatchPincode, setFetchingDispatchPincode] = useState<number | null>(null);
+  const [termsQuotationType, setTermsQuotationType] = useState("DOMESTIC");
+  const [terms, setTerms] = useState<{ termName: string; termValue: string; isIncluded: boolean; isCustom: boolean }[]>([]);
+  const [termsLoaded, setTermsLoaded] = useState(false);
+
+  useEffect(() => {
+    const loadTerms = async () => {
+      try {
+        const res = await fetch(`/api/offer-term-templates?quotationType=${termsQuotationType}`);
+        const data = await res.json();
+        setTerms((data.templates || []).map((t: any) => ({
+          termName: t.termName,
+          termValue: t.termDefaultValue || "",
+          isIncluded: true,
+          isCustom: false,
+        })));
+        setTermsLoaded(true);
+      } catch {
+        console.error("Failed to load term templates");
+      }
+    };
+    loadTerms();
+  }, [termsQuotationType]);
 
   const update = (field: keyof CustomerFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -286,6 +309,22 @@ export default function CustomerCreatePage() {
         const err = await res.json();
         throw new Error(err.error || "Failed to save");
       }
+      const created = await res.json();
+      const customerId = created.customer?.id || created.id;
+
+      // Save terms for this customer if any configured
+      if (customerId && terms.length > 0) {
+        try {
+          await fetch(`/api/masters/customers/${customerId}/terms`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ quotationType: termsQuotationType, terms }),
+          });
+        } catch {
+          console.error("Failed to save customer terms");
+        }
+      }
+
       toast.success("Customer created successfully");
       router.push("/masters/customers");
     } catch (error: any) {
@@ -538,6 +577,89 @@ export default function CustomerCreatePage() {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Default Terms & Conditions */}
+      <Card>
+        <CardHeader className="py-3 px-4">
+          <CardTitle className="flex items-center justify-between text-base">
+            <span className="flex items-center gap-2">
+              <ListChecks className="h-4 w-4" />
+              Default Terms & Conditions
+            </span>
+            <div className="flex items-center gap-2">
+              <Select value={termsQuotationType} onValueChange={setTermsQuotationType}>
+                <SelectTrigger className="w-[140px] h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="DOMESTIC">Domestic</SelectItem>
+                  <SelectItem value="EXPORT">Export</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button type="button" variant="outline" size="sm" onClick={() => setTerms([...terms, { termName: "", termValue: "", isIncluded: true, isCustom: true }])}>
+                <Plus className="w-4 h-4 mr-1" />
+                Add Term
+              </Button>
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="px-4 pb-4 pt-0">
+          <p className="text-xs text-muted-foreground mb-3">
+            Configure default T&C for this customer. These will auto-populate when creating quotations.
+          </p>
+          {terms.length === 0 && (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No terms loaded. Global defaults will be used.
+            </p>
+          )}
+          <div className="space-y-2">
+            {terms.map((term, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <Checkbox
+                  checked={term.isIncluded}
+                  onCheckedChange={(checked) => {
+                    const newTerms = [...terms];
+                    newTerms[i] = { ...newTerms[i], isIncluded: !!checked };
+                    setTerms(newTerms);
+                  }}
+                />
+                <Input
+                  value={term.termName}
+                  onChange={(e) => {
+                    const newTerms = [...terms];
+                    newTerms[i] = { ...newTerms[i], termName: e.target.value };
+                    setTerms(newTerms);
+                  }}
+                  placeholder="Term name"
+                  className="w-[220px]"
+                  disabled={!term.isCustom}
+                />
+                <Input
+                  value={term.termValue}
+                  onChange={(e) => {
+                    const newTerms = [...terms];
+                    newTerms[i] = { ...newTerms[i], termValue: e.target.value };
+                    setTerms(newTerms);
+                  }}
+                  placeholder="Term value"
+                  className="flex-1"
+                />
+                {term.isCustom && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setTerms(terms.filter((_, idx) => idx !== i))}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
