@@ -78,7 +78,7 @@ export default function MTCCertificateDetailPage() {
   const [finalizeOpen, setFinalizeOpen] = useState(false);
   const [reviseOpen, setReviseOpen] = useState(false);
 
-  const isDraft = cert?.status === "DRAFT";
+  const isDraft = cert?.status === "DRAFT" || cert?.status === "REVISED";
 
   const fetchCertificate = useCallback(async () => {
     try {
@@ -803,14 +803,18 @@ export default function MTCCertificateDetailPage() {
                         >
                           {item.orientation || "L"}
                         </TableCell>
-                        <TableCell className="text-xs font-medium text-muted-foreground text-center">
-                          min.
+                        <TableCell
+                          rowSpan={3}
+                          className="text-xs text-center border-r"
+                        >
+                          {item.specimenForm || "S"}
                         </TableCell>
                         {sortedMech.map((r: any) => (
                           <TableCell
                             key={`mech-min-${r.id}`}
                             className="text-center text-xs text-muted-foreground"
                           >
+                            <span className="text-[10px] text-muted-foreground">min: </span>
                             {r.minValue != null
                               ? Number(r.minValue).toFixed(1)
                               : "--"}
@@ -820,14 +824,12 @@ export default function MTCCertificateDetailPage() {
 
                       {/* Max row */}
                       <TableRow className="bg-muted/30">
-                        <TableCell className="text-xs font-medium text-muted-foreground text-center">
-                          max.
-                        </TableCell>
                         {sortedMech.map((r: any) => (
                           <TableCell
                             key={`mech-max-${r.id}`}
                             className="text-center text-xs text-muted-foreground"
                           >
+                            <span className="text-[10px] text-muted-foreground">max: </span>
                             {r.maxValue != null
                               ? Number(r.maxValue).toFixed(1)
                               : "--"}

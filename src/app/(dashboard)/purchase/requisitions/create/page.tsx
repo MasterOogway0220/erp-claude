@@ -217,7 +217,7 @@ function CreatePRPage() {
               <div className="space-y-2">
                 <Label htmlFor="salesOrderId">Sales Order Reference (Optional)</Label>
                 <Select
-                  value={formData.salesOrderId}
+                  value={formData.salesOrderId || undefined}
                   onValueChange={(value) =>
                     setFormData({ ...formData, salesOrderId: value })
                   }
@@ -238,7 +238,7 @@ function CreatePRPage() {
               <div className="space-y-2">
                 <Label htmlFor="suggestedVendorId">Suggested Vendor (Optional)</Label>
                 <Select
-                  value={formData.suggestedVendorId}
+                  value={formData.suggestedVendorId || undefined}
                   onValueChange={(value) =>
                     setFormData({ ...formData, suggestedVendorId: value })
                   }

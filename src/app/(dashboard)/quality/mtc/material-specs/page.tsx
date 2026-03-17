@@ -25,7 +25,7 @@ export default function MaterialSpecsListPage() {
       const response = await fetch("/api/mtc/material-specs");
       if (response.ok) {
         const data = await response.json();
-        setSpecs(data.specs || []);
+        setSpecs(data.materialSpecs || []);
       }
     } catch (error) {
       console.error("Failed to fetch material specs:", error);
@@ -36,7 +36,7 @@ export default function MaterialSpecsListPage() {
 
   const columns: Column<any>[] = [
     {
-      key: "specification",
+      key: "materialSpec",
       header: "Material Spec",
       sortable: true,
       cell: (row) => (
@@ -44,7 +44,7 @@ export default function MaterialSpecsListPage() {
           href={`/quality/mtc/material-specs/${row.id}`}
           className="font-mono text-sm text-blue-600 hover:underline font-medium"
         >
-          {row.specification}
+          {row.materialSpec}
         </Link>
       ),
     },
@@ -142,7 +142,7 @@ export default function MaterialSpecsListPage() {
       <DataTable
         columns={columns}
         data={specs}
-        searchKey="specification"
+        searchKey="materialSpec"
         searchPlaceholder="Search by specification..."
       />
     </div>

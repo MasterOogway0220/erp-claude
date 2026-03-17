@@ -173,7 +173,7 @@ function CreateMTCPage() {
       const res = await fetch("/api/mtc/material-specs");
       if (res.ok) {
         const data = await res.json();
-        setMaterialSpecs(data.specs || []);
+        setMaterialSpecs(data.materialSpecs || []);
       }
     } catch (error) {
       console.error("Failed to fetch material specs:", error);

@@ -71,10 +71,11 @@ export async function GET(
 
     if (isNonStandard) {
       html = generateNonStandardQuotationHtml(quotation as any, companyInfo as any, pdfVariant);
+      landscape = false;
     } else {
       html = generateStandardQuotationHtml(quotation as any, companyInfo as any, pdfVariant);
+      landscape = true;
     }
-    landscape = false;
 
     const format = searchParams.get("format");
     if (format === "html") {
@@ -83,7 +84,9 @@ export async function GET(
       });
     }
 
-    const filenameSuffix = isUnquoted ? "-UNQUOTED" : "";
+    const filenameSuffix = isNonStandard
+      ? (isUnquoted ? "-TECHNICAL" : "-COMMERCIAL")
+      : (isUnquoted ? "-UNQUOTED" : "");
     const pdfBuffer = await renderHtmlToPdf(html, landscape);
     const filename = `${quotation.quotationNo.replace(/\//g, "-")}${filenameSuffix}.pdf`;
 

@@ -351,7 +351,7 @@ function CreateInvoicePage() {
               <div className="space-y-2">
                 <Label>Dispatch Note *</Label>
                 <Select
-                  value={formData.dispatchNoteId}
+                  value={formData.dispatchNoteId || undefined}
                   onValueChange={(value) =>
                     setFormData({ ...formData, dispatchNoteId: value })
                   }
@@ -412,7 +412,7 @@ function CreateInvoicePage() {
               <div className="space-y-2">
                 <Label>Warehouse</Label>
                 <Select
-                  value={formData.warehouseId}
+                  value={formData.warehouseId || undefined}
                   onValueChange={(value) =>
                     setFormData({ ...formData, warehouseId: value })
                   }

@@ -155,7 +155,7 @@ export default function CreateStockIssuePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label>Sales Order *</Label>
-              <Select value={selectedSO} onValueChange={setSelectedSO}>
+              <Select value={selectedSO || undefined} onValueChange={setSelectedSO}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select Sales Order" />
                 </SelectTrigger>
@@ -170,7 +170,7 @@ export default function CreateStockIssuePage() {
             </div>
             <div className="space-y-2">
               <Label>Authorized By</Label>
-              <Select value={authorizedById} onValueChange={setAuthorizedById}>
+              <Select value={authorizedById || undefined} onValueChange={setAuthorizedById}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select Authorizer" />
                 </SelectTrigger>

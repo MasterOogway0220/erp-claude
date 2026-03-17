@@ -1,6 +1,6 @@
 // Non-Standard Quotation PDF Template — Portrait A4, 9-column table
 // Matches EXPORT_QUOTATION_FORMAT > COMMERCIAL / TECHNICAL sheets exactly
-// Generates COMMERCIAL (with prices) or TECHNICAL (with "QUOTED") variant
+// COMMERCIAL = with prices, TECHNICAL = prices shown as "QUOTED"
 
 import { numberToWords } from "../amount-in-words";
 
@@ -130,7 +130,9 @@ export function generateNonStandardQuotationHtml(
   company: CompanyInfo,
   variant: "QUOTED" | "UNQUOTED"
 ): string {
-  const isUnquoted = variant === "UNQUOTED";
+  const isTechnical = variant === "UNQUOTED";
+  // Display label: COMMERCIAL for quoted (with prices), TECHNICAL for unquoted
+  const typeLabel = isTechnical ? "TECHNICAL" : "COMMERCIAL";
 
   const totalQty = quotation.items.reduce(
     (sum, item) => sum + (parseFloat(item.quantity) || 0),
@@ -161,24 +163,51 @@ export function generateNonStandardQuotationHtml(
     .filter(Boolean)
     .join(" ");
 
+  // Build customer address lines (rows 7-10 col A-C in Excel)
+  const customerAddressLines: string[] = [];
+  if (quotation.customer.addressLine1) customerAddressLines.push(quotation.customer.addressLine1);
+  if (quotation.customer.addressLine2) customerAddressLines.push(quotation.customer.addressLine2);
+  const cityStateLine = [
+    quotation.customer.city,
+    quotation.customer.state,
+    quotation.customer.pincode,
+    quotation.customer.country,
+  ].filter(Boolean).join(", ");
+  if (cityStateLine) customerAddressLines.push(cityStateLine);
+
+  // Buyer info
+  const buyerName = quotation.buyer?.buyerName || quotation.customer.contactPerson || "";
+  const buyerDesignation = quotation.buyer?.designation || "";
+  const buyerEmail = quotation.buyer?.email || quotation.customer.email || "";
+  const buyerContact = quotation.buyer?.mobile || quotation.buyer?.telephone || quotation.customer.phone || "";
+
+  // Enquiry reference
+  const enquiryRef = quotation.inquiryNo || "";
+  const enquiryDate = quotation.inquiryDate;
+
+  // Prepared by
+  const preparedByName = quotation.preparedBy?.name || "";
+  const preparedByPhone = quotation.preparedBy?.phone || "";
+
   const itemRows = quotation.items
     .map((item: any) => {
       const desc = buildItemDescription(item);
       return `<tr class="data-row">
         <td class="cell-center cell-top">${item.sNo}</td>
         <td class="cell-left cell-top cell-wrap" colspan="4">${desc}</td>
-        <td class="cell-left cell-top cell-wrap">${formatNumber(item.quantity, 0)}</td>
-        <td class="cell-right cell-top">${isUnquoted ? '<span class="quoted-bold">QUOTED</span>' : formatNumber(item.unitRate, 2)}</td>
-        <td class="cell-right cell-top">${isUnquoted ? '<span class="quoted-normal">QUOTED</span>' : formatNumber(item.amount, 0)}</td>
+        <td class="cell-center cell-top">${formatNumber(item.quantity, 0)}</td>
+        <td class="cell-right cell-top">${isTechnical ? '<span class="quoted-bold">QUOTED</span>' : formatNumber(item.unitRate, 2)}</td>
+        <td class="cell-right cell-top">${isTechnical ? '<span class="quoted-normal">QUOTED</span>' : formatNumber(item.amount, 0)}</td>
         <td class="cell-center cell-top cell-wrap">${escapeHtml(item.delivery)}</td>
       </tr>`;
     })
     .join("\n");
 
-  // Non-standard terms include "Currency" as first extra term
+  // Currency term (always first in offer terms)
+  const currencySymbol = quotation.currency === "USD" ? "$" : quotation.currency === "EUR" ? "\u20AC" : quotation.currency === "GBP" ? "\u00A3" : quotation.currency;
   const currencyTerm = `<tr class="term-row">
     <td class="term-name" colspan="3">Currency</td>
-    <td class="term-value" colspan="6">: ${escapeHtml(quotation.currency)} (${quotation.currency === "USD" ? "$" : quotation.currency === "EUR" ? "€" : quotation.currency})</td>
+    <td class="term-value" colspan="6">: ${escapeHtml(quotation.currency)} (${currencySymbol})</td>
   </tr>`;
 
   const termRows = includedTerms
@@ -197,6 +226,16 @@ export function generateNonStandardQuotationHtml(
       </tr>`;
     })
     .join("\n");
+
+  // Revision label
+  const revisionLabel = quotation.version && quotation.version > 0
+    ? `REVISED ${typeLabel}<br><span style="font-size:10pt">Revision ${quotation.version}</span>`
+    : typeLabel;
+
+  // Footer format text
+  const formatText = quotation.version && quotation.version > 0
+    ? `FORMAT: QTN-Rev.${quotation.version}, Dated: ${formatDate(quotation.quotationDate)}`
+    : `FORMAT: ${escapeHtml(quotation.quotationNo)}, Dated: ${formatDate(quotation.quotationDate)}`;
 
   return `<!DOCTYPE html>
 <html>
@@ -218,17 +257,9 @@ export function generateNonStandardQuotationHtml(
   table { border-collapse: collapse; width: 100%; }
   td, th { padding: 1px 3px; vertical-align: middle; }
 
-  /* Hair borders (very thin, grey) — Non-Standard default */
+  /* Hair borders (very thin, grey) */
   .hair { border: 0.5px solid #999; }
   .hair-all td { border: 0.5px solid #999; }
-  .hair-top { border-top: 0.5px solid #999; }
-  .hair-bottom { border-bottom: 0.5px solid #999; }
-  .hair-left { border-left: 0.5px solid #999; }
-  .hair-right { border-right: 0.5px solid #999; }
-
-  .thin { border: 1px solid #000; }
-  .thin-top { border-top: 1px solid #000; }
-  .thin-bottom { border-bottom: 1px solid #000; }
 
   /* ZONE 1: Type label */
   .type-label {
@@ -240,30 +271,33 @@ export function generateNonStandardQuotationHtml(
     vertical-align: middle;
   }
 
-  /* ZONE 2: Info block */
+  /* ZONE 2: Info block — 3 sections across 9 columns */
+  /* Cols A-C (1-3): Customer | Cols D-F (4-6): Attention/Buyer | Cols G-I (7-9): NPS info */
   .info-grid td {
-    height: 13.5pt;
+    height: 15pt;
     font-size: 10pt;
     border: 0.5px solid #999;
     padding: 1px 4px;
+    vertical-align: top;
   }
   .info-label { font-weight: bold; }
   .info-value { font-weight: normal; }
   .info-customer-name { font-weight: bold; font-size: 10pt; }
   .info-small { font-size: 9pt; }
 
-  /* Quotation number block */
-  .qtn-block td {
-    border: 0.5px solid #999;
+  /* Quotation number block (right side, rows 4-5 of Excel) */
+  .qtn-row td {
     font-size: 10pt;
-    height: 13.5pt;
+    height: 15pt;
     padding: 1px 4px;
   }
+  .qtn-row .qtn-label { font-weight: bold; text-align: left; }
+  .qtn-row .qtn-value { font-weight: normal; text-align: left; }
 
   /* ZONE 3: Intro line */
   .intro-row td { font-size: 10pt; padding: 8px 0 6px 0; }
 
-  /* ZONE 4: Table header */
+  /* ZONE 4: Table header — grey background */
   .table-header th {
     font-size: 10pt;
     font-weight: normal;
@@ -298,7 +332,7 @@ export function generateNonStandardQuotationHtml(
   .quoted-bold { font-weight: bold; }
   .quoted-normal { font-weight: normal; }
 
-  /* Total row */
+  /* Grand Total row */
   .grand-total td {
     font-size: 10pt;
     font-weight: bold;
@@ -365,16 +399,16 @@ export function generateNonStandardQuotationHtml(
     white-space: normal;
   }
 
-  /* Column widths - 9 columns (A through I) */
-  col.col-sr     { width: 5%; }
-  col.col-desc1  { width: 16%; }
-  col.col-desc2  { width: 17%; }
-  col.col-desc3  { width: 12%; }
-  col.col-desc4  { width: 12%; }
-  col.col-qty    { width: 8%; }
-  col.col-rate   { width: 11%; }
-  col.col-total  { width: 12%; }
-  col.col-deliv  { width: 13%; }
+  /* Column widths - 9 columns (A through I) matching Excel */
+  col.col-a { width: 5%; }   /* Sr. no */
+  col.col-b { width: 14%; }  /* Desc col 1 */
+  col.col-c { width: 14%; }  /* Desc col 2 */
+  col.col-d { width: 12%; }  /* Desc col 3 / Attention */
+  col.col-e { width: 12%; }  /* Desc col 4 */
+  col.col-f { width: 8%; }   /* Qty */
+  col.col-g { width: 11%; }  /* Unit rate */
+  col.col-h { width: 11%; }  /* Total */
+  col.col-i { width: 13%; }  /* Delivery */
 
   /* Page break control */
   .keep-together { page-break-inside: avoid; }
@@ -383,75 +417,94 @@ export function generateNonStandardQuotationHtml(
 <body>
 <table>
   <colgroup>
-    <col class="col-sr">
-    <col class="col-desc1">
-    <col class="col-desc2">
-    <col class="col-desc3">
-    <col class="col-desc4">
-    <col class="col-qty">
-    <col class="col-rate">
-    <col class="col-total">
-    <col class="col-deliv">
+    <col class="col-a">
+    <col class="col-b">
+    <col class="col-c">
+    <col class="col-d">
+    <col class="col-e">
+    <col class="col-f">
+    <col class="col-g">
+    <col class="col-h">
+    <col class="col-i">
   </colgroup>
 
-  <!-- ZONE 1: Type label + Logo -->
+  <!-- ============================================================ -->
+  <!-- ROW 1-2: Logo (cols A-F) + Type Label (cols G-I)             -->
+  <!-- ============================================================ -->
   <tr>
     <td colspan="6" rowspan="2" style="vertical-align:middle;padding:4px;">
       ${company.companyLogoUrl ? `<img src="${company.companyLogoUrl}" alt="Logo" style="max-width:200px;max-height:50px;object-fit:contain;">` : `<span style="font-size:16pt;font-weight:bold">${escapeHtml(company.companyName)}</span>`}
     </td>
-    <td colspan="3" rowspan="2" class="type-label">${quotation.version && quotation.version > 0 ? `REVISED ${variant}<br><span style="font-size:10pt">Revision ${quotation.version}</span>` : variant}</td>
+    <td colspan="3" rowspan="2" class="type-label">${revisionLabel}</td>
   </tr>
   <tr></tr>
   <tr><td colspan="9" style="height:4px;"></td></tr>
 
-  <!-- Quotation Number block (top right) -->
-  <tr class="qtn-block">
+  <!-- ============================================================ -->
+  <!-- ROW 4: Quotation Number / Dated labels (right side G-I)      -->
+  <!-- ============================================================ -->
+  <tr class="qtn-row">
     <td colspan="6"></td>
-    <td class="info-label">Quotation Number:</td>
-    <td class="info-value" colspan="2">${escapeHtml(quotation.quotationNo)}</td>
+    <td class="qtn-label" colspan="2">Quotation Number :</td>
+    <td class="qtn-label">Dated :</td>
   </tr>
-  <tr class="qtn-block">
+  <!-- ROW 5: Quotation Number / Dated values -->
+  <tr class="qtn-row">
     <td colspan="6"></td>
-    <td class="info-label">Dated:</td>
-    <td class="info-value" colspan="2">${formatDate(quotation.quotationDate)}</td>
-  </tr>
-  ${quotation.inquiryNo ? `<tr class="qtn-block">
-    <td colspan="6"></td>
-    <td class="info-label">Client Inquiry No.:</td>
-    <td class="info-value" colspan="2">${escapeHtml(quotation.inquiryNo)}</td>
-  </tr>` : ""}
-  ${quotation.inquiryDate ? `<tr class="qtn-block">
-    <td colspan="6"></td>
-    <td class="info-label">Inquiry Date:</td>
-    <td class="info-value" colspan="2">${formatDate(quotation.inquiryDate)}</td>
-  </tr>` : ""}
-  <tr><td colspan="9" style="height:4px;"></td></tr>
-
-  <!-- ZONE 2: Customer / Buyer / Prepared By info grid -->
-  <tr class="info-grid">
-    <td class="info-label" colspan="2">Customer:</td>
-    <td class="info-label" colspan="2">Attention:</td>
-    <td class="info-value" colspan="5">Prepared by: ${escapeHtml(quotation.preparedBy?.name)}</td>
-  </tr>
-  <tr class="info-grid">
-    <td class="info-customer-name" colspan="2">M/s. ${escapeHtml(quotation.customer.name)}</td>
-    <td class="info-value" colspan="2">${escapeHtml(quotation.buyer?.buyerName || quotation.customer.contactPerson)}</td>
-    <td class="info-value" colspan="5">Direct Line: ${escapeHtml(quotation.preparedBy?.phone) || ""}</td>
-  </tr>
-  <tr class="info-grid">
-    <td class="info-value" colspan="4"></td>
-    <td class="info-small" colspan="5">Dated: ${formatDate(quotation.quotationDate)}</td>
+    <td class="qtn-value" colspan="2">${escapeHtml(quotation.quotationNo)}</td>
+    <td class="qtn-value">${formatDate(quotation.quotationDate)}</td>
   </tr>
 
-  <!-- ZONE 3: Intro line -->
+  <!-- ============================================================ -->
+  <!-- ROW 6: Customer / Attention / Prepared by labels             -->
+  <!-- ============================================================ -->
+  <tr class="info-grid">
+    <td class="info-label" colspan="3">Customer :</td>
+    <td class="info-label" colspan="3">Attention :</td>
+    <td class="info-value" colspan="3"><strong>Prepared by:</strong> ${escapeHtml(preparedByName)}</td>
+  </tr>
+
+  <!-- ROW 7: Customer name / Buyer name / Direct Line -->
+  <tr class="info-grid">
+    <td class="info-customer-name" colspan="3">M/s. ${escapeHtml(quotation.customer.name)}</td>
+    <td class="info-value" colspan="3">${escapeHtml(buyerName)}</td>
+    <td class="info-value" colspan="3">Direct Line : ${escapeHtml(preparedByPhone)}</td>
+  </tr>
+
+  <!-- ROW 8: Customer address line 1 / Buyer designation / Enquiry Reference -->
+  <tr class="info-grid">
+    <td class="info-value" colspan="3">${escapeHtml(customerAddressLines[0] || "")}</td>
+    <td class="info-value" colspan="3">${escapeHtml(buyerDesignation)}</td>
+    <td class="info-value" colspan="3"><strong>Enquiry Reference :</strong>${enquiryRef ? "" : ""}</td>
+  </tr>
+
+  <!-- ROW 9: Customer address line 2 / Buyer email / Enquiry number -->
+  <tr class="info-grid">
+    <td class="info-value" colspan="3">${escapeHtml(customerAddressLines[1] || "")}</td>
+    <td class="info-value" colspan="3">${escapeHtml(buyerEmail)}</td>
+    <td class="info-small" colspan="3">${escapeHtml(enquiryRef)}</td>
+  </tr>
+
+  <!-- ROW 10: Customer address line 3 / Buyer contact / Enquiry dated -->
+  <tr class="info-grid">
+    <td class="info-value" colspan="3">${escapeHtml(customerAddressLines[2] || "")}</td>
+    <td class="info-value" colspan="3">${escapeHtml(buyerContact)}</td>
+    <td class="info-value" colspan="3">${enquiryDate ? `<strong>Dated:</strong> ${formatDate(enquiryDate)}` : ""}</td>
+  </tr>
+
+  <!-- ============================================================ -->
+  <!-- ROW 12: Intro line                                           -->
+  <!-- ============================================================ -->
   <tr class="intro-row">
     <td colspan="9">In response to your inquiry, we are pleased to quote as follows:</td>
   </tr>
 
-  <!-- ZONE 4: Item table header (2 rows) -->
+  <!-- ============================================================ -->
+  <!-- ROW 13-14: Item table header (2 rows with grey background)   -->
+  <!-- ============================================================ -->
   <tr class="table-header">
     <th>Sr.</th>
-    <th colspan="4">Item Description</th>
+    <th colspan="4">Item Desciption</th>
     <th>Qty</th>
     <th>Unit rate</th>
     <th>Total</th>
@@ -466,33 +519,41 @@ export function generateNonStandardQuotationHtml(
     <th>Ex-Works</th>
   </tr>
 
-  <!-- ZONE 5: Data rows -->
+  <!-- ============================================================ -->
+  <!-- Data rows                                                    -->
+  <!-- ============================================================ -->
   ${itemRows}
 
-  <!-- Grand Total row -->
+  <!-- ============================================================ -->
+  <!-- Grand Total row                                              -->
+  <!-- ============================================================ -->
   <tr class="grand-total">
     <td colspan="5">Grand Total</td>
     <td>${formatNumber(totalQty, 0)}</td>
     <td></td>
-    <td>${isUnquoted ? "" : formatNumber(totalAmount, 0)}</td>
+    <td class="cell-right">${isTechnical ? "" : formatNumber(totalAmount, 0)}</td>
     <td></td>
   </tr>
 
-  ${!isUnquoted ? `<!-- Amount in Words -->
+  ${!isTechnical ? `<!-- Amount in Words -->
   <tr>
     <td colspan="9" style="font-size:10pt;padding:4px 6px;text-align:left;border:0.5px solid #999;">
       <strong>Amount in Words:</strong> ${escapeHtml(numberToWords(totalAmount, quotation.currency))}
     </td>
   </tr>` : ""}
 
-  <!-- ZONE 6: Offer Terms -->
+  <!-- ============================================================ -->
+  <!-- OFFER TERMS                                                  -->
+  <!-- ============================================================ -->
   <tr class="terms-header">
     <td colspan="9">OFFER TERMS:</td>
   </tr>
   ${currencyTerm}
   ${termRows}
 
-  <!-- ZONE 7: Notes -->
+  <!-- ============================================================ -->
+  <!-- NOTES                                                        -->
+  <!-- ============================================================ -->
   <tr class="notes-header">
     <td colspan="9">NOTES:</td>
   </tr>
@@ -501,10 +562,12 @@ export function generateNonStandardQuotationHtml(
   <!-- Spacer -->
   <tr><td colspan="9" style="height:8px;"></td></tr>
 
-  <!-- ZONE 8: Footer -->
+  <!-- ============================================================ -->
+  <!-- FOOTER                                                       -->
+  <!-- ============================================================ -->
   <tr class="footer-disclaimer">
     <td colspan="5" class="left">This is a computer generated document hence not signed.</td>
-    <td colspan="4" class="right">FORMAT: QTN${quotation.version && quotation.version > 0 ? `-Rev.${quotation.version}` : ""}</td>
+    <td colspan="4" class="right">${escapeHtml(formatText)}</td>
   </tr>
   <tr class="footer-appreciation">
     <td colspan="9">YOUR ORDER WILL BE GREATLY APPRECIATED AND WILL RECEIVE OUR PROMPT AND CAREFUL ATTENTION.</td>

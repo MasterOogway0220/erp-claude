@@ -215,7 +215,7 @@ function CreateDispatchNotePage() {
               <div className="space-y-2">
                 <Label>Packing List *</Label>
                 <Select
-                  value={formData.packingListId}
+                  value={formData.packingListId || undefined}
                   onValueChange={(value) =>
                     setFormData({ ...formData, packingListId: value })
                   }
@@ -247,7 +247,7 @@ function CreateDispatchNotePage() {
               <div className="space-y-2">
                 <Label>Warehouse</Label>
                 <Select
-                  value={formData.warehouseId}
+                  value={formData.warehouseId || undefined}
                   onValueChange={(value) =>
                     setFormData({ ...formData, warehouseId: value })
                   }
@@ -300,7 +300,7 @@ function CreateDispatchNotePage() {
               <div className="space-y-2">
                 <Label>Transporter</Label>
                 <Select
-                  value={formData.transporterId}
+                  value={formData.transporterId || undefined}
                   onValueChange={(value) =>
                     setFormData({ ...formData, transporterId: value })
                   }

@@ -104,7 +104,7 @@ function MaterialSpecCreateContent() {
   const [submitting, setSubmitting] = useState(false);
 
   const [form, setForm] = useState({
-    specification: "",
+    materialSpec: "",
     description: "",
     startingMaterial: "",
     heatTreatment: "",
@@ -136,10 +136,10 @@ function MaterialSpecCreateContent() {
       const response = await fetch(`/api/mtc/material-specs/${id}`);
       if (!response.ok) throw new Error("Failed to fetch");
       const data = await response.json();
-      const spec = data.spec;
+      const spec = data.materialSpec;
 
       setForm({
-        specification: spec.specification || "",
+        materialSpec: spec.materialSpec || "",
         description: spec.description || "",
         startingMaterial: spec.startingMaterial || "",
         heatTreatment: spec.heatTreatment || "",
@@ -157,8 +157,8 @@ function MaterialSpecCreateContent() {
             sortOrder: el.sortOrder || 0,
             minValue: el.minValue?.toString() || "",
             maxValue: el.maxValue?.toString() || "",
-            resultMin: el.resultMin?.toString() || "",
-            resultMax: el.resultMax?.toString() || "",
+            resultMin: el.resultMinValue?.toString() || "",
+            resultMax: el.resultMaxValue?.toString() || "",
           }))
         );
       }
@@ -172,19 +172,20 @@ function MaterialSpecCreateContent() {
             sortOrder: prop.sortOrder || 0,
             minValue: prop.minValue?.toString() || "",
             maxValue: prop.maxValue?.toString() || "",
-            resultMin: prop.resultMin?.toString() || "",
-            resultMax: prop.resultMax?.toString() || "",
+            resultMin: prop.resultMinValue?.toString() || "",
+            resultMax: prop.resultMaxValue?.toString() || "",
           }))
         );
       }
 
-      if (spec.impactProperties) {
+      if (spec.impactProperties?.length > 0) {
+        const ip = spec.impactProperties[0];
         setImpactProperties({
-          testTemperature: spec.impactProperties.testTemperature?.toString() || "",
-          specimenSize: spec.impactProperties.specimenSize || "",
-          minimumEnergy: spec.impactProperties.minimumEnergy?.toString() || "",
-          resultMin: spec.impactProperties.resultMin?.toString() || "",
-          resultMax: spec.impactProperties.resultMax?.toString() || "",
+          testTemperature: ip.testTemperature?.toString() || "",
+          specimenSize: ip.specimenSize || "",
+          minimumEnergy: ip.minEnergy?.toString() || "",
+          resultMin: ip.resultMinValue?.toString() || "",
+          resultMax: ip.resultMaxValue?.toString() || "",
         });
       }
     } catch (error) {
@@ -267,7 +268,7 @@ function MaterialSpecCreateContent() {
   };
 
   const handleSubmit = async () => {
-    if (!form.specification.trim()) {
+    if (!form.materialSpec.trim()) {
       toast.error("Material specification is required");
       return;
     }
@@ -281,8 +282,8 @@ function MaterialSpecCreateContent() {
           sortOrder: Number(el.sortOrder),
           minValue: el.minValue ? parseFloat(el.minValue) : null,
           maxValue: el.maxValue ? parseFloat(el.maxValue) : null,
-          resultMin: el.resultMin ? parseFloat(el.resultMin) : null,
-          resultMax: el.resultMax ? parseFloat(el.resultMax) : null,
+          resultMinValue: el.resultMin ? parseFloat(el.resultMin) : null,
+          resultMaxValue: el.resultMax ? parseFloat(el.resultMax) : null,
         })),
         mechanicalProperties: mechanicalProperties.map((p) => ({
           propertyName: p.propertyName,
@@ -290,30 +291,30 @@ function MaterialSpecCreateContent() {
           sortOrder: Number(p.sortOrder),
           minValue: p.minValue ? parseFloat(p.minValue) : null,
           maxValue: p.maxValue ? parseFloat(p.maxValue) : null,
-          resultMin: p.resultMin ? parseFloat(p.resultMin) : null,
-          resultMax: p.resultMax ? parseFloat(p.resultMax) : null,
+          resultMinValue: p.resultMin ? parseFloat(p.resultMin) : null,
+          resultMaxValue: p.resultMax ? parseFloat(p.resultMax) : null,
         })),
         impactProperties: impactProperties.testTemperature
-          ? {
+          ? [{
               testTemperature: impactProperties.testTemperature,
               specimenSize: impactProperties.specimenSize,
-              minimumEnergy: impactProperties.minimumEnergy
+              minEnergy: impactProperties.minimumEnergy
                 ? parseFloat(impactProperties.minimumEnergy)
                 : null,
-              resultMin: impactProperties.resultMin
+              resultMinValue: impactProperties.resultMin
                 ? parseFloat(impactProperties.resultMin)
                 : null,
-              resultMax: impactProperties.resultMax
+              resultMaxValue: impactProperties.resultMax
                 ? parseFloat(impactProperties.resultMax)
                 : null,
-            }
-          : null,
+            }]
+          : [],
       };
 
       const url = editId
         ? `/api/mtc/material-specs/${editId}`
         : "/api/mtc/material-specs";
-      const method = editId ? "PUT" : "POST";
+      const method = editId ? "PATCH" : "POST";
 
       const response = await fetch(url, {
         method,
@@ -360,8 +361,8 @@ function MaterialSpecCreateContent() {
               <Label>Material Specification *</Label>
               <Input
                 placeholder="e.g. ASTM A234 GR. WPB"
-                value={form.specification}
-                onChange={(e) => setForm({ ...form, specification: e.target.value })}
+                value={form.materialSpec}
+                onChange={(e) => setForm({ ...form, materialSpec: e.target.value })}
               />
             </div>
             <div className="space-y-2">

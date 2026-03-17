@@ -439,11 +439,16 @@ export default function CreateInspectionPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Stock Item (Under Inspection) *</Label>
-                <Select value={selectedStockId} onValueChange={handleStockSelect}>
+                <Select value={selectedStockId || undefined} onValueChange={handleStockSelect}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select stock to inspect" />
                   </SelectTrigger>
                   <SelectContent>
+                    {stocks.length === 0 && (
+                      <div className="px-2 py-4 text-sm text-center text-muted-foreground">
+                        No stocks under inspection
+                      </div>
+                    )}
                     {stocks.map((stock) => (
                       <SelectItem key={stock.id} value={stock.id}>
                         {stock.heatNo || "N/A"} - {stock.product || ""} {stock.sizeLabel || ""}
@@ -466,7 +471,7 @@ export default function CreateInspectionPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Inspection Type</Label>
-                <Select value={inspectionType} onValueChange={setInspectionType}>
+                <Select value={inspectionType || undefined} onValueChange={setInspectionType}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select inspection type" />
                   </SelectTrigger>
@@ -485,7 +490,7 @@ export default function CreateInspectionPage() {
               </div>
               <div className="space-y-2">
                 <Label>TPI Agency</Label>
-                <Select value={tpiAgencyId} onValueChange={setTpiAgencyId}>
+                <Select value={tpiAgencyId || undefined} onValueChange={setTpiAgencyId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select TPI agency (if applicable)" />
                   </SelectTrigger>

@@ -56,17 +56,17 @@ export default function MTCCertificatesListPage() {
       ),
     },
     {
-      key: "date",
+      key: "certificateDate",
       header: "Date",
       sortable: true,
-      cell: (row) => format(new Date(row.date), "dd MMM yyyy"),
+      cell: (row) => format(new Date(row.certificateDate), "dd MMM yyyy"),
     },
     {
-      key: "type",
+      key: "issuedAgainst",
       header: "Type",
       cell: (row) => (
         <Badge variant="outline">
-          {row.type === "PURCHASE_ORDER" ? "PO" : "Quotation"}
+          {row.issuedAgainst === "PURCHASE_ORDER" ? "PO" : "Quotation"}
         </Badge>
       ),
     },
@@ -82,24 +82,24 @@ export default function MTCCertificatesListPage() {
       header: "Material Spec",
       cell: (row) => (
         <span className="text-sm font-mono">
-          {row.materialSpec?.specification || row.materialSpecification || "—"}
+          {row.materialSpec || row.materialSpecRef?.materialSpec || "—"}
         </span>
       ),
     },
     {
-      key: "reference",
+      key: "poNo",
       header: "PO/Quotation Ref",
       cell: (row) => (
         <span className="text-sm font-mono">
-          {row.purchaseOrder?.poNo || row.quotation?.quotationNo || row.referenceNo || "—"}
+          {row.poNo || row.quotationNo || "—"}
         </span>
       ),
     },
     {
-      key: "items",
+      key: "_count",
       header: "Items",
       cell: (row) => (
-        <Badge variant="secondary">{row.items?.length || 0}</Badge>
+        <Badge variant="secondary">{row._count?.items || 0}</Badge>
       ),
     },
     {

@@ -294,7 +294,7 @@ function CreatePOPage() {
               <div className="space-y-2">
                 <Label htmlFor="vendorId">Vendor *</Label>
                 <Select
-                  value={formData.vendorId}
+                  value={formData.vendorId || undefined}
                   onValueChange={(value) =>
                     setFormData({ ...formData, vendorId: value })
                   }
@@ -315,7 +315,7 @@ function CreatePOPage() {
               <div className="space-y-2">
                 <Label htmlFor="prId">PR Reference (Optional)</Label>
                 <Select
-                  value={formData.prId}
+                  value={formData.prId || undefined}
                   onValueChange={(value) =>
                     setFormData({ ...formData, prId: value })
                   }
@@ -336,7 +336,7 @@ function CreatePOPage() {
               <div className="space-y-2">
                 <Label htmlFor="salesOrderId">SO Reference (Optional)</Label>
                 <Select
-                  value={formData.salesOrderId}
+                  value={formData.salesOrderId || undefined}
                   onValueChange={(value) =>
                     setFormData({ ...formData, salesOrderId: value })
                   }

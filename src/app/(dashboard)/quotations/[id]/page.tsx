@@ -542,11 +542,11 @@ export default function QuotationDetailPage() {
               <DropdownMenuContent>
                 <DropdownMenuItem onClick={() => handleDownloadPDF("quoted")}>
                   <FileText className="h-4 w-4 mr-2" />
-                  Quoted PDF
+                  {quotation.quotationCategory === "NON_STANDARD" ? "Commercial PDF" : "Quoted PDF"}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleDownloadPDF("unquoted")}>
                   <FileText className="h-4 w-4 mr-2" />
-                  Unquoted PDF
+                  {quotation.quotationCategory === "NON_STANDARD" ? "Technical PDF" : "Unquoted PDF"}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -599,212 +599,139 @@ export default function QuotationDetailPage() {
         )}
       </div>
 
-      {/* Quotation Info */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Quotation Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid grid-cols-2 gap-2">
-              <div className="text-sm text-muted-foreground">Quotation No.</div>
-              <div className="font-medium">{quotation.quotationNo}</div>
+      {/* Quotation Details */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle>Quotation Details</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {/* Row 1 */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-x-4 gap-y-2">
+            <div>
+              <div className="text-xs text-muted-foreground">Customer</div>
+              <div className="text-sm font-medium">{quotation.customer.name}</div>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="text-sm text-muted-foreground">Revision</div>
-              <div className="font-medium">Rev.{quotation.version}</div>
+            <div>
+              <div className="text-xs text-muted-foreground">Buyer (Attn.)</div>
+              <div className="text-sm font-medium">{quotation.buyer?.buyerName || quotation.kindAttention || "---"}</div>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="text-sm text-muted-foreground">Date</div>
-              <div className="font-medium">
-                {format(new Date(quotation.quotationDate), "dd MMM yyyy")}
-              </div>
+            <div>
+              <div className="text-xs text-muted-foreground">Market Type</div>
+              <div className="text-sm font-medium">{quotation.quotationType}</div>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="text-sm text-muted-foreground">Type</div>
-              <div className="font-medium">
-                <Badge variant="outline">{quotation.quotationType}</Badge>
-              </div>
+            <div>
+              <div className="text-xs text-muted-foreground">Currency</div>
+              <div className="text-sm font-medium">{quotation.currency}</div>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="text-sm text-muted-foreground">Category</div>
-              <div className="font-medium">
-                <Badge variant="outline">{quotation.quotationCategory}</Badge>
-              </div>
+            <div>
+              <div className="text-xs text-muted-foreground">Quotation No.</div>
+              <div className="text-sm font-medium">{quotation.quotationNo}</div>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="text-sm text-muted-foreground">Currency</div>
-              <div className="font-medium">{quotation.currency}</div>
+            <div>
+              <div className="text-xs text-muted-foreground">Rev. No.</div>
+              <div className="text-sm font-medium">Rev.{quotation.version}</div>
             </div>
-            {quotation.validUpto && (
-              <div className="grid grid-cols-2 gap-2">
-                <div className="text-sm text-muted-foreground">Valid Until</div>
-                <div className="font-medium">
-                  {format(new Date(quotation.validUpto), "dd MMM yyyy")}
-                </div>
-              </div>
-            )}
-            {quotation.inquiryNo && (
-              <div className="grid grid-cols-2 gap-2">
-                <div className="text-sm text-muted-foreground">Inquiry No.</div>
-                <div className="font-medium">{quotation.inquiryNo}</div>
-              </div>
-            )}
-            {quotation.inquiryDate && (
-              <div className="grid grid-cols-2 gap-2">
-                <div className="text-sm text-muted-foreground">Inquiry Date</div>
-                <div className="font-medium">
-                  {format(new Date(quotation.inquiryDate), "dd MMM yyyy")}
-                </div>
-              </div>
-            )}
-            {quotation.revisionTrigger && (
-              <div className="grid grid-cols-2 gap-2">
-                <div className="text-sm text-muted-foreground">Revision Reason</div>
-                <div className="font-medium">
-                  {REVISION_TRIGGERS.find((t) => t.code === quotation.revisionTrigger)?.label || quotation.revisionTrigger}
-                </div>
-              </div>
-            )}
-            {quotation.revisionNotes && (
-              <div className="grid grid-cols-2 gap-2">
-                <div className="text-sm text-muted-foreground">Revision Notes</div>
-                <div className="font-medium text-sm">{quotation.revisionNotes}</div>
-              </div>
-            )}
-            {quotation.kindAttention && (
-              <div className="grid grid-cols-2 gap-2">
-                <div className="text-sm text-muted-foreground">Kind Attention</div>
-                <div className="font-medium text-sm">{quotation.kindAttention}</div>
-              </div>
-            )}
-            {(quotation.placeOfSupplyCity || quotation.placeOfSupplyState) && (
-              <div className="grid grid-cols-2 gap-2">
-                <div className="text-sm text-muted-foreground">Place of Supply</div>
-                <div className="font-medium text-sm">
-                  {[quotation.placeOfSupplyCity, quotation.placeOfSupplyState, quotation.placeOfSupplyCountry]
-                    .filter(Boolean)
-                    .join(", ")}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+            <div>
+              <div className="text-xs text-muted-foreground">Quotation Date</div>
+              <div className="text-sm font-medium">{format(new Date(quotation.quotationDate), "dd MMM yyyy")}</div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground">Deal Owner</div>
+              <div className="text-sm font-medium">{quotation.dealOwner?.name || quotation.preparedBy?.name || "---"}</div>
+            </div>
+          </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Customer & Workflow</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid grid-cols-2 gap-2">
-              <div className="text-sm text-muted-foreground">Customer</div>
-              <div className="font-medium">{quotation.customer.name}</div>
-            </div>
-            {quotation.buyer && (
-              <div className="grid grid-cols-2 gap-2">
-                <div className="text-sm text-muted-foreground">Buyer</div>
-                <div className="font-medium">{quotation.buyer.buyerName}</div>
-              </div>
-            )}
-            <div className="grid grid-cols-2 gap-2">
-              <div className="text-sm text-muted-foreground">Prepared By</div>
-              <div className="font-medium">
-                {quotation.preparedBy?.name || "---"}
+          {/* Row 2 */}
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_auto_auto] gap-x-4 gap-y-2 mt-3 pt-3 border-t">
+            <div>
+              <div className="text-xs text-muted-foreground">Address</div>
+              <div className="text-sm font-medium">
+                {[
+                  quotation.customer.address,
+                  quotation.customer.city,
+                  quotation.customer.state,
+                  quotation.customer.country,
+                  quotation.customer.pincode,
+                ].filter(Boolean).join(", ") || "---"}
               </div>
             </div>
-            {quotation.dealOwner && (
-              <div className="grid grid-cols-2 gap-2">
-                <div className="text-sm text-muted-foreground">Deal Owner</div>
-                <div className="font-medium">{quotation.dealOwner.name}</div>
-              </div>
-            )}
-            <div className="grid grid-cols-2 gap-2">
-              <div className="text-sm text-muted-foreground">Payment Terms</div>
-              <div className="font-medium">
-                {quotation.paymentTerms ? (
-                  <Badge variant="outline">{quotation.paymentTerms.name}</Badge>
-                ) : (
-                  <span className="text-muted-foreground">Not set</span>
-                )}
+            <div>
+              <div className="text-xs text-muted-foreground">Inquiry No.</div>
+              <div className="text-sm font-medium">{quotation.inquiryNo || "---"}</div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground">Inquiry Date</div>
+              <div className="text-sm font-medium">
+                {quotation.inquiryDate ? format(new Date(quotation.inquiryDate), "dd MMM yyyy") : "---"}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="text-sm text-muted-foreground">Follow Up Date</div>
-              {quotation.nextActionDate ? (
-                <div className={`font-medium ${new Date(quotation.nextActionDate) < new Date() ? "text-destructive" : ""}`}>
-                  {format(new Date(quotation.nextActionDate), "dd MMM yyyy")}
+            <div>
+              <div className="text-xs text-muted-foreground">Follow Up Date</div>
+              <div className={`text-sm font-medium ${quotation.nextActionDate && new Date(quotation.nextActionDate) < new Date() ? "text-destructive" : ""}`}>
+                {quotation.nextActionDate ? format(new Date(quotation.nextActionDate), "dd MMM yyyy") : "---"}
+              </div>
+            </div>
+          </div>
+
+          {/* Conditional workflow info */}
+          {(quotation.salesOrders?.length > 0 || quotation.approvedBy || quotation.sentDate || quotation.lossReason) && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-x-4 gap-y-2 mt-3 pt-3 border-t">
+              {quotation.salesOrders?.length > 0 && (
+                <div>
+                  <div className="text-xs text-muted-foreground">OC Created</div>
+                  <div className="text-sm font-medium text-green-600">
+                    {quotation.salesOrders.map((so: any) => so.soNo).join(", ")}
+                  </div>
                 </div>
-              ) : (
-                <span className="text-muted-foreground">Not set</span>
+              )}
+              {quotation.approvedBy && (
+                <>
+                  <div>
+                    <div className="text-xs text-muted-foreground">
+                      {quotation.status === "REJECTED" ? "Rejected By" : "Approved By"}
+                    </div>
+                    <div className="text-sm font-medium">{quotation.approvedBy.name}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground">
+                      {quotation.status === "REJECTED" ? "Rejection" : "Approval"} Date
+                    </div>
+                    <div className="text-sm font-medium">{format(new Date(quotation.approvalDate), "dd MMM yyyy")}</div>
+                  </div>
+                  {quotation.approvalRemarks && (
+                    <div>
+                      <div className="text-xs text-muted-foreground">Remarks</div>
+                      <div className="text-sm font-medium">{quotation.approvalRemarks}</div>
+                    </div>
+                  )}
+                </>
+              )}
+              {quotation.sentDate && (
+                <div>
+                  <div className="text-xs text-muted-foreground">Sent Date</div>
+                  <div className="text-sm font-medium">{format(new Date(quotation.sentDate), "dd MMM yyyy")}</div>
+                </div>
+              )}
+              {quotation.lossReason && (
+                <>
+                  <div>
+                    <div className="text-xs text-muted-foreground">Loss Reason</div>
+                    <div className="text-sm font-medium text-red-600">
+                      {LOSS_REASONS.find((r) => r.code === quotation.lossReason)?.label || quotation.lossReason}
+                    </div>
+                  </div>
+                  {quotation.lossCompetitor && (
+                    <div>
+                      <div className="text-xs text-muted-foreground">Competitor</div>
+                      <div className="text-sm font-medium">{quotation.lossCompetitor}</div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
-            {quotation.deliveryTerms && (
-              <div className="grid grid-cols-2 gap-2">
-                <div className="text-sm text-muted-foreground">Delivery Terms</div>
-                <div className="font-medium">
-                  <Badge variant="outline">{quotation.deliveryTerms.name}</Badge>
-                </div>
-              </div>
-            )}
-            {quotation.salesOrders?.length > 0 && (
-              <div className="grid grid-cols-2 gap-2">
-                <div className="text-sm text-muted-foreground">OC Created</div>
-                <div className="font-medium text-green-600">
-                  {quotation.salesOrders.map((so: any) => so.soNo).join(", ")}
-                </div>
-              </div>
-            )}
-            {quotation.approvedBy && (
-              <>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="text-sm text-muted-foreground">
-                    {quotation.status === "REJECTED" ? "Rejected By" : "Approved By"}
-                  </div>
-                  <div className="font-medium">{quotation.approvedBy.name}</div>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="text-sm text-muted-foreground">
-                    {quotation.status === "REJECTED" ? "Rejection" : "Approval"} Date
-                  </div>
-                  <div className="font-medium">
-                    {format(new Date(quotation.approvalDate), "dd MMM yyyy")}
-                  </div>
-                </div>
-                {quotation.approvalRemarks && (
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="text-sm text-muted-foreground">Remarks</div>
-                    <div className="font-medium text-sm">{quotation.approvalRemarks}</div>
-                  </div>
-                )}
-              </>
-            )}
-            {quotation.sentDate && (
-              <div className="grid grid-cols-2 gap-2">
-                <div className="text-sm text-muted-foreground">Sent Date</div>
-                <div className="font-medium">
-                  {format(new Date(quotation.sentDate), "dd MMM yyyy")}
-                </div>
-              </div>
-            )}
-            {quotation.lossReason && (
-              <>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="text-sm text-muted-foreground">Loss Reason</div>
-                  <div className="font-medium text-red-600">
-                    {LOSS_REASONS.find((r) => r.code === quotation.lossReason)?.label || quotation.lossReason}
-                  </div>
-                </div>
-                {quotation.lossCompetitor && (
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="text-sm text-muted-foreground">Competitor</div>
-                    <div className="font-medium">{quotation.lossCompetitor}</div>
-                  </div>
-                )}
-              </>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Financial Summary */}
       {(quotation.subtotal || quotation.grandTotal) && (
@@ -1008,7 +935,7 @@ export default function QuotationDetailPage() {
           </CardHeader>
           <CardContent>
             {isEditingTerms ? (
-              <div className="space-y-3">
+              <div className="space-y-1">
                 {editableTerms.map((term: any, index: number) => (
                   <div key={index} className="flex gap-2 items-start border rounded-lg p-3">
                     <span className="font-semibold text-muted-foreground min-w-[24px] mt-2">
@@ -1052,7 +979,7 @@ export default function QuotationDetailPage() {
                 </Button>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-0.5">
                 {quotation.terms
                   .filter((t: any) => t.isIncluded)
                   .map((term: any, index: number) => (

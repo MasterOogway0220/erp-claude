@@ -291,7 +291,7 @@ export default function CreatePackingListPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Sales Order *</Label>
-                <Select value={selectedSOId} onValueChange={setSelectedSOId}>
+                <Select value={selectedSOId || undefined} onValueChange={setSelectedSOId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select Sales Order" />
                   </SelectTrigger>
@@ -317,7 +317,7 @@ export default function CreatePackingListPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Warehouse</Label>
-                <Select value={warehouseId} onValueChange={setWarehouseId}>
+                <Select value={warehouseId || undefined} onValueChange={setWarehouseId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select Warehouse" />
                   </SelectTrigger>

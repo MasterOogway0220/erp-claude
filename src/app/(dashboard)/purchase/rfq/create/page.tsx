@@ -190,7 +190,7 @@ function CreateRFQContent() {
         <CardContent className="space-y-4">
           <div className="max-w-md">
             <Label htmlFor="pr-select">Approved Purchase Requisition</Label>
-            <Select value={selectedPrId} onValueChange={setSelectedPrId}>
+            <Select value={selectedPrId || undefined} onValueChange={setSelectedPrId}>
               <SelectTrigger id="pr-select" className="mt-1">
                 <SelectValue placeholder="Select a PR..." />
               </SelectTrigger>

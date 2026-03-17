@@ -48,7 +48,7 @@ export default function LabLetterDetailPage({
         setLetter(data.labLetter);
       } else {
         toast.error("Failed to load lab letter");
-        router.push("/quality");
+        router.push("/quality/lab-letters");
       }
     } catch {
       toast.error("Failed to load lab letter");

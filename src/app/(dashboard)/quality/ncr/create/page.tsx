@@ -150,7 +150,7 @@ export default function CreateNCRPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Heat Number (from Stock) *</Label>
-                <Select value={selectedStockId} onValueChange={handleStockSelect}>
+                <Select value={selectedStockId || undefined} onValueChange={handleStockSelect}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select stock by heat number" />
                   </SelectTrigger>
@@ -199,7 +199,7 @@ export default function CreateNCRPage() {
               <div className="space-y-2">
                 <Label>Non-Conformance Type *</Label>
                 <Select
-                  value={formData.nonConformanceType}
+                  value={formData.nonConformanceType || undefined}
                   onValueChange={(value) =>
                     setFormData({ ...formData, nonConformanceType: value })
                   }

@@ -724,9 +724,9 @@ function StandardQuotationPage() {
               Quotation Details
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-5">
-            {/* Row 1: Customer | Buyer | Market Type | Quotation No | Rev No | Currency */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+          <CardContent className="space-y-3">
+            {/* Row 1: Customer | Buyer | Market Type | Currency | Quotation No | Rev No | Quotation Date | Inquiry Owner */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium">Customer <span className="text-destructive">*</span></Label>
                 <div className="flex gap-2">
@@ -761,33 +761,41 @@ function StandardQuotationPage() {
 
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium">Buyer (Attn.)</Label>
-                <Select
-                  value={formData.buyerId || "NONE"}
-                  onValueChange={(value) => {
-                    if (value === "__ADD_NEW__") {
-                      setShowAddBuyerModal(true);
-                      return;
-                    }
-                    setFormData({ ...formData, buyerId: value === "NONE" ? "" : value });
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select buyer (optional)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="NONE">No buyer selected</SelectItem>
-                    {buyersData?.buyers?.map((buyer: any) => (
-                      <SelectItem key={buyer.id} value={buyer.id}>
-                        {buyer.buyerName}
-                      </SelectItem>
-                    ))}
-                    {formData.customerId && (
-                      <SelectItem value="__ADD_NEW__" className="text-primary font-medium">
-                        ➕ Add New Client
-                      </SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-2">
+                  <Select
+                    value={formData.buyerId || "NONE"}
+                    onValueChange={(value) => {
+                      if (value === "__ADD_NEW__") {
+                        setShowAddBuyerModal(true);
+                        return;
+                      }
+                      setFormData({ ...formData, buyerId: value === "NONE" ? "" : value });
+                    }}
+                  >
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select buyer" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="NONE">No buyer selected</SelectItem>
+                      {buyersData?.buyers?.map((buyer: any) => (
+                        <SelectItem key={buyer.id} value={buyer.id}>
+                          {buyer.buyerName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {formData.customerId && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="shrink-0"
+                      onClick={() => setShowAddBuyerModal(true)}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-1.5">
@@ -804,6 +812,26 @@ function StandardQuotationPage() {
                   <SelectContent>
                     <SelectItem value="DOMESTIC">Domestic</SelectItem>
                     <SelectItem value="EXPORT">Export</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Currency</Label>
+                <Select
+                  value={formData.currency}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, currency: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="INR">INR</SelectItem>
+                    <SelectItem value="USD">USD</SelectItem>
+                    <SelectItem value="EUR">EUR</SelectItem>
+                    <SelectItem value="AED">AED</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -827,31 +855,6 @@ function StandardQuotationPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-sm font-medium">Currency</Label>
-                <Select
-                  value={formData.currency}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, currency: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="INR">INR</SelectItem>
-                    <SelectItem value="USD">USD</SelectItem>
-                    <SelectItem value="EUR">EUR</SelectItem>
-                    <SelectItem value="AED">AED</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <Separator className="my-1" />
-
-            {/* Row 2: Quotation Date | Inquiry Date | Inquiry No | Follow Up Date | Deal Owner */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              <div className="space-y-1.5">
                 <Label className="text-sm font-medium">Quotation Date</Label>
                 <Input
                   type="date"
@@ -863,36 +866,7 @@ function StandardQuotationPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-sm font-medium">Inquiry Date</Label>
-                <Input
-                  type="date"
-                  value={formData.inquiryDate}
-                  onChange={(e) => setFormData({ ...formData, inquiryDate: e.target.value })}
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-sm font-medium">Inquiry No.</Label>
-                <Input
-                  value={formData.inquiryNo}
-                  onChange={(e) => setFormData({ ...formData, inquiryNo: e.target.value })}
-                  placeholder="Client inquiry ref."
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-sm font-medium">Follow Up Date</Label>
-                <Input
-                  type="date"
-                  value={formData.nextActionDate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, nextActionDate: e.target.value })
-                  }
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-sm font-medium">Deal Owner</Label>
+                <Label className="text-sm font-medium">Inquiry Owner</Label>
                 <Select
                   value={formData.dealOwnerId || "NONE"}
                   onValueChange={(value) =>
@@ -911,6 +885,54 @@ function StandardQuotationPage() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+
+            {/* Row 2: Address | Inquiry No | Inquiry Date | Follow Up Date */}
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_auto_auto] gap-3">
+              <div className="space-y-1.5 lg:col-span-1">
+                <Label className="text-sm font-medium">Address</Label>
+                <Input
+                  value={
+                    selectedCustomer
+                      ? [selectedCustomer.addressLine1, selectedCustomer.addressLine2, selectedCustomer.city, selectedCustomer.state, selectedCustomer.country, selectedCustomer.pincode]
+                          .filter(Boolean)
+                          .join(", ")
+                      : ""
+                  }
+                  readOnly
+                  className="bg-muted"
+                  placeholder="Select a customer to see address"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Inquiry No.</Label>
+                <Input
+                  value={formData.inquiryNo}
+                  onChange={(e) => setFormData({ ...formData, inquiryNo: e.target.value })}
+                  placeholder="Client inquiry ref."
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Inquiry Date</Label>
+                <Input
+                  type="date"
+                  value={formData.inquiryDate}
+                  onChange={(e) => setFormData({ ...formData, inquiryDate: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Follow Up Date</Label>
+                <Input
+                  type="date"
+                  value={formData.nextActionDate}
+                  onChange={(e) =>
+                    setFormData({ ...formData, nextActionDate: e.target.value })
+                  }
+                />
               </div>
             </div>
 
@@ -974,10 +996,10 @@ function StandardQuotationPage() {
                     )}
                   </div>
 
-                  {/* Row 1: Material Code | Product | Material | Additional Specs | Size */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                    <div className="space-y-1.5">
-                      <Label className="text-sm font-medium">Material Code</Label>
+                  {/* Line 1: Material Code | Product | Material | Additional Spec | Size | Length | Ends | Qty | Unit Rate */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium">Material Code</Label>
                       <SmartCombobox
                         options={materialCodes}
                         value={item.materialCodeLabel || ""}
@@ -1017,34 +1039,9 @@ function StandardQuotationPage() {
                         if (fields.length) updateItem(index, "length", fields.length);
                       }}
                     />
-                    <div className="space-y-1.5">
-                      <Label className="text-sm font-medium">Size (NPS x Sch) <span className="text-destructive">*</span></Label>
-                      <SmartCombobox
-                        options={sizeOptions}
-                        value={item.sizeLabel || ""}
-                        onSelect={(s: any) => updateItem(index, "sizeId", s.id)}
-                        onChange={(text) => {
-                          setItems((prev) => {
-                            const newItems = [...prev];
-                            newItems[index] = { ...newItems[index], sizeLabel: text, sizeId: "" };
-                            return newItems;
-                          });
-                        }}
-                        displayFn={(s: any) => s.sizeLabel}
-                        filterFn={(s: any, query) =>
-                          s.sizeLabel.toLowerCase().includes(query.toLowerCase())
-                        }
-                        placeholder={hasPipeType ? "Search sizes..." : "Select product first"}
-                        disabled={!hasPipeType}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Row 2: OD | WT | Length | Ends | Qty | Unit Rate | Unit Wt | Total Wt */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
                     {item.itemCategory === "Fitting" ? (
-                      <div className="space-y-1.5 col-span-2 sm:col-span-4">
-                        <Label className="text-sm font-medium">Select Fitting <span className="text-destructive">*</span></Label>
+                      <div className="space-y-1 sm:col-span-2 lg:col-span-2">
+                        <Label className="text-xs font-medium">Select Fitting <span className="text-destructive">*</span></Label>
                         <FittingSelect
                           value={item.fittingLabel}
                           onChange={(text) => {
@@ -1072,8 +1069,8 @@ function StandardQuotationPage() {
                         />
                       </div>
                     ) : item.itemCategory === "Flange" ? (
-                      <div className="space-y-1.5 col-span-2 sm:col-span-4">
-                        <Label className="text-sm font-medium">Select Flange <span className="text-destructive">*</span></Label>
+                      <div className="space-y-1 sm:col-span-2 lg:col-span-2">
+                        <Label className="text-xs font-medium">Select Flange <span className="text-destructive">*</span></Label>
                         <FlangeSelect
                           value={item.flangeLabel}
                           onChange={(text) => {
@@ -1102,148 +1099,172 @@ function StandardQuotationPage() {
                       </div>
                     ) : (
                       <>
-                        <div className="space-y-1.5">
-                          <Label className="text-sm font-medium">OD (mm)</Label>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            value={item.od}
-                            onChange={(e) => updateItem(index, "od", e.target.value)}
-                            placeholder="Auto"
-                            readOnly={!!item.sizeId}
-                            className={item.sizeId ? "bg-muted" : ""}
+                        <div className="space-y-1">
+                          <Label className="text-xs font-medium">Size (NPS x Sch) <span className="text-destructive">*</span></Label>
+                          <SmartCombobox
+                            options={sizeOptions}
+                            value={item.sizeLabel || ""}
+                            onSelect={(s: any) => updateItem(index, "sizeId", s.id)}
+                            onChange={(text) => {
+                              setItems((prev) => {
+                                const newItems = [...prev];
+                                newItems[index] = { ...newItems[index], sizeLabel: text, sizeId: "" };
+                                return newItems;
+                              });
+                            }}
+                            displayFn={(s: any) => s.sizeLabel}
+                            filterFn={(s: any, query) =>
+                              s.sizeLabel.toLowerCase().includes(query.toLowerCase())
+                            }
+                            placeholder={hasPipeType ? "Search sizes..." : "Select product first"}
+                            disabled={!hasPipeType}
                           />
                         </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-sm font-medium">WT (mm)</Label>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            value={item.wt}
-                            onChange={(e) => updateItem(index, "wt", e.target.value)}
-                            placeholder="Auto"
-                            readOnly={!!item.sizeId}
-                            className={item.sizeId ? "bg-muted" : ""}
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-sm font-medium">Length</Label>
+                        <div className="space-y-1">
+                          <Label className="text-xs font-medium">Length</Label>
                           <Input
                             value={item.length}
                             onChange={(e) => updateItem(index, "length", e.target.value)}
                             placeholder="9.00-11.8"
+                            className="h-8"
                           />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-sm font-medium">Ends</Label>
-                          <Select
-                            value={item.ends}
-                            onValueChange={(value) => updateItem(index, "ends", value)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="BE">BE</SelectItem>
-                              <SelectItem value="PE">PE</SelectItem>
-                              <SelectItem value="NPTM">NPTM</SelectItem>
-                              <SelectItem value="BSPT">BSPT</SelectItem>
-                            </SelectContent>
-                          </Select>
                         </div>
                       </>
                     )}
-                    <div className="space-y-1.5">
-                      <Label className="text-sm font-medium">Qty (Mtr) <span className="text-destructive">*</span></Label>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium">Ends</Label>
+                      <Select
+                        value={item.ends}
+                        onValueChange={(value) => updateItem(index, "ends", value)}
+                      >
+                        <SelectTrigger className="h-8">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="BE">BE</SelectItem>
+                          <SelectItem value="PE">PE</SelectItem>
+                          <SelectItem value="NPTM">NPTM</SelectItem>
+                          <SelectItem value="BSPT">BSPT</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium">Qty (Mtr) <span className="text-destructive">*</span></Label>
                       <Input
                         type="number"
                         step="0.001"
                         value={item.quantity}
                         onChange={(e) => updateItem(index, "quantity", e.target.value)}
                         required
+                        className="h-8"
                       />
                     </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-sm font-medium">Unit Rate ({curr}) <span className="text-destructive">*</span></Label>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium">Unit Rate ({curr})</Label>
                       <Input
                         type="number"
                         step="0.01"
                         value={item.unitRate}
                         onChange={(e) => updateItem(index, "unitRate", e.target.value)}
                         required
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">Unit Wt (kg/m)</Label>
-                      <Input
-                        value={item.unitWeight}
-                        readOnly
-                        className="bg-muted text-sm"
-                        placeholder="Auto from size"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">Total Wt (MT)</Label>
-                      <Input
-                        value={item.totalWeightMT}
-                        readOnly
-                        className="bg-muted text-sm"
-                        placeholder="Auto"
+                        className="h-8"
                       />
                     </div>
                   </div>
 
-                  {/* Row 3: Past Quote/PO, Remark, Total Amount */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 pt-2 border-t border-border/30">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">Past Quote</Label>
+                  {/* Line 2: OD | WT | Unit Wt | Total Wt | Past Quote# | Past Quote Price | Past PO# | Past PO Price | Remarks | Total */}
+                  <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-10 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">OD (mm)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={item.od}
+                        onChange={(e) => updateItem(index, "od", e.target.value)}
+                        placeholder="Auto"
+                        readOnly={!!item.sizeId}
+                        className={`h-8 ${item.sizeId ? "bg-muted" : ""}`}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">WT (mm)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={item.wt}
+                        onChange={(e) => updateItem(index, "wt", e.target.value)}
+                        placeholder="Auto"
+                        readOnly={!!item.sizeId}
+                        className={`h-8 ${item.sizeId ? "bg-muted" : ""}`}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Unit WT (Kg/m)</Label>
+                      <Input
+                        value={item.unitWeight}
+                        readOnly
+                        className="bg-muted h-8 text-sm"
+                        placeholder="Auto"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Total WT (MT)</Label>
+                      <Input
+                        value={item.totalWeightMT}
+                        readOnly
+                        className="bg-muted h-8 text-sm"
+                        placeholder="Auto"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Past Quote#</Label>
                       <Input
                         value={item.pastQuote}
                         onChange={(e) => updateItem(index, "pastQuote", e.target.value)}
                         placeholder="Quote ref"
-                        className="text-sm"
+                        className="h-8 text-sm"
                       />
                     </div>
-                    <div className="space-y-1.5">
+                    <div className="space-y-1">
                       <Label className="text-xs text-muted-foreground">Past Quote Price</Label>
                       <Input
                         type="number"
                         step="0.01"
                         value={item.pastQuotePrice}
                         onChange={(e) => updateItem(index, "pastQuotePrice", e.target.value)}
-                        className="text-sm"
+                        className="h-8 text-sm"
                       />
                     </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">Past PO</Label>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Past PO#</Label>
                       <Input
                         value={item.pastPo}
                         onChange={(e) => updateItem(index, "pastPo", e.target.value)}
                         placeholder="PO ref"
-                        className="text-sm"
+                        className="h-8 text-sm"
                       />
                     </div>
-                    <div className="space-y-1.5">
+                    <div className="space-y-1">
                       <Label className="text-xs text-muted-foreground">Past PO Price</Label>
                       <Input
                         type="number"
                         step="0.01"
                         value={item.pastPoPrice}
                         onChange={(e) => updateItem(index, "pastPoPrice", e.target.value)}
-                        className="text-sm"
+                        className="h-8 text-sm"
                       />
                     </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">Remark</Label>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Remarks</Label>
                       <Input
                         value={item.remark}
                         onChange={(e) => updateItem(index, "remark", e.target.value)}
-                        className="text-sm"
+                        className="h-8 text-sm"
                       />
                     </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-sm font-medium">Total Amount ({curr})</Label>
-                      <Input value={item.amount} readOnly className="bg-muted font-semibold" />
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium">Total ({curr})</Label>
+                      <Input value={item.amount} readOnly className="bg-muted h-8 font-semibold" />
                     </div>
                   </div>
                 </div>
@@ -1299,13 +1320,13 @@ function StandardQuotationPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
+              <div className="space-y-0.5">
                 {terms.map((term, index) => (
-                  <div key={index} className="flex gap-3 items-start rounded-md p-2 hover:bg-muted/40 transition-colors">
+                  <div key={index} className="flex gap-3 items-start rounded-md py-0.5 px-2 hover:bg-muted/40 transition-colors">
                     <Checkbox
                       checked={term.isIncluded}
                       onCheckedChange={() => toggleTermIncluded(index)}
-                      className="mt-2.5"
+                      className="mt-1"
                     />
                     <div className="flex-1 grid grid-cols-[180px_1fr] gap-3 items-start">
                       {term.isHeadingEditable ? (

@@ -284,7 +284,7 @@ function CreateSalesOrderPage() {
               <div className="space-y-2">
                 <Label htmlFor="quotationId">Reference Quotation (Optional)</Label>
                 <Select
-                  value={formData.quotationId}
+                  value={formData.quotationId || undefined}
                   onValueChange={(value) => handleQuotationChange(value)}
                 >
                   <SelectTrigger>
@@ -303,7 +303,7 @@ function CreateSalesOrderPage() {
               <div className="space-y-2">
                 <Label htmlFor="customerId">Customer *</Label>
                 <Select
-                  value={formData.customerId}
+                  value={formData.customerId || undefined}
                   onValueChange={(value) =>
                     setFormData({ ...formData, customerId: value })
                   }

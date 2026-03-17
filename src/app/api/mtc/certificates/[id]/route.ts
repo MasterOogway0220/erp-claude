@@ -89,6 +89,13 @@ export async function PATCH(
       items,
     } = body;
 
+    // Helper to convert string/empty to number or null for Decimal fields
+    function toDecimalOrNull(val: any): number | null {
+      if (val === null || val === undefined || val === "") return null;
+      const num = parseFloat(val);
+      return isNaN(num) ? null : num;
+    }
+
     // Build update data for the certificate
     const updateData: any = {};
     if (status !== undefined) updateData.status = status;
@@ -136,8 +143,8 @@ export async function PATCH(
               await tx.mTCChemicalResult.update({
                 where: { id: cr.id },
                 data: {
-                  ...(cr.heatResult !== undefined && { heatResult: cr.heatResult }),
-                  ...(cr.productResult !== undefined && { productResult: cr.productResult }),
+                  ...(cr.heatResult !== undefined && { heatResult: toDecimalOrNull(cr.heatResult) }),
+                  ...(cr.productResult !== undefined && { productResult: toDecimalOrNull(cr.productResult) }),
                 },
               });
             }
@@ -150,9 +157,9 @@ export async function PATCH(
               await tx.mTCMechanicalResult.update({
                 where: { id: mr.id },
                 data: {
-                  ...(mr.result !== undefined && { result: mr.result }),
-                  ...(mr.specimenForm !== undefined && { specimenForm: mr.specimenForm }),
-                  ...(mr.orientation !== undefined && { orientation: mr.orientation }),
+                  ...(mr.result !== undefined && { result: toDecimalOrNull(mr.result) }),
+                  ...(mr.specimenForm !== undefined && { specimenForm: mr.specimenForm || null }),
+                  ...(mr.orientation !== undefined && { orientation: mr.orientation || null }),
                 },
               });
             }
@@ -165,10 +172,10 @@ export async function PATCH(
               await tx.mTCImpactResult.update({
                 where: { id: ir.id },
                 data: {
-                  ...(ir.result1 !== undefined && { result1: ir.result1 }),
-                  ...(ir.result2 !== undefined && { result2: ir.result2 }),
-                  ...(ir.result3 !== undefined && { result3: ir.result3 }),
-                  ...(ir.average !== undefined && { average: ir.average }),
+                  ...(ir.result1 !== undefined && { result1: toDecimalOrNull(ir.result1) }),
+                  ...(ir.result2 !== undefined && { result2: toDecimalOrNull(ir.result2) }),
+                  ...(ir.result3 !== undefined && { result3: toDecimalOrNull(ir.result3) }),
+                  ...(ir.average !== undefined && { average: toDecimalOrNull(ir.average) }),
                 },
               });
             }
