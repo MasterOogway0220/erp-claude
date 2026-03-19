@@ -84,11 +84,22 @@ export async function GET(
       });
     }
 
-    const filenameSuffix = isNonStandard
-      ? (isUnquoted ? "-TECHNICAL" : "-COMMERCIAL")
-      : (isUnquoted ? "-UNQUOTED" : "");
     const pdfBuffer = await renderHtmlToPdf(html, landscape);
-    const filename = `${quotation.quotationNo.replace(/\//g, "-")}${filenameSuffix}.pdf`;
+
+    // Build filename: PRICED-QUT-NNNNN-CLIENT NAME-INQ.NO or TECHNICAL-QUT-...
+    const qtnNum = quotation.quotationNo.replace(/\//g, "-");
+    const clientName = (quotation.customer?.name || "").toUpperCase().replace(/[^A-Z0-9 ]/g, "").trim();
+    const inqNo = (quotation.inquiryNo || "").replace(/\//g, "-").trim();
+    let filename: string;
+    if (isNonStandard) {
+      filename = isUnquoted
+        ? `TECHNICAL-QUT-${qtnNum}-${clientName}${inqNo ? `-${inqNo}` : ""}.pdf`
+        : `COMMERCIAL-QUT-${qtnNum}-${clientName}${inqNo ? `-${inqNo}` : ""}.pdf`;
+    } else {
+      filename = isUnquoted
+        ? `TECHNICAL-QUT-${qtnNum}-${clientName}${inqNo ? `-${inqNo}` : ""}.pdf`
+        : `PRICED-QUT-${qtnNum}-${clientName}${inqNo ? `-${inqNo}` : ""}.pdf`;
+    }
 
     return new NextResponse(new Uint8Array(pdfBuffer), {
       headers: {

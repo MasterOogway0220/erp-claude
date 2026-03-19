@@ -6,6 +6,7 @@ import { numberToWords } from "../amount-in-words";
 interface CompanyInfo {
   companyName: string;
   companyLogoUrl?: string | null;
+  isoLogoUrl?: string | null;
   regAddressLine1?: string | null;
   regAddressLine2?: string | null;
   regCity?: string | null;
@@ -49,16 +50,17 @@ interface QuotationData {
   terms: any[];
 }
 
-const exportNotes = [
-  "Prices are subject to review if items are deleted or if quantities are changed.",
-  "This quotation is subject to confirmation at the time of order placement.",
-  "Invoicing shall be based on the actual quantity supplied at the agreed unit rate.",
-  "Shipping date will be calculated based on the number of business days after receipt of the techno-commercial Purchase Order (PO).",
-  "Supply shall be made as close as possible to the requested quantity in the fixed lengths indicated.",
-  "Once an order is placed, it cannot be cancelled under any circumstances.",
-  "The quoted specification complies with the standard practice of the specification, without supplementary requirements (unless otherwise specifically stated in the offer).",
-  "Reduction in quantity after placement of order will not be accepted. Any increase in quantity will be subject to our acceptance.",
-  "In case of any changes in Government duties, taxes, or policies, the rates are liable to revision.",
+const fixedNotes = [
+  "This quotation is subject to our final confirmation at the time of order placement.",
+  "Prices are subject to review in the event of any change in item scope or quantities.",
+  "Invoicing shall be based on the actual quantity supplied at the agreed unit rates.",
+  "The delivery / shipping schedule shall be calculated based on the number of business days from the date of receipt of a clear techno-commercial Purchase Order (PO).",
+  "Supply shall be made as close as reasonably possible to the requested quantities, in accordance with standard manufacturing tolerances and available fixed lengths.",
+  "Once a Purchase Order is placed, cancellation shall not be permitted under any circumstances.",
+  "The quoted specifications conform to standard industry practices and applicable specifications, without any supplementary requirements unless explicitly stated in this offer.",
+  "Reduction in ordered quantity after placement of Purchase Order shall not be accepted. Any increase in quantity shall be subject to our review and acceptance.",
+  "In the event of any change in Government duties, taxes, levies, or policies, the quoted prices shall be subject to revision accordingly.",
+  "In case of Force Majeure events, we shall not be liable for any delay or failure in performance due to unforeseen events beyond our control, and delivery schedules shall be adjusted accordingly.",
 ];
 
 function formatDate(date: string | Date | null | undefined): string {
@@ -102,6 +104,9 @@ export function generateStandardQuotationHtml(
   const isUnquoted = variant === "UNQUOTED";
   const curr = quotation.currency || "INR";
 
+  // Determine the UOM from items (use first item's uom or default to Mtr)
+  const defaultUom = quotation.items[0]?.uom || "Mtr";
+
   const totalQty = quotation.items.reduce(
     (sum: number, item: any) => sum + (parseFloat(item.quantity) || 0),
     0
@@ -140,15 +145,14 @@ export function generateStandardQuotationHtml(
   const itemRows = quotation.items
     .map((item: any) => {
       const materialCode = item.materialCode?.code || item.materialCodeLabel || "";
-      const remarkParts = [item.remark, materialCode].filter(Boolean).join(" / ");
-      const sizeLabel = item.sizeLabel || "";
+      const uom = item.uom || defaultUom;
 
       return `<tr>
         <td class="c">${item.sNo}</td>
         <td class="l">${esc(item.product)}</td>
         <td class="l">${esc(item.material)}</td>
         <td class="l">${esc(item.additionalSpec)}</td>
-        <td class="c">${esc(sizeLabel)}</td>
+        <td class="c">${esc(item.sizeLabel || "")}</td>
         <td class="c">${item.od ? fmtPlain(item.od, 1) : ""}</td>
         <td class="c">${item.wt ? fmtPlain(item.wt, 2) : ""}</td>
         <td class="c">${esc(item.length)}</td>
@@ -156,26 +160,26 @@ export function generateStandardQuotationHtml(
         <td class="r">${fmtPlain(item.quantity, 2)}</td>
         <td class="r">${isUnquoted ? '<b>QUOTED</b>' : fmtPlain(item.unitRate, 2)}</td>
         <td class="r">${isUnquoted ? 'QUOTED' : fmt(item.amount, 2)}</td>
-        <td class="c">${esc(item.delivery) || "6-8 Weeks"}</td>
-        <td class="l small">${esc(remarkParts)}</td>
+        <td class="c">${esc(item.delivery) || ""}</td>
+        <td class="l small">${esc(materialCode)}</td>
       </tr>`;
     })
     .join("\n");
 
-  // Build term rows
+  // Build term rows - aligned closer
   const termRows = includedTerms
     .map((term: any, i: number) => {
       return `<tr class="term-row">
-        <td class="term-no">${i + 1}</td>
-        <td class="term-name" colspan="2">${esc(term.termName)}</td>
-        <td class="term-val" colspan="11">: ${esc(term.termValue)}</td>
+        <td class="term-no">${i + 1}.</td>
+        <td class="term-name">${esc(term.termName)}</td>
+        <td class="term-val">: ${esc(term.termValue)}</td>
       </tr>`;
     })
     .join("\n");
 
   // Build note rows
-  const noteRows = exportNotes
-    .map((note, i) => `<tr class="note-row"><td colspan="14">${i + 1}) ${esc(note)}</td></tr>`)
+  const noteRows = fixedNotes
+    .map((note, i) => `<tr class="note-row"><td colspan="3">${i + 1}. ${esc(note)}</td></tr>`)
     .join("\n");
 
   return `<!DOCTYPE html>
@@ -184,7 +188,7 @@ export function generateStandardQuotationHtml(
 <meta charset="utf-8">
 <style>
   @page {
-    size: 297mm 230mm; /* wider than A4 landscape height to fit all content */
+    size: 297mm 230mm;
     margin: 6mm 8mm;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -217,10 +221,10 @@ export function generateStandardQuotationHtml(
   .info-val { font-weight: normal; }
   .bold { font-weight: bold; }
 
-  /* Green header */
+  /* Grey header — 15% grey for S/N column styling */
   .hdr th {
-    background-color: #548235 !important;
-    color: #fff;
+    background-color: #d9d9d9 !important;
+    color: #000;
     font-weight: bold;
     font-size: 8pt;
     text-align: center;
@@ -240,12 +244,22 @@ export function generateStandardQuotationHtml(
     background: #f5f5f5;
   }
 
-  /* Terms */
+  /* Financial summary - compact */
+  .fin-summary { border-collapse: collapse; margin-top: 2px; }
+  .fin-summary td {
+    padding: 1px 6px;
+    font-size: 8.5pt;
+    border: none;
+  }
+  .fin-summary .lbl { text-align: right; font-weight: normal; }
+  .fin-summary .val { text-align: right; font-weight: bold; }
+
+  /* Terms - tighter alignment */
   table.terms { border-collapse: collapse; width: 100%; margin-top: 4px; }
-  table.terms td { border: none; padding: 0.5px 4px; font-size: 8.5pt; vertical-align: top; }
+  table.terms td { border: none; padding: 0.5px 2px; font-size: 8.5pt; vertical-align: top; }
   .terms-title { font-weight: bold; font-size: 9pt; padding: 4px 0 2px 0 !important; text-decoration: underline; }
-  .term-no { width: 20px; text-align: right; padding-right: 5px !important; }
-  .term-name { font-weight: bold; width: 140px; }
+  .term-no { width: 18px; text-align: right; padding-right: 3px !important; }
+  .term-name { font-weight: bold; white-space: nowrap; padding-right: 2px !important; }
   .term-val { font-weight: normal; }
 
   /* Notes */
@@ -287,16 +301,19 @@ export function generateStandardQuotationHtml(
 </head>
 <body>
 
-<!-- HEADER: Logo row -->
+<!-- HEADER: Logo row — ISO logo left, Company logo right -->
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
   <div style="font-size:10pt;">
-    ${company.companyLogoUrl
-      ? `<img src="${company.companyLogoUrl}" alt="Logo" style="max-height:50px;">`
+    ${company.isoLogoUrl
+      ? `<img src="${company.isoLogoUrl}" alt="ISO" style="max-height:50px;">`
       : `<span style="font-size:8pt;color:#666;">ISO 9001:2015 | ISO 14001:2015 | ISO 45001:2018</span>`
     }
   </div>
   <div style="text-align:right;">
-    <span style="font-size:18pt;font-weight:bold;color:#548235;font-family:'Calibri',sans-serif;">${esc(company.companyName)}</span>
+    ${company.companyLogoUrl
+      ? `<img src="${company.companyLogoUrl}" alt="Logo" style="max-height:50px;">`
+      : `<span style="font-size:18pt;font-weight:bold;color:#548235;font-family:'Calibri',sans-serif;">${esc(company.companyName)}</span>`
+    }
   </div>
 </div>
 
@@ -337,7 +354,7 @@ export function generateStandardQuotationHtml(
 <!-- ITEMS TABLE -->
 <table class="main">
   <colgroup>
-    <col style="width:3.5%">
+    <col style="width:3%">
     <col style="width:10%">
     <col style="width:10%">
     <col style="width:10%">
@@ -345,12 +362,12 @@ export function generateStandardQuotationHtml(
     <col style="width:5%">
     <col style="width:4.5%">
     <col style="width:6%">
-    <col style="width:4%">
+    <col style="width:3.5%">
     <col style="width:6.5%">
     <col style="width:7%">
     <col style="width:8.5%">
     <col style="width:7%">
-    <col style="width:9%">
+    <col style="width:10%">
   </colgroup>
   <tr class="hdr">
     <th>S/N</th>
@@ -362,11 +379,11 @@ export function generateStandardQuotationHtml(
     <th>W.T.<br>(mm)</th>
     <th>Length<br>(Mtr.)</th>
     <th>Ends</th>
-    <th>Qty<br>(Mtr.)</th>
-    <th>Unit Rate<br>${esc(curr)}/Mtr</th>
+    <th>Qty<br>(${esc(defaultUom)})</th>
+    <th>Unit Rate<br>${esc(curr)}/${esc(defaultUom)}</th>
     <th>Amount<br>(${esc(curr)}.)</th>
     <th>Delivery<br>(Ex-works)</th>
-    <th>Remark/<br>Material Code</th>
+    <th>Material Code</th>
   </tr>
 
   ${itemRows}
@@ -388,13 +405,13 @@ ${!isUnquoted ? `
 
 <!-- OFFER TERMS -->
 <table class="terms">
-  <tr><td colspan="14" class="terms-title">OFFER TERMS:</td></tr>
+  <tr><td colspan="3" class="terms-title">OFFER TERMS:</td></tr>
   ${termRows}
 </table>
 
 <!-- NOTES -->
 <table class="terms">
-  <tr><td colspan="14" class="notes-title">NOTES:</td></tr>
+  <tr><td colspan="3" class="notes-title">NOTES:</td></tr>
   ${noteRows}
 </table>
 

@@ -436,9 +436,7 @@ function CreateSalesOrderPage() {
                         onMaterialChange={(val) => updateItem(index, "material", val)}
                         onAdditionalSpecChange={(val) => updateItem(index, "additionalSpec", val)}
                         showAdditionalSpec
-                        onAutoFill={(fields) => {
-                          if (fields.ends) updateItem(index, "ends", fields.ends);
-                        }}
+                        onAutoFill={() => {}}
                       />
                     </div>
                     <div className="md:col-span-2">

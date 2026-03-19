@@ -58,6 +58,29 @@ const INDIAN_STATES = [
   "Puducherry",
 ];
 
+const COUNTRIES = [
+  "Afghanistan", "Albania", "Algeria", "Argentina", "Armenia", "Australia",
+  "Austria", "Azerbaijan", "Bahrain", "Bangladesh", "Belarus", "Belgium",
+  "Bhutan", "Bolivia", "Bosnia and Herzegovina", "Botswana", "Brazil",
+  "Brunei", "Bulgaria", "Cambodia", "Cameroon", "Canada", "Chile", "China",
+  "Colombia", "Costa Rica", "Croatia", "Cuba", "Cyprus", "Czech Republic",
+  "Denmark", "Ecuador", "Egypt", "Estonia", "Ethiopia", "Finland", "France",
+  "Georgia", "Germany", "Ghana", "Greece", "Guatemala", "Hong Kong",
+  "Hungary", "Iceland", "Indonesia", "Iran", "Iraq", "Ireland", "Israel",
+  "Italy", "Jamaica", "Japan", "Jordan", "Kazakhstan", "Kenya", "Kuwait",
+  "Kyrgyzstan", "Latvia", "Lebanon", "Libya", "Lithuania", "Luxembourg",
+  "Macau", "Malaysia", "Maldives", "Malta", "Mauritius", "Mexico", "Moldova",
+  "Mongolia", "Montenegro", "Morocco", "Myanmar", "Nepal", "Netherlands",
+  "New Zealand", "Nigeria", "North Macedonia", "Norway", "Oman", "Pakistan",
+  "Palestine", "Panama", "Paraguay", "Peru", "Philippines", "Poland",
+  "Portugal", "Qatar", "Romania", "Russia", "Saudi Arabia", "Senegal",
+  "Serbia", "Singapore", "Slovakia", "Slovenia", "South Africa", "South Korea",
+  "Spain", "Sri Lanka", "Sudan", "Sweden", "Switzerland", "Syria", "Taiwan",
+  "Tajikistan", "Tanzania", "Thailand", "Tunisia", "Turkey", "Turkmenistan",
+  "UAE", "Uganda", "Ukraine", "United Kingdom", "United States", "Uruguay",
+  "Uzbekistan", "Venezuela", "Vietnam", "Yemen", "Zambia", "Zimbabwe",
+];
+
 interface DispatchAddress {
   label: string;
   companyName: string;
@@ -78,6 +101,7 @@ interface CustomerFormData {
   contactPerson: string;
   contactPersonEmail: string;
   contactPersonPhone: string;
+  customerType: string;
   companyType: string;
   name: string;
   email: string;
@@ -128,6 +152,7 @@ const defaultForm: CustomerFormData = {
   contactPerson: "",
   contactPersonEmail: "",
   contactPersonPhone: "",
+  customerType: "DOMESTIC",
   companyType: "BUYER",
   name: "",
   email: "",
@@ -350,40 +375,34 @@ export default function CustomerCreatePage() {
         </Button>
       </PageHeader>
 
-      {/* Row 1: Contact Person */}
-      <Card>
-        <CardHeader className="py-3 px-4">
-          <CardTitle className="text-base">Contact Person</CardTitle>
-        </CardHeader>
-        <CardContent className="px-4 pb-4 pt-0">
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-1.5">
-              <Label>Name</Label>
-              <Input value={formData.contactPerson} onChange={(e) => update("contactPerson", e.target.value)} placeholder="Contact person name" />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Email</Label>
-              <Input type="email" value={formData.contactPersonEmail} onChange={(e) => update("contactPersonEmail", e.target.value)} placeholder="contact@email.com" />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Phone No.</Label>
-              <Input value={formData.contactPersonPhone} onChange={(e) => update("contactPersonPhone", e.target.value)} placeholder="+91 ..." />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Row 2: Company Details + Statutory Details */}
+      {/* Row 1: Company Details + Statutory Details */}
       <div className="grid grid-cols-2 gap-4">
         <Card>
           <CardHeader className="py-3 px-4">
             <CardTitle className="text-base">Company Details</CardTitle>
           </CardHeader>
           <CardContent className="px-4 pb-4 pt-0 space-y-3">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <div className="space-y-1.5">
                 <Label>Company Name *</Label>
                 <Input value={formData.name} onChange={(e) => update("name", e.target.value)} placeholder="Company name" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Customer Type</Label>
+                <Select value={formData.customerType} onValueChange={(v) => {
+                  update("customerType", v);
+                  if (v === "DOMESTIC") {
+                    setFormData((prev) => ({ ...prev, customerType: v, country: "India", state: "", pincode: "" }));
+                  } else {
+                    setFormData((prev) => ({ ...prev, customerType: v, country: "", state: "", pincode: "" }));
+                  }
+                }}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="DOMESTIC">Domestic</SelectItem>
+                    <SelectItem value="INTERNATIONAL">International</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-1.5">
                 <Label>Company Type</Label>
@@ -476,27 +495,51 @@ export default function CustomerCreatePage() {
                 <Input value={formData.addressLine2} onChange={(e) => update("addressLine2", e.target.value)} placeholder="Area, landmark" />
               </div>
             </div>
-            <div className="grid grid-cols-4 gap-3">
-              <div className="space-y-1.5">
-                <Label>Pincode</Label>
-                <div className="relative">
-                  <Input value={formData.pincode} onChange={(e) => handlePincodeChange(e.target.value)} placeholder="400004" maxLength={6} />
-                  {fetchingPincode && <Loader2 className="w-4 h-4 animate-spin absolute right-2.5 top-2.5 text-muted-foreground" />}
+            {formData.customerType === "DOMESTIC" ? (
+              <div className="grid grid-cols-4 gap-3">
+                <div className="space-y-1.5">
+                  <Label>Pincode</Label>
+                  <div className="relative">
+                    <Input value={formData.pincode} onChange={(e) => handlePincodeChange(e.target.value)} placeholder="400004" maxLength={6} />
+                    {fetchingPincode && <Loader2 className="w-4 h-4 animate-spin absolute right-2.5 top-2.5 text-muted-foreground" />}
+                  </div>
+                </div>
+                <div className="space-y-1.5"><Label>City</Label><Input value={formData.city} onChange={(e) => update("city", e.target.value)} placeholder="Mumbai" /></div>
+                <div className="space-y-1.5">
+                  <Label>State</Label>
+                  <Select value={formData.state || "NONE"} onValueChange={(v) => update("state", v === "NONE" ? "" : v)}>
+                    <SelectTrigger><SelectValue placeholder="Select state" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="NONE">Select state</SelectItem>
+                      {INDIAN_STATES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5"><Label>Country</Label><Input value="India" disabled /></div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-4 gap-3">
+                <div className="space-y-1.5">
+                  <Label>Country</Label>
+                  <Select value={formData.country || "NONE"} onValueChange={(v) => update("country", v === "NONE" ? "" : v)}>
+                    <SelectTrigger><SelectValue placeholder="Select country" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="NONE">Select country</SelectItem>
+                      {COUNTRIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5"><Label>City</Label><Input value={formData.city} onChange={(e) => update("city", e.target.value)} placeholder="City" /></div>
+                <div className="space-y-1.5">
+                  <Label>State / Province</Label>
+                  <Input value={formData.state} onChange={(e) => update("state", e.target.value)} placeholder="State or province" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>ZIP / Postal Code</Label>
+                  <Input value={formData.pincode} onChange={(e) => update("pincode", e.target.value)} placeholder="Postal code" />
                 </div>
               </div>
-              <div className="space-y-1.5"><Label>City</Label><Input value={formData.city} onChange={(e) => update("city", e.target.value)} placeholder="Mumbai" /></div>
-              <div className="space-y-1.5">
-                <Label>State</Label>
-                <Select value={formData.state || "NONE"} onValueChange={(v) => update("state", v === "NONE" ? "" : v)}>
-                  <SelectTrigger><SelectValue placeholder="Select state" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="NONE">Select state</SelectItem>
-                    {INDIAN_STATES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5"><Label>Country</Label><Input value={formData.country} onChange={(e) => update("country", e.target.value)} /></div>
-            </div>
+            )}
           </CardContent>
         </Card>
 

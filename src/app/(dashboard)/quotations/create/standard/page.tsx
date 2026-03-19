@@ -27,7 +27,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, ArrowLeft, Building2, MapPin, ListChecks, FileText, Package, Calculator } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Building2, MapPin, ListChecks, FileText, Package, Calculator, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
 import { FittingSelect } from "@/components/shared/fitting-select";
@@ -54,6 +54,7 @@ interface QuotationItem {
   quantity: string;
   unitRate: string;
   amount: string;
+  uom: string;
   delivery: string;
   remark: string;
   unitWeight: string;
@@ -88,6 +89,7 @@ const emptyItem: QuotationItem = {
   quantity: "",
   unitRate: "",
   amount: "0.00",
+  uom: "Mtr",
   delivery: "6-8 Weeks",
   remark: "",
   unitWeight: "",
@@ -541,6 +543,7 @@ function StandardQuotationPage() {
           quantity: String(item.quantity),
           unitRate: String(item.unitRate),
           amount: String(item.amount),
+          uom: item.uom || "Mtr",
           delivery: item.delivery || "",
           remark: item.remark || "",
           unitWeight: item.unitWeight ? String(item.unitWeight) : "",
@@ -742,7 +745,7 @@ function StandardQuotationPage() {
           <CardContent className="space-y-3">
             {/* Row 1: Customer | Buyer | Market Type | Currency | Quotation No | Rev No | Quotation Date | Inquiry Owner */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8 gap-3">
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 min-w-0">
                 <Label className="text-sm font-medium">Customer <span className="text-destructive">*</span></Label>
                 <div className="flex gap-2">
                   <Select
@@ -751,7 +754,7 @@ function StandardQuotationPage() {
                       setFormData({ ...formData, customerId: value })
                     }
                   >
-                    <SelectTrigger className="flex-1">
+                    <SelectTrigger className="flex-1 min-w-0">
                       <SelectValue placeholder="Select customer" />
                     </SelectTrigger>
                     <SelectContent>
@@ -774,7 +777,7 @@ function StandardQuotationPage() {
                 </div>
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 min-w-0">
                 <Label className="text-sm font-medium">Buyer (Attn.)</Label>
                 <div className="flex gap-2">
                   <Select
@@ -787,7 +790,7 @@ function StandardQuotationPage() {
                       setFormData({ ...formData, buyerId: value === "NONE" ? "" : value });
                     }}
                   >
-                    <SelectTrigger className="flex-1">
+                    <SelectTrigger className="flex-1 min-w-0">
                       <SelectValue placeholder="Select buyer" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1004,15 +1007,71 @@ function StandardQuotationPage() {
                         ))}
                       </div>
                     </div>
-                    {items.length > 1 && (
-                      <Button type="button" variant="ghost" size="icon" onClick={() => removeItem(index)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    )}
+                    <div className="flex items-center gap-1">
+                      {items.length > 1 && (
+                        <Select
+                          value="__none__"
+                          onValueChange={(val) => {
+                            if (val === "__none__") return;
+                            const srcIdx = parseInt(val);
+                            const src = items[srcIdx];
+                            if (!src) return;
+                            setItems((old) => {
+                              const newItems = [...old];
+                              newItems[index] = {
+                                ...newItems[index],
+                                itemCategory: src.itemCategory,
+                                materialCodeId: src.materialCodeId,
+                                materialCodeLabel: src.materialCodeLabel,
+                                product: src.product,
+                                material: src.material,
+                                additionalSpec: src.additionalSpec,
+                                sizeId: src.sizeId,
+                                sizeLabel: src.sizeLabel,
+                                nps: src.nps,
+                                schedule: src.schedule,
+                                od: src.od,
+                                wt: src.wt,
+                                length: src.length,
+                                ends: src.ends,
+                                uom: src.uom,
+                                delivery: src.delivery,
+                                unitWeight: src.unitWeight,
+                                fittingId: src.fittingId,
+                                fittingLabel: src.fittingLabel,
+                                flangeId: src.flangeId,
+                                flangeLabel: src.flangeLabel,
+                              };
+                              return newItems;
+                            });
+                          }}
+                        >
+                          <SelectTrigger className="h-7 w-auto text-xs gap-1 px-2">
+                            <Copy className="h-3 w-3" />
+                            <span>Copy From</span>
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__none__" disabled>Select item to copy</SelectItem>
+                            {items.map((_, i) =>
+                              i !== index ? (
+                                <SelectItem key={i} value={String(i)}>
+                                  Item #{i + 1}{items[i].product ? ` — ${items[i].product}` : ""}
+                                </SelectItem>
+                              ) : null
+                            )}
+                          </SelectContent>
+                        </Select>
+                      )}
+                      {items.length > 1 && (
+                        <Button type="button" variant="ghost" size="icon" onClick={() => removeItem(index)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Line 1: Material Code | Product | Material | Additional Spec | Size | Length | Ends | Qty | Unit Rate */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 gap-3">
+                  {/* Line 1: Material Code | Product | Material | Additional Spec | Size | Length | Ends | Qty | UOM | Unit Rate | Delivery */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-12 gap-3">
                     <div className="space-y-1">
                       <Label className="text-xs font-medium">Material Code</Label>
                       <SmartCombobox
@@ -1049,9 +1108,8 @@ function StandardQuotationPage() {
                       onMaterialChange={(val) => updateItem(index, "material", val)}
                       onAdditionalSpecChange={(val) => updateItem(index, "additionalSpec", val)}
                       showAdditionalSpec
-                      onAutoFill={(fields) => {
-                        if (fields.ends) updateItem(index, "ends", fields.ends);
-                        if (fields.length) updateItem(index, "length", fields.length);
+                      onAutoFill={() => {
+                        // Additional spec auto-fill handled by the component
                       }}
                     />
                     {item.itemCategory === "Fitting" ? (
@@ -1164,7 +1222,7 @@ function StandardQuotationPage() {
                       </Select>
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs font-medium">Qty (Mtr) <span className="text-destructive">*</span></Label>
+                      <Label className="text-xs font-medium">Qty <span className="text-destructive">*</span></Label>
                       <Input
                         type="number"
                         step="0.001"
@@ -1175,6 +1233,26 @@ function StandardQuotationPage() {
                       />
                     </div>
                     <div className="space-y-1">
+                      <Label className="text-xs font-medium">Unit</Label>
+                      <Select
+                        value={item.uom}
+                        onValueChange={(value) => updateItem(index, "uom", value)}
+                      >
+                        <SelectTrigger className="h-8">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Mtr">Mtr</SelectItem>
+                          <SelectItem value="Nos">Nos</SelectItem>
+                          <SelectItem value="Kg">Kg</SelectItem>
+                          <SelectItem value="MT">MT</SelectItem>
+                          <SelectItem value="Feet">Feet</SelectItem>
+                          <SelectItem value="Set">Set</SelectItem>
+                          <SelectItem value="Lot">Lot</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
                       <Label className="text-xs font-medium">Unit Rate ({curr})</Label>
                       <Input
                         type="number"
@@ -1182,6 +1260,15 @@ function StandardQuotationPage() {
                         value={item.unitRate}
                         onChange={(e) => updateItem(index, "unitRate", e.target.value)}
                         required
+                        className="h-8"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium">Delivery</Label>
+                      <Input
+                        value={item.delivery}
+                        onChange={(e) => updateItem(index, "delivery", e.target.value)}
+                        placeholder="6-8 Weeks"
                         className="h-8"
                       />
                     </div>
@@ -1281,6 +1368,72 @@ function StandardQuotationPage() {
                       <Label className="text-xs font-medium">Total ({curr})</Label>
                       <Input value={item.amount} readOnly className="bg-muted h-8 font-semibold" />
                     </div>
+                    {item.materialCodeLabel && item.product && (
+                      <div className="flex items-end">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-8 text-xs whitespace-nowrap"
+                          onClick={async () => {
+                            const code = item.materialCodeLabel;
+                            const desc = [item.product, item.material, item.additionalSpec, item.sizeLabel].filter(Boolean).join(" / ");
+                            try {
+                              // Check for duplicate specs with different code
+                              const checkRes = await fetch(`/api/masters/material-codes?search=${encodeURIComponent(item.product)}`);
+                              const checkData = await checkRes.json();
+                              const existing = (checkData.materialCodes || []).find((mc: any) =>
+                                mc.code !== code &&
+                                mc.productType === item.product &&
+                                mc.materialGrade === item.material &&
+                                mc.size === item.sizeLabel
+                              );
+                              if (existing) {
+                                const replace = confirm(
+                                  `A product with same specifications exists with material code "${existing.code}".\n\nDo you want to replace it with "${code}"?`
+                                );
+                                if (replace) {
+                                  await fetch(`/api/masters/material-codes/${existing.id}`, {
+                                    method: "PATCH",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ code }),
+                                  });
+                                  toast.success(`Material code updated from ${existing.code} to ${code}`);
+                                  return;
+                                }
+                                return;
+                              }
+                              // Check if this code already exists
+                              const existingCode = (checkData.materialCodes || []).find((mc: any) => mc.code === code);
+                              if (existingCode) {
+                                toast.info(`Material code ${code} already exists in master`);
+                                return;
+                              }
+                              // Create new
+                              const res = await fetch("/api/masters/material-codes", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  code,
+                                  description: desc,
+                                  productType: item.product,
+                                  materialGrade: item.material,
+                                  size: item.sizeLabel,
+                                  schedule: item.schedule,
+                                  unit: item.uom || "Mtr",
+                                }),
+                              });
+                              if (!res.ok) throw new Error("Failed to save");
+                              toast.success(`Material code ${code} saved to master`);
+                            } catch {
+                              toast.error("Failed to record material code");
+                            }
+                          }}
+                        >
+                          Record MC
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
               );

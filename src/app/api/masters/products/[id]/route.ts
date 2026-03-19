@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess, companyFilter } from "@/lib/rbac";
+import { checkAccess } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
+
+// Note: ProductSpecMaster has no companyId field — it's a shared/global master
 
 export async function GET(
   request: NextRequest,
@@ -9,14 +11,12 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { authorized, response, companyId } = await checkAccess("masters", "read");
+    const { authorized, response } = await checkAccess("masters", "read");
     if (!authorized) return response!;
 
     const product = await prisma.productSpecMaster.findUnique({
-      where: { id, ...companyFilter(companyId) },
-      include: {
-        dimensionalStandard: true,
-      },
+      where: { id },
+      include: { dimensionalStandard: true },
     });
 
     if (!product) {
@@ -26,10 +26,7 @@ export async function GET(
     return NextResponse.json(product);
   } catch (error) {
     console.error("Error fetching product:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch product" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch product" }, { status: 500 });
   }
 }
 
@@ -46,7 +43,7 @@ export async function PATCH(
     const { product, category, specification, grade, material, additionalSpec, ends, length, dimensionalStandardId } = body;
 
     const updated = await prisma.productSpecMaster.update({
-      where: { id, ...companyFilter(companyId) },
+      where: { id },
       data: {
         product,
         category: category !== undefined ? (category || null) : undefined,
@@ -72,10 +69,7 @@ export async function PATCH(
     return NextResponse.json(updated);
   } catch (error) {
     console.error("Error updating product:", error);
-    return NextResponse.json(
-      { error: "Failed to update product" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to update product" }, { status: 500 });
   }
 }
 
@@ -89,7 +83,7 @@ export async function DELETE(
     if (!authorized) return response!;
 
     const product = await prisma.productSpecMaster.findUnique({
-      where: { id, ...companyFilter(companyId) },
+      where: { id },
       select: { product: true, material: true },
     });
 
@@ -97,7 +91,6 @@ export async function DELETE(
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
-    // Proactive linked-record check
     const [quotationItemCount, soItemCount, poItemCount] = await Promise.all([
       prisma.quotationItem.count({ where: { product: product.product } }),
       prisma.salesOrderItem.count({ where: { product: product.product } }),
@@ -111,9 +104,7 @@ export async function DELETE(
       );
     }
 
-    await prisma.productSpecMaster.delete({
-      where: { id, ...companyFilter(companyId) },
-    });
+    await prisma.productSpecMaster.delete({ where: { id } });
 
     createAuditLog({
       userId: session.user.id,
@@ -133,9 +124,6 @@ export async function DELETE(
       );
     }
     console.error("Error deleting product:", error);
-    return NextResponse.json(
-      { error: "Failed to delete product" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to delete product" }, { status: 500 });
   }
 }

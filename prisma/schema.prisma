@@ -426,6 +426,7 @@ model CustomerMaster {
   paymentTerms          String?
   currency              String      @default("INR")
   isActive              Boolean     @default(true)
+  customerType          String      @default("DOMESTIC")
   companyType           CompanyType @default(BUYER)
   gstType               GSTType?
   contactPersonEmail    String?
@@ -551,6 +552,20 @@ model ProductSpecMaster {
 
   @@index([category])
   @@index([dimensionalStandardId])
+}
+
+// Additional Specification sub-master — linked to product names
+// e.g., all materials of "C.S. SEAMLESS PIPE" share the same set of additional specs
+model AdditionalSpecOption {
+  id        String   @id @default(cuid())
+  product   String   // Product name this spec applies to (e.g., "C.S. SEAMLESS PIPE")
+  specName  String   // The additional specification value (e.g., "NACE MR0175")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([product, specName])
+  @@index([product])
 }
 
 model SizeMaster {
@@ -970,6 +985,7 @@ model CompanyMaster {
   email           String?
   website         String?
   companyLogoUrl  String?
+  isoLogoUrl      String?
   fyStartMonth    Int       @default(4)
   fyStartDate     DateTime?
   fyEndDate       DateTime?

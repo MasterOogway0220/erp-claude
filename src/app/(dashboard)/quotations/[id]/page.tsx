@@ -835,9 +835,11 @@ export default function QuotationDetailPage() {
                   <TableHead>OD</TableHead>
                   <TableHead>WT</TableHead>
                   <TableHead>Ends</TableHead>
-                  <TableHead className="text-right">Qty (Mtr)</TableHead>
+                  <TableHead className="text-right">Qty</TableHead>
+                  <TableHead>Unit</TableHead>
                   <TableHead className="text-right">Rate</TableHead>
                   <TableHead className="text-right">Amount</TableHead>
+                  <TableHead>Delivery</TableHead>
                   <TableHead className="text-right">Weight (MT)</TableHead>
                 </TableRow>
               </TableHeader>
@@ -870,12 +872,14 @@ export default function QuotationDetailPage() {
                     <TableCell className="text-right">
                       {parseFloat(item.quantity).toFixed(3)}
                     </TableCell>
+                    <TableCell>{item.uom || "Mtr"}</TableCell>
                     <TableCell className="text-right">
                       {parseFloat(item.unitRate).toFixed(2)}
                     </TableCell>
                     <TableCell className="text-right font-semibold">
                       {parseFloat(item.amount).toFixed(2)}
                     </TableCell>
+                    <TableCell>{item.delivery || "---"}</TableCell>
                     <TableCell className="text-right">
                       {item.totalWeightMT
                         ? parseFloat(item.totalWeightMT).toFixed(4)
@@ -885,12 +889,13 @@ export default function QuotationDetailPage() {
                 ))}
                 <TableRow className="font-bold">
                   <TableCell />
-                  <TableCell colSpan={9} className="text-right">
+                  <TableCell colSpan={10} className="text-right">
                     Total:
                   </TableCell>
                   <TableCell className="text-right">
                     {quotation.currency} {totalAmount.toFixed(2)}
                   </TableCell>
+                  <TableCell />
                   <TableCell className="text-right">
                     {totalWeight.toFixed(4)} MT
                   </TableCell>

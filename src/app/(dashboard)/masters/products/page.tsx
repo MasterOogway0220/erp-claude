@@ -35,11 +35,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Download } from "lucide-react";
 import { toast } from "sonner";
 
 // ─── Top-level tabs ──────────────────────────────────────────────────────────
-type MainTab = "pipes" | "sizes" | "lengths" | "fittings" | "flanges" | "units" | "material-codes";
+type MainTab = "pipes" | "sizes" | "lengths" | "fittings" | "flanges" | "units" | "material-codes" | "additional-specs";
 
 export default function ProductMasterPage() {
   const [activeTab, setActiveTab] = useState<MainTab>("pipes");
@@ -52,6 +52,7 @@ export default function ProductMasterPage() {
     flanges: "Flange Master",
     units: "Unit Master (UOM)",
     "material-codes": "Material Code Master",
+    "additional-specs": "Additional Specifications",
   };
 
   return (
@@ -69,6 +70,7 @@ export default function ProductMasterPage() {
           <TabsTrigger value="fittings">Fittings</TabsTrigger>
           <TabsTrigger value="flanges">Flanges</TabsTrigger>
           <TabsTrigger value="units">Units (UOM)</TabsTrigger>
+          <TabsTrigger value="additional-specs">Additional Specs</TabsTrigger>
           <TabsTrigger value="material-codes">Material Codes</TabsTrigger>
         </TabsList>
 
@@ -89,6 +91,9 @@ export default function ProductMasterPage() {
         </TabsContent>
         <TabsContent value="units" className="mt-4">
           <UnitsPanel />
+        </TabsContent>
+        <TabsContent value="additional-specs" className="mt-4">
+          <AdditionalSpecsPanel />
         </TabsContent>
         <TabsContent value="material-codes" className="mt-4">
           <MaterialCodesPanel />
@@ -297,10 +302,35 @@ function PipesPanel() {
             ))}
           </SelectContent>
         </Select>
-        <Button onClick={() => openDialog()} className="ml-auto">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Product Spec
-        </Button>
+        <div className="ml-auto flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => {
+              const products: ProductSpec[] = data?.products || [];
+              if (!products.length) { toast.error("No products to export"); return; }
+              const headers = ["Category", "Product", "Specification", "Grade", "Material", "Dim. Standard", "Additional Spec"];
+              const rows = products.map((p) => [
+                p.category || "", p.product, p.specification || "", p.grade || "",
+                p.material || "", p.dimensionalStandard?.name || "", p.additionalSpec || "",
+              ]);
+              const csv = [headers.join(","), ...rows.map((r) => r.map((c) => `"${c.replace(/"/g, '""')}"`).join(","))].join("\n");
+              const blob = new Blob([csv], { type: "text/csv" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = "pipe-product-spec-chart.csv";
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Download CSV
+          </Button>
+          <Button onClick={() => openDialog()}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Product Spec
+          </Button>
+        </div>
       </div>
 
       <div className="rounded-lg border bg-card">
@@ -314,16 +344,14 @@ function PipesPanel() {
               <TableHead>Material</TableHead>
               <TableHead>Dim. Standard</TableHead>
               <TableHead>Additional Spec</TableHead>
-              <TableHead>Ends</TableHead>
-              <TableHead>Length</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">Loading products...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Loading products...</TableCell></TableRow>
             ) : data?.products?.length === 0 ? (
-              <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">No products found</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No products found</TableCell></TableRow>
             ) : (
               data?.products?.map((p: ProductSpec) => (
                 <TableRow key={p.id}>
@@ -336,8 +364,6 @@ function PipesPanel() {
                   <TableCell className="max-w-[150px] truncate">{p.material || "—"}</TableCell>
                   <TableCell>{p.dimensionalStandard?.name || "—"}</TableCell>
                   <TableCell className="max-w-[120px] truncate">{p.additionalSpec || "—"}</TableCell>
-                  <TableCell>{p.ends || "—"}</TableCell>
-                  <TableCell>{p.length || "—"}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Button variant="ghost" size="icon" onClick={() => openDialog(p)}><Pencil className="h-4 w-4" /></Button>
@@ -416,33 +442,6 @@ function PipesPanel() {
                 <Label>Additional Specification</Label>
                 <Input value={formData.additionalSpec} onChange={(e) => setFormData({ ...formData, additionalSpec: e.target.value })} placeholder="e.g., NACE MR0175, HIC, IBR" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label>Ends</Label>
-                  <Input value={formData.ends} onChange={(e) => setFormData({ ...formData, ends: e.target.value })} placeholder="BE, PE, NPTM, BSPT" />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Length</Label>
-                  <div className="flex gap-2">
-                    <div className="flex-1">
-                      <SmartCombobox<{ id: string; label: string }>
-                        options={lengths}
-                        value={formData.length || lengthSearch}
-                        onSelect={(len) => { setFormData({ ...formData, length: len.label }); setLengthSearch(""); }}
-                        onChange={(text) => { setFormData({ ...formData, length: text }); setLengthSearch(text); }}
-                        displayFn={(len) => len.label}
-                        filterFn={(len, query) => len.label.toLowerCase().includes(query.toLowerCase())}
-                        placeholder="Search or type length..."
-                      />
-                    </div>
-                    {lengthSearch && !lengths.some((l: any) => l.label.toLowerCase() === lengthSearch.toLowerCase()) && (
-                      <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={() => addLengthMutation.mutate(lengthSearch)} disabled={addLengthMutation.isPending}>
-                        <Plus className="h-3 w-3 mr-1" />Add
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </div>
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={closeDialog}>Cancel</Button>
@@ -504,9 +503,30 @@ function SizesPanel() {
             <TabsTrigger value="CS_AS">CS &amp; AS Pipes</TabsTrigger>
             <TabsTrigger value="SS_DS">SS &amp; DS Pipes</TabsTrigger>
           </TabsList>
-          <Button onClick={() => router.push("/masters/sizes/create")}>
-            <Plus className="h-4 w-4 mr-2" />Add Size
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                const sizes: SizeEntry[] = data?.sizes || [];
+                if (!sizes.length) { toast.error("No sizes to export"); return; }
+                const headers = ["Size Label", "OD (mm)", "WT (mm)", "Weight (kg/m)", "Pipe Type"];
+                const rows = sizes.map((s) => [s.sizeLabel, s.od, s.wt, s.weight, sizeTab]);
+                const csv = [headers.join(","), ...rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))].join("\n");
+                const blob = new Blob([csv], { type: "text/csv" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `size-master-${sizeTab}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+            >
+              <Download className="h-4 w-4 mr-2" />Download CSV
+            </Button>
+            <Button onClick={() => router.push("/masters/sizes/create")}>
+              <Plus className="h-4 w-4 mr-2" />Add Size
+            </Button>
+          </div>
         </div>
 
         <div className="my-4 relative max-w-sm">
@@ -754,7 +774,7 @@ function FittingsPanel() {
 
 // ─── FLANGES ─────────────────────────────────────────────────────────────────
 
-const FLANGE_TABS = ["All", "Weld Neck", "Slip On", "Blind", "Socket Weld", "Others"] as const;
+const FLANGE_TABS = ["All", "Weld Neck", "Slip On", "Socket Weld", "Blind", "Lap Joint", "Threaded"] as const;
 
 interface Flange {
   id: string;
@@ -786,9 +806,7 @@ function FlangesPanel() {
     },
   });
 
-  const flanges: Flange[] = (data?.flanges || []).filter((f: Flange) =>
-    flangeTab === "Others" ? !["Weld Neck", "Slip On", "Blind", "Socket Weld"].includes(f.type) : true
-  );
+  const flanges: Flange[] = data?.flanges || [];
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -807,9 +825,30 @@ function FlangesPanel() {
           <TabsList>
             {FLANGE_TABS.map((t) => <TabsTrigger key={t} value={t}>{t}</TabsTrigger>)}
           </TabsList>
-          <Button onClick={() => router.push("/masters/flanges/create")}>
-            <Plus className="h-4 w-4 mr-2" />Add Flange
-          </Button>
+          <div className="flex gap-2">
+            {flanges.length === 0 && (
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  if (!confirm("Seed all standard flange sizes (6 types x 20 sizes x 7 classes = 840 records)?")) return;
+                  try {
+                    const res = await fetch("/api/masters/flanges/seed", { method: "POST" });
+                    if (!res.ok) { const err = await res.json(); throw new Error(err.error || "Failed"); }
+                    const data = await res.json();
+                    toast.success(data.message);
+                    queryClient.invalidateQueries({ queryKey: ["flanges"] });
+                  } catch (err: any) {
+                    toast.error(err.message || "Failed to seed flanges");
+                  }
+                }}
+              >
+                Seed Standard Flanges
+              </Button>
+            )}
+            <Button onClick={() => router.push("/masters/flanges/create")}>
+              <Plus className="h-4 w-4 mr-2" />Add Flange
+            </Button>
+          </div>
         </div>
 
         <div className="my-4 relative max-w-sm">
@@ -1142,6 +1181,162 @@ function MaterialCodesPanel() {
           </form>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+// ─── ADDITIONAL SPECS ─────────────────────────────────────────────────────────
+
+interface AdditionalSpec {
+  id: string;
+  product: string;
+  specName: string;
+}
+
+function AdditionalSpecsPanel() {
+  const queryClient = useQueryClient();
+  const [productFilter, setProductFilter] = useState("");
+  const [newSpec, setNewSpec] = useState({ product: "", specName: "" });
+  const [adding, setAdding] = useState(false);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["additional-specs", productFilter],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (productFilter) params.set("product", productFilter);
+      const res = await fetch(`/api/masters/additional-specs?${params}`);
+      if (!res.ok) throw new Error("Failed to fetch");
+      return res.json();
+    },
+  });
+
+  const { data: productsData } = useQuery({
+    queryKey: ["products-list-for-specs"],
+    queryFn: async () => {
+      const res = await fetch("/api/masters/products?limit=500");
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+  });
+
+  const uniqueProducts = Array.from(
+    new Set((productsData?.products || []).map((p: any) => p.product))
+  ).sort() as string[];
+
+  const specs: AdditionalSpec[] = data?.specs || [];
+
+  // Group by product
+  const grouped = specs.reduce((acc: Record<string, AdditionalSpec[]>, s) => {
+    if (!acc[s.product]) acc[s.product] = [];
+    acc[s.product].push(s);
+    return acc;
+  }, {});
+
+  const handleAdd = async () => {
+    if (!newSpec.product || !newSpec.specName.trim()) {
+      toast.error("Product and spec name are required");
+      return;
+    }
+    setAdding(true);
+    try {
+      const res = await fetch("/api/masters/additional-specs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newSpec),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed");
+      }
+      toast.success("Additional spec added");
+      setNewSpec({ product: newSpec.product, specName: "" });
+      queryClient.invalidateQueries({ queryKey: ["additional-specs"] });
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-4 flex-wrap">
+        <Select value={productFilter || "ALL"} onValueChange={(v) => setProductFilter(v === "ALL" ? "" : v)}>
+          <SelectTrigger className="w-[250px]">
+            <SelectValue placeholder="Filter by product" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">All Products</SelectItem>
+            {uniqueProducts.map((p) => (
+              <SelectItem key={p} value={p}>{p}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {specs.length === 0 && !productFilter && (
+          <Button
+            variant="outline"
+            onClick={async () => {
+              if (!confirm("Seed standard additional specs from Excel data?")) return;
+              try {
+                const res = await fetch("/api/masters/additional-specs/seed", { method: "POST" });
+                if (!res.ok) { const err = await res.json(); throw new Error(err.error || "Failed"); }
+                const d = await res.json();
+                toast.success(d.message);
+                queryClient.invalidateQueries({ queryKey: ["additional-specs"] });
+              } catch (err: any) {
+                toast.error(err.message);
+              }
+            }}
+          >
+            Seed from Excel
+          </Button>
+        )}
+      </div>
+
+      {/* Add new spec */}
+      <div className="flex gap-3 items-end border rounded-lg p-3 bg-muted/30">
+        <div className="grid gap-1 flex-1">
+          <Label className="text-xs">Product</Label>
+          <Select value={newSpec.product || "NONE"} onValueChange={(v) => setNewSpec({ ...newSpec, product: v === "NONE" ? "" : v })}>
+            <SelectTrigger><SelectValue placeholder="Select product" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="NONE">Select product</SelectItem>
+              {uniqueProducts.map((p) => (
+                <SelectItem key={p} value={p}>{p}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid gap-1 flex-1">
+          <Label className="text-xs">Additional Spec Name</Label>
+          <Input value={newSpec.specName} onChange={(e) => setNewSpec({ ...newSpec, specName: e.target.value })} placeholder="e.g., NACE MR0175" />
+        </div>
+        <Button onClick={handleAdd} disabled={adding}>
+          <Plus className="h-4 w-4 mr-1" />{adding ? "Adding..." : "Add"}
+        </Button>
+      </div>
+
+      {/* Grouped display */}
+      {isLoading ? (
+        <div className="text-center py-8 text-muted-foreground">Loading...</div>
+      ) : Object.keys(grouped).length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground">No additional specs found. Seed from Excel or add manually.</div>
+      ) : (
+        <div className="space-y-4">
+          {Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b)).map(([product, specsList]) => (
+            <div key={product} className="rounded-lg border p-4">
+              <h3 className="font-semibold text-sm mb-2">{product} <span className="text-muted-foreground font-normal">({specsList.length} specs)</span></h3>
+              <div className="flex flex-wrap gap-2">
+                {specsList.map((s) => (
+                  <Badge key={s.id} variant="secondary" className="text-xs">
+                    {s.specName}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

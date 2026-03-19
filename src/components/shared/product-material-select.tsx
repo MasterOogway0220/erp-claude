@@ -13,6 +13,12 @@ interface ProductSpec {
   length: string | null;
 }
 
+interface AdditionalSpecOption {
+  id: string;
+  product: string;
+  specName: string;
+}
+
 interface ProductMaterialSelectProps {
   product: string;
   material: string;
@@ -22,8 +28,6 @@ interface ProductMaterialSelectProps {
   onAdditionalSpecChange?: (value: string) => void;
   onAutoFill?: (fields: {
     additionalSpec?: string;
-    ends?: string;
-    length?: string;
   }) => void;
   productLabel?: string;
   materialLabel?: string;
@@ -34,7 +38,6 @@ interface ProductMaterialSelectProps {
 }
 
 // Products that share the same material/spec pool.
-// When any product in a group is selected, materials from ALL products in that group are shown.
 const PRODUCT_GROUPS: string[][] = [
   ["A.S. EFSW PIPE", "A.S. LSAW PIPE"],
   ["C.S. EFSW PIPE", "C.S. LSAW PIPE"],
@@ -52,29 +55,30 @@ function getProductGroup(product: string): string[] {
   return [product];
 }
 
-// Module-level cache so all instances share one fetch
+// Module-level caches
 let cachedProducts: ProductSpec[] | null = null;
 let fetchPromise: Promise<ProductSpec[]> | null = null;
+let cachedAdditionalSpecs: AdditionalSpecOption[] | null = null;
+let fetchAdditionalSpecsPromise: Promise<AdditionalSpecOption[]> | null = null;
 
 function fetchProducts(): Promise<ProductSpec[]> {
   if (cachedProducts) return Promise.resolve(cachedProducts);
   if (fetchPromise) return fetchPromise;
-
   fetchPromise = fetch("/api/masters/products?limit=500")
-    .then((res) => {
-      if (!res.ok) throw new Error("Failed to fetch products");
-      return res.json();
-    })
-    .then((data) => {
-      cachedProducts = data.products || [];
-      return cachedProducts!;
-    })
-    .catch(() => {
-      fetchPromise = null;
-      return [] as ProductSpec[];
-    });
-
+    .then((res) => { if (!res.ok) throw new Error("Failed"); return res.json(); })
+    .then((data) => { cachedProducts = data.products || []; return cachedProducts!; })
+    .catch(() => { fetchPromise = null; return [] as ProductSpec[]; });
   return fetchPromise;
+}
+
+function fetchAdditionalSpecs(): Promise<AdditionalSpecOption[]> {
+  if (cachedAdditionalSpecs) return Promise.resolve(cachedAdditionalSpecs);
+  if (fetchAdditionalSpecsPromise) return fetchAdditionalSpecsPromise;
+  fetchAdditionalSpecsPromise = fetch("/api/masters/additional-specs")
+    .then((res) => { if (!res.ok) throw new Error("Failed"); return res.json(); })
+    .then((data) => { cachedAdditionalSpecs = data.specs || []; return cachedAdditionalSpecs!; })
+    .catch(() => { fetchAdditionalSpecsPromise = null; return [] as AdditionalSpecOption[]; });
+  return fetchAdditionalSpecsPromise;
 }
 
 export function ProductMaterialSelect({
@@ -92,55 +96,46 @@ export function ProductMaterialSelect({
   className,
   disabled,
 }: ProductMaterialSelectProps) {
-  const [allProducts, setAllProducts] = useState<ProductSpec[]>(
-    cachedProducts || []
-  );
+  const [allProducts, setAllProducts] = useState<ProductSpec[]>(cachedProducts || []);
+  const [allAdditionalSpecs, setAllAdditionalSpecs] = useState<AdditionalSpecOption[]>(cachedAdditionalSpecs || []);
 
   useEffect(() => {
     fetchProducts().then(setAllProducts);
+    fetchAdditionalSpecs().then(setAllAdditionalSpecs);
   }, []);
 
-  // Unique product names for the product dropdown
-  const uniqueProducts = Array.from(
-    new Set(allProducts.map((p) => p.product))
-  ).sort();
+  const uniqueProducts = Array.from(new Set(allProducts.map((p) => p.product))).sort();
 
-  // Records matching the selected product OR any product in its group (case-insensitive)
   const productGroup = product ? getProductGroup(product) : [];
   const productMatches = product
     ? allProducts.filter((p) =>
-        productGroup.some(
-          (g) => g.toLowerCase() === p.product.toLowerCase()
-        )
+        productGroup.some((g) => g.toLowerCase() === p.product.toLowerCase())
       )
     : [];
 
-  // Materials: only show when a valid product is selected
   const matchingMaterials = Array.from(
-    new Set(
-      productMatches.map((p) => p.material).filter(Boolean) as string[]
-    )
+    new Set(productMatches.map((p) => p.material).filter(Boolean) as string[])
   ).sort();
 
-  // Additional specs: show when product is selected.
-  // If material is also selected, filter by product+material.
-  // If no material is selected (or product has no material records), show all specs for the product.
+  // Additional specs from the sub-master — matched by product name
   const matchingAdditionalSpecs = (() => {
     if (!product) return [];
+    // Check sub-master first
+    const fromSubMaster = allAdditionalSpecs
+      .filter((s) => productGroup.some((g) => g.toLowerCase() === s.product.toLowerCase()))
+      .map((s) => s.specName);
+    if (fromSubMaster.length > 0) {
+      return Array.from(new Set(fromSubMaster)).sort();
+    }
+    // Fallback: derive from product spec records (legacy)
     const filtered = material
-      ? productMatches.filter(
-          (p) => p.material?.toLowerCase() === material.toLowerCase()
-        )
+      ? productMatches.filter((p) => p.material?.toLowerCase() === material.toLowerCase())
       : productMatches;
     return Array.from(
-      new Set(
-        filtered.map((p) => p.additionalSpec).filter(Boolean) as string[]
-      )
+      new Set(filtered.map((p) => p.additionalSpec).filter(Boolean) as string[])
     ).sort();
   })();
 
-  // When product+material match records, auto-fill specs.
-  // Only auto-fill additionalSpec when there's exactly one unique value (no ambiguity).
   const tryAutoFill = (prod: string, mat: string) => {
     if (!onAutoFill || !prod) return;
     const group = getProductGroup(prod);
@@ -153,11 +148,8 @@ export function ProductMaterialSelect({
     const uniqueSpecs = Array.from(
       new Set(matches.map((p) => p.additionalSpec).filter(Boolean))
     );
-    const firstMatch = matches[0];
     onAutoFill({
       additionalSpec: uniqueSpecs.length === 1 ? (uniqueSpecs[0] as string) : undefined,
-      ends: firstMatch.ends || undefined,
-      length: firstMatch.length || undefined,
     });
   };
 
@@ -173,24 +165,19 @@ export function ProductMaterialSelect({
             value={product}
             onSelect={(name) => {
               onProductChange(name);
-              // Reset dependent fields when product changes
               onMaterialChange("");
               if (onAdditionalSpecChange) onAdditionalSpecChange("");
-              // Try auto-fill for products that have no material requirement
               tryAutoFill(name, "");
             }}
             onChange={(text) => {
               onProductChange(text);
-              // Reset dependent fields when product is being retyped
               if (text !== product) {
                 onMaterialChange("");
                 if (onAdditionalSpecChange) onAdditionalSpecChange("");
               }
             }}
             displayFn={(name) => name}
-            filterFn={(name, query) =>
-              name.toLowerCase().includes(query.toLowerCase())
-            }
+            filterFn={(name, query) => name.toLowerCase().includes(query.toLowerCase())}
             placeholder="e.g., C.S. SEAMLESS PIPE"
             disabled={disabled}
           />
@@ -203,21 +190,17 @@ export function ProductMaterialSelect({
             value={material}
             onSelect={(name) => {
               onMaterialChange(name);
-              // Reset additionalSpec when material changes
               if (onAdditionalSpecChange) onAdditionalSpecChange("");
               tryAutoFill(product, name);
             }}
             onChange={(text) => {
               onMaterialChange(text);
-              // Reset additionalSpec when material is being retyped
               if (text !== material && onAdditionalSpecChange) {
                 onAdditionalSpecChange("");
               }
             }}
             displayFn={(name) => name}
-            filterFn={(name, query) =>
-              name.toLowerCase().includes(query.toLowerCase())
-            }
+            filterFn={(name, query) => name.toLowerCase().includes(query.toLowerCase())}
             placeholder="e.g., ASTM A106 GR. B"
             disabled={disabled}
           />
@@ -229,32 +212,10 @@ export function ProductMaterialSelect({
             <SmartCombobox
               options={matchingAdditionalSpecs}
               value={additionalSpec}
-              onSelect={(name) => {
-                onAdditionalSpecChange(name);
-                // When additional spec is selected, try to auto-fill ends/length
-                if (onAutoFill && product) {
-                  const group = getProductGroup(product);
-                  const match = allProducts.find(
-                    (p) =>
-                      group.some((g) => g.toLowerCase() === p.product.toLowerCase()) &&
-                      (!material || p.material?.toLowerCase() === material.toLowerCase()) &&
-                      p.additionalSpec?.toLowerCase() === name.toLowerCase()
-                  );
-                  if (match) {
-                    onAutoFill({
-                      ends: match.ends || undefined,
-                      length: match.length || undefined,
-                    });
-                  }
-                }
-              }}
-              onChange={(text) => {
-                onAdditionalSpecChange(text);
-              }}
+              onSelect={(name) => onAdditionalSpecChange(name)}
+              onChange={(text) => onAdditionalSpecChange(text)}
               displayFn={(name) => name}
-              filterFn={(name, query) =>
-                name.toLowerCase().includes(query.toLowerCase())
-              }
+              filterFn={(name, query) => name.toLowerCase().includes(query.toLowerCase())}
               placeholder="e.g., NACE MR0175"
               disabled={disabled}
             />

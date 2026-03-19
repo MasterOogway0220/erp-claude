@@ -72,38 +72,64 @@ export async function GET(request: NextRequest) {
     country: "India",
   };
 
-  // Try the GST portal public search API
-  try {
-    const res = await fetch(
-      `https://api.gst.gov.in/commonapi/v1.1/search?gstin=${gstin}`,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          ...(process.env.GST_API_TOKEN
-            ? { Authorization: `Bearer ${process.env.GST_API_TOKEN}` }
-            : {}),
-        },
-        signal: AbortSignal.timeout(5000),
-      }
-    );
-
-    if (res.ok) {
+  // Try multiple free GST lookup sources
+  const apis = [
+    // Source 1: GST Verification public endpoint
+    async () => {
+      const res = await fetch(
+        `https://commonapi.mastersindia.co/commonapis/searchgstin?gstin=${gstin}`,
+        { signal: AbortSignal.timeout(8000) }
+      );
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (!data?.data?.lgnm && !data?.data?.tradeNam) return null;
+      const tp = data.data;
+      const addr = tp.pradr?.addr || tp.pradr || {};
+      return {
+        companyName: tp.tradeNam || tp.lgnm || "",
+        regAddressLine1: typeof addr === "string" ? addr : (addr.bno ? `${addr.bno}, ${addr.flno || ""} ${addr.bnm || ""} ${addr.st || ""}`.trim() : (tp.pradr?.adr || "")),
+        regCity: addr.dst || addr.city || "",
+        regState: tp.pradr?.stcd ? (GSTIN_STATE_CODES[tp.pradr.stcd] ?? parsed.state) : parsed.state,
+        regPincode: addr.pncd || "",
+      };
+    },
+    // Source 2: GST portal public API
+    async () => {
+      const res = await fetch(
+        `https://api.gst.gov.in/commonapi/v1.1/search?gstin=${gstin}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            ...(process.env.GST_API_TOKEN ? { Authorization: `Bearer ${process.env.GST_API_TOKEN}` } : {}),
+          },
+          signal: AbortSignal.timeout(5000),
+        }
+      );
+      if (!res.ok) return null;
       const data = await res.json();
       const tp = data?.taxpayerInfo ?? data;
+      if (!tp?.lgnm && !tp?.tradeNam) return null;
+      return {
+        companyName: tp.lgnm ?? tp.tradeNam ?? "",
+        regAddressLine1: tp.pradr?.adr ?? "",
+        regCity: tp.pradr?.dst ?? "",
+        regState: tp.pradr?.stcd ? (GSTIN_STATE_CODES[tp.pradr.stcd] ?? parsed.state) : parsed.state,
+        regPincode: tp.pradr?.pncd ?? "",
+      };
+    },
+  ];
 
-      return NextResponse.json({
-        ...parsed,
-        companyName: tp?.lgnm ?? tp?.tradeNam ?? "",
-        regAddressLine1: tp?.pradr?.adr ?? "",
-        regCity: tp?.pradr?.dst ?? "",
-        regState: tp?.pradr?.stcd ? (GSTIN_STATE_CODES[tp.pradr.stcd] ?? parsed.state) : parsed.state,
-        regPincode: tp?.pradr?.pncd ?? "",
-        fromApi: true,
-      });
+  for (const apiFn of apis) {
+    try {
+      const result = await apiFn();
+      if (result?.companyName) {
+        return NextResponse.json({ ...parsed, ...result, fromApi: true });
+      }
+    } catch {
+      // Try next source
     }
-  } catch {
-    // API unavailable — return parsed data only
   }
 
+  // All APIs failed — return parsed data from GSTIN string
   return NextResponse.json({ ...parsed, fromApi: false });
 }
