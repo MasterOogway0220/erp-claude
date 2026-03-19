@@ -135,14 +135,12 @@ interface ProductFormData {
   grade: string;
   material: string;
   additionalSpec: string;
-  ends: string;
-  length: string;
   dimensionalStandardId: string;
 }
 
 const emptyProductForm: ProductFormData = {
   product: "", category: "", specification: "", grade: "",
-  material: "", additionalSpec: "", ends: "", length: "", dimensionalStandardId: "",
+  material: "", additionalSpec: "", dimensionalStandardId: "",
 };
 
 function PipesPanel() {
@@ -154,7 +152,6 @@ function PipesPanel() {
   const [editingProduct, setEditingProduct] = useState<ProductSpec | null>(null);
   const [formData, setFormData] = useState<ProductFormData>(emptyProductForm);
   const [dimStdSearch, setDimStdSearch] = useState("");
-  const [lengthSearch, setLengthSearch] = useState("");
 
   const { data, isLoading } = useQuery({
     queryKey: ["products", search, categoryFilter, page],
@@ -176,17 +173,7 @@ function PipesPanel() {
     },
   });
 
-  const { data: lengthsData } = useQuery({
-    queryKey: ["lengths"],
-    queryFn: async () => {
-      const res = await fetch("/api/masters/lengths");
-      if (!res.ok) throw new Error("Failed to fetch lengths");
-      return res.json();
-    },
-  });
-
   const dimensionalStandards = dimStdData?.dimensionalStandards || [];
-  const lengths = lengthsData?.lengths || [];
 
   const createMutation = useMutation({
     mutationFn: async (data: ProductFormData) => {
@@ -224,24 +211,6 @@ function PipesPanel() {
     onError: (err: Error) => toast.error(err.message),
   });
 
-  const addLengthMutation = useMutation({
-    mutationFn: async (label: string) => {
-      const res = await fetch("/api/masters/lengths", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ label }),
-      });
-      if (!res.ok) { const err = await res.json(); throw new Error(err.error || "Failed to add length"); }
-      return res.json();
-    },
-    onSuccess: (newLength) => {
-      queryClient.invalidateQueries({ queryKey: ["lengths"] });
-      setFormData((prev) => ({ ...prev, length: newLength.label }));
-      setLengthSearch("");
-      toast.success("Length added");
-    },
-    onError: (err: Error) => toast.error(err.message),
-  });
-
   const openDialog = (product?: ProductSpec) => {
     if (product) {
       setEditingProduct(product);
@@ -249,7 +218,6 @@ function PipesPanel() {
         product: product.product, category: product.category || "",
         specification: product.specification || "", grade: product.grade || "",
         material: product.material || "", additionalSpec: product.additionalSpec || "",
-        ends: product.ends || "", length: product.length || "",
         dimensionalStandardId: product.dimensionalStandardId || "",
       });
       setDimStdSearch(product.dimensionalStandard?.name || "");
@@ -258,7 +226,6 @@ function PipesPanel() {
       setFormData(emptyProductForm);
       setDimStdSearch("");
     }
-    setLengthSearch("");
     setIsDialogOpen(true);
   };
 
@@ -267,7 +234,6 @@ function PipesPanel() {
     setEditingProduct(null);
     setFormData(emptyProductForm);
     setDimStdSearch("");
-    setLengthSearch("");
   };
 
   const handleSubmit = (e: React.FormEvent) => {
