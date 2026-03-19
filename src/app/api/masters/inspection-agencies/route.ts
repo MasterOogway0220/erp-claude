@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
-    const { authorized, response } = await checkAccess("masters", "read");
+    const { authorized, response, companyId } = await checkAccess("masters", "read");
     if (!authorized) return response!;
 
     const agencies = await prisma.inspectionAgencyMaster.findMany({
+      where: { ...companyFilter(companyId) },
       orderBy: { name: "asc" },
     });
 
@@ -24,7 +25,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { authorized, session, response } = await checkAccess("masters", "write");
+    const { authorized, session, response, companyId } = await checkAccess("masters", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -47,6 +48,7 @@ export async function POST(request: NextRequest) {
         accreditationDetails: body.accreditationDetails || null,
         approvedStatus: body.approvedStatus ?? true,
         isActive: body.isActive ?? true,
+        companyId,
       },
     });
 
@@ -55,6 +57,7 @@ export async function POST(request: NextRequest) {
       recordId: agency.id,
       action: "CREATE",
       userId: session.user?.id,
+      companyId,
     });
 
     return NextResponse.json(agency, { status: 201 });

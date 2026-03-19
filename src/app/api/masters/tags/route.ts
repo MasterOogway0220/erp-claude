@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
-    const { authorized, response } = await checkAccess("masters", "read");
+    const { authorized, response, companyId } = await checkAccess("masters", "read");
     if (!authorized) return response!;
 
     const tags = await prisma.tag.findMany({
+      where: { ...companyFilter(companyId) },
       orderBy: { name: "asc" },
       include: {
         _count: { select: { customers: true } },
@@ -27,7 +28,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { authorized, session, response } = await checkAccess("masters", "write");
+    const { authorized, session, response, companyId } = await checkAccess("masters", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -40,7 +41,7 @@ export async function POST(request: NextRequest) {
     }
 
     const tag = await prisma.tag.create({
-      data: { name: body.name },
+      data: { name: body.name, companyId },
     });
 
     await createAuditLog({
@@ -48,6 +49,7 @@ export async function POST(request: NextRequest) {
       recordId: tag.id,
       action: "CREATE",
       userId: session.user?.id,
+      companyId,
     });
 
     return NextResponse.json(tag, { status: 201 });

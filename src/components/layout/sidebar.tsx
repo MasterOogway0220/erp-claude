@@ -317,21 +317,11 @@ export function Sidebar() {
     <div className="flex h-14 shrink-0 items-center justify-between border-b border-border/40 px-4">
       {!isCollapsed ? (
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground text-[10px] font-bold tracking-tight">
-            NPS
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[13px] font-semibold leading-none tracking-[-0.01em] text-foreground">
-              Piping Solutions
-            </span>
-            <span className="text-[10px] text-muted-foreground/60 leading-tight mt-1">
-              ERP System
-            </span>
-          </div>
+          <img src="/n-pipe-logo.jpg.jpeg" alt="N-Pipe Solutions" className="h-8" />
         </div>
       ) : (
-        <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground text-[10px] font-bold tracking-tight">
-          NPS
+        <div className="mx-auto flex h-8 w-8 items-center justify-center">
+          <img src="/n-pipe-logo.jpg.jpeg" alt="NPS" className="h-8 w-8 object-contain" />
         </div>
       )}
       {/* Desktop: collapse toggle */}

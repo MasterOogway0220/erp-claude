@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 
@@ -8,12 +8,12 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { authorized, response } = await checkAccess("masters", "read");
+    const { authorized, response, companyId } = await checkAccess("masters", "read");
     if (!authorized) return response!;
 
     const { id } = await params;
     const flange = await prisma.flangeMaster.findUnique({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
     });
 
     if (!flange) {
@@ -35,7 +35,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { authorized, session, response } = await checkAccess("masters", "write");
+    const { authorized, session, response, companyId } = await checkAccess("masters", "write");
     if (!authorized) return response!;
 
     const { id } = await params;
@@ -46,7 +46,7 @@ export async function PATCH(
     ].filter(Boolean).join(" ");
 
     const flange = await prisma.flangeMaster.update({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
       data: {
         type: body.type ?? undefined,
         size: body.size ?? undefined,
@@ -64,6 +64,7 @@ export async function PATCH(
       recordId: id,
       action: "UPDATE",
       userId: session.user?.id,
+      companyId,
     });
 
     return NextResponse.json(flange);
@@ -81,13 +82,13 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { authorized, session, response } = await checkAccess("masters", "delete");
+    const { authorized, session, response, companyId } = await checkAccess("masters", "delete");
     if (!authorized) return response!;
 
     const { id } = await params;
 
     const flange = await prisma.flangeMaster.findUnique({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
       select: {
         type: true,
         size: true,
@@ -115,13 +116,14 @@ export async function DELETE(
       );
     }
 
-    await prisma.flangeMaster.delete({ where: { id } });
+    await prisma.flangeMaster.delete({ where: { id, ...companyFilter(companyId) } });
 
     await createAuditLog({
       tableName: "FlangeMaster",
       recordId: id,
       action: "DELETE",
       userId: session.user?.id,
+      companyId,
     });
 
     return NextResponse.json({ message: "Flange deleted successfully" });

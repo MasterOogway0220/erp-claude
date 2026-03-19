@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 
 export async function GET(
@@ -9,11 +9,11 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { authorized, response } = await checkAccess("masters", "read");
+    const { authorized, response, companyId } = await checkAccess("masters", "read");
     if (!authorized) return response!;
 
     const standard = await prisma.dimensionalStandardMaster.findUnique({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
       include: {
         products: { select: { id: true, product: true } },
       },
@@ -39,13 +39,13 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const { authorized, session, response } = await checkAccess("masters", "write");
+    const { authorized, session, response, companyId } = await checkAccess("masters", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
 
     const updated = await prisma.dimensionalStandardMaster.update({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
       data: {
         name: body.name ?? undefined,
         code: body.code ?? undefined,
@@ -57,6 +57,7 @@ export async function PATCH(
       action: "UPDATE",
       tableName: "DimensionalStandardMaster",
       recordId: id,
+      companyId,
     }).catch(console.error);
 
     return NextResponse.json(updated);
@@ -81,11 +82,11 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const { authorized, session, response } = await checkAccess("masters", "delete");
+    const { authorized, session, response, companyId } = await checkAccess("masters", "delete");
     if (!authorized) return response!;
 
     const standard = await prisma.dimensionalStandardMaster.findUnique({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
       select: {
         name: true,
         _count: { select: { products: true } },
@@ -105,13 +106,14 @@ export async function DELETE(
       );
     }
 
-    await prisma.dimensionalStandardMaster.delete({ where: { id } });
+    await prisma.dimensionalStandardMaster.delete({ where: { id, ...companyFilter(companyId) } });
 
     createAuditLog({
       userId: session.user.id,
       action: "DELETE",
       tableName: "DimensionalStandardMaster",
       recordId: id,
+      companyId,
     }).catch(console.error);
 
     return NextResponse.json({ message: "Dimensional standard deleted successfully" });

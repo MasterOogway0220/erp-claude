@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 
 export async function GET(
@@ -9,11 +9,11 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { authorized, response } = await checkAccess("masters", "read");
+    const { authorized, response, companyId } = await checkAccess("masters", "read");
     if (!authorized) return response!;
 
     const length = await prisma.lengthMaster.findUnique({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
     });
 
     if (!length) {
@@ -36,13 +36,13 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const { authorized, session, response } = await checkAccess("masters", "write");
+    const { authorized, session, response, companyId } = await checkAccess("masters", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
 
     const updated = await prisma.lengthMaster.update({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
       data: {
         label: body.label ?? undefined,
       },
@@ -53,6 +53,7 @@ export async function PATCH(
       action: "UPDATE",
       tableName: "LengthMaster",
       recordId: id,
+      companyId,
     }).catch(console.error);
 
     return NextResponse.json(updated);
@@ -77,24 +78,25 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const { authorized, session, response } = await checkAccess("masters", "delete");
+    const { authorized, session, response, companyId } = await checkAccess("masters", "delete");
     if (!authorized) return response!;
 
     const length = await prisma.lengthMaster.findUnique({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
     });
 
     if (!length) {
       return NextResponse.json({ error: "Length not found" }, { status: 404 });
     }
 
-    await prisma.lengthMaster.delete({ where: { id } });
+    await prisma.lengthMaster.delete({ where: { id, ...companyFilter(companyId) } });
 
     createAuditLog({
       userId: session.user.id,
       action: "DELETE",
       tableName: "LengthMaster",
       recordId: id,
+      companyId,
     }).catch(console.error);
 
     return NextResponse.json({ message: "Length deleted successfully" });

@@ -536,6 +536,7 @@ model VendorMaster {
 
 model ProductSpecMaster {
   id                    String           @id @default(cuid())
+  companyId             String?
   product               String
   category              ProductCategory?
   specification         String?
@@ -558,6 +559,7 @@ model ProductSpecMaster {
 // e.g., all materials of "C.S. SEAMLESS PIPE" share the same set of additional specs
 model AdditionalSpecOption {
   id        String   @id @default(cuid())
+  companyId             String?
   product   String   // Product name this spec applies to (e.g., "C.S. SEAMLESS PIPE")
   specName  String   // The additional specification value (e.g., "NACE MR0175")
   isActive  Boolean  @default(true)
@@ -570,6 +572,7 @@ model AdditionalSpecOption {
 
 model SizeMaster {
   id        String   @id @default(cuid())
+  companyId             String?
   sizeLabel String
   od        Decimal  @db.Decimal(10, 3)
   wt        Decimal  @db.Decimal(10, 3)
@@ -592,6 +595,7 @@ model SizeMaster {
 
 model TestingMaster {
   id            String   @id @default(cuid())
+  companyId             String?
   testName      String
   applicableFor String?
   isMandatory   Boolean  @default(false)
@@ -601,6 +605,7 @@ model TestingMaster {
 
 model LengthMaster {
   id        String   @id @default(cuid())
+  companyId             String?
   label     String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -642,6 +647,7 @@ model UomMaster {
 
 model PaymentTermsMaster {
   id          String   @id @default(cuid())
+  companyId             String?
   code        String?
   name        String
   description String?
@@ -657,6 +663,7 @@ model PaymentTermsMaster {
 
 model DeliveryTermsMaster {
   id          String   @id @default(cuid())
+  companyId             String?
   code        String?
   name        String
   description String?
@@ -671,6 +678,7 @@ model DeliveryTermsMaster {
 
 model InspectionAgencyMaster {
   id                   String   @id @default(cuid())
+  companyId             String?
   name                 String
   code                 String   @unique
   contactPerson        String?
@@ -726,6 +734,7 @@ model CertificationTypeMaster {
 
 model DimensionalStandardMaster {
   id        String   @id @default(cuid())
+  companyId             String?
   name      String
   code      String   @unique
   createdAt DateTime @default(now())
@@ -1069,6 +1078,7 @@ model EmployeeMaster {
 
 model BuyerMaster {
   id          String   @id @default(cuid())
+  companyId             String?
   customerId  String
   buyerName   String
   designation String?
@@ -1119,6 +1129,7 @@ model CustomerDispatchAddress {
 
 model Tag {
   id        String   @id @default(cuid())
+  companyId             String?
   name      String   @unique
   createdAt DateTime @default(now())
 
@@ -1143,6 +1154,7 @@ model CustomerTag {
 
 model MaterialCodeMaster {
   id              String    @id @default(cuid())
+  companyId             String?
   code            String    @unique // Internal Item / Material Code
   clientItemCode  String? // Client's item code (if different)
   description     String?   @db.Text // Product description as per Client PO
@@ -1175,6 +1187,7 @@ model MaterialCodeMaster {
 
 model FittingMaster {
   id            String   @id @default(cuid())
+  companyId             String?
   type          String // Elbow, Tee, Reducer, Cap, Coupling, Union, etc.
   size          String // NPS e.g. 1/2", 2", 4"
   schedule      String? // 40, 80, 160, XXS
@@ -1201,6 +1214,7 @@ model FittingMaster {
 
 model FlangeMaster {
   id            String   @id @default(cuid())
+  companyId             String?
   type          String // Weld Neck, Slip On, Blind, Socket Weld, Lap Joint, Threaded
   size          String // NPS
   rating        String // 150, 300, 600, 900, 1500, 2500

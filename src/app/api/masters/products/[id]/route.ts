@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
-
-// Note: ProductSpecMaster has no companyId field — it's a shared/global master
 
 export async function GET(
   request: NextRequest,
@@ -11,11 +9,11 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { authorized, response } = await checkAccess("masters", "read");
+    const { authorized, response, companyId } = await checkAccess("masters", "read");
     if (!authorized) return response!;
 
     const product = await prisma.productSpecMaster.findUnique({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
       include: { dimensionalStandard: true },
     });
 
@@ -43,7 +41,7 @@ export async function PATCH(
     const { product, category, specification, grade, material, additionalSpec, ends, length, dimensionalStandardId } = body;
 
     const updated = await prisma.productSpecMaster.update({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
       data: {
         product,
         category: category !== undefined ? (category || null) : undefined,
@@ -83,7 +81,7 @@ export async function DELETE(
     if (!authorized) return response!;
 
     const product = await prisma.productSpecMaster.findUnique({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
       select: { product: true, material: true },
     });
 
@@ -104,7 +102,7 @@ export async function DELETE(
       );
     }
 
-    await prisma.productSpecMaster.delete({ where: { id } });
+    await prisma.productSpecMaster.delete({ where: { id, ...companyFilter(companyId) } });
 
     createAuditLog({
       userId: session.user.id,

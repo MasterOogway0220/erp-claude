@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 
 export async function PATCH(
@@ -9,7 +9,7 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const { authorized, session, response } = await checkAccess("masters", "write");
+    const { authorized, session, response, companyId } = await checkAccess("masters", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -18,13 +18,13 @@ export async function PATCH(
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }
 
-    const existing = await prisma.inspectionAgencyMaster.findUnique({ where: { id } });
+    const existing = await prisma.inspectionAgencyMaster.findUnique({ where: { id, ...companyFilter(companyId) } });
     if (!existing) {
       return NextResponse.json({ error: "Inspection agency not found" }, { status: 404 });
     }
 
     const updated = await prisma.inspectionAgencyMaster.update({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
       data: {
         code: body.code ?? undefined,
         name: body.name ?? undefined,
@@ -38,7 +38,7 @@ export async function PATCH(
       },
     });
 
-    createAuditLog({ userId: session.user.id, action: "UPDATE", tableName: "InspectionAgencyMaster", recordId: id, oldValue: existing.name, newValue: updated.name }).catch(console.error);
+    createAuditLog({ userId: session.user.id, action: "UPDATE", tableName: "InspectionAgencyMaster", recordId: id, oldValue: existing.name, newValue: updated.name, companyId }).catch(console.error);
 
     return NextResponse.json(updated);
   } catch (error: any) {
@@ -56,20 +56,20 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const { authorized, session, response } = await checkAccess("masters", "delete");
+    const { authorized, session, response, companyId } = await checkAccess("masters", "delete");
     if (!authorized) return response!;
 
     const existing = await prisma.inspectionAgencyMaster.findUnique({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
       select: { name: true },
     });
     if (!existing) {
       return NextResponse.json({ error: "Inspection agency not found" }, { status: 404 });
     }
 
-    await prisma.inspectionAgencyMaster.delete({ where: { id } });
+    await prisma.inspectionAgencyMaster.delete({ where: { id, ...companyFilter(companyId) } });
 
-    createAuditLog({ userId: session.user.id, action: "DELETE", tableName: "InspectionAgencyMaster", recordId: id, oldValue: existing.name }).catch(console.error);
+    createAuditLog({ userId: session.user.id, action: "DELETE", tableName: "InspectionAgencyMaster", recordId: id, oldValue: existing.name, companyId }).catch(console.error);
 
     return NextResponse.json({ success: true });
   } catch (error) {

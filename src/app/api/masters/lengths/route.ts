@@ -1,19 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 
 export async function GET(request: NextRequest) {
   try {
-    const { authorized, response } = await checkAccess("masters", "read");
+    const { authorized, response, companyId } = await checkAccess("masters", "read");
     if (!authorized) return response!;
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
 
     const where = search
-      ? { label: { contains: search } }
-      : {};
+      ? { label: { contains: search }, ...companyFilter(companyId) }
+      : { ...companyFilter(companyId) };
 
     const lengths = await prisma.lengthMaster.findMany({
       where,
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { authorized, session, response } = await checkAccess("masters", "write");
+    const { authorized, session, response, companyId } = await checkAccess("masters", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     }
 
     const newLength = await prisma.lengthMaster.create({
-      data: { label },
+      data: { label, companyId },
     });
 
     createAuditLog({
@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
       tableName: "LengthMaster",
       recordId: newLength.id,
       newValue: JSON.stringify({ label }),
+      companyId,
     }).catch(console.error);
 
     return NextResponse.json(newLength, { status: 201 });

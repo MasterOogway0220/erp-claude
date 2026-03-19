@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 
@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search") || "";
     const customerId = searchParams.get("customerId") || "";
 
-    const where: any = {};
+    const where: any = { ...companyFilter(companyId) };
 
     if (customerId) {
       where.customerId = customerId;
@@ -66,6 +66,7 @@ export async function POST(request: NextRequest) {
         mobile: body.mobile || null,
         telephone: body.telephone || null,
         isActive: body.isActive ?? true,
+        companyId,
       },
       include: {
         customer: { select: { id: true, name: true } },

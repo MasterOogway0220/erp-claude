@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
-    const { authorized, response } = await checkAccess("masters", "read");
+    const { authorized, response, companyId } = await checkAccess("masters", "read");
     if (!authorized) return response!;
 
     const paymentTerms = await prisma.paymentTermsMaster.findMany({
+      where: { ...companyFilter(companyId) },
       orderBy: { name: "asc" },
     });
 
@@ -24,7 +25,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { authorized, session, response } = await checkAccess("masters", "write");
+    const { authorized, session, response, companyId } = await checkAccess("masters", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -43,6 +44,7 @@ export async function POST(request: NextRequest) {
         description: body.description || null,
         days: body.days ?? 30,
         isActive: body.isActive ?? true,
+        companyId,
       },
     });
 
@@ -51,6 +53,7 @@ export async function POST(request: NextRequest) {
       recordId: paymentTerm.id,
       action: "CREATE",
       userId: session.user?.id,
+      companyId,
     });
 
     return NextResponse.json(paymentTerm, { status: 201 });

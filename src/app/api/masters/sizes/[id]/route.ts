@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 
@@ -8,13 +8,13 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { authorized, response } = await checkAccess("masters", "read");
+    const { authorized, response, companyId } = await checkAccess("masters", "read");
     if (!authorized) return response!;
 
     const { id } = await params;
 
     const size = await prisma.sizeMaster.findUnique({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
     });
 
     if (!size) {
@@ -39,14 +39,14 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { authorized, session, response } = await checkAccess("masters", "write");
+    const { authorized, session, response, companyId } = await checkAccess("masters", "write");
     if (!authorized) return response!;
 
     const { id } = await params;
     const body = await request.json();
 
     const size = await prisma.sizeMaster.update({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
       data: {
         sizeLabel: body.sizeLabel ?? undefined,
         od: body.od != null ? parseFloat(body.od) : undefined,
@@ -63,6 +63,7 @@ export async function PATCH(
       recordId: id,
       action: "UPDATE",
       userId: session.user?.id,
+      companyId,
     });
 
     return NextResponse.json(size);
@@ -80,13 +81,13 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { authorized, session, response } = await checkAccess("masters", "delete");
+    const { authorized, session, response, companyId } = await checkAccess("masters", "delete");
     if (!authorized) return response!;
 
     const { id } = await params;
 
     const size = await prisma.sizeMaster.findUnique({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
       select: {
         sizeLabel: true,
         _count: { select: { quotationItems: true } },
@@ -106,13 +107,14 @@ export async function DELETE(
       );
     }
 
-    await prisma.sizeMaster.delete({ where: { id } });
+    await prisma.sizeMaster.delete({ where: { id, ...companyFilter(companyId) } });
 
     await createAuditLog({
       tableName: "SizeMaster",
       recordId: id,
       action: "DELETE",
       userId: session.user?.id,
+      companyId,
     });
 
     return NextResponse.json({ message: "Size deleted successfully" });

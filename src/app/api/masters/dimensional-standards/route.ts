@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 
 export async function GET(request: NextRequest) {
   try {
-    const { authorized, response } = await checkAccess("masters", "read");
+    const { authorized, response, companyId } = await checkAccess("masters", "read");
     if (!authorized) return response!;
 
     const { searchParams } = new URL(request.url);
@@ -17,8 +17,9 @@ export async function GET(request: NextRequest) {
             { name: { contains: search } },
             { code: { contains: search } },
           ],
+          ...companyFilter(companyId),
         }
-      : {};
+      : { ...companyFilter(companyId) };
 
     const dimensionalStandards = await prisma.dimensionalStandardMaster.findMany({
       where,
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { authorized, session, response } = await checkAccess("masters", "write");
+    const { authorized, session, response, companyId } = await checkAccess("masters", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest) {
     }
 
     const newStandard = await prisma.dimensionalStandardMaster.create({
-      data: { name, code },
+      data: { name, code, companyId },
     });
 
     createAuditLog({
@@ -60,6 +61,7 @@ export async function POST(request: NextRequest) {
       tableName: "DimensionalStandardMaster",
       recordId: newStandard.id,
       newValue: JSON.stringify({ name, code }),
+      companyId,
     }).catch(console.error);
 
     return NextResponse.json(newStandard, { status: 201 });

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 
 // ASME B16.5: up to 24" — all 6 types
 const SIZES_B165 = [
@@ -29,10 +29,10 @@ const TYPES_B1647 = ["Weld Neck", "Blind"];
 
 export async function POST() {
   try {
-    const { authorized, response } = await checkAccess("masters", "write");
+    const { authorized, response, companyId } = await checkAccess("masters", "write");
     if (!authorized) return response!;
 
-    const existingCount = await prisma.flangeMaster.count();
+    const existingCount = await prisma.flangeMaster.count({ where: { ...companyFilter(companyId) } });
     if (existingCount > 0) {
       return NextResponse.json(
         { error: `Flange master already has ${existingCount} records. Delete existing records before re-seeding.` },
@@ -41,6 +41,7 @@ export async function POST() {
     }
 
     const records: any[] = [];
+    const cId = companyId; // shorthand for seed records
 
     // ASME B16.5 flanges
     for (const type of TYPES_B165) {
@@ -52,6 +53,7 @@ export async function POST() {
             standard: "ASME B16.5",
             facing: "RF",
             description: `${type} ${size}NB x ${rating}# RF, ASTM A105, ASME B16.5`,
+            companyId: cId,
           });
         }
       }
@@ -67,6 +69,7 @@ export async function POST() {
             standard: "ASME B16.47 Series A",
             facing: "RF",
             description: `${type} ${size}NB x ${rating}# RF, ASTM A105, ASME B16.47 Series A`,
+            companyId: cId,
           });
         }
       }
@@ -82,6 +85,7 @@ export async function POST() {
             standard: "ASME B16.47 Series B",
             facing: "RF",
             description: `${type} ${size}NB x ${rating}# RF, ASTM A105, ASME B16.47 Series B`,
+            companyId: cId,
           });
         }
       }
@@ -97,6 +101,7 @@ export async function POST() {
             standard: "ASME B16.47 Series B",
             facing: "RF",
             description: `${type} ${size}NB x ${rating}# RF, ASTM A105, ASME B16.47 Series B`,
+            companyId: cId,
           });
         }
       }

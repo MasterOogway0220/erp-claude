@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 
 export async function GET(request: NextRequest) {
   try {
-    const { authorized, response } = await checkAccess("masters", "read");
+    const { authorized, response, companyId } = await checkAccess("masters", "read");
     if (!authorized) return response!;
 
     const { searchParams } = new URL(request.url);
     const product = searchParams.get("product") || "";
 
-    const where: any = { isActive: true };
+    const where: any = { isActive: true, ...companyFilter(companyId) };
     if (product) where.product = product;
 
     const specs = await prisma.additionalSpecOption.findMany({
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { authorized, response } = await checkAccess("masters", "write");
+    const { authorized, response, companyId } = await checkAccess("masters", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     }
 
     const spec = await prisma.additionalSpecOption.create({
-      data: { product, specName },
+      data: { product, specName, companyId },
     });
 
     return NextResponse.json(spec, { status: 201 });

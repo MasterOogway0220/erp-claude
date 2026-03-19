@@ -69,14 +69,7 @@ export default function LoginPage() {
         {/* Top section - Logo & Company */}
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15 backdrop-blur-sm border border-white/10">
-              <span className="text-lg font-bold tracking-tight">N</span>
-            </div>
-            <div>
-              <h1 className="text-xl font-semibold tracking-tight">
-                NPS Piping Solutions
-              </h1>
-            </div>
+            <img src="/n-pipe-logo.jpg.jpeg" alt="N-Pipe Solutions" className="h-10" />
           </div>
         </div>
 

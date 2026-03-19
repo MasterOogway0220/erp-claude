@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 
 export async function PATCH(
@@ -9,7 +9,7 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const { authorized, session, response } = await checkAccess("masters", "write");
+    const { authorized, session, response, companyId } = await checkAccess("masters", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -22,7 +22,7 @@ export async function PATCH(
     }
 
     const existing = await prisma.deliveryTermsMaster.findUnique({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
     });
 
     if (!existing) {
@@ -33,7 +33,7 @@ export async function PATCH(
     }
 
     const updated = await prisma.deliveryTermsMaster.update({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
       data: {
         code: body.code !== undefined ? (body.code || null) : undefined,
         name: body.name ?? undefined,
@@ -50,6 +50,7 @@ export async function PATCH(
       recordId: id,
       oldValue: existing.name,
       newValue: updated.name,
+      companyId,
     }).catch(console.error);
 
     return NextResponse.json(updated);
@@ -74,11 +75,11 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const { authorized, session, response } = await checkAccess("masters", "delete");
+    const { authorized, session, response, companyId } = await checkAccess("masters", "delete");
     if (!authorized) return response!;
 
     const existing = await prisma.deliveryTermsMaster.findUnique({
-      where: { id },
+      where: { id, ...companyFilter(companyId) },
       select: {
         name: true,
         _count: {
@@ -105,7 +106,7 @@ export async function DELETE(
       );
     }
 
-    await prisma.deliveryTermsMaster.delete({ where: { id } });
+    await prisma.deliveryTermsMaster.delete({ where: { id, ...companyFilter(companyId) } });
 
     createAuditLog({
       userId: session.user.id,
@@ -113,6 +114,7 @@ export async function DELETE(
       tableName: "DeliveryTermsMaster",
       recordId: id,
       oldValue: existing.name,
+      companyId,
     }).catch(console.error);
 
     return NextResponse.json({ success: true });

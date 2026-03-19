@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 
 export async function GET(request: NextRequest) {
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "50");
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const where: any = { ...companyFilter(companyId) };
 
     if (category) {
       where.category = category;
@@ -88,6 +88,7 @@ export async function POST(request: NextRequest) {
         ends: ends || null,
         length: length || null,
         dimensionalStandardId: dimensionalStandardId || null,
+        companyId,
       },
     });
 

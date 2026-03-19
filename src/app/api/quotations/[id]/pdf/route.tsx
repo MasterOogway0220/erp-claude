@@ -22,6 +22,7 @@ const DEFAULT_COMPANY = {
   email: "info@n-pipe.com",
   website: "www.n-pipe.com",
   companyLogoUrl: null,
+  isoLogoUrl: null,
 };
 
 export async function GET(
@@ -59,6 +60,15 @@ export async function GET(
 
     const company = await prisma.companyMaster.findFirst();
     const companyInfo = company || DEFAULT_COMPANY;
+
+    // Convert relative logo URLs to absolute for PDF rendering (Puppeteer needs full URLs)
+    const origin = request.nextUrl.origin || "https://erp-claude-three.vercel.app";
+    if (companyInfo.companyLogoUrl && companyInfo.companyLogoUrl.startsWith("/")) {
+      (companyInfo as any).companyLogoUrl = `${origin}${companyInfo.companyLogoUrl}`;
+    }
+    if ((companyInfo as any).isoLogoUrl && (companyInfo as any).isoLogoUrl.startsWith("/")) {
+      (companyInfo as any).isoLogoUrl = `${origin}${(companyInfo as any).isoLogoUrl}`;
+    }
 
     const isNonStandard = quotation.quotationCategory === "NON_STANDARD";
 
