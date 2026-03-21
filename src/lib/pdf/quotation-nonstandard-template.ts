@@ -7,6 +7,7 @@ import { numberToWords } from "../amount-in-words";
 interface CompanyInfo {
   companyName: string;
   companyLogoUrl?: string | null;
+  isoLogoUrl?: string | null;
   regAddressLine1?: string | null;
   regAddressLine2?: string | null;
   regCity?: string | null;
@@ -51,15 +52,16 @@ interface QuotationData {
 }
 
 const exportNotes = [
-  "Prices are subject to review if items are deleted or if quantities are changed.",
-  "This quotation is subject to confirmation at the time of order placement.",
-  "Invoicing shall be based on the actual quantity supplied at the agreed unit rate.",
-  "Shipping date will be calculated based on the number of business days after receipt of the techno-commercial Purchase Order (PO).",
-  "Supply shall be made as close as possible to the requested quantity in the fixed lengths indicated.",
-  "Once an order is placed, it cannot be cancelled under any circumstances.",
-  "The quoted specification complies with the standard practice of the specification, without supplementary requirements (unless otherwise specifically stated in the offer).",
-  "Reduction in quantity after placement of order will not be accepted. Any increase in quantity will be subject to our acceptance.",
-  "In case of any changes in Government duties, taxes, or policies, the rates are liable to revision.",
+  "This quotation is subject to our final confirmation at the time of order placement.",
+  "Prices are subject to review in the event of any change in item scope or quantities.",
+  "Invoicing shall be based on the actual quantity supplied at the agreed unit rates.",
+  "The delivery / shipping schedule shall be calculated based on the number of business days from the date of receipt of a clear techno-commercial Purchase Order (PO).",
+  "Supply shall be made as close as reasonably possible to the requested quantities, in accordance with standard manufacturing tolerances and available fixed lengths.",
+  "Once a Purchase Order is placed, cancellation shall not be permitted under any circumstances.",
+  "The quoted specifications conform to standard industry practices and applicable specifications, without any supplementary requirements unless explicitly stated in this offer.",
+  "Reduction in ordered quantity after placement of Purchase Order shall not be accepted. Any increase in quantity shall be subject to our review and acceptance.",
+  "In the event of any change in Government duties, taxes, levies, or policies, the quoted prices shall be subject to revision accordingly.",
+  "In case of Force Majeure events, we shall not be liable for any delay or failure in performance due to unforeseen events beyond our control, and delivery schedules shall be adjusted accordingly.",
 ];
 
 function formatDate(date: string | Date | null | undefined): string {
@@ -97,13 +99,20 @@ function nl2br(str: string | null | undefined): string {
  */
 function buildItemDescription(item: any): string {
   if (item.itemDescription) {
-    return nl2br(item.itemDescription);
+    // If itemDescription doesn't already include material code, prepend it
+    const mcCode = item.materialCode?.code || "";
+    const desc = item.itemDescription;
+    if (mcCode && !desc.includes(mcCode)) {
+      return `MATERIAL CODE: ${escapeHtml(mcCode)}<br>${nl2br(desc)}`;
+    }
+    return nl2br(desc);
   }
 
   const lines: string[] = [];
 
-  if (item.materialCode?.code) {
-    lines.push(`MATERIAL CODE: ${item.materialCode.code}`);
+  const matCode = item.materialCode?.code || item.remark || "";
+  if (matCode) {
+    lines.push(`MATERIAL CODE: ${matCode}`);
   }
 
   // Build short pipe description line
@@ -193,7 +202,7 @@ export function generateNonStandardQuotationHtml(
     .map((item: any) => {
       const desc = buildItemDescription(item);
       return `<tr class="data-row">
-        <td class="cell-center cell-top">${item.sNo}</td>
+        <td class="cell-center cell-top" style="background-color:#d9d9d9;">${item.sNo}</td>
         <td class="cell-left cell-top cell-wrap" colspan="4">${desc}</td>
         <td class="cell-center cell-top">${formatNumber(item.quantity, 0)}</td>
         <td class="cell-right cell-top">${isTechnical ? '<span class="quoted-bold">QUOTED</span>' : formatNumber(item.unitRate, 2)}</td>
@@ -203,18 +212,11 @@ export function generateNonStandardQuotationHtml(
     })
     .join("\n");
 
-  // Currency term (always first in offer terms)
-  const currencySymbol = quotation.currency === "USD" ? "$" : quotation.currency === "EUR" ? "\u20AC" : quotation.currency === "GBP" ? "\u00A3" : quotation.currency;
-  const currencyTerm = `<tr class="term-row">
-    <td class="term-name" colspan="3">Currency</td>
-    <td class="term-value" colspan="6">: ${escapeHtml(quotation.currency)} (${currencySymbol})</td>
-  </tr>`;
-
   const termRows = includedTerms
     .map((term: any) => {
       return `<tr class="term-row">
-        <td class="term-name" colspan="3">${escapeHtml(term.termName)}</td>
-        <td class="term-value" colspan="6">: ${escapeHtml(term.termValue)}</td>
+        <td class="term-name" colspan="2">${escapeHtml(term.termName)}</td>
+        <td class="term-value" colspan="7">: ${escapeHtml(term.termValue)}</td>
       </tr>`;
     })
     .join("\n");
@@ -341,27 +343,39 @@ export function generateNonStandardQuotationHtml(
     height: 15pt;
   }
 
-  /* ZONE 6: Offer terms */
+  /* ZONE 6: Offer terms — tight spacing */
   .terms-header td {
     font-size: 9pt;
     font-weight: bold;
     text-align: left;
-    padding-top: 6px;
-    padding-bottom: 2px;
+    text-decoration: underline;
+    padding-top: 4px;
+    padding-bottom: 1px;
   }
-  .term-row td { font-size: 9pt; height: 12pt; padding: 0 4px; }
-  .term-name { font-weight: bold; text-align: left; }
-  .term-value { font-weight: normal; text-align: left; }
+  .term-row td { font-size: 8.5pt; height: auto; padding: 0px 2px; line-height: 1.15; }
+  .term-name { font-weight: bold; text-align: left; white-space: nowrap; padding-right: 0px; }
+  .term-value { font-weight: normal; text-align: left; padding-left: 0px; }
 
   /* ZONE 7: Notes */
   .notes-header td {
     font-size: 9pt;
     font-weight: bold;
     text-align: left;
-    padding-top: 6px;
-    padding-bottom: 2px;
+    text-decoration: underline;
+    padding-top: 4px;
+    padding-bottom: 1px;
   }
-  .note-row td { font-size: 8pt; height: 12pt; padding: 0 4px; text-align: left; }
+  .note-row td { font-size: 8pt; height: 10pt; padding: 0px 4px; text-align: left; line-height: 1.2; }
+
+  /* Financial summary — compact */
+  .fin-summary td {
+    padding: 0px 4px;
+    font-size: 8pt;
+    border: none;
+    line-height: 1.3;
+  }
+  .fin-summary .lbl { text-align: right; font-weight: normal; }
+  .fin-summary .val { text-align: right; font-weight: bold; }
 
   /* ZONE 8: Footer */
   .footer-disclaimer td {
@@ -431,8 +445,14 @@ export function generateNonStandardQuotationHtml(
   <!-- ROW 1-2: Logo (cols A-F) + Type Label (cols G-I)             -->
   <!-- ============================================================ -->
   <tr>
-    <td colspan="6" rowspan="2" style="vertical-align:middle;padding:4px;">
-      ${company.companyLogoUrl ? `<img src="${company.companyLogoUrl}" alt="Logo" style="max-width:200px;max-height:50px;object-fit:contain;">` : `<span style="font-size:16pt;font-weight:bold">${escapeHtml(company.companyName)}</span>`}
+    <td colspan="2" rowspan="2" style="vertical-align:middle;padding:4px;">
+      ${(company as any).isoLogoUrl
+        ? `<img src="${(company as any).isoLogoUrl}" alt="ISO" style="max-height:45px;">`
+        : `<span style="font-size:7pt;color:#666;">ISO 9001:2015 | ISO 14001:2015 | ISO 45001:2018</span>`
+      }
+    </td>
+    <td colspan="4" rowspan="2" style="vertical-align:middle;text-align:center;padding:4px;">
+      ${company.companyLogoUrl ? `<img src="${company.companyLogoUrl}" alt="Logo" style="max-height:50px;object-fit:contain;">` : `<span style="font-size:16pt;font-weight:bold">${escapeHtml(company.companyName)}</span>`}
     </td>
     <td colspan="3" rowspan="2" class="type-label">${revisionLabel}</td>
   </tr>
@@ -512,7 +532,7 @@ export function generateNonStandardQuotationHtml(
   <tr class="table-header-sub">
     <th>no.</th>
     <th colspan="4"></th>
-    <th>MTR</th>
+    <th>${escapeHtml(quotation.items[0]?.uom || "MTR")}</th>
     <th>${escapeHtml(quotation.currency)}</th>
     <th>${escapeHtml(quotation.currency)}</th>
     <th>Ex-Works</th>
@@ -534,12 +554,43 @@ export function generateNonStandardQuotationHtml(
     <td></td>
   </tr>
 
-  ${!isTechnical ? `<!-- Amount in Words -->
-  <tr>
-    <td colspan="9" style="font-size:10pt;padding:4px 6px;text-align:left;border:0.5px solid #999;">
-      <strong>Amount in Words:</strong> ${escapeHtml(numberToWords(totalAmount, quotation.currency))}
-    </td>
-  </tr>` : ""}
+  ${!isTechnical ? (() => {
+    const sub = parseFloat(String((quotation as any).subtotal)) || totalAmount;
+    const disc = parseFloat(String((quotation as any).additionalDiscount)) || 0;
+    const discAmt = parseFloat(String((quotation as any).discountAmount)) || 0;
+    const afterDisc = parseFloat(String((quotation as any).totalAfterDiscount)) || (sub - discAmt);
+    const tRate = parseFloat(String((quotation as any).taxRate)) || 0;
+    const tAmt = parseFloat(String((quotation as any).taxAmount)) || 0;
+    const rcm = (quotation as any).rcmEnabled || false;
+    const rOff = (quotation as any).roundOff || false;
+    const rOffAmt = parseFloat(String((quotation as any).roundOffAmount)) || 0;
+    const gt = parseFloat(String((quotation as any).grandTotal)) || totalAmount;
+    const adv = parseFloat(String((quotation as any).advanceToPay)) || 0;
+    let rows = `<tr><td class="lbl">Sub-total</td><td class="val">${formatNumber(sub)}</td></tr>`;
+    if (disc > 0) {
+      rows += `<tr><td class="lbl">Discount (${formatNumber(disc, 1)}%)</td><td class="val">- ${formatNumber(discAmt)}</td></tr>`;
+      rows += `<tr><td class="lbl">After Discount</td><td class="val">${formatNumber(afterDisc)}</td></tr>`;
+    }
+    if (tRate > 0 && !rcm) {
+      rows += `<tr><td class="lbl">GST (${formatNumber(tRate, 0)}%)</td><td class="val">${formatNumber(tAmt)}</td></tr>`;
+    }
+    if (rcm) {
+      rows += `<tr><td class="lbl">Tax - RCM (buyer)</td><td class="val">0.00</td></tr>`;
+    }
+    if (rOff && rOffAmt !== 0) {
+      rows += `<tr><td class="lbl">Round-off</td><td class="val">${rOffAmt >= 0 ? "+" : ""}${formatNumber(rOffAmt)}</td></tr>`;
+    }
+    rows += `<tr><td class="lbl" style="font-weight:bold;border-top:1px solid #000;padding-top:2px;">Grand Total (${escapeHtml(quotation.currency)})</td><td class="val" style="border-top:1px solid #000;padding-top:2px;">${formatNumber(gt)}</td></tr>`;
+    if (adv > 0) {
+      rows += `<tr><td class="lbl">Advance to Pay</td><td class="val">${formatNumber(adv)}</td></tr>`;
+    }
+    return `<tr><td colspan="9" style="padding:0;border:none;">
+      <table class="fin-summary" style="border-collapse:collapse;margin-left:auto;"><tbody>${rows}</tbody></table>
+    </td></tr>
+    <tr><td colspan="9" style="font-size:8pt;padding:2px 6px;text-align:left;border:0.5px solid #999;">
+      <strong>Amount in Words:</strong> ${escapeHtml(numberToWords(gt, quotation.currency))}
+    </td></tr>`;
+  })() : ""}
 
   <!-- ============================================================ -->
   <!-- OFFER TERMS                                                  -->
@@ -547,7 +598,6 @@ export function generateNonStandardQuotationHtml(
   <tr class="terms-header">
     <td colspan="9">OFFER TERMS:</td>
   </tr>
-  ${currencyTerm}
   ${termRows}
 
   <!-- ============================================================ -->

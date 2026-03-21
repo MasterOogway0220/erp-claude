@@ -97,9 +97,11 @@ export async function GET(
     const pdfBuffer = await renderHtmlToPdf(html, landscape);
 
     // Build filename: PRICED-QUT-NNNNN-CLIENT NAME-INQ.NO or TECHNICAL-QUT-...
-    const qtnNum = quotation.quotationNo.replace(/\//g, "-");
+    // Extract just the sequential number (last segment after final /)
+    const qtnParts = quotation.quotationNo.split("/");
+    const qtnNum = qtnParts[qtnParts.length - 1] || quotation.quotationNo.replace(/\//g, "-");
     const clientName = (quotation.customer?.name || "").toUpperCase().replace(/[^A-Z0-9 ]/g, "").trim();
-    const inqNo = (quotation.inquiryNo || "").replace(/\//g, "-").trim();
+    const inqNo = (quotation.inquiryNo || "").trim();
     let filename: string;
     if (isNonStandard) {
       filename = isUnquoted

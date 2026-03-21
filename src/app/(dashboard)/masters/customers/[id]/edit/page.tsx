@@ -100,9 +100,6 @@ interface DispatchAddress {
 }
 
 interface CustomerFormData {
-  contactPerson: string;
-  contactPersonEmail: string;
-  contactPersonPhone: string;
   customerType: string;
   companyType: string;
   name: string;
@@ -197,9 +194,6 @@ export default function CustomerEditPage() {
         }
         const customer = await res.json();
         setFormData({
-          contactPerson: customer.contactPerson || "",
-          contactPersonEmail: customer.contactPersonEmail || "",
-          contactPersonPhone: customer.contactPersonPhone || "",
           customerType: customer.customerType || "DOMESTIC",
           companyType: customer.companyType || "BUYER",
           name: customer.name || "",

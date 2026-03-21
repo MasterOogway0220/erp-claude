@@ -171,7 +171,7 @@ function StandardQuotationPage() {
   // Add New Customer modal state
   const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
   const [newCustomerForm, setNewCustomerForm] = useState({
-    name: "", companyType: "BUYER", contactPerson: "", contactPersonEmail: "", contactPersonPhone: "", gstNo: "", addressLine1: "", city: "", state: "",
+    name: "", companyType: "BUYER", gstNo: "", addressLine1: "", city: "", state: "",
   });
   const [addingCustomer, setAddingCustomer] = useState(false);
 
@@ -363,11 +363,18 @@ function StandardQuotationPage() {
   }, [formData.currency]);
 
   // Clear GST fields when currency is not INR (only INR supports GST)
+  // Also update any "Currency" term value to reflect selected currency
   useEffect(() => {
     if (formData.currency !== "INR") {
       setTaxRate("");
       setRcmEnabled(false);
     }
+    // Auto-update currency term value
+    setTerms((prev) => prev.map((t) =>
+      t.termName.toLowerCase().includes("currency")
+        ? { ...t, termValue: formData.currency }
+        : t
+    ));
   }, [formData.currency]);
 
   // Auto-fill place of supply from customer state
@@ -1070,8 +1077,8 @@ function StandardQuotationPage() {
                     </div>
                   </div>
 
-                  {/* Line 1: Material Code | Product | Material | Additional Spec | Size | Length | Ends | Qty | UOM | Unit Rate | Delivery */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-12 gap-3">
+                  {/* Line 1a: Material Code | Product | Material | Additional Spec */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div className="space-y-1">
                       <Label className="text-xs font-medium">Material Code</Label>
                       <SmartCombobox
@@ -1100,7 +1107,7 @@ function StandardQuotationPage() {
                       />
                     </div>
                     <ProductMaterialSelect
-                      className="sm:col-span-2 lg:col-span-3"
+                      className="sm:col-span-3"
                       product={item.product}
                       material={item.material}
                       additionalSpec={item.additionalSpec}
@@ -1112,8 +1119,11 @@ function StandardQuotationPage() {
                         // Additional spec auto-fill handled by the component
                       }}
                     />
+                  </div>
+                  {/* Line 1b: Size/Fitting/Flange | Length | Ends | Qty | UOM | Unit Rate | Delivery */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-8 gap-3">
                     {item.itemCategory === "Fitting" ? (
-                      <div className="space-y-1 sm:col-span-2 lg:col-span-2">
+                      <div className="space-y-1 lg:col-span-2">
                         <Label className="text-xs font-medium">Select Fitting <span className="text-destructive">*</span></Label>
                         <FittingSelect
                           value={item.fittingLabel}
@@ -1142,7 +1152,7 @@ function StandardQuotationPage() {
                         />
                       </div>
                     ) : item.itemCategory === "Flange" ? (
-                      <div className="space-y-1 sm:col-span-2 lg:col-span-2">
+                      <div className="space-y-1 lg:col-span-2">
                         <Label className="text-xs font-medium">Select Flange <span className="text-destructive">*</span></Label>
                         <FlangeSelect
                           value={item.flangeLabel}
@@ -1195,12 +1205,25 @@ function StandardQuotationPage() {
                         </div>
                         <div className="space-y-1">
                           <Label className="text-xs font-medium">Length</Label>
-                          <Input
-                            value={item.length}
-                            onChange={(e) => updateItem(index, "length", e.target.value)}
-                            placeholder="9.00-11.8"
-                            className="h-8"
-                          />
+                          <Select
+                            value={item.length || "__none__"}
+                            onValueChange={(value) => updateItem(index, "length", value === "__none__" ? "" : value)}
+                          >
+                            <SelectTrigger className="h-8">
+                              <SelectValue placeholder="Select" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="__none__">Select</SelectItem>
+                              <SelectItem value="5.8">5.8 Mtr</SelectItem>
+                              <SelectItem value="6.0">6.0 Mtr</SelectItem>
+                              <SelectItem value="6.1">6.1 Mtr</SelectItem>
+                              <SelectItem value="9.0-11.8">9.0-11.8 Mtr</SelectItem>
+                              <SelectItem value="5.8-6.1">5.8-6.1 Mtr</SelectItem>
+                              <SelectItem value="Random">Random</SelectItem>
+                              <SelectItem value="Fixed">Fixed</SelectItem>
+                              <SelectItem value="Cut Length">Cut Length</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
                       </>
                     )}
@@ -1673,33 +1696,6 @@ function StandardQuotationPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label>Contact Person</Label>
-                <Input
-                  value={newCustomerForm.contactPerson}
-                  onChange={(e) => setNewCustomerForm({ ...newCustomerForm, contactPerson: e.target.value })}
-                  placeholder="Name"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label>Contact Email</Label>
-                <Input
-                  type="email"
-                  value={newCustomerForm.contactPersonEmail}
-                  onChange={(e) => setNewCustomerForm({ ...newCustomerForm, contactPersonEmail: e.target.value })}
-                  placeholder="email@company.com"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label>Contact Phone</Label>
-                <Input
-                  value={newCustomerForm.contactPersonPhone}
-                  onChange={(e) => setNewCustomerForm({ ...newCustomerForm, contactPersonPhone: e.target.value })}
-                  placeholder="+91 9876543210"
-                />
-              </div>
-              <div className="grid gap-2">
                 <Label>City</Label>
                 <Input
                   value={newCustomerForm.city}
@@ -1742,9 +1738,6 @@ function StandardQuotationPage() {
                     body: JSON.stringify({
                       name: newCustomerForm.name.trim(),
                       companyType: newCustomerForm.companyType,
-                      contactPerson: newCustomerForm.contactPerson.trim() || undefined,
-                      contactPersonEmail: newCustomerForm.contactPersonEmail.trim() || undefined,
-                      contactPersonPhone: newCustomerForm.contactPersonPhone.trim() || undefined,
                       gstNo: newCustomerForm.gstNo.trim() || undefined,
                       addressLine1: newCustomerForm.addressLine1.trim() || undefined,
                       city: newCustomerForm.city.trim() || undefined,
@@ -1758,7 +1751,7 @@ function StandardQuotationPage() {
                   const data = await res.json();
                   await queryClient.invalidateQueries({ queryKey: ["customers"] });
                   setFormData((prev) => ({ ...prev, customerId: data.id }));
-                  setNewCustomerForm({ name: "", companyType: "BUYER", contactPerson: "", contactPersonEmail: "", contactPersonPhone: "", gstNo: "", addressLine1: "", city: "", state: "" });
+                  setNewCustomerForm({ name: "", companyType: "BUYER", gstNo: "", addressLine1: "", city: "", state: "" });
                   setShowAddCustomerModal(false);
                   toast.success("Customer created successfully");
                 } catch (err: any) {

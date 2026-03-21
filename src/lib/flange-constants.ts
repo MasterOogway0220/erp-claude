@@ -15,7 +15,18 @@ export const FLANGE_TYPES_B1647 = [
   { value: "Blind", label: "BLIND (BL)" },
 ];
 
-export const FLANGE_RATINGS = ["75", "150", "300", "400", "600", "900", "1500", "2500"];
+// Ratings for ASME B16.5 (no 75#)
+export const FLANGE_RATINGS = ["150", "300", "400", "600", "900", "1500", "2500"];
+
+// Ratings for ASME B16.47 Series A
+export const FLANGE_RATINGS_B1647_A = ["150", "300", "400", "600", "900"];
+
+// Ratings for ASME B16.47 Series B (75# is Series B specific)
+export const FLANGE_RATINGS_B1647_B = ["75", "150", "300", "400", "600", "900"];
+
+// Series B limited sizes: 400#, 600#, 900# only available up to 36"
+export const SERIES_B_LIMITED_RATINGS = ["400", "600", "900"];
+export const SERIES_B_LIMITED_MAX_SIZE = 36; // inches
 
 export const FLANGE_FACINGS = [
   { value: "RF", label: "RAISED FACE (RF)" },
@@ -37,12 +48,30 @@ export const SIZES_B1647 = [
 
 export const ALL_FLANGE_SIZES = [...SIZES_B165, ...SIZES_B1647];
 
+// ─── ASME B16.5 Schedules (applicable for WNRF & SWRF only) ─────────────────
 export const SCHEDULES_SS_DS = [
-  "SCH 10S", "SCH 20", "SCH 30", "SCH 40S", "SCH 80S",
+  "SCH 5S", "SCH 10S", "SCH 20", "SCH 30", "SCH 40S", "SCH 80S",
+  "SCH 100", "SCH 120", "SCH 140", "SCH 160", "SCH XXS",
 ];
 
 export const SCHEDULES_CS_AS = [
+  "SCH 5", "SCH 10", "SCH 20", "SCH 30", "SCH STD", "SCH 40",
+  "SCH XS", "SCH 80", "SCH 100", "SCH 120", "SCH 140", "SCH 160", "SCH XXS",
+];
+
+// ─── ASME B16.47 Schedules (shorter list) ────────────────────────────────────
+export const SCHEDULES_B1647_SS_DS = [
+  "SCH 10S", "SCH 20", "SCH 30", "SCH 40S", "SCH 80S",
+];
+
+export const SCHEDULES_B1647_CS_AS = [
   "SCH 10", "SCH 20", "SCH 30", "SCH STD", "SCH 40", "SCH XS",
+];
+
+// B16.47 Series options
+export const B1647_SERIES = [
+  { value: "ASME B16.47 Series A", label: "Series A" },
+  { value: "ASME B16.47 Series B", label: "Series B" },
 ];
 
 // Facing rules for ASME B16.47
@@ -62,8 +91,31 @@ export function isScheduleApplicable(type: string, facing: string): boolean {
   return (type === "Weld Neck" || type === "Socket Weld") && facing === "RF";
 }
 
-// Determine standard from size
+// Determine standard from size (base standard, series picked by user for B16.47)
 export function getStandardForSize(size: string): string {
   const num = parseFloat(size.replace('"', '').replace('NB', '').trim());
   return num >= 26 ? "ASME B16.47" : "ASME B16.5";
+}
+
+// Get ratings for a given standard
+export function getRatingsForStandard(standard: string): string[] {
+  if (standard.includes("Series B")) return FLANGE_RATINGS_B1647_B;
+  if (standard.includes("Series A")) return FLANGE_RATINGS_B1647_A;
+  if (standard.includes("B16.47")) return FLANGE_RATINGS_B1647_A; // default to A
+  return FLANGE_RATINGS;
+}
+
+// Get schedule options based on standard and pipe category
+export function getScheduleOptions(standard: string, pipeCategory: string): string[] {
+  if (standard.includes("B16.47")) {
+    return pipeCategory === "SS_DS" ? SCHEDULES_B1647_SS_DS : SCHEDULES_B1647_CS_AS;
+  }
+  return pipeCategory === "SS_DS" ? SCHEDULES_SS_DS : SCHEDULES_CS_AS;
+}
+
+// Check if a rating+size combo is valid for Series B
+export function isSeriesBSizeValid(rating: string, size: string): boolean {
+  if (!SERIES_B_LIMITED_RATINGS.includes(rating)) return true;
+  const num = parseFloat(size.replace('"', '').replace('NB', '').trim());
+  return num <= SERIES_B_LIMITED_MAX_SIZE;
 }

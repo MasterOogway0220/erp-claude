@@ -98,9 +98,6 @@ interface DispatchAddress {
 }
 
 interface CustomerFormData {
-  contactPerson: string;
-  contactPersonEmail: string;
-  contactPersonPhone: string;
   customerType: string;
   companyType: string;
   name: string;
@@ -149,9 +146,6 @@ const emptyDispatchAddress: DispatchAddress = {
 };
 
 const defaultForm: CustomerFormData = {
-  contactPerson: "",
-  contactPersonEmail: "",
-  contactPersonPhone: "",
   customerType: "DOMESTIC",
   companyType: "BUYER",
   name: "",

@@ -46,6 +46,17 @@ interface QuotationData {
     telephone?: string | null;
   } | null;
   version?: number;
+  subtotal?: number | string | null;
+  additionalDiscount?: number | string | null;
+  discountAmount?: number | string | null;
+  totalAfterDiscount?: number | string | null;
+  taxRate?: number | string | null;
+  taxAmount?: number | string | null;
+  rcmEnabled?: boolean;
+  roundOff?: boolean;
+  roundOffAmount?: number | string | null;
+  grandTotal?: number | string | null;
+  advanceToPay?: number | string | null;
   items: any[];
   terms: any[];
 }
@@ -158,7 +169,7 @@ export function generateStandardQuotationHtml(
         : (hasMixedUnits ? `${fmtPlain(item.unitRate, 2)}/${esc(uom)}` : fmtPlain(item.unitRate, 2));
 
       return `<tr>
-        <td class="c">${item.sNo}</td>
+        <td class="c" style="background-color:#d9d9d9;">${item.sNo}</td>
         <td class="l">${esc(item.product)}</td>
         <td class="l">${esc(item.material)}</td>
         <td class="l">${esc(item.additionalSpec)}</td>
@@ -254,23 +265,24 @@ export function generateStandardQuotationHtml(
     background: #f5f5f5;
   }
 
-  /* Financial summary - compact */
+  /* Financial summary - compact inline */
   .fin-summary { border-collapse: collapse; margin-top: 2px; }
   .fin-summary td {
-    padding: 1px 6px;
-    font-size: 8.5pt;
+    padding: 0px 4px;
+    font-size: 8pt;
     border: none;
+    line-height: 1.3;
   }
   .fin-summary .lbl { text-align: right; font-weight: normal; }
   .fin-summary .val { text-align: right; font-weight: bold; }
 
-  /* Terms - tighter alignment */
+  /* Terms - tight alignment, no gap */
   table.terms { border-collapse: collapse; width: 100%; margin-top: 4px; }
   table.terms td { border: none; padding: 0.5px 2px; font-size: 8.5pt; vertical-align: top; }
   .terms-title { font-weight: bold; font-size: 9pt; padding: 4px 0 2px 0 !important; text-decoration: underline; }
-  .term-no { width: 18px; text-align: right; padding-right: 3px !important; }
-  .term-name { font-weight: bold; white-space: nowrap; padding-right: 2px !important; }
-  .term-val { font-weight: normal; }
+  .term-no { width: 14px; text-align: right; padding-right: 2px !important; }
+  .term-name { font-weight: bold; white-space: nowrap; padding-right: 0px !important; }
+  .term-val { font-weight: normal; padding-left: 2px !important; }
 
   /* Notes */
   .notes-title { font-weight: bold; font-size: 9pt; padding: 4px 0 2px 0 !important; text-decoration: underline; }
@@ -374,10 +386,10 @@ export function generateStandardQuotationHtml(
     <col style="width:6%">
     <col style="width:3.5%">
     <col style="width:6.5%">
-    <col style="width:7%">
-    <col style="width:8.5%">
-    <col style="width:7%">
-    <col style="width:10%">
+    <col style="width:8%">
+    <col style="width:9%">
+    <col style="width:8%">
+    <col style="width:7.5%">
   </colgroup>
   <tr class="hdr">
     <th>S/N</th>
@@ -408,10 +420,41 @@ export function generateStandardQuotationHtml(
   </tr>
 </table>
 
-${!isUnquoted ? `
-<div style="font-size:9pt;padding:4px 0;text-align:left;">
-  <b>Amount in Words:</b> ${esc(numberToWords(totalAmount, curr))}
-</div>` : ""}
+${!isUnquoted ? (() => {
+  const sub = parseFloat(String(quotation.subtotal)) || totalAmount;
+  const disc = parseFloat(String(quotation.additionalDiscount)) || 0;
+  const discAmt = parseFloat(String(quotation.discountAmount)) || 0;
+  const afterDisc = parseFloat(String(quotation.totalAfterDiscount)) || (sub - discAmt);
+  const tRate = parseFloat(String(quotation.taxRate)) || 0;
+  const tAmt = parseFloat(String(quotation.taxAmount)) || 0;
+  const rcm = quotation.rcmEnabled || false;
+  const rOff = quotation.roundOff || false;
+  const rOffAmt = parseFloat(String(quotation.roundOffAmount)) || 0;
+  const gt = parseFloat(String(quotation.grandTotal)) || totalAmount;
+  const adv = parseFloat(String(quotation.advanceToPay)) || 0;
+  let rows = `<tr><td class="lbl">Sub-total</td><td class="val">${fmt(sub)}</td></tr>`;
+  if (disc > 0) {
+    rows += `<tr><td class="lbl">Discount (${fmtPlain(disc, 1)}%)</td><td class="val">− ${fmt(discAmt)}</td></tr>`;
+    rows += `<tr><td class="lbl">After Discount</td><td class="val">${fmt(afterDisc)}</td></tr>`;
+  }
+  if (tRate > 0 && !rcm) {
+    rows += `<tr><td class="lbl">GST (${fmtPlain(tRate, 0)}%)</td><td class="val">${fmt(tAmt)}</td></tr>`;
+  }
+  if (rcm) {
+    rows += `<tr><td class="lbl">Tax — RCM (buyer)</td><td class="val">0.00</td></tr>`;
+  }
+  if (rOff && rOffAmt !== 0) {
+    rows += `<tr><td class="lbl">Round-off</td><td class="val">${rOffAmt >= 0 ? "+" : ""}${fmtPlain(rOffAmt, 2)}</td></tr>`;
+  }
+  rows += `<tr><td class="lbl" style="font-weight:bold;border-top:1px solid #000;padding-top:2px;">Grand Total (${esc(curr)})</td><td class="val" style="border-top:1px solid #000;padding-top:2px;">${fmt(gt)}</td></tr>`;
+  if (adv > 0) {
+    rows += `<tr><td class="lbl">Advance to Pay</td><td class="val">${fmt(adv)}</td></tr>`;
+  }
+  return `<table class="fin-summary" style="margin-left:auto;"><tbody>${rows}</tbody></table>
+<div style="font-size:8pt;padding:2px 0;text-align:left;">
+  <b>Amount in Words:</b> ${esc(numberToWords(gt, curr))}
+</div>`;
+})() : ""}
 
 <!-- OFFER TERMS -->
 <table class="terms">

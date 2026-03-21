@@ -120,7 +120,6 @@ export default function CustomersPage() {
               <TableRow>
                 <TableHead>Company Name</TableHead>
                 <TableHead>Type</TableHead>
-                <TableHead>Contact Person</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>City</TableHead>
                 <TableHead>GST No.</TableHead>
@@ -132,13 +131,13 @@ export default function CustomersPage() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                     Loading...
                   </TableCell>
                 </TableRow>
               ) : customers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                     No {activeTab === "BUYER" ? "buyers" : activeTab === "SUPPLIER" ? "vendors" : "customers"} found
                   </TableCell>
                 </TableRow>
@@ -160,7 +159,6 @@ export default function CustomersPage() {
                         {c.companyType === "BOTH" ? "Buyer & Vendor" : c.companyType === "SUPPLIER" ? "Vendor" : "Buyer"}
                       </Badge>
                     </TableCell>
-                    <TableCell>{c.contactPerson || "—"}</TableCell>
                     <TableCell>{c.email || "—"}</TableCell>
                     <TableCell>{c.city || "—"}</TableCell>
                     <TableCell className="font-mono text-xs">{c.gstNo || "—"}</TableCell>

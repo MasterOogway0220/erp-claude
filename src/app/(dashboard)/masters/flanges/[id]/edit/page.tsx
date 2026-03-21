@@ -21,14 +21,15 @@ import { PageLoading } from "@/components/shared/page-loading";
 import {
   FLANGE_TYPES_B165,
   FLANGE_TYPES_B1647,
-  FLANGE_RATINGS,
   FLANGE_FACINGS,
   ALL_FLANGE_SIZES,
-  SCHEDULES_SS_DS,
-  SCHEDULES_CS_AS,
+  B1647_SERIES,
   getAllowedFacings,
   isScheduleApplicable,
   getStandardForSize,
+  getRatingsForStandard,
+  getScheduleOptions,
+  isSeriesBSizeValid,
 } from "@/lib/flange-constants";
 
 interface Flange {
@@ -101,16 +102,50 @@ export default function EditFlangePage() {
   const flangeTypes = isLargeFlange ? FLANGE_TYPES_B1647 : FLANGE_TYPES_B165;
   const allowedFacingValues = getAllowedFacings(formData.rating, formData.standard);
   const scheduleApplicable = isScheduleApplicable(formData.type, formData.facing);
-  const scheduleOptions = formData.pipeCategory === "SS_DS" ? SCHEDULES_SS_DS : SCHEDULES_CS_AS;
+  const scheduleOptions = getScheduleOptions(formData.standard, formData.pipeCategory);
+  const ratings = getRatingsForStandard(formData.standard);
 
   const handleSizeChange = (size: string) => {
-    const std = getStandardForSize(size);
-    const updates: Partial<FlangeFormData> = { size, standard: std };
-    if (std.includes("B16.47") && !["Weld Neck", "Blind"].includes(formData.type)) {
+    const baseStd = getStandardForSize(size);
+    const updates: Partial<FlangeFormData> = { size };
+
+    if (baseStd.includes("B16.47")) {
+      if (!formData.standard.includes("B16.47")) {
+        updates.standard = "ASME B16.47 Series A";
+      }
+    } else {
+      updates.standard = baseStd;
+    }
+
+    const newStd = updates.standard || formData.standard;
+
+    if (newStd.includes("B16.47") && !["Weld Neck", "Blind"].includes(formData.type)) {
       updates.type = "Weld Neck";
     }
-    const newAllowed = getAllowedFacings(formData.rating, std);
+    const newAllowed = getAllowedFacings(formData.rating, newStd);
     if (formData.facing && !newAllowed.includes(formData.facing)) updates.facing = "";
+    const newRatings = getRatingsForStandard(newStd);
+    if (!newRatings.includes(formData.rating)) {
+      updates.rating = newRatings[0] || "150";
+    }
+    setFormData((prev) => ({ ...prev, ...updates }));
+  };
+
+  const handleSeriesChange = (series: string) => {
+    const updates: Partial<FlangeFormData> = { standard: series };
+    const newRatings = getRatingsForStandard(series);
+    if (!newRatings.includes(formData.rating)) {
+      updates.rating = newRatings[0] || "150";
+    }
+    if (series.includes("Series B") && formData.size && formData.rating) {
+      if (!isSeriesBSizeValid(formData.rating, formData.size)) {
+        updates.rating = "150";
+      }
+    }
+    const newAllowed = getAllowedFacings(updates.rating || formData.rating, series);
+    if (formData.facing && !newAllowed.includes(formData.facing)) {
+      updates.facing = "";
+    }
     setFormData((prev) => ({ ...prev, ...updates }));
   };
 
@@ -128,6 +163,11 @@ export default function EditFlangePage() {
     if (!formData.rating) { toast.error("Rating is required"); return; }
     if (!formData.materialGrade.trim()) { toast.error("Material grade is required"); return; }
 
+    if (formData.standard.includes("Series B") && !isSeriesBSizeValid(formData.rating, formData.size)) {
+      toast.error(`${formData.rating}# is only available up to 36" for Series B`);
+      return;
+    }
+
     setSaving(true);
     try {
       const res = await fetch(`/api/masters/flanges/${id}`, {
@@ -140,6 +180,10 @@ export default function EditFlangePage() {
     } catch { toast.error("Failed to update flange"); }
     finally { setSaving(false); }
   };
+
+  const filteredRatings = formData.standard.includes("Series B") && formData.size
+    ? ratings.filter((r) => isSeriesBSizeValid(r, formData.size))
+    : ratings;
 
   if (loading) return <PageLoading />;
 
@@ -161,7 +205,7 @@ export default function EditFlangePage() {
         <Card>
           <CardHeader><CardTitle>Flange Details</CardTitle></CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="grid gap-2">
                 <Label>Size *</Label>
                 <Select value={formData.size || "__none__"} onValueChange={(v) => handleSizeChange(v === "__none__" ? "" : v)}>
@@ -176,11 +220,19 @@ export default function EditFlangePage() {
               </div>
               <div className="grid gap-2">
                 <Label>Dimension Standard</Label>
-                <Input value={formData.standard} readOnly className="bg-muted" />
+                {isLargeFlange ? (
+                  <Select value={formData.standard} onValueChange={handleSeriesChange}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {B1647_SERIES.map((s) => (
+                        <SelectItem key={s.value} value={s.value}>{s.value}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input value={formData.standard} readOnly className="bg-muted" />
+                )}
               </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label>Type *</Label>
                 <Select value={formData.type} onValueChange={(v) => update("type", v)}>
@@ -192,20 +244,20 @@ export default function EditFlangePage() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
               <div className="grid gap-2">
                 <Label>Class (Rating) *</Label>
                 <Select value={formData.rating} onValueChange={handleRatingChange}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {FLANGE_RATINGS.map((r) => (
+                    {filteredRatings.map((r) => (
                       <SelectItem key={r} value={r}>{r}#</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label>Facing</Label>
                 <Select value={formData.facing || "__none__"} onValueChange={(v) => update("facing", v === "__none__" ? "" : v)}>

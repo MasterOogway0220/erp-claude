@@ -741,8 +741,8 @@ export default function QuotationDetailPage() {
           </CardHeader>
           <CardContent>
             <div className="flex justify-end">
-              <div className="space-y-2 text-sm w-full max-w-sm">
-                <div className="flex justify-between py-1">
+              <div className="space-y-1 text-sm w-full max-w-sm">
+                <div className="flex justify-between py-0.5">
                   <span className="text-muted-foreground">Subtotal</span>
                   <span className="font-medium">
                     {quotation.currency} {parseFloat(quotation.subtotal || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
@@ -750,11 +750,11 @@ export default function QuotationDetailPage() {
                 </div>
                 {quotation.additionalDiscount && parseFloat(quotation.additionalDiscount) > 0 && (
                   <>
-                    <div className="flex justify-between py-1 text-orange-600">
+                    <div className="flex justify-between py-0.5 text-orange-600">
                       <span>Discount ({parseFloat(quotation.additionalDiscount)}%)</span>
                       <span>− {quotation.currency} {parseFloat(quotation.discountAmount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
                     </div>
-                    <div className="flex justify-between py-1">
+                    <div className="flex justify-between py-0.5">
                       <span className="text-muted-foreground">After Discount</span>
                       <span className="font-medium">
                         {quotation.currency} {parseFloat(quotation.totalAfterDiscount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
@@ -763,31 +763,31 @@ export default function QuotationDetailPage() {
                   </>
                 )}
                 {quotation.taxRate && parseFloat(quotation.taxRate) > 0 && !quotation.rcmEnabled && (
-                  <div className="flex justify-between py-1">
+                  <div className="flex justify-between py-0.5">
                     <span className="text-muted-foreground">GST ({parseFloat(quotation.taxRate)}%)</span>
                     <span>{quotation.currency} {parseFloat(quotation.taxAmount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
                   </div>
                 )}
                 {quotation.rcmEnabled && (
-                  <div className="flex justify-between py-1 text-amber-600">
+                  <div className="flex justify-between py-0.5 text-amber-600">
                     <span>Tax — RCM (paid by buyer)</span>
                     <span>₹0.00</span>
                   </div>
                 )}
                 {quotation.roundOff && quotation.roundOffAmount != null && (
-                  <div className="flex justify-between py-1 text-muted-foreground">
+                  <div className="flex justify-between py-0.5 text-muted-foreground">
                     <span>Round-off</span>
                     <span>{parseFloat(quotation.roundOffAmount) >= 0 ? "+" : ""}{parseFloat(quotation.roundOffAmount).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
                   </div>
                 )}
-                <div className="flex justify-between py-2 border-t font-bold text-base">
+                <div className="flex justify-between py-1 border-t font-bold text-base">
                   <span>Grand Total</span>
                   <span>
                     {quotation.currency} {parseFloat(quotation.grandTotal || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                   </span>
                 </div>
                 {quotation.advanceToPay && parseFloat(quotation.advanceToPay) > 0 && (
-                  <div className="flex justify-between py-1 text-green-600">
+                  <div className="flex justify-between py-0.5 text-green-600">
                     <span>Advance to Pay</span>
                     <span>{quotation.currency} {parseFloat(quotation.advanceToPay).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
                   </div>
@@ -829,18 +829,31 @@ export default function QuotationDetailPage() {
                     />
                   </TableHead>
                   <TableHead>S/N</TableHead>
-                  <TableHead>Product</TableHead>
-                  <TableHead>Material</TableHead>
-                  <TableHead>Size</TableHead>
-                  <TableHead>OD</TableHead>
-                  <TableHead>WT</TableHead>
-                  <TableHead>Ends</TableHead>
-                  <TableHead className="text-right">Qty</TableHead>
-                  <TableHead>Unit</TableHead>
-                  <TableHead className="text-right">Rate</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                  <TableHead>Delivery</TableHead>
-                  <TableHead className="text-right">Weight (MT)</TableHead>
+                  {quotation.quotationCategory === "NON_STANDARD" ? (
+                    <>
+                      <TableHead>Description</TableHead>
+                      <TableHead className="text-right">Qty</TableHead>
+                      <TableHead>Unit</TableHead>
+                      <TableHead className="text-right">Rate</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                      <TableHead>Delivery</TableHead>
+                    </>
+                  ) : (
+                    <>
+                      <TableHead>Product</TableHead>
+                      <TableHead>Material</TableHead>
+                      <TableHead>Size</TableHead>
+                      <TableHead>OD</TableHead>
+                      <TableHead>WT</TableHead>
+                      <TableHead>Ends</TableHead>
+                      <TableHead className="text-right">Qty</TableHead>
+                      <TableHead>Unit</TableHead>
+                      <TableHead className="text-right">Rate</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                      <TableHead>Delivery</TableHead>
+                      <TableHead className="text-right">Weight (MT)</TableHead>
+                    </>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -861,44 +874,83 @@ export default function QuotationDetailPage() {
                       />
                     </TableCell>
                     <TableCell>{item.sNo}</TableCell>
-                    <TableCell className="font-medium">{item.product || "---"}</TableCell>
-                    <TableCell className="max-w-xs truncate">
-                      {item.material || "---"}
-                    </TableCell>
-                    <TableCell>{item.sizeLabel || "---"}</TableCell>
-                    <TableCell>{item.od || "---"}</TableCell>
-                    <TableCell>{item.wt || "---"}</TableCell>
-                    <TableCell>{item.ends || "---"}</TableCell>
-                    <TableCell className="text-right">
-                      {parseFloat(item.quantity).toFixed(3)}
-                    </TableCell>
-                    <TableCell>{item.uom || "Mtr"}</TableCell>
-                    <TableCell className="text-right">
-                      {parseFloat(item.unitRate).toFixed(2)}
-                    </TableCell>
-                    <TableCell className="text-right font-semibold">
-                      {parseFloat(item.amount).toFixed(2)}
-                    </TableCell>
-                    <TableCell>{item.delivery || "---"}</TableCell>
-                    <TableCell className="text-right">
-                      {item.totalWeightMT
-                        ? parseFloat(item.totalWeightMT).toFixed(4)
-                        : "---"}
-                    </TableCell>
+                    {quotation.quotationCategory === "NON_STANDARD" ? (
+                      <>
+                        <TableCell className="max-w-md">
+                          <div className="whitespace-pre-line text-sm">
+                            {item.itemDescription
+                              ? item.itemDescription
+                              : [
+                                  item.materialCode?.code && `Material Code: ${item.materialCode.code}`,
+                                  item.material && item.sizeLabel
+                                    ? `${item.material} ${item.sizeLabel}${item.ends ? ` ${item.ends}` : ""}`
+                                    : item.material || item.sizeLabel,
+                                  item.tagNo && `Tag: ${item.tagNo}`,
+                                  item.drawingRef && `DWG: ${item.drawingRef}`,
+                                  item.certificateReq && `Cert: ${item.certificateReq}`,
+                                ].filter(Boolean).join("\n") || item.product || "---"
+                            }
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {parseFloat(item.quantity).toFixed(3)}
+                        </TableCell>
+                        <TableCell>{item.uom || "Mtr"}</TableCell>
+                        <TableCell className="text-right">
+                          {parseFloat(item.unitRate).toFixed(2)}
+                        </TableCell>
+                        <TableCell className="text-right font-semibold">
+                          {parseFloat(item.amount).toFixed(2)}
+                        </TableCell>
+                        <TableCell>{item.delivery || "---"}</TableCell>
+                      </>
+                    ) : (
+                      <>
+                        <TableCell className="font-medium">{item.product || "---"}</TableCell>
+                        <TableCell className="max-w-xs truncate">
+                          {item.material || "---"}
+                        </TableCell>
+                        <TableCell>{item.sizeLabel || "---"}</TableCell>
+                        <TableCell>{item.od || "---"}</TableCell>
+                        <TableCell>{item.wt || "---"}</TableCell>
+                        <TableCell>{item.ends || "---"}</TableCell>
+                        <TableCell className="text-right">
+                          {parseFloat(item.quantity).toFixed(3)}
+                        </TableCell>
+                        <TableCell>{item.uom || "Mtr"}</TableCell>
+                        <TableCell className="text-right">
+                          {parseFloat(item.unitRate).toFixed(2)}
+                        </TableCell>
+                        <TableCell className="text-right font-semibold">
+                          {parseFloat(item.amount).toFixed(2)}
+                        </TableCell>
+                        <TableCell>{item.delivery || "---"}</TableCell>
+                        <TableCell className="text-right">
+                          {item.totalWeightMT
+                            ? parseFloat(item.totalWeightMT).toFixed(4)
+                            : "---"}
+                        </TableCell>
+                      </>
+                    )}
                   </TableRow>
                 ))}
                 <TableRow className="font-bold">
                   <TableCell />
-                  <TableCell colSpan={10} className="text-right">
+                  <TableCell colSpan={quotation.quotationCategory === "NON_STANDARD" ? 4 : 10} className="text-right">
                     Total:
                   </TableCell>
                   <TableCell className="text-right">
                     {quotation.currency} {totalAmount.toFixed(2)}
                   </TableCell>
-                  <TableCell />
-                  <TableCell className="text-right">
-                    {totalWeight.toFixed(4)} MT
-                  </TableCell>
+                  {quotation.quotationCategory !== "NON_STANDARD" && (
+                    <>
+                      <TableCell />
+                      <TableCell className="text-right">
+                        {totalWeight.toFixed(4)} MT
+                      </TableCell>
+                    </>
+                  )}
+                  {quotation.quotationCategory === "NON_STANDARD" && <TableCell />}
                 </TableRow>
               </TableBody>
             </Table>

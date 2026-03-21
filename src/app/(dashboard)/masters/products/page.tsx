@@ -134,13 +134,12 @@ interface ProductFormData {
   specification: string;
   grade: string;
   material: string;
-  additionalSpec: string;
   dimensionalStandardId: string;
 }
 
 const emptyProductForm: ProductFormData = {
   product: "", category: "", specification: "", grade: "",
-  material: "", additionalSpec: "", dimensionalStandardId: "",
+  material: "", dimensionalStandardId: "",
 };
 
 function PipesPanel() {
@@ -217,7 +216,7 @@ function PipesPanel() {
       setFormData({
         product: product.product, category: product.category || "",
         specification: product.specification || "", grade: product.grade || "",
-        material: product.material || "", additionalSpec: product.additionalSpec || "",
+        material: product.material || "",
         dimensionalStandardId: product.dimensionalStandardId || "",
       });
       setDimStdSearch(product.dimensionalStandard?.name || "");
@@ -274,10 +273,10 @@ function PipesPanel() {
             onClick={() => {
               const products: ProductSpec[] = data?.products || [];
               if (!products.length) { toast.error("No products to export"); return; }
-              const headers = ["Category", "Product", "Specification", "Grade", "Material", "Dim. Standard", "Additional Spec"];
+              const headers = ["Category", "Product", "Specification", "Grade", "Material", "Dim. Standard"];
               const rows = products.map((p) => [
                 p.category || "", p.product, p.specification || "", p.grade || "",
-                p.material || "", p.dimensionalStandard?.name || "", p.additionalSpec || "",
+                p.material || "", p.dimensionalStandard?.name || "",
               ]);
               const csv = [headers.join(","), ...rows.map((r) => r.map((c) => `"${c.replace(/"/g, '""')}"`).join(","))].join("\n");
               const blob = new Blob([csv], { type: "text/csv" });
@@ -309,15 +308,14 @@ function PipesPanel() {
               <TableHead>Grade</TableHead>
               <TableHead>Material</TableHead>
               <TableHead>Dim. Standard</TableHead>
-              <TableHead>Additional Spec</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Loading products...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Loading products...</TableCell></TableRow>
             ) : data?.products?.length === 0 ? (
-              <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No products found</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No products found</TableCell></TableRow>
             ) : (
               data?.products?.map((p: ProductSpec) => (
                 <TableRow key={p.id}>
@@ -329,7 +327,6 @@ function PipesPanel() {
                   <TableCell>{p.grade || "—"}</TableCell>
                   <TableCell className="max-w-[150px] truncate">{p.material || "—"}</TableCell>
                   <TableCell>{p.dimensionalStandard?.name || "—"}</TableCell>
-                  <TableCell className="max-w-[120px] truncate">{p.additionalSpec || "—"}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Button variant="ghost" size="icon" onClick={() => openDialog(p)}><Pencil className="h-4 w-4" /></Button>
@@ -403,10 +400,6 @@ function PipesPanel() {
                   filterFn={(std, query) => { const q = query.toLowerCase(); return std.name.toLowerCase().includes(q) || std.code.toLowerCase().includes(q); }}
                   placeholder="Search dimensional standard..."
                 />
-              </div>
-              <div className="grid gap-2">
-                <Label>Additional Specification</Label>
-                <Input value={formData.additionalSpec} onChange={(e) => setFormData({ ...formData, additionalSpec: e.target.value })} placeholder="e.g., NACE MR0175, HIC, IBR" />
               </div>
             </div>
             <DialogFooter>
@@ -706,9 +699,9 @@ function FittingsPanel() {
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
-                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Loading fittings...</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Loading fittings...</TableCell></TableRow>
                   ) : fittings.length === 0 ? (
-                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No fittings found</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No fittings found</TableCell></TableRow>
                   ) : (
                     fittings.map((f) => (
                       <TableRow key={f.id}>

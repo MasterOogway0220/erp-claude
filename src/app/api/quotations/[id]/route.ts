@@ -36,7 +36,7 @@ export async function GET(
         preparedBy: { select: { name: true, email: true } },
         approvedBy: { select: { name: true } },
         dealOwner: { select: { name: true } },
-        items: { orderBy: { sNo: "asc" } },
+        items: { orderBy: { sNo: "asc" }, include: { materialCode: true } },
         terms: { orderBy: { termNo: "asc" } },
         salesOrders: { select: { id: true, soNo: true, createdAt: true } },
         parentQuotation: {

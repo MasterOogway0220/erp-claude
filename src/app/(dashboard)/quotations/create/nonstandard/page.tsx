@@ -51,7 +51,9 @@ interface NonStdItem {
   quantity: string;
   unitRate: string;
   amount: string;
+  uom: string;
   delivery: string;
+  remark: string;
   pastQuote: string;
   pastQuotePrice: string;
   pastPo: string;
@@ -80,7 +82,9 @@ const emptyItem: NonStdItem = {
   quantity: "",
   unitRate: "",
   amount: "0.00",
+  uom: "Mtr",
   delivery: "8-10 Weeks, Ex-works",
+  remark: "",
   pastQuote: "",
   pastQuotePrice: "",
   pastPo: "",
@@ -130,7 +134,7 @@ function NonStandardQuotationPage() {
     isCustom: boolean;
     isHeadingEditable: boolean;
   }[]>([]);
-  const [useStructuredInput, setUseStructuredInput] = useState<boolean[]>([true]);
+  const [useStructuredInput, setUseStructuredInput] = useState<boolean[]>([false]);
 
   // Financial controls
   const [taxRate, setTaxRate] = useState("");
@@ -147,7 +151,7 @@ function NonStandardQuotationPage() {
   // Add New Customer modal state
   const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
   const [newCustomerForm, setNewCustomerForm] = useState({
-    name: "", companyType: "BUYER", contactPerson: "", contactPersonEmail: "", contactPersonPhone: "", gstNo: "", addressLine1: "", city: "", state: "",
+    name: "", companyType: "BUYER", gstNo: "", addressLine1: "", city: "", state: "",
   });
   const [addingCustomer, setAddingCustomer] = useState(false);
 
@@ -282,11 +286,17 @@ function NonStandardQuotationPage() {
   }, [formData.currency]);
 
   // Clear GST fields when currency is not INR (only INR supports GST)
+  // Also update any "Currency" term value to reflect selected currency
   useEffect(() => {
     if (formData.currency !== "INR") {
       setTaxRate("");
       setRcmEnabled(false);
     }
+    setTerms((prev) => prev.map((t) =>
+      t.termName.toLowerCase().includes("currency")
+        ? { ...t, termValue: formData.currency }
+        : t
+    ));
   }, [formData.currency]);
 
   // Reset buyer when customer changes
@@ -462,7 +472,9 @@ function NonStandardQuotationPage() {
           quantity: String(item.quantity),
           unitRate: String(item.unitRate),
           amount: String(item.amount),
+          uom: item.uom || "Mtr",
           delivery: item.delivery || "",
+          remark: item.remark || "",
           pastQuote: item.pastQuote || "",
           pastQuotePrice: item.pastQuotePrice ? String(item.pastQuotePrice) : "",
           pastPo: item.pastPo || "",
@@ -509,7 +521,7 @@ function NonStandardQuotationPage() {
 
   const addItem = () => {
     setItems([...items, { ...emptyItem }]);
-    setUseStructuredInput([...useStructuredInput, true]);
+    setUseStructuredInput([...useStructuredInput, false]);
   };
 
   const removeItem = (index: number) => {
@@ -564,8 +576,9 @@ function NonStandardQuotationPage() {
         quantity: item.quantity,
         unitRate: item.unitRate,
         amount: item.amount,
+        uom: item.uom || "Mtr",
         delivery: item.delivery,
-        remark: item.materialCode || "",
+        remark: item.remark || "",
         unitWeight: "",
         totalWeightMT: "",
         tagNo: item.tagNo || "",
@@ -863,19 +876,6 @@ function NonStandardQuotationPage() {
                     <div className="flex gap-2">
                       <Button
                         type="button"
-                        variant={useStructuredInput[index] ? "default" : "outline"}
-                        size="sm"
-                        className="h-7 text-xs"
-                        onClick={() => {
-                          const newFlags = [...useStructuredInput];
-                          newFlags[index] = true;
-                          setUseStructuredInput(newFlags);
-                        }}
-                      >
-                        Structured
-                      </Button>
-                      <Button
-                        type="button"
                         variant={!useStructuredInput[index] ? "default" : "outline"}
                         size="sm"
                         className="h-7 text-xs"
@@ -891,6 +891,19 @@ function NonStandardQuotationPage() {
                         }}
                       >
                         Free Text
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={useStructuredInput[index] ? "default" : "outline"}
+                        size="sm"
+                        className="h-7 text-xs"
+                        onClick={() => {
+                          const newFlags = [...useStructuredInput];
+                          newFlags[index] = true;
+                          setUseStructuredInput(newFlags);
+                        }}
+                      >
+                        Structured
                       </Button>
                     </div>
                   </div>
@@ -1037,8 +1050,8 @@ function NonStandardQuotationPage() {
                       </div>
                     </div>
 
-                    {/* Row 2: Drawing Ref | Item No | Certificate Req | Qty | Unit Rate | Total Amount */}
-                    <div className="grid grid-cols-6 gap-4">
+                    {/* Row 2: Drawing Ref | Item No | Certificate Req */}
+                    <div className="grid grid-cols-3 gap-4">
                       <div className="grid gap-2">
                         <Label className="text-sm">Drawing Ref (DWG)</Label>
                         <Input
@@ -1061,6 +1074,9 @@ function NonStandardQuotationPage() {
                           placeholder="NACE MILLS TEST CERTS..."
                         />
                       </div>
+                    </div>
+                    {/* Row 3: Qty | Unit | Unit Rate | Total | Delivery | Remarks */}
+                    <div className="grid grid-cols-6 gap-4">
                       <div className="grid gap-2">
                         <Label className="text-sm">Qty *</Label>
                         <Input
@@ -1070,6 +1086,21 @@ function NonStandardQuotationPage() {
                           onChange={(e) => updateItem(index, "quantity", e.target.value)}
                           required
                         />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label className="text-sm">Unit</Label>
+                        <Select value={item.uom} onValueChange={(v) => updateItem(index, "uom", v)}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Mtr">Mtr</SelectItem>
+                            <SelectItem value="Nos">Nos</SelectItem>
+                            <SelectItem value="Kg">Kg</SelectItem>
+                            <SelectItem value="MT">MT</SelectItem>
+                            <SelectItem value="Feet">Feet</SelectItem>
+                            <SelectItem value="Set">Set</SelectItem>
+                            <SelectItem value="Lot">Lot</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="grid gap-2">
                         <Label className="text-sm">Unit Rate ({formData.currency}) *</Label>
@@ -1084,6 +1115,22 @@ function NonStandardQuotationPage() {
                       <div className="grid gap-2">
                         <Label className="text-sm">Total Amount ({formData.currency})</Label>
                         <Input value={item.amount} readOnly className="bg-muted font-semibold" />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label className="text-sm">Delivery</Label>
+                        <Input
+                          value={item.delivery}
+                          onChange={(e) => updateItem(index, "delivery", e.target.value)}
+                          placeholder="8-10 Weeks"
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label className="text-sm">Remarks</Label>
+                        <Input
+                          value={item.remark}
+                          onChange={(e) => updateItem(index, "remark", e.target.value)}
+                          placeholder="Any remarks"
+                        />
                       </div>
                     </div>
                   </>
@@ -1193,8 +1240,8 @@ function NonStandardQuotationPage() {
                       />
                     </div>
 
-                    {/* Qty / Rate / Total Amount */}
-                    <div className="grid grid-cols-3 gap-4">
+                    {/* Qty / Unit / Rate / Total / Delivery / Remarks */}
+                    <div className="grid grid-cols-6 gap-4">
                       <div className="grid gap-2">
                         <Label className="text-sm">Qty *</Label>
                         <Input
@@ -1204,6 +1251,21 @@ function NonStandardQuotationPage() {
                           onChange={(e) => updateItem(index, "quantity", e.target.value)}
                           required
                         />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label className="text-sm">Unit</Label>
+                        <Select value={item.uom} onValueChange={(v) => updateItem(index, "uom", v)}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Mtr">Mtr</SelectItem>
+                            <SelectItem value="Nos">Nos</SelectItem>
+                            <SelectItem value="Kg">Kg</SelectItem>
+                            <SelectItem value="MT">MT</SelectItem>
+                            <SelectItem value="Feet">Feet</SelectItem>
+                            <SelectItem value="Set">Set</SelectItem>
+                            <SelectItem value="Lot">Lot</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="grid gap-2">
                         <Label className="text-sm">Unit Rate ({formData.currency}) *</Label>
@@ -1218,6 +1280,22 @@ function NonStandardQuotationPage() {
                       <div className="grid gap-2">
                         <Label className="text-sm">Total Amount ({formData.currency})</Label>
                         <Input value={item.amount} readOnly className="bg-muted font-semibold" />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label className="text-sm">Delivery</Label>
+                        <Input
+                          value={item.delivery}
+                          onChange={(e) => updateItem(index, "delivery", e.target.value)}
+                          placeholder="8-10 Weeks"
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label className="text-sm">Remarks</Label>
+                        <Input
+                          value={item.remark}
+                          onChange={(e) => updateItem(index, "remark", e.target.value)}
+                          placeholder="Any remarks"
+                        />
                       </div>
                     </div>
 
@@ -1498,33 +1576,6 @@ function NonStandardQuotationPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label>Contact Person</Label>
-                <Input
-                  value={newCustomerForm.contactPerson}
-                  onChange={(e) => setNewCustomerForm({ ...newCustomerForm, contactPerson: e.target.value })}
-                  placeholder="Name"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label>Contact Email</Label>
-                <Input
-                  type="email"
-                  value={newCustomerForm.contactPersonEmail}
-                  onChange={(e) => setNewCustomerForm({ ...newCustomerForm, contactPersonEmail: e.target.value })}
-                  placeholder="email@company.com"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label>Contact Phone</Label>
-                <Input
-                  value={newCustomerForm.contactPersonPhone}
-                  onChange={(e) => setNewCustomerForm({ ...newCustomerForm, contactPersonPhone: e.target.value })}
-                  placeholder="+91 9876543210"
-                />
-              </div>
-              <div className="grid gap-2">
                 <Label>City</Label>
                 <Input
                   value={newCustomerForm.city}
@@ -1567,9 +1618,6 @@ function NonStandardQuotationPage() {
                     body: JSON.stringify({
                       name: newCustomerForm.name.trim(),
                       companyType: newCustomerForm.companyType,
-                      contactPerson: newCustomerForm.contactPerson.trim() || undefined,
-                      contactPersonEmail: newCustomerForm.contactPersonEmail.trim() || undefined,
-                      contactPersonPhone: newCustomerForm.contactPersonPhone.trim() || undefined,
                       gstNo: newCustomerForm.gstNo.trim() || undefined,
                       addressLine1: newCustomerForm.addressLine1.trim() || undefined,
                       city: newCustomerForm.city.trim() || undefined,
@@ -1583,7 +1631,7 @@ function NonStandardQuotationPage() {
                   const data = await res.json();
                   await queryClient.invalidateQueries({ queryKey: ["customers"] });
                   setFormData((prev) => ({ ...prev, customerId: data.id }));
-                  setNewCustomerForm({ name: "", companyType: "BUYER", contactPerson: "", contactPersonEmail: "", contactPersonPhone: "", gstNo: "", addressLine1: "", city: "", state: "" });
+                  setNewCustomerForm({ name: "", companyType: "BUYER", gstNo: "", addressLine1: "", city: "", state: "" });
                   setShowAddCustomerModal(false);
                   toast.success("Customer created successfully");
                 } catch (err: any) {
