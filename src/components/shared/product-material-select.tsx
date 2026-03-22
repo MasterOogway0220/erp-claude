@@ -117,13 +117,10 @@ export function ProductMaterialSelect({
     new Set(productMatches.map((p) => p.material).filter(Boolean) as string[])
   ).sort();
 
-  // Additional specs from the sub-master — matched by product name
+  // Additional specs from the sub-master — show all specs (not filtered by product)
   const matchingAdditionalSpecs = (() => {
-    if (!product) return [];
-    // Check sub-master first
-    const fromSubMaster = allAdditionalSpecs
-      .filter((s) => productGroup.some((g) => g.toLowerCase() === s.product.toLowerCase()))
-      .map((s) => s.specName);
+    // Show all specs from sub-master regardless of product
+    const fromSubMaster = allAdditionalSpecs.map((s) => s.specName);
     if (fromSubMaster.length > 0) {
       return Array.from(new Set(fromSubMaster)).sort();
     }

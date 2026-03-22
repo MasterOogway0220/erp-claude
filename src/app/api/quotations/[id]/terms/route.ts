@@ -27,7 +27,7 @@ export async function PUT(
     }
 
     const userRole = session.user?.role;
-    const isAdminOrMgmt = userRole === "SUPER_ADMIN" || userRole === "MANAGEMENT";
+    const isAdminOrMgmt = userRole === "SUPER_ADMIN" || userRole === "ADMIN" || userRole === "MANAGEMENT";
 
     // Allow editing terms for DRAFT (anyone) or other statuses (admin/mgmt only)
     if (existing.status !== "DRAFT" && !isAdminOrMgmt) {

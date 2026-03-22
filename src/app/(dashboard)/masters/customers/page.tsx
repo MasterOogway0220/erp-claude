@@ -85,8 +85,8 @@ export default function CustomersPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Customer Master"
-        description="Manage customer information for quotations and sales orders"
+        title="Customer / Vendor Master"
+        description="Manage customer and vendor information for quotations and sales orders"
       />
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabValue)}>

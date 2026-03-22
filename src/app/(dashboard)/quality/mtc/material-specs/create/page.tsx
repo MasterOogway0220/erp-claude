@@ -81,6 +81,8 @@ const DEFAULT_ELEMENTS: Omit<ChemicalElement, "id">[] = [
   { element: "Ni", sortOrder: 8, minValue: "", maxValue: "", resultMin: "", resultMax: "" },
   { element: "Cu", sortOrder: 9, minValue: "", maxValue: "", resultMin: "", resultMax: "" },
   { element: "V", sortOrder: 10, minValue: "", maxValue: "", resultMin: "", resultMax: "" },
+  { element: "F1", sortOrder: 11, minValue: "", maxValue: "", resultMin: "", resultMax: "" },
+  { element: "CEQ", sortOrder: 12, minValue: "", maxValue: "", resultMin: "", resultMax: "" },
 ];
 
 const DEFAULT_PROPERTIES: Omit<MechanicalProperty, "id">[] = [
@@ -102,6 +104,7 @@ function MaterialSpecCreateContent() {
 
   const [loading, setLoading] = useState(!!editId);
   const [submitting, setSubmitting] = useState(false);
+  const [allSpecs, setAllSpecs] = useState<any[]>([]);
 
   const [form, setForm] = useState({
     materialSpec: "",
@@ -124,6 +127,67 @@ function MaterialSpecCreateContent() {
     resultMin: "",
     resultMax: "",
   });
+
+  // Fetch all existing specs for "Copy from" feature
+  useEffect(() => {
+    fetch("/api/mtc/material-specs")
+      .then((r) => r.ok ? r.json() : { materialSpecs: [] })
+      .then((d) => setAllSpecs(d.materialSpecs || []))
+      .catch(() => {});
+  }, []);
+
+  const handleCopyFrom = (specId: string) => {
+    const spec = allSpecs.find((s: any) => s.id === specId);
+    if (!spec) return;
+    setForm({
+      materialSpec: "", // Leave blank — user fills in new spec name
+      description: "",
+      startingMaterial: spec.startingMaterial || "",
+      heatTreatment: spec.heatTreatment || "",
+      heatTreatmentType: spec.heatTreatmentType || "",
+      constructionType: spec.constructionType || "",
+      dimensionStandard: spec.dimensionStandard || "",
+      defaultNotes: spec.defaultNotes || "",
+    });
+    if (spec.chemicalElements?.length) {
+      setChemicalElements(
+        spec.chemicalElements.map((el: any) => ({
+          id: generateId(),
+          element: el.element || "",
+          sortOrder: el.sortOrder || 0,
+          minValue: el.minValue?.toString() || "",
+          maxValue: el.maxValue?.toString() || "",
+          resultMin: el.resultMinValue?.toString() || "",
+          resultMax: el.resultMaxValue?.toString() || "",
+        }))
+      );
+    }
+    if (spec.mechanicalProperties?.length) {
+      setMechanicalProperties(
+        spec.mechanicalProperties.map((p: any) => ({
+          id: generateId(),
+          propertyName: p.propertyName || "",
+          unit: p.unit || "",
+          sortOrder: p.sortOrder || 0,
+          minValue: p.minValue?.toString() || "",
+          maxValue: p.maxValue?.toString() || "",
+          resultMin: p.resultMinValue?.toString() || "",
+          resultMax: p.resultMaxValue?.toString() || "",
+        }))
+      );
+    }
+    if (spec.impactProperties?.length > 0) {
+      const ip = spec.impactProperties[0];
+      setImpactProperties({
+        testTemperature: ip.testTemperature?.toString() || "",
+        specimenSize: ip.specimenSize || "",
+        minimumEnergy: ip.minEnergy?.toString() || "",
+        resultMin: ip.resultMinValue?.toString() || "",
+        resultMax: ip.resultMaxValue?.toString() || "",
+      });
+    }
+    toast.success(`Copied from ${spec.materialSpec}. Enter new spec name.`);
+  };
 
   useEffect(() => {
     if (editId) {
@@ -353,7 +417,23 @@ function MaterialSpecCreateContent() {
       {/* Section 1: Basic Details */}
       <Card>
         <CardHeader>
-          <CardTitle>Basic Details</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Basic Details</CardTitle>
+            {!editId && allSpecs.length > 0 && (
+              <Select onValueChange={handleCopyFrom}>
+                <SelectTrigger className="w-[280px]">
+                  <SelectValue placeholder="Copy from earlier spec..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {allSpecs.map((s: any) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.materialSpec}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -363,14 +443,6 @@ function MaterialSpecCreateContent() {
                 placeholder="e.g. ASTM A234 GR. WPB"
                 value={form.materialSpec}
                 onChange={(e) => setForm({ ...form, materialSpec: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Description</Label>
-              <Input
-                placeholder="Description"
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
               />
             </div>
             <div className="space-y-2">
@@ -562,6 +634,11 @@ function MaterialSpecCreateContent() {
               </Table>
             </div>
           )}
+          <div className="mt-3 p-3 rounded-md bg-muted/50 text-xs text-muted-foreground space-y-1">
+            <p><strong>F1</strong> = Cu + Ni + Cr + Mo</p>
+            <p><strong>CEQ</strong> = C + Mn/6 + (Cr + Mo + V)/5 + (Ni + Cu)/15</p>
+            <p className="text-xs italic">F1 and CEQ are derived/calculated values. Set their max values in the spec above — actual results will be auto-calculated from base elements during certificate generation.</p>
+          </div>
         </CardContent>
       </Card>
 

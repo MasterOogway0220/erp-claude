@@ -312,10 +312,10 @@ export async function PUT(
     }
 
     const userRole = session.user?.role;
-    const isAdminOrMgmt = userRole === "SUPER_ADMIN" || userRole === "MANAGEMENT";
+    const isAdminOrMgmt = userRole === "SUPER_ADMIN" || userRole === "ADMIN" || userRole === "MANAGEMENT";
 
     // DRAFT: anyone with write access can edit
-    // PENDING_APPROVAL, APPROVED, SENT, WON: only MANAGEMENT/SUPER_ADMIN
+    // PENDING_APPROVAL, APPROVED, SENT, WON: only MANAGEMENT/ADMIN/SUPER_ADMIN
     if (existing.status === "DRAFT") {
       // allowed for all with write access
     } else if (isAdminOrMgmt && ADMIN_EDITABLE_STATUSES.includes(existing.status)) {

@@ -721,8 +721,11 @@ function CreateMTCPage() {
               <div className="space-y-2">
                 <Label>Material Specification *</Label>
                 <Select
-                  value={formData.materialSpecId}
-                  onValueChange={handleMaterialSpecSelect}
+                  value={formData.materialSpecId || "NONE"}
+                  onValueChange={(v) => {
+                    if (v === "NONE") return;
+                    handleMaterialSpecSelect(v);
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue
@@ -732,27 +735,46 @@ function CreateMTCPage() {
                     />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="NONE" disabled>-- Select Material Spec --</SelectItem>
                     {materialSpecs.map((spec: any) => (
                       <SelectItem key={spec.id} value={spec.id}>
                         {spec.materialSpec || spec.specification}
-                        {spec.description ? ` — ${spec.description}` : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {materialSpecs.length === 0 && !loadingSpecs && (
+                  <p className="text-xs text-amber-600 mt-1">
+                    No material specs found. Create one in Quality &gt; Material Specs first.
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Additional Requirement</Label>
-                <Input
-                  value={formData.additionalRequirement}
-                  onChange={(e) =>
+                <Select
+                  value={formData.additionalRequirement || "NONE"}
+                  onValueChange={(v) =>
                     setFormData((prev) => ({
                       ...prev,
-                      additionalRequirement: e.target.value,
+                      additionalRequirement: v === "NONE" ? "" : v,
                     }))
                   }
-                  placeholder="e.g. NACE MR0175/MR0103"
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select requirement" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NONE">-- None --</SelectItem>
+                    <SelectItem value="NACE MR0175">NACE MR0175</SelectItem>
+                    <SelectItem value="NACE MR0103">NACE MR0103</SelectItem>
+                    <SelectItem value="NACE MR0175/MR0103">NACE MR0175/MR0103</SelectItem>
+                    <SelectItem value="H2 SERVICE">H2 SERVICE</SelectItem>
+                    <SelectItem value="IBR">IBR</SelectItem>
+                    <SelectItem value="GALVANISED">GALVANISED</SelectItem>
+                    <SelectItem value="LOW TEMPERATURE">LOW TEMPERATURE</SelectItem>
+                    <SelectItem value="HIGH TEMPERATURE">HIGH TEMPERATURE</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               {selectedSpec && (
                 <>

@@ -251,6 +251,16 @@ export default function CustomerEditPage() {
     fetchCustomer();
   }, [id, router]);
 
+  const [industrySegments, setIndustrySegments] = useState<string[]>([]);
+  useEffect(() => {
+    if (!formData) return;
+    const cat = formData.companyType === "SUPPLIER" ? "VENDOR" : "CUSTOMER";
+    fetch(`/api/masters/industry-segments?category=${cat}`)
+      .then(r => r.ok ? r.json() : { segments: [] })
+      .then(d => setIndustrySegments((d.segments || []).map((s: any) => s.name)))
+      .catch(() => {});
+  }, [formData?.companyType]);
+
   // Load customer-specific terms or fall back to global templates
   useEffect(() => {
     if (!id) return;
@@ -472,9 +482,9 @@ export default function CustomerEditPage() {
                 <Label>Customer Type</Label>
                 <Select value={formData.customerType} onValueChange={(v) => {
                   if (v === "DOMESTIC") {
-                    setFormData((prev) => prev ? { ...prev, customerType: v, country: "India", state: "", pincode: "" } : prev);
+                    setFormData((prev) => prev ? { ...prev, customerType: v, country: "India", state: "", pincode: "", defaultCurrency: "INR", currency: "INR" } : prev);
                   } else {
-                    setFormData((prev) => prev ? { ...prev, customerType: v, country: "", state: "", pincode: "" } : prev);
+                    setFormData((prev) => prev ? { ...prev, customerType: v, country: "", state: "", pincode: "", defaultCurrency: "USD", currency: "USD" } : prev);
                   }
                 }}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
@@ -513,7 +523,15 @@ export default function CustomerEditPage() {
               </div>
               <div className="space-y-1.5">
                 <Label>Industry Segment</Label>
-                <Input value={formData.industrySegment} onChange={(e) => update("industrySegment", e.target.value)} placeholder="e.g., Oil & Gas" />
+                <Select value={formData.industrySegment || "NONE"} onValueChange={(v) => update("industrySegment", v === "NONE" ? "" : v)}>
+                  <SelectTrigger><SelectValue placeholder="Select segment" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NONE">-- Select --</SelectItem>
+                    {industrySegments.map((s) => (
+                      <SelectItem key={s} value={s}>{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-1.5">
                 <Label>Status</Label>

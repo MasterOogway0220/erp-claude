@@ -201,6 +201,14 @@ export default function CustomerCreatePage() {
   const [saving, setSaving] = useState(false);
   const [fetchingPincode, setFetchingPincode] = useState(false);
   const [fetchingDispatchPincode, setFetchingDispatchPincode] = useState<number | null>(null);
+  const [industrySegments, setIndustrySegments] = useState<string[]>([]);
+  useEffect(() => {
+    const cat = formData.companyType === "SUPPLIER" ? "VENDOR" : "CUSTOMER";
+    fetch(`/api/masters/industry-segments?category=${cat}`)
+      .then(r => r.ok ? r.json() : { segments: [] })
+      .then(d => setIndustrySegments((d.segments || []).map((s: any) => s.name)))
+      .catch(() => {});
+  }, [formData.companyType]);
   const [termsQuotationType, setTermsQuotationType] = useState("DOMESTIC");
   const [terms, setTerms] = useState<{ termName: string; termValue: string; isIncluded: boolean; isCustom: boolean }[]>([]);
   const [termsLoaded, setTermsLoaded] = useState(false);
@@ -386,9 +394,9 @@ export default function CustomerCreatePage() {
                 <Select value={formData.customerType} onValueChange={(v) => {
                   update("customerType", v);
                   if (v === "DOMESTIC") {
-                    setFormData((prev) => ({ ...prev, customerType: v, country: "India", state: "", pincode: "" }));
+                    setFormData((prev) => ({ ...prev, customerType: v, country: "India", state: "", pincode: "", defaultCurrency: "INR", currency: "INR" }));
                   } else {
-                    setFormData((prev) => ({ ...prev, customerType: v, country: "", state: "", pincode: "" }));
+                    setFormData((prev) => ({ ...prev, customerType: v, country: "", state: "", pincode: "", defaultCurrency: "USD", currency: "USD" }));
                   }
                 }}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
@@ -427,7 +435,15 @@ export default function CustomerCreatePage() {
               </div>
               <div className="space-y-1.5">
                 <Label>Industry Segment</Label>
-                <Input value={formData.industrySegment} onChange={(e) => update("industrySegment", e.target.value)} placeholder="e.g., Oil & Gas" />
+                <Select value={formData.industrySegment || "NONE"} onValueChange={(v) => update("industrySegment", v === "NONE" ? "" : v)}>
+                  <SelectTrigger><SelectValue placeholder="Select segment" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NONE">-- Select --</SelectItem>
+                    {industrySegments.map((s) => (
+                      <SelectItem key={s} value={s}>{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </CardContent>

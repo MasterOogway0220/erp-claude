@@ -831,6 +831,7 @@ export default function QuotationDetailPage() {
                   <TableHead>S/N</TableHead>
                   {quotation.quotationCategory === "NON_STANDARD" ? (
                     <>
+                      <TableHead>Material Code</TableHead>
                       <TableHead>Description</TableHead>
                       <TableHead className="text-right">Qty</TableHead>
                       <TableHead>Unit</TableHead>
@@ -840,6 +841,7 @@ export default function QuotationDetailPage() {
                     </>
                   ) : (
                     <>
+                      <TableHead>Material Code</TableHead>
                       <TableHead>Product</TableHead>
                       <TableHead>Material</TableHead>
                       <TableHead>Size</TableHead>
@@ -876,6 +878,7 @@ export default function QuotationDetailPage() {
                     <TableCell>{item.sNo}</TableCell>
                     {quotation.quotationCategory === "NON_STANDARD" ? (
                       <>
+                        <TableCell className="text-xs">{item.materialCode?.code || item.materialCodeLabel || "---"}</TableCell>
                         <TableCell className="max-w-md">
                           <div className="whitespace-pre-line text-sm">
                             {item.itemDescription
@@ -906,6 +909,7 @@ export default function QuotationDetailPage() {
                       </>
                     ) : (
                       <>
+                        <TableCell className="text-xs">{item.materialCode?.code || item.materialCodeLabel || "---"}</TableCell>
                         <TableCell className="font-medium">{item.product || "---"}</TableCell>
                         <TableCell className="max-w-xs truncate">
                           {item.material || "---"}
@@ -936,7 +940,7 @@ export default function QuotationDetailPage() {
                 ))}
                 <TableRow className="font-bold">
                   <TableCell />
-                  <TableCell colSpan={quotation.quotationCategory === "NON_STANDARD" ? 4 : 10} className="text-right">
+                  <TableCell colSpan={quotation.quotationCategory === "NON_STANDARD" ? 5 : 11} className="text-right">
                     Total:
                   </TableCell>
                   <TableCell className="text-right">

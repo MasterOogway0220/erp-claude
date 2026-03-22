@@ -62,7 +62,7 @@ export async function GET(
     const companyInfo = company || DEFAULT_COMPANY;
 
     // Convert relative logo URLs to absolute for PDF rendering (Puppeteer needs full URLs)
-    const origin = request.nextUrl.origin || "https://erp-claude-three.vercel.app";
+    const origin = request.nextUrl.origin || "";
     if (companyInfo.companyLogoUrl && companyInfo.companyLogoUrl.startsWith("/")) {
       (companyInfo as any).companyLogoUrl = `${origin}${companyInfo.companyLogoUrl}`;
     }

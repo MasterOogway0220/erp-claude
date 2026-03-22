@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { ArrowLeft, Save, User, LayoutGrid, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
@@ -63,6 +64,7 @@ export default function EditEmployeePage() {
   const id = params.id as string;
 
   const [employee, setEmployee] = useState<Employee | null>(null);
+  const [isActive, setIsActive] = useState(true);
   const [formData, setFormData] = useState<EmployeeFormData>({
     name: "", designation: "", email: "", password: "", mobile: "",
     department: "", role: "", moduleAccess: [],
@@ -86,6 +88,7 @@ export default function EditEmployeePage() {
         }
 
         setEmployee(found);
+        setIsActive(found.isActive !== false);
         setFormData({
           name: found.name,
           designation: found.designation || "",
@@ -147,6 +150,7 @@ export default function EditEmployeePage() {
         department: formData.department || null,
         role: formData.role,
         moduleAccess: formData.moduleAccess,
+        isActive,
       };
       if (formData.password) {
         payload.password = formData.password;
@@ -198,9 +202,24 @@ export default function EditEmployeePage() {
         {employee && (
           <Card>
             <CardContent className="pt-4">
-              <div className="flex items-center gap-4">
-                <Label className="text-muted-foreground w-28 shrink-0">Employee Code</Label>
-                <span className="font-mono text-sm font-medium">{employee.code}</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <Label className="text-muted-foreground w-28 shrink-0">Employee Code</Label>
+                  <span className="font-mono text-sm font-medium">{employee.code}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Label htmlFor="isActive" className="text-sm">Status</Label>
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id="isActive"
+                      checked={isActive}
+                      onCheckedChange={setIsActive}
+                    />
+                    <span className={`text-sm font-medium ${isActive ? "text-green-600" : "text-red-600"}`}>
+                      {isActive ? "Active" : "Inactive"}
+                    </span>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>

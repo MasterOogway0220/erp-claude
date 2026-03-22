@@ -1183,6 +1183,36 @@ model MaterialCodeMaster {
   @@index([productType])
 }
 
+// ==================== DEPARTMENT MASTER ====================
+
+model DepartmentMaster {
+  id        String   @id @default(cuid())
+  companyId String?
+  name      String   // e.g., Purchase, Sales, Quality, Warehouse, Accounts
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, name])
+  @@index([companyId])
+}
+
+// ==================== INDUSTRY SEGMENT MASTER ====================
+
+model IndustrySegmentMaster {
+  id        String   @id @default(cuid())
+  companyId String?
+  name      String   // e.g., Oil & Gas, Petrochemical, Power, Pharmaceutical
+  category  String   @default("CUSTOMER") // CUSTOMER or VENDOR
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, name, category])
+  @@index([companyId])
+  @@index([category])
+}
+
 // ==================== FITTING MASTER ====================
 
 model FittingMaster {

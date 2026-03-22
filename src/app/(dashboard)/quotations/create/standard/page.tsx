@@ -389,8 +389,13 @@ function StandardQuotationPage() {
     }
   }, [selectedCustomer, editId]);
 
-  // Reset buyer when customer changes
+  // Reset buyer when customer changes (but not during initial edit load)
+  const initialEditLoadDone = useRef(false);
   useEffect(() => {
+    if (editId && !initialEditLoadDone.current && editData?.quotation) {
+      initialEditLoadDone.current = true;
+      return;
+    }
     setFormData((prev) => ({ ...prev, buyerId: "" }));
   }, [formData.customerId]);
 
@@ -1081,30 +1086,121 @@ function StandardQuotationPage() {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div className="space-y-1">
                       <Label className="text-xs font-medium">Material Code</Label>
-                      <SmartCombobox
-                        options={materialCodes}
-                        value={item.materialCodeLabel || ""}
-                        onSelect={(mc: any) => {
-                          setItems((prev) => {
-                            const newItems = [...prev];
-                            newItems[index] = { ...newItems[index], materialCodeId: mc.id, materialCodeLabel: mc.code };
-                            return newItems;
-                          });
-                        }}
-                        onChange={(text) => {
-                          setItems((prev) => {
-                            const newItems = [...prev];
-                            newItems[index] = { ...newItems[index], materialCodeLabel: text, materialCodeId: "" };
-                            return newItems;
-                          });
-                        }}
-                        displayFn={(mc: any) => `${mc.code}${mc.description ? ` — ${mc.description}` : ""}`}
-                        filterFn={(mc: any, query) =>
-                          mc.code.toLowerCase().includes(query.toLowerCase()) ||
-                          (mc.description || "").toLowerCase().includes(query.toLowerCase())
-                        }
-                        placeholder="Search material code..."
-                      />
+                      <div className="flex gap-1">
+                        <SmartCombobox
+                          options={materialCodes}
+                          value={item.materialCodeLabel || ""}
+                          onSelect={(mc: any) => {
+                            setItems((prev) => {
+                              const newItems = [...prev];
+                              newItems[index] = { ...newItems[index], materialCodeId: mc.id, materialCodeLabel: mc.code };
+                              return newItems;
+                            });
+                          }}
+                          onChange={(text) => {
+                            setItems((prev) => {
+                              const newItems = [...prev];
+                              newItems[index] = { ...newItems[index], materialCodeLabel: text, materialCodeId: "" };
+                              return newItems;
+                            });
+                          }}
+                          displayFn={(mc: any) => `${mc.code}${mc.description ? ` — ${mc.description}` : ""}`}
+                          filterFn={(mc: any, query) =>
+                            mc.code.toLowerCase().includes(query.toLowerCase()) ||
+                            (mc.description || "").toLowerCase().includes(query.toLowerCase())
+                          }
+                          placeholder="Search material code..."
+                        />
+                        {item.materialCodeLabel && item.product && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-8 px-2 text-[10px] whitespace-nowrap shrink-0"
+                            title="Save this material code and product specs to Material Code Master"
+                            onClick={async () => {
+                              const code = item.materialCodeLabel.trim();
+                              if (!code) { toast.error("Material Code is required"); return; }
+                              try {
+                                // Build size label from item fields
+                                const sizeLabel = item.sizeLabel || "";
+                                // Check for duplicates with same product specs but different code
+                                const checkRes = await fetch("/api/masters/material-codes/check-duplicate", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({
+                                    productType: item.product,
+                                    materialGrade: item.material,
+                                    size: sizeLabel,
+                                    schedule: item.schedule,
+                                    code,
+                                  }),
+                                });
+                                const checkData = await checkRes.json();
+                                if (checkData.duplicates?.length > 0) {
+                                  const dup = checkData.duplicates[0];
+                                  const replace = window.confirm(
+                                    `A product with same specifications exists in the master with material code "${dup.code}".\n\nDo you want to replace it with "${code}"?`
+                                  );
+                                  if (!replace) return;
+                                  // Update the existing record with new code
+                                  const updateRes = await fetch(`/api/masters/material-codes/${dup.id}`, {
+                                    method: "PATCH",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ code }),
+                                  });
+                                  if (!updateRes.ok) {
+                                    const err = await updateRes.json().catch(() => ({}));
+                                    throw new Error(err.error || "Failed to update material code");
+                                  }
+                                  const updated = await updateRes.json();
+                                  setItems((prev) => {
+                                    const newItems = [...prev];
+                                    newItems[index] = { ...newItems[index], materialCodeId: updated.id, materialCodeLabel: code };
+                                    return newItems;
+                                  });
+                                  queryClient.invalidateQueries({ queryKey: ["material-codes"] });
+                                  toast.success(`Material code updated from "${dup.code}" to "${code}"`);
+                                  return;
+                                }
+                                // No duplicate — create new
+                                const desc = [item.product, item.material, sizeLabel, item.schedule].filter(Boolean).join(" ");
+                                const createRes = await fetch("/api/masters/material-codes", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({
+                                    code,
+                                    productType: item.product,
+                                    materialGrade: item.material,
+                                    size: sizeLabel,
+                                    odSize: item.od || null,
+                                    nbSize: item.nps || null,
+                                    thickness: item.wt || null,
+                                    schedule: item.schedule || null,
+                                    description: desc,
+                                  }),
+                                });
+                                if (!createRes.ok) {
+                                  const err = await createRes.json().catch(() => ({}));
+                                  throw new Error(err.error || "Failed to create material code");
+                                }
+                                const created = await createRes.json();
+                                setItems((prev) => {
+                                  const newItems = [...prev];
+                                  newItems[index] = { ...newItems[index], materialCodeId: created.id, materialCodeLabel: code };
+                                  return newItems;
+                                });
+                                queryClient.invalidateQueries({ queryKey: ["material-codes"] });
+                                toast.success("Material code recorded successfully");
+                              } catch (err: any) {
+                                toast.error(err.message || "Failed to record material code");
+                              }
+                            }}
+                          >
+                            Record
+                          </Button>
+                        )}
+                      </div>
                     </div>
                     <ProductMaterialSelect
                       className="sm:col-span-3"

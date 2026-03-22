@@ -210,7 +210,7 @@ export default function CustomerContactsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Customer Contacts"
+        title="Customer / Vendor Contacts"
         description="Company directory — manage contacts for follow-up, quality, and accounts"
       >
         <Button onClick={openCreateDialog}>

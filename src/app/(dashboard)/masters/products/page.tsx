@@ -1255,18 +1255,6 @@ function AdditionalSpecsPanel() {
       {/* Add new spec */}
       <div className="flex gap-3 items-end border rounded-lg p-3 bg-muted/30">
         <div className="grid gap-1 flex-1">
-          <Label className="text-xs">Product</Label>
-          <Select value={newSpec.product || "NONE"} onValueChange={(v) => setNewSpec({ ...newSpec, product: v === "NONE" ? "" : v })}>
-            <SelectTrigger><SelectValue placeholder="Select product" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="NONE">Select product</SelectItem>
-              {uniqueProducts.map((p) => (
-                <SelectItem key={p} value={p}>{p}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="grid gap-1 flex-1">
           <Label className="text-xs">Additional Spec Name</Label>
           <Input value={newSpec.specName} onChange={(e) => setNewSpec({ ...newSpec, specName: e.target.value })} placeholder="e.g., NACE MR0175" />
         </div>

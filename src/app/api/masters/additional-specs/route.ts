@@ -33,12 +33,12 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { product, specName } = body;
 
-    if (!product || !specName) {
-      return NextResponse.json({ error: "Product and specName are required" }, { status: 400 });
+    if (!specName) {
+      return NextResponse.json({ error: "Spec name is required" }, { status: 400 });
     }
 
     const spec = await prisma.additionalSpecOption.create({
-      data: { product, specName, companyId },
+      data: { product: product || "ALL", specName, companyId },
     });
 
     return NextResponse.json(spec, { status: 201 });
