@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -33,21 +33,11 @@ interface Vendor {
   city?: string;
 }
 
-interface PR {
-  id: string;
-  prNo: string;
-  items: Array<{
-    product: string;
-    material: string;
-    additionalSpec: string;
-    sizeLabel: string;
-    quantity: number;
-  }>;
-}
-
 interface SalesOrder {
   id: string;
   soNo: string;
+  items?: any[];
+  customer?: { name: string };
 }
 
 interface POItem {
@@ -79,7 +69,7 @@ function CreatePOPage() {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [vendors, setVendors] = useState<Vendor[]>([]);
-  const [prs, setPRs] = useState<PR[]>([]);
+  const [prs, setPRs] = useState<any[]>([]);
   const [salesOrders, setSalesOrders] = useState<SalesOrder[]>([]);
 
   const [formData, setFormData] = useState({
@@ -123,11 +113,19 @@ function CreatePOPage() {
     fetchSalesOrders();
   }, []);
 
+  // Load PR items when prId changes AND prs are loaded
   useEffect(() => {
-    if (formData.prId) {
+    if (formData.prId && prs.length > 0) {
       loadPRItems(formData.prId);
     }
-  }, [formData.prId]);
+  }, [formData.prId, prs]);
+
+  // Load SO items when salesOrderId changes
+  useEffect(() => {
+    if (formData.salesOrderId) {
+      loadSOItems(formData.salesOrderId);
+    }
+  }, [formData.salesOrderId]);
 
   const fetchVendors = async () => {
     try {
@@ -165,25 +163,48 @@ function CreatePOPage() {
     }
   };
 
-  const loadPRItems = async (prId: string) => {
-    const pr = prs.find((p) => p.id === prId);
-    if (pr) {
-      const prItems: POItem[] = pr.items.map((item) => ({
-        itemCategory: "Pipe" as POItemCategory,
-        product: item.product,
-        material: item.material,
-        additionalSpec: item.additionalSpec,
-        sizeLabel: item.sizeLabel,
-        quantity: item.quantity,
-        unitRate: 0,
-        amount: 0,
-        deliveryDate: formData.deliveryDate,
-        fittingId: "",
-        fittingLabel: "",
-        flangeId: "",
-        flangeLabel: "",
-      }));
-      setItems(prItems);
+  const mapToPOItems = (sourceItems: any[]): POItem[] => {
+    return sourceItems.map((item: any) => ({
+      itemCategory: "Pipe" as POItemCategory,
+      product: item.product || "",
+      material: item.material || "",
+      additionalSpec: item.additionalSpec || "",
+      sizeLabel: item.sizeLabel || "",
+      quantity: parseFloat(String(item.quantity)) || 0,
+      unitRate: parseFloat(String(item.unitRate)) || 0,
+      amount: (parseFloat(String(item.quantity)) || 0) * (parseFloat(String(item.unitRate)) || 0),
+      deliveryDate: item.deliveryDate
+        ? format(new Date(item.deliveryDate), "yyyy-MM-dd")
+        : formData.deliveryDate,
+      fittingId: "",
+      fittingLabel: "",
+      flangeId: "",
+      flangeLabel: "",
+    }));
+  };
+
+  const loadPRItems = (prId: string) => {
+    const pr = prs.find((p: any) => p.id === prId);
+    if (pr?.items?.length > 0) {
+      setItems(mapToPOItems(pr.items));
+      toast.success(`Loaded ${pr.items.length} items from PR ${pr.prNo}`);
+    }
+  };
+
+  const loadSOItems = async (soId: string) => {
+    try {
+      const response = await fetch(`/api/sales-orders/${soId}`);
+      if (response.ok) {
+        const data = await response.json();
+        const so = data.salesOrder || data;
+        if (so.items?.length > 0) {
+          setItems(mapToPOItems(so.items));
+          toast.success(`Loaded ${so.items.length} items from SO ${so.soNo || ""}`);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch SO details:", error);
+      toast.error("Failed to load SO items");
     }
   };
 
@@ -276,7 +297,7 @@ function CreatePOPage() {
     <div className="space-y-6">
       <PageHeader
         title="Create Purchase Order"
-        description="Create a new purchase order from PR or manually"
+        description="Create a new purchase order from PR, SO, or manually"
       >
         <Button variant="outline" onClick={() => router.back()}>
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -326,9 +347,9 @@ function CreatePOPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="NONE">None</SelectItem>
-                    {prs.map((pr) => (
+                    {prs.map((pr: any) => (
                       <SelectItem key={pr.id} value={pr.id}>
-                        {pr.prNo}
+                        {pr.prNo}{pr.salesOrder ? ` (SO: ${pr.salesOrder.soNo})` : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -350,7 +371,7 @@ function CreatePOPage() {
                     <SelectItem value="NONE">None</SelectItem>
                     {salesOrders.map((so) => (
                       <SelectItem key={so.id} value={so.id}>
-                        {so.soNo}
+                        {so.soNo}{(so as any).customer?.name ? ` — ${(so as any).customer.name}` : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -422,7 +443,7 @@ function CreatePOPage() {
           <CardContent>
             {items.length === 0 ? (
               <div className="text-center text-muted-foreground py-8">
-                No items added. Click "Add Item" or select a PR to auto-populate.
+                No items added. Click &quot;Add Item&quot; or select a PR/SO to auto-populate.
               </div>
             ) : (
               <div className="space-y-4">
@@ -549,7 +570,7 @@ function CreatePOPage() {
                       <Input
                         type="number"
                         step="0.001"
-                        value={item.quantity}
+                        value={item.quantity || ""}
                         onChange={(e) => updateItem(index, "quantity", e.target.value)}
                         className="h-9"
                         required
@@ -560,7 +581,7 @@ function CreatePOPage() {
                       <Input
                         type="number"
                         step="0.01"
-                        value={item.unitRate}
+                        value={item.unitRate || ""}
                         onChange={(e) => updateItem(index, "unitRate", e.target.value)}
                         className="h-9"
                         required
@@ -589,13 +610,13 @@ function CreatePOPage() {
                       </Button>
                     </div>
                     <div className="md:col-span-12 text-right text-sm text-muted-foreground">
-                      Amount: {formData.currency} {item.amount.toFixed(2)}
+                      Amount: {formData.currency} {(item.amount || 0).toFixed(2)}
                     </div>
                   </div>
                 ))}
                 <div className="text-right text-lg font-semibold pt-4 border-t">
                   Total: {formData.currency}{" "}
-                  {items.reduce((sum, item) => sum + item.amount, 0).toFixed(2)}
+                  {items.reduce((sum, item) => sum + (item.amount || 0), 0).toFixed(2)}
                 </div>
               </div>
             )}
