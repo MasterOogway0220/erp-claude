@@ -145,6 +145,36 @@ async function fetchAddressFromPincode(pincode: string): Promise<{ city: string;
   }
 }
 
+// Helper to fetch address from international postal code using Zippopotam.us
+async function fetchIntlAddressFromPostalCode(
+  postalCode: string,
+  countryIsoCode: string
+): Promise<{ city: string; state: string } | null> {
+  if (!postalCode.trim() || !countryIsoCode) return null;
+  try {
+    const res = await fetch(
+      `https://api.zippopotam.us/${countryIsoCode}/${encodeURIComponent(postalCode.trim())}`
+    );
+    if (!res.ok) {
+      toast.error("Postal code not found");
+      return null;
+    }
+    const data = await res.json();
+    if (data?.places?.length > 0) {
+      const place = data.places[0];
+      return {
+        city: place["place name"] || "",
+        state: place.state || "",
+      };
+    }
+    toast.error("Postal code not found");
+    return null;
+  } catch {
+    toast.error("Failed to fetch address from postal code");
+    return null;
+  }
+}
+
 export default function CustomerEditPage() {
   const router = useRouter();
   const params = useParams();
@@ -154,6 +184,7 @@ export default function CustomerEditPage() {
   const [formData, setFormData] = useState<CustomerFormData | null>(null);
   const [saving, setSaving] = useState(false);
   const [fetchingPincode, setFetchingPincode] = useState(false);
+  const [fetchingIntlPincode, setFetchingIntlPincode] = useState(false);
   const [fetchingDispatchPincode, setFetchingDispatchPincode] = useState<number | null>(null);
 
   // International address: derive states and cities from selected country/state
@@ -333,6 +364,21 @@ export default function CustomerEditPage() {
     }
     setFetchingPincode(false);
   }, []);
+
+  const handleIntlPincodeChange = useCallback(async (value: string) => {
+    setFormData((prev) => prev ? { ...prev, pincode: value } : prev);
+    if (!value.trim() || value.trim().length < 4 || !selectedCountryObj) return;
+    setFetchingIntlPincode(true);
+    const result = await fetchIntlAddressFromPostalCode(value, selectedCountryObj.isoCode);
+    if (result) {
+      setFormData((prev) => prev ? ({
+        ...prev,
+        city: result.city || prev.city,
+        state: result.state || prev.state,
+      }) : prev);
+    }
+    setFetchingIntlPincode(false);
+  }, [selectedCountryObj]);
 
   const handleGstinChange = useCallback(async (value: string) => {
     setFormData((prev) => prev ? { ...prev, gstNo: value.toUpperCase() } : prev);
@@ -663,7 +709,10 @@ export default function CustomerEditPage() {
                 </div>
                 <div className="space-y-1.5">
                   <Label>ZIP / Postal Code</Label>
-                  <Input value={formData.pincode} onChange={(e) => update("pincode", e.target.value)} placeholder="Postal code" />
+                  <div className="relative">
+                    <Input value={formData.pincode} onChange={(e) => handleIntlPincodeChange(e.target.value)} placeholder="Postal code" />
+                    {fetchingIntlPincode && <Loader2 className="w-4 h-4 animate-spin absolute right-2.5 top-2.5 text-muted-foreground" />}
+                  </div>
                 </div>
               </div>
             )}
