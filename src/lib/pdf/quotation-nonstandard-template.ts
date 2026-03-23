@@ -100,7 +100,7 @@ function nl2br(str: string | null | undefined): string {
 function buildItemDescription(item: any): string {
   if (item.itemDescription) {
     // If itemDescription doesn't already include material code, prepend it
-    const mcCode = item.materialCode?.code || "";
+    const mcCode = item.materialCode?.code || item.materialCodeLabel || "";
     const desc = item.itemDescription;
     if (mcCode && !desc.includes(mcCode)) {
       return `MATERIAL CODE: ${escapeHtml(mcCode)}<br>${nl2br(desc)}`;
@@ -110,7 +110,7 @@ function buildItemDescription(item: any): string {
 
   const lines: string[] = [];
 
-  const matCode = item.materialCode?.code || item.remark || "";
+  const matCode = item.materialCode?.code || item.materialCodeLabel || item.remark || "";
   if (matCode) {
     lines.push(`MATERIAL CODE: ${matCode}`);
   }

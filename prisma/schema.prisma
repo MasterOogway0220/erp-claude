@@ -925,6 +925,7 @@ model QuotationItem {
   sizeNPS           Decimal? @db.Decimal(6, 3)
   schedule          String?
   materialCodeId    String?
+  materialCodeLabel String?
   uom               String?
   hsnCode           String?
   taxRate           Decimal? @db.Decimal(5, 2)

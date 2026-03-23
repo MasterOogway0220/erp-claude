@@ -435,6 +435,7 @@ export async function PUT(
               delivery: item.delivery || null,
               remark: item.remark || null,
               materialCodeId: item.materialCodeId || null,
+              materialCodeLabel: item.materialCodeLabel || null,
               uom: item.uom || null,
               hsnCode: item.hsnCode || null,
               taxRate: item.taxRate ? parseFloat(item.taxRate) : null,

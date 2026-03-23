@@ -736,13 +736,13 @@ export default function QuotationDetailPage() {
       {/* Financial Summary */}
       {(quotation.subtotal || quotation.grandTotal) && (
         <Card>
-          <CardHeader>
-            <CardTitle>Financial Summary</CardTitle>
+          <CardHeader className="py-3 px-4">
+            <CardTitle className="text-base">Financial Summary</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-4 pb-3 pt-0">
             <div className="flex justify-end">
-              <div className="space-y-1 text-sm w-full max-w-sm">
-                <div className="flex justify-between py-0.5">
+              <div className="space-y-0 text-xs w-full max-w-xs">
+                <div className="flex justify-between py-px">
                   <span className="text-muted-foreground">Subtotal</span>
                   <span className="font-medium">
                     {quotation.currency} {parseFloat(quotation.subtotal || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
@@ -750,11 +750,11 @@ export default function QuotationDetailPage() {
                 </div>
                 {quotation.additionalDiscount && parseFloat(quotation.additionalDiscount) > 0 && (
                   <>
-                    <div className="flex justify-between py-0.5 text-orange-600">
+                    <div className="flex justify-between py-px text-orange-600">
                       <span>Discount ({parseFloat(quotation.additionalDiscount)}%)</span>
                       <span>− {quotation.currency} {parseFloat(quotation.discountAmount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
                     </div>
-                    <div className="flex justify-between py-0.5">
+                    <div className="flex justify-between py-px">
                       <span className="text-muted-foreground">After Discount</span>
                       <span className="font-medium">
                         {quotation.currency} {parseFloat(quotation.totalAfterDiscount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
@@ -763,31 +763,31 @@ export default function QuotationDetailPage() {
                   </>
                 )}
                 {quotation.taxRate && parseFloat(quotation.taxRate) > 0 && !quotation.rcmEnabled && (
-                  <div className="flex justify-between py-0.5">
+                  <div className="flex justify-between py-px">
                     <span className="text-muted-foreground">GST ({parseFloat(quotation.taxRate)}%)</span>
                     <span>{quotation.currency} {parseFloat(quotation.taxAmount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
                   </div>
                 )}
                 {quotation.rcmEnabled && (
-                  <div className="flex justify-between py-0.5 text-amber-600">
+                  <div className="flex justify-between py-px text-amber-600">
                     <span>Tax — RCM (paid by buyer)</span>
                     <span>₹0.00</span>
                   </div>
                 )}
                 {quotation.roundOff && quotation.roundOffAmount != null && (
-                  <div className="flex justify-between py-0.5 text-muted-foreground">
+                  <div className="flex justify-between py-px text-muted-foreground">
                     <span>Round-off</span>
                     <span>{parseFloat(quotation.roundOffAmount) >= 0 ? "+" : ""}{parseFloat(quotation.roundOffAmount).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
                   </div>
                 )}
-                <div className="flex justify-between py-1 border-t font-bold text-base">
+                <div className="flex justify-between py-0.5 border-t font-bold text-sm mt-0.5">
                   <span>Grand Total</span>
                   <span>
                     {quotation.currency} {parseFloat(quotation.grandTotal || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                   </span>
                 </div>
                 {quotation.advanceToPay && parseFloat(quotation.advanceToPay) > 0 && (
-                  <div className="flex justify-between py-0.5 text-green-600">
+                  <div className="flex justify-between py-px text-green-600">
                     <span>Advance to Pay</span>
                     <span>{quotation.currency} {parseFloat(quotation.advanceToPay).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
                   </div>
@@ -795,7 +795,7 @@ export default function QuotationDetailPage() {
               </div>
             </div>
             {quotation.amountInWords && (
-              <div className="mt-3 text-right text-sm text-muted-foreground italic">
+              <div className="mt-1 text-right text-xs text-muted-foreground italic">
                 {quotation.amountInWords}
               </div>
             )}

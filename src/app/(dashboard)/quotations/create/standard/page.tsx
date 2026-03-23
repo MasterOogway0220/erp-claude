@@ -319,8 +319,12 @@ function StandardQuotationPage() {
     (b: any) => b.id === formData.buyerId
   );
 
-  // Auto-set currency based on market type
+  // Track whether we're loading from edit data — skip auto-currency effects until loaded
+  const editLoadedRef = useRef(false);
+
+  // Auto-set currency based on market type (skip in edit mode until data is loaded)
   useEffect(() => {
+    if (editId && !editLoadedRef.current) return;
     if (formData.quotationType === "EXPORT" && formData.currency === "INR") {
       setFormData((prev) => ({ ...prev, currency: "USD" }));
     } else if (formData.quotationType === "DOMESTIC" && formData.currency !== "INR") {
@@ -328,8 +332,9 @@ function StandardQuotationPage() {
     }
   }, [formData.quotationType]);
 
-  // Auto-set currency from customer
+  // Auto-set currency from customer (skip in edit mode — quotation already has the right currency)
   useEffect(() => {
+    if (editId) return;
     if (selectedCustomer?.defaultCurrency) {
       setFormData((prev) => ({ ...prev, currency: selectedCustomer.defaultCurrency }));
     }
@@ -581,6 +586,10 @@ function StandardQuotationPage() {
           isHeadingEditable: t.isHeadingEditable,
         })));
       }
+      // Sync prevCurrencyRef so the currency conversion effect doesn't fire
+      prevCurrencyRef.current = q.currency || "INR";
+      // Mark edit as loaded so auto-currency effects can work for manual changes
+      editLoadedRef.current = true;
     }
   }, [editData]);
 
@@ -622,6 +631,7 @@ function StandardQuotationPage() {
   });
 
   const addItem = () => setItems([...items, { ...emptyItem }]);
+  const [copyResetKey, setCopyResetKey] = useState(0);
 
   const removeItem = (index: number) => {
     if (items.length > 1) setItems(items.filter((_, i) => i !== index));
@@ -1022,12 +1032,12 @@ function StandardQuotationPage() {
                     <div className="flex items-center gap-1">
                       {items.length > 1 && (
                         <Select
-                          value="__none__"
+                          key={`copy-${index}-${copyResetKey}`}
                           onValueChange={(val) => {
-                            if (val === "__none__") return;
                             const srcIdx = parseInt(val);
                             const src = items[srcIdx];
                             if (!src) return;
+                            setCopyResetKey((k) => k + 1);
                             setItems((old) => {
                               const newItems = [...old];
                               newItems[index] = {
@@ -1063,7 +1073,6 @@ function StandardQuotationPage() {
                             <span>Copy From</span>
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="__none__" disabled>Select item to copy</SelectItem>
                             {items.map((_, i) =>
                               i !== index ? (
                                 <SelectItem key={i} value={String(i)}>
@@ -1557,6 +1566,12 @@ function StandardQuotationPage() {
                 </div>
               );
             })}
+            <div className="flex justify-center pt-2">
+              <Button type="button" variant="outline" size="sm" onClick={addItem}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Item
+              </Button>
+            </div>
           </CardContent>
         </Card>
 

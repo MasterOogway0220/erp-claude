@@ -18,6 +18,7 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Save, MapPin, Plus, X, Loader2, ListChecks } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
+import { Country, State, City } from "country-state-city";
 
 const INDIAN_STATES = [
   "Andhra Pradesh",
@@ -58,28 +59,7 @@ const INDIAN_STATES = [
   "Puducherry",
 ];
 
-const COUNTRIES = [
-  "Afghanistan", "Albania", "Algeria", "Argentina", "Armenia", "Australia",
-  "Austria", "Azerbaijan", "Bahrain", "Bangladesh", "Belarus", "Belgium",
-  "Bhutan", "Bolivia", "Bosnia and Herzegovina", "Botswana", "Brazil",
-  "Brunei", "Bulgaria", "Cambodia", "Cameroon", "Canada", "Chile", "China",
-  "Colombia", "Costa Rica", "Croatia", "Cuba", "Cyprus", "Czech Republic",
-  "Denmark", "Ecuador", "Egypt", "Estonia", "Ethiopia", "Finland", "France",
-  "Georgia", "Germany", "Ghana", "Greece", "Guatemala", "Hong Kong",
-  "Hungary", "Iceland", "Indonesia", "Iran", "Iraq", "Ireland", "Israel",
-  "Italy", "Jamaica", "Japan", "Jordan", "Kazakhstan", "Kenya", "Kuwait",
-  "Kyrgyzstan", "Latvia", "Lebanon", "Libya", "Lithuania", "Luxembourg",
-  "Macau", "Malaysia", "Maldives", "Malta", "Mauritius", "Mexico", "Moldova",
-  "Mongolia", "Montenegro", "Morocco", "Myanmar", "Nepal", "Netherlands",
-  "New Zealand", "Nigeria", "North Macedonia", "Norway", "Oman", "Pakistan",
-  "Palestine", "Panama", "Paraguay", "Peru", "Philippines", "Poland",
-  "Portugal", "Qatar", "Romania", "Russia", "Saudi Arabia", "Senegal",
-  "Serbia", "Singapore", "Slovakia", "Slovenia", "South Africa", "South Korea",
-  "Spain", "Sri Lanka", "Sudan", "Sweden", "Switzerland", "Syria", "Taiwan",
-  "Tajikistan", "Tanzania", "Thailand", "Tunisia", "Turkey", "Turkmenistan",
-  "UAE", "Uganda", "Ukraine", "United Kingdom", "United States", "Uruguay",
-  "Uzbekistan", "Venezuela", "Vietnam", "Yemen", "Zambia", "Zimbabwe",
-];
+const ALL_COUNTRIES = Country.getAllCountries().filter((c) => c.name !== "India");
 
 interface DispatchAddress {
   label: string;
@@ -202,6 +182,15 @@ export default function CustomerCreatePage() {
   const [fetchingPincode, setFetchingPincode] = useState(false);
   const [fetchingDispatchPincode, setFetchingDispatchPincode] = useState<number | null>(null);
   const [industrySegments, setIndustrySegments] = useState<string[]>([]);
+
+  // International address: derive states and cities from selected country/state
+  const selectedCountryObj = formData.customerType === "INTERNATIONAL"
+    ? ALL_COUNTRIES.find((c) => c.name === formData.country) : null;
+  const intlStates = selectedCountryObj ? State.getStatesOfCountry(selectedCountryObj.isoCode) : [];
+  const selectedStateObj = selectedCountryObj && formData.state
+    ? intlStates.find((s) => s.name === formData.state) : null;
+  const intlCities = selectedCountryObj && selectedStateObj
+    ? City.getCitiesOfState(selectedCountryObj.isoCode, selectedStateObj.isoCode) : [];
   useEffect(() => {
     const cat = formData.companyType === "SUPPLIER" ? "VENDOR" : "CUSTOMER";
     fetch(`/api/masters/industry-segments?category=${cat}`)
@@ -531,18 +520,47 @@ export default function CustomerCreatePage() {
               <div className="grid grid-cols-4 gap-3">
                 <div className="space-y-1.5">
                   <Label>Country</Label>
-                  <Select value={formData.country || "NONE"} onValueChange={(v) => update("country", v === "NONE" ? "" : v)}>
+                  <Select value={formData.country || "NONE"} onValueChange={(v) => {
+                    const country = v === "NONE" ? "" : v;
+                    setFormData((prev) => ({ ...prev, country, state: "", city: "" }));
+                  }}>
                     <SelectTrigger><SelectValue placeholder="Select country" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="NONE">Select country</SelectItem>
-                      {COUNTRIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                      {ALL_COUNTRIES.map((c) => <SelectItem key={c.isoCode} value={c.name}>{c.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-1.5"><Label>City</Label><Input value={formData.city} onChange={(e) => update("city", e.target.value)} placeholder="City" /></div>
                 <div className="space-y-1.5">
                   <Label>State / Province</Label>
-                  <Input value={formData.state} onChange={(e) => update("state", e.target.value)} placeholder="State or province" />
+                  {intlStates.length > 0 ? (
+                    <Select value={formData.state || "NONE"} onValueChange={(v) => {
+                      const state = v === "NONE" ? "" : v;
+                      setFormData((prev) => ({ ...prev, state, city: "" }));
+                    }}>
+                      <SelectTrigger><SelectValue placeholder="Select state" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="NONE">Select state</SelectItem>
+                        {intlStates.map((s) => <SelectItem key={s.isoCode} value={s.name}>{s.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Input value={formData.state} onChange={(e) => update("state", e.target.value)} placeholder="State or province" />
+                  )}
+                </div>
+                <div className="space-y-1.5">
+                  <Label>City</Label>
+                  {intlCities.length > 0 ? (
+                    <Select value={formData.city || "NONE"} onValueChange={(v) => update("city", v === "NONE" ? "" : v)}>
+                      <SelectTrigger><SelectValue placeholder="Select city" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="NONE">Select city</SelectItem>
+                        {intlCities.map((c) => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Input value={formData.city} onChange={(e) => update("city", e.target.value)} placeholder="City" />
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <Label>ZIP / Postal Code</Label>

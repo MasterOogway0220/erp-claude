@@ -242,8 +242,12 @@ function NonStandardQuotationPage() {
     (b: any) => b.id === formData.buyerId
   );
 
-  // Auto-set currency based on market type
+  // Track whether edit data has been loaded — skip auto-currency until loaded
+  const editCurrencyLoadedRef = useRef(false);
+
+  // Auto-set currency based on market type (skip in edit mode until data is loaded)
   useEffect(() => {
+    if (editId && !editCurrencyLoadedRef.current) return;
     if (formData.quotationType === "EXPORT" && formData.currency === "INR") {
       setFormData((prev) => ({ ...prev, currency: "USD" }));
     } else if (formData.quotationType === "DOMESTIC" && formData.currency !== "INR") {
@@ -251,8 +255,9 @@ function NonStandardQuotationPage() {
     }
   }, [formData.quotationType]);
 
-  // Auto-set currency from customer
+  // Auto-set currency from customer (skip in edit mode — quotation already has the right currency)
   useEffect(() => {
+    if (editId) return;
     if (selectedCustomer?.defaultCurrency) {
       setFormData((prev) => ({ ...prev, currency: selectedCustomer.defaultCurrency }));
     }
@@ -499,6 +504,10 @@ function NonStandardQuotationPage() {
           isHeadingEditable: t.isHeadingEditable,
         })));
       }
+      // Sync prevCurrencyRef so the currency conversion effect doesn't fire
+      prevCurrencyRef.current = q.currency || "INR";
+      // Mark edit as loaded so auto-currency effects can work for manual changes
+      editCurrencyLoadedRef.current = true;
     }
   }, [editData]);
 
@@ -528,6 +537,7 @@ function NonStandardQuotationPage() {
     setItems([...items, { ...emptyItem }]);
     setUseStructuredInput([...useStructuredInput, false]);
   };
+  const [copyResetKey, setCopyResetKey] = useState(0);
 
   const removeItem = (index: number) => {
     if (items.length > 1) {
@@ -914,12 +924,12 @@ function NonStandardQuotationPage() {
                   </div>
                   {items.length > 1 && (
                     <Select
-                      value="__none__"
+                      key={`copy-${index}-${copyResetKey}`}
                       onValueChange={(val) => {
-                        if (val === "__none__") return;
                         const srcIdx = parseInt(val);
                         const src = items[srcIdx];
                         if (!src) return;
+                        setCopyResetKey((k) => k + 1);
                         setItems((prev) => {
                           const newItems = [...prev];
                           newItems[index] = {
@@ -956,7 +966,6 @@ function NonStandardQuotationPage() {
                         <span>Copy From</span>
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="__none__" disabled>Select item to copy</SelectItem>
                         {items.map((_, i) =>
                           i !== index ? (
                             <SelectItem key={i} value={String(i)}>
@@ -1559,6 +1568,13 @@ function NonStandardQuotationPage() {
                 )}
               </div>
             ))}
+
+            <div className="flex justify-center pt-2">
+              <Button type="button" variant="outline" size="sm" onClick={addItem}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Item
+              </Button>
+            </div>
 
             {/* Totals */}
             <div className="flex justify-end gap-8 pt-4 border-t">
