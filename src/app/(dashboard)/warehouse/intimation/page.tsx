@@ -94,8 +94,8 @@ export default function WarehouseIntimationPage() {
   const [intimations, setIntimations] = useState<Intimation[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [priorityFilter, setPriorityFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -107,8 +107,8 @@ export default function WarehouseIntimationPage() {
       setLoading(true);
       const params = new URLSearchParams();
       if (search) params.set("search", search);
-      if (statusFilter) params.set("status", statusFilter);
-      if (priorityFilter) params.set("priority", priorityFilter);
+      if (statusFilter && statusFilter !== "all") params.set("status", statusFilter);
+      if (priorityFilter && priorityFilter !== "all") params.set("priority", priorityFilter);
 
       const res = await fetch(`/api/warehouse/intimation?${params}`);
       if (res.ok) {

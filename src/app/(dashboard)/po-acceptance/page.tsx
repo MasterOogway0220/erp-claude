@@ -58,13 +58,13 @@ export default function POAcceptanceListPage() {
   const [acceptances, setAcceptances] = useState<POAcceptanceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const fetchAcceptances = async () => {
     try {
       const params = new URLSearchParams();
       if (search) params.set("search", search);
-      if (statusFilter) params.set("status", statusFilter);
+      if (statusFilter && statusFilter !== "all") params.set("status", statusFilter);
 
       const response = await fetch(`/api/po-acceptance?${params}`);
       if (response.ok) {

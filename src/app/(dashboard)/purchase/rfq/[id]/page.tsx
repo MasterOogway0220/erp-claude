@@ -91,7 +91,7 @@ export default function RFQDetailPage() {
   const [quotationRef, setQuotationRef] = useState("");
   const [quotationDate, setQuotationDate] = useState("");
   const [validUntil, setValidUntil] = useState("");
-  const [priceBasis, setPriceBasis] = useState("");
+  const [priceBasis, setPriceBasis] = useState("EX_WORKS");
   const [deliveryDays, setDeliveryDays] = useState("");
   const [paymentTerms, setPaymentTerms] = useState("");
   const [freight, setFreight] = useState("0");

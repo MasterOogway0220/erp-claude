@@ -55,7 +55,7 @@ export default function ClientPurchaseOrdersPage() {
   const [clientPOs, setClientPOs] = useState<ClientPO[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   useEffect(() => {
     fetchClientPOs();
@@ -66,7 +66,7 @@ export default function ClientPurchaseOrdersPage() {
       setLoading(true);
       const params = new URLSearchParams();
       if (search) params.set("search", search);
-      if (statusFilter) params.set("status", statusFilter);
+      if (statusFilter && statusFilter !== "all") params.set("status", statusFilter);
 
       const response = await fetch(`/api/client-purchase-orders?${params}`);
       if (response.ok) {

@@ -416,11 +416,12 @@ export default function WarehousesPage() {
             </div>
             <div className="space-y-2">
               <Label>Preservation Method</Label>
-              <Select value={locPreservation} onValueChange={setLocPreservation}>
+              <Select value={locPreservation || "NONE"} onValueChange={(v) => setLocPreservation(v === "NONE" ? "" : v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select preservation method" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="NONE">None</SelectItem>
                   <SelectItem value="Indoor Protected">Indoor Protected</SelectItem>
                   <SelectItem value="Climate Controlled">Climate Controlled</SelectItem>
                   <SelectItem value="Open Yard">Open Yard</SelectItem>

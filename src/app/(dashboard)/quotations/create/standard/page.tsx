@@ -771,15 +771,16 @@ function StandardQuotationPage() {
                 <Label className="text-sm font-medium">Customer <span className="text-destructive">*</span></Label>
                 <div className="flex gap-2">
                   <Select
-                    value={formData.customerId || undefined}
+                    value={formData.customerId || "NONE"}
                     onValueChange={(value) =>
-                      setFormData({ ...formData, customerId: value })
+                      setFormData({ ...formData, customerId: value === "NONE" ? "" : value })
                     }
                   >
                     <SelectTrigger className="flex-1 min-w-0">
                       <SelectValue placeholder="Select customer" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="NONE" disabled>Select customer</SelectItem>
                       {customersData?.customers?.map((customer: any) => (
                         <SelectItem key={customer.id} value={customer.id}>
                           {customer.name}

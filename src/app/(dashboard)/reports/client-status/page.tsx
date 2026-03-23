@@ -309,11 +309,12 @@ export default function ClientStatusReportPage() {
                 className="pl-10"
               />
             </div>
-            <Select value={selectedSOId} onValueChange={setSelectedSOId}>
+            <Select value={selectedSOId || "NONE"} onValueChange={(v) => setSelectedSOId(v === "NONE" ? "" : v)}>
               <SelectTrigger className="w-full sm:w-[350px]">
                 <SelectValue placeholder="Select Sales Order" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="NONE" disabled>Select Sales Order</SelectItem>
                 {loadingSOs ? (
                   <SelectItem value="loading" disabled>
                     Loading...
