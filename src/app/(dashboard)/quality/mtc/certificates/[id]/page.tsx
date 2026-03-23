@@ -339,10 +339,21 @@ export default function MTCCertificateDetailPage() {
           <Button
             variant="outline"
             onClick={() =>
-              window.open(`/api/mtc/certificates/${id}/pdf`, "_blank")
+              window.open(`/api/mtc/certificates/${id}/pdf?format=html`, "_blank")
             }
           >
-            <Printer className="w-4 h-4 mr-2" /> Print / PDF
+            <Printer className="w-4 h-4 mr-2" /> Preview
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              const a = document.createElement("a");
+              a.href = `/api/mtc/certificates/${id}/pdf`;
+              a.download = "";
+              a.click();
+            }}
+          >
+            <FileText className="w-4 h-4 mr-2" /> Download PDF
           </Button>
         </div>
       </PageHeader>
