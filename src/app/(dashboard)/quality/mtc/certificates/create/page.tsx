@@ -566,17 +566,14 @@ function CreateMTCPage() {
                 <div className="space-y-2">
                   <Label>Purchase Order *</Label>
                   <Select
-                    value={selectedPO?.id || ""}
-                    onValueChange={handlePOSelect}
+                    value={selectedPO?.id || "NONE"}
+                    onValueChange={(v) => v !== "NONE" && handlePOSelect(v)}
                   >
                     <SelectTrigger>
-                      <SelectValue
-                        placeholder={
-                          loadingPOs ? "Loading..." : "Select Purchase Order"
-                        }
-                      />
+                      <SelectValue placeholder={loadingPOs ? "Loading..." : "Select Purchase Order"} />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="NONE" disabled>Select Purchase Order</SelectItem>
                       {purchaseOrders.map((po: any) => (
                         <SelectItem key={po.id} value={po.id}>
                           {po.poNo} — {po.vendor?.name || po.vendorName || ""}
@@ -609,24 +606,28 @@ function CreateMTCPage() {
                 <div className="space-y-2">
                   <Label>Customer *</Label>
                   <Select
-                    value={formData.customerId}
-                    onValueChange={(v) => {
-                      const c = customers.find((c: any) => c.id === v);
+                    value={formData.customerId || "NONE"}
+                    onValueChange={(val) => {
+                      if (val === "NONE") return;
+                      const c = customers.find((c: any) => c.id === val);
                       setFormData((prev) => ({
                         ...prev,
-                        customerId: v,
+                        customerId: val,
                         customerName: c?.name || "",
+                        quotationId: "",
+                        quotationNo: "",
                       }));
+                      setSelectedQuotation(null);
+                      setSelectedItems([]);
+                      setItems([]);
+                      setSourceItems([]);
                     }}
                   >
                     <SelectTrigger>
-                      <SelectValue
-                        placeholder={
-                          loadingCustomers ? "Loading..." : "Select Customer"
-                        }
-                      />
+                      <SelectValue placeholder={loadingCustomers ? "Loading..." : "Select Customer"} />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="NONE" disabled>Select Customer</SelectItem>
                       {customers.map((c: any) => (
                         <SelectItem key={c.id} value={c.id}>
                           {c.name}
@@ -638,24 +639,21 @@ function CreateMTCPage() {
                 <div className="space-y-2">
                   <Label>Quotation Number *</Label>
                   <Select
-                    value={formData.quotationId}
-                    onValueChange={handleQuotationSelect}
+                    value={formData.quotationId || "NONE"}
+                    onValueChange={(val) => val !== "NONE" && handleQuotationSelect(val)}
                   >
                     <SelectTrigger>
-                      <SelectValue
-                        placeholder={
-                          loadingQuotations
-                            ? "Loading..."
-                            : "Select Quotation"
-                        }
-                      />
+                      <SelectValue placeholder={loadingQuotations ? "Loading..." : formData.customerId ? "Select Quotation" : "Select customer first"} />
                     </SelectTrigger>
                     <SelectContent>
-                      {quotations.map((q: any) => (
-                        <SelectItem key={q.id} value={q.id}>
-                          {q.quotationNo || q.id}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="NONE" disabled>{formData.customerId ? "Select Quotation" : "Select customer first"}</SelectItem>
+                      {quotations
+                        .filter((q: any) => !formData.customerId || q.customerId === formData.customerId)
+                        .map((q: any) => (
+                          <SelectItem key={q.id} value={q.id}>
+                            {q.quotationNo || q.id}{q.customer?.name ? ` — ${q.customer.name}` : ""}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 </div>
