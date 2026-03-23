@@ -549,178 +549,68 @@ export default function MTCCertificateDetailPage() {
       {/* Chemical Composition */}
       {hasChemical && (
         <Card>
-          <CardHeader>
-            <CardTitle>Chemical Composition</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Chemical Composition (%)</CardTitle>
           </CardHeader>
-          <CardContent className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-16 sticky left-0 bg-background z-10">
-                    ITEM
-                  </TableHead>
-                  <TableHead className="w-20">HEAT NO.</TableHead>
-                  <TableHead className="w-10">%</TableHead>
+          <CardContent className="overflow-x-auto px-3 pb-3">
+            <table className="w-full border-collapse text-xs">
+              <thead>
+                <tr className="bg-muted">
+                  <th className="border px-2 py-1.5 text-left font-semibold w-14">ITEM</th>
+                  <th className="border px-2 py-1.5 text-left font-semibold w-20">HEAT NO.</th>
+                  <th className="border px-1 py-1.5 text-center font-semibold w-10">%</th>
                   {elements.map((el) => (
-                    <TableHead key={el} className="text-center w-16">
-                      {el}
-                    </TableHead>
+                    <th key={el} className="border px-1 py-1.5 text-center font-semibold min-w-[52px]">{el}</th>
                   ))}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+                </tr>
+              </thead>
+              <tbody>
                 {items.map((item: any, idx: number) => {
-                  const sortedResults = [...(item.chemicalResults || [])].sort(
-                    (a: any, b: any) =>
-                      (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
-                  );
-
-                  return (
-                    <tbody key={item.id || idx}>
-                      {/* Min row */}
-                      <TableRow className="bg-muted/30">
-                        <TableCell
-                          rowSpan={4}
-                          className="font-mono font-medium text-center sticky left-0 bg-muted/30 z-10 border-r"
-                        >
-                          {item.itemNo || idx + 1}
-                        </TableCell>
-                        <TableCell
-                          rowSpan={4}
-                          className="font-mono text-sm border-r"
-                        >
-                          {item.heatNo || "—"}
-                        </TableCell>
-                        <TableCell className="text-xs font-medium text-muted-foreground">
-                          min.
-                        </TableCell>
-                        {sortedResults.map((r: any) => (
-                          <TableCell
-                            key={`min-${r.id}`}
-                            className="text-center text-xs text-muted-foreground"
-                          >
-                            {r.minValue != null
-                              ? Number(r.minValue).toFixed(
-                                  r.element === "CEQ" || r.element === "F1"
-                                    ? 2
-                                    : 3
-                                )
-                              : "--"}
-                          </TableCell>
-                        ))}
-                      </TableRow>
-
-                      {/* Max row */}
-                      <TableRow className="bg-muted/30">
-                        <TableCell className="text-xs font-medium text-muted-foreground">
-                          max.
-                        </TableCell>
-                        {sortedResults.map((r: any) => (
-                          <TableCell
-                            key={`max-${r.id}`}
-                            className="text-center text-xs text-muted-foreground"
-                          >
-                            {r.maxValue != null
-                              ? Number(r.maxValue).toFixed(3)
-                              : "--"}
-                          </TableCell>
-                        ))}
-                      </TableRow>
-
-                      {/* Heat result row */}
-                      <TableRow>
-                        <TableCell className="text-xs font-medium text-blue-600">
-                          H
-                        </TableCell>
-                        {sortedResults.map((r: any) => {
-                          const numVal = r.heatResult
-                            ? parseFloat(r.heatResult)
-                            : null;
-                          const inRange = isInRange(
-                            numVal,
-                            r.minValue != null ? Number(r.minValue) : null,
-                            r.maxValue != null ? Number(r.maxValue) : null
-                          );
-                          return (
-                            <TableCell
-                              key={`heat-${r.id}`}
-                              className={`text-center p-1 ${resultCellClass(inRange)}`}
-                            >
-                              {isDraft ? (
-                                <Input
-                                  type="number"
-                                  step="0.001"
-                                  value={r.heatResult ?? ""}
-                                  onChange={(e) =>
-                                    updateChemicalResult(
-                                      item.id,
-                                      r.id,
-                                      "heatResult",
-                                      e.target.value
-                                    )
-                                  }
-                                  className="h-7 w-16 text-center text-xs p-1 mx-auto"
-                                />
-                              ) : (
-                                <span className="text-xs font-mono">
-                                  {numVal != null ? numVal.toFixed(3) : "--"}
-                                </span>
-                              )}
-                            </TableCell>
-                          );
-                        })}
-                      </TableRow>
-
-                      {/* Product result row */}
-                      <TableRow className="border-b-2">
-                        <TableCell className="text-xs font-medium text-green-600">
-                          P
-                        </TableCell>
-                        {sortedResults.map((r: any) => {
-                          const numVal = r.productResult
-                            ? parseFloat(r.productResult)
-                            : null;
-                          const inRange = isInRange(
-                            numVal,
-                            r.minValue != null ? Number(r.minValue) : null,
-                            r.maxValue != null ? Number(r.maxValue) : null
-                          );
-                          return (
-                            <TableCell
-                              key={`product-${r.id}`}
-                              className={`text-center p-1 ${resultCellClass(inRange)}`}
-                            >
-                              {isDraft ? (
-                                <Input
-                                  type="number"
-                                  step="0.001"
-                                  value={r.productResult ?? ""}
-                                  onChange={(e) =>
-                                    updateChemicalResult(
-                                      item.id,
-                                      r.id,
-                                      "productResult",
-                                      e.target.value
-                                    )
-                                  }
-                                  className="h-7 w-16 text-center text-xs p-1 mx-auto"
-                                />
-                              ) : (
-                                <span className="text-xs font-mono">
-                                  {numVal != null ? numVal.toFixed(3) : "--"}
-                                </span>
-                              )}
-                            </TableCell>
-                          );
-                        })}
-                      </TableRow>
-                    </tbody>
-                  );
+                  const sorted = [...(item.chemicalResults || [])].sort((a: any, b: any) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+                  const fmtVal = (v: any, dec: number = 3) => v != null ? Number(v).toFixed(dec) : "--";
+                  return [
+                    /* min row */
+                    <tr key={`${item.id}-min`} className="bg-muted/40">
+                      <td rowSpan={4} className="border px-2 py-1 text-center font-semibold bg-muted/60">{item.itemNo || idx + 1}</td>
+                      <td rowSpan={4} className="border px-2 py-1 font-mono text-xs">{item.heatNo || "—"}</td>
+                      <td className="border px-1 py-0.5 text-center italic text-muted-foreground">min.</td>
+                      {sorted.map((r: any) => <td key={r.id} className="border px-1 py-0.5 text-center text-muted-foreground">{fmtVal(r.minValue)}</td>)}
+                    </tr>,
+                    /* max row */
+                    <tr key={`${item.id}-max`} className="bg-muted/40">
+                      <td className="border px-1 py-0.5 text-center italic text-muted-foreground">max.</td>
+                      {sorted.map((r: any) => <td key={r.id} className="border px-1 py-0.5 text-center text-muted-foreground">{fmtVal(r.maxValue)}</td>)}
+                    </tr>,
+                    /* H row */
+                    <tr key={`${item.id}-heat`}>
+                      <td className="border px-1 py-0.5 text-center font-semibold text-blue-600">H</td>
+                      {sorted.map((r: any) => {
+                        const nv = r.heatResult ? parseFloat(r.heatResult) : null;
+                        const ir = isInRange(nv, r.minValue != null ? Number(r.minValue) : null, r.maxValue != null ? Number(r.maxValue) : null);
+                        return <td key={r.id} className={`border px-1 py-0.5 text-center ${resultCellClass(ir)}`}>
+                          {isDraft ? <Input type="number" step="0.001" value={r.heatResult ?? ""} onChange={(e) => updateChemicalResult(item.id, r.id, "heatResult", e.target.value)} className="h-6 w-[60px] text-center text-xs p-0.5 mx-auto" />
+                           : <span className="font-mono">{nv != null ? nv.toFixed(3) : ""}</span>}
+                        </td>;
+                      })}
+                    </tr>,
+                    /* P row */
+                    <tr key={`${item.id}-prod`} className="border-b-2 border-b-foreground/20">
+                      <td className="border px-1 py-0.5 text-center font-semibold text-green-600">P</td>
+                      {sorted.map((r: any) => {
+                        const nv = r.productResult ? parseFloat(r.productResult) : null;
+                        const ir = isInRange(nv, r.minValue != null ? Number(r.minValue) : null, r.maxValue != null ? Number(r.maxValue) : null);
+                        return <td key={r.id} className={`border px-1 py-0.5 text-center ${resultCellClass(ir)}`}>
+                          {isDraft ? <Input type="number" step="0.001" value={r.productResult ?? ""} onChange={(e) => updateChemicalResult(item.id, r.id, "productResult", e.target.value)} className="h-6 w-[60px] text-center text-xs p-0.5 mx-auto" />
+                           : <span className="font-mono">{nv != null ? nv.toFixed(3) : ""}</span>}
+                        </td>;
+                      })}
+                    </tr>,
+                  ];
                 })}
-              </TableBody>
-            </Table>
-            <p className="text-xs text-muted-foreground mt-2">
-              F1 = Cu+Ni+Cr+Mo ; CEQ = C + Mn/6 + (Cr+Mo+V)/5 + (Ni+Cu)/15
+              </tbody>
+            </table>
+            <p className="text-[10px] text-muted-foreground mt-1.5">
+              F1 = Cu+Ni+Cr+Mo &nbsp;;&nbsp; CEQ = C + Mn/6 + (Cr+Mo+V)/5 + (Ni+Cu)/15
             </p>
           </CardContent>
         </Card>
@@ -729,173 +619,78 @@ export default function MTCCertificateDetailPage() {
       {/* Mechanical Properties */}
       {hasMechanical && (
         <Card>
-          <CardHeader>
-            <CardTitle>Mechanical Properties</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Mechanical Properties</CardTitle>
           </CardHeader>
-          <CardContent className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[60px]">ITEM NO</TableHead>
-                  <TableHead className="w-[100px]">HEAT NO</TableHead>
-                  <TableHead className="w-[40px] text-center">O</TableHead>
-                  <TableHead className="w-[40px] text-center">S</TableHead>
-                  {(() => {
-                    // Collect unique property names from first item with mechanical results
-                    const firstItem = items.find(
-                      (i: any) =>
-                        i.mechanicalResults && i.mechanicalResults.length > 0
-                    );
-                    if (!firstItem) return null;
-                    return [...firstItem.mechanicalResults]
-                      .sort(
-                        (a: any, b: any) =>
-                          (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
-                      )
-                      .map((r: any) => (
-                        <TableHead
-                          key={r.propertyName}
-                          className="text-center min-w-[80px]"
-                        >
-                          <div className="text-xs">
-                            {r.propertyName === "Yield Strength"
-                              ? "YS"
-                              : r.propertyName === "Tensile Strength"
-                                ? "TS"
-                                : r.propertyName === "Elongation"
-                                  ? "EL"
-                                  : r.propertyName === "Reduction Area"
-                                    ? "RA"
-                                    : r.propertyName === "Hardness"
-                                      ? "HB"
-                                      : r.propertyName}
-                          </div>
-                          {r.unit && (
-                            <div className="text-[10px] text-muted-foreground font-normal">
-                              ({r.unit})
-                            </div>
-                          )}
-                        </TableHead>
-                      ));
-                  })()}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {items.map((item: any, idx: number) => {
-                  if (
-                    !item.mechanicalResults ||
-                    item.mechanicalResults.length === 0
-                  )
-                    return null;
-                  const sortedMech = [...item.mechanicalResults].sort(
-                    (a: any, b: any) =>
-                      (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
-                  );
-
-                  return (
-                    <tbody key={item.id || idx}>
-                      {/* Min row */}
-                      <TableRow className="bg-muted/30">
-                        <TableCell
-                          rowSpan={3}
-                          className="font-mono font-medium text-center border-r"
-                        >
-                          {item.itemNo || idx + 1}
-                        </TableCell>
-                        <TableCell
-                          rowSpan={3}
-                          className="font-mono text-sm border-r"
-                        >
-                          {item.heatNo || "—"}
-                        </TableCell>
-                        <TableCell
-                          rowSpan={3}
-                          className="text-xs text-center border-r"
-                        >
-                          {item.orientation || "L"}
-                        </TableCell>
-                        <TableCell
-                          rowSpan={3}
-                          className="text-xs text-center border-r"
-                        >
-                          {item.specimenForm || "S"}
-                        </TableCell>
-                        {sortedMech.map((r: any) => (
-                          <TableCell
-                            key={`mech-min-${r.id}`}
-                            className="text-center text-xs text-muted-foreground"
-                          >
-                            <span className="text-[10px] text-muted-foreground">min: </span>
-                            {r.minValue != null
-                              ? Number(r.minValue).toFixed(1)
-                              : "--"}
-                          </TableCell>
-                        ))}
-                      </TableRow>
-
-                      {/* Max row */}
-                      <TableRow className="bg-muted/30">
-                        {sortedMech.map((r: any) => (
-                          <TableCell
-                            key={`mech-max-${r.id}`}
-                            className="text-center text-xs text-muted-foreground"
-                          >
-                            <span className="text-[10px] text-muted-foreground">max: </span>
-                            {r.maxValue != null
-                              ? Number(r.maxValue).toFixed(1)
-                              : "--"}
-                          </TableCell>
-                        ))}
-                      </TableRow>
-
-                      {/* Result row */}
-                      <TableRow className="border-b-2">
-                        <TableCell className="text-xs font-medium text-green-600 text-center">
-                          R
-                        </TableCell>
-                        {sortedMech.map((r: any) => {
-                          const numVal = r.result
-                            ? parseFloat(r.result)
-                            : null;
-                          const inRange = isInRange(
-                            numVal,
-                            r.minValue != null ? Number(r.minValue) : null,
-                            r.maxValue != null ? Number(r.maxValue) : null
-                          );
-                          return (
-                            <TableCell
-                              key={`mech-result-${r.id}`}
-                              className={`text-center p-1 ${resultCellClass(inRange)}`}
-                            >
-                              {isDraft ? (
-                                <Input
-                                  type="number"
-                                  step="0.1"
-                                  value={r.result ?? ""}
-                                  onChange={(e) =>
-                                    updateMechanicalResult(
-                                      item.id,
-                                      r.id,
-                                      "result",
-                                      e.target.value
-                                    )
-                                  }
-                                  className="h-7 w-[70px] text-center text-xs p-1 mx-auto"
-                                />
-                              ) : (
-                                <span className="text-xs font-mono">
-                                  {numVal != null ? numVal.toFixed(1) : "--"}
-                                </span>
-                              )}
-                            </TableCell>
-                          );
-                        })}
-                      </TableRow>
-                    </tbody>
-                  );
-                })}
-              </TableBody>
-            </Table>
+          <CardContent className="overflow-x-auto px-3 pb-3">
+            {(() => {
+              const firstItem = items.find((i: any) => i.mechanicalResults?.length > 0);
+              if (!firstItem) return null;
+              const propHeaders = [...firstItem.mechanicalResults].sort((a: any, b: any) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+              const shortName = (n: string) => {
+                const lc = n.toLowerCase();
+                if (lc.includes("yield")) return "YS";
+                if (lc.includes("tensile")) return "TS";
+                if (lc.includes("elongation")) return "EL";
+                if (lc.includes("reduction")) return "RA";
+                if (lc.includes("hardness")) return "HB";
+                return n;
+              };
+              return (
+                <table className="w-full border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-muted">
+                      <th className="border px-2 py-1.5 text-left font-semibold w-14">ITEM</th>
+                      <th className="border px-2 py-1.5 text-left font-semibold w-20">HEAT NO.</th>
+                      <th className="border px-1 py-1.5 text-center font-semibold w-10"></th>
+                      <th className="border px-1 py-1.5 text-center font-semibold w-8">O</th>
+                      <th className="border px-1 py-1.5 text-center font-semibold w-8">S</th>
+                      {propHeaders.map((r: any) => (
+                        <th key={r.propertyName} className="border px-1 py-1.5 text-center font-semibold min-w-[64px]">
+                          <div>{shortName(r.propertyName)}</div>
+                          {r.unit && <div className="text-[10px] text-muted-foreground font-normal">({r.unit})</div>}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((item: any, idx: number) => {
+                      if (!item.mechanicalResults?.length) return null;
+                      const sorted = [...item.mechanicalResults].sort((a: any, b: any) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+                      const fmtV = (val: any) => val != null ? Number(val).toFixed(1) : "--";
+                      return [
+                        /* min row */
+                        <tr key={`${item.id}-min`} className="bg-muted/40">
+                          <td rowSpan={3} className="border px-2 py-1 text-center font-semibold bg-muted/60">{item.itemNo || idx + 1}</td>
+                          <td rowSpan={3} className="border px-2 py-1 font-mono">{item.heatNo || "—"}</td>
+                          <td className="border px-1 py-0.5 text-center italic text-muted-foreground">min.</td>
+                          <td rowSpan={3} className="border px-1 py-0.5 text-center font-semibold">{item.orientation || "L"}</td>
+                          <td rowSpan={3} className="border px-1 py-0.5 text-center font-semibold">{item.specimenForm || "S"}</td>
+                          {sorted.map((r: any) => <td key={r.id} className="border px-1 py-0.5 text-center text-muted-foreground">{fmtV(r.minValue)}</td>)}
+                        </tr>,
+                        /* max row */
+                        <tr key={`${item.id}-max`} className="bg-muted/40">
+                          <td className="border px-1 py-0.5 text-center italic text-muted-foreground">max.</td>
+                          {sorted.map((r: any) => <td key={r.id} className="border px-1 py-0.5 text-center text-muted-foreground">{fmtV(r.maxValue)}</td>)}
+                        </tr>,
+                        /* result row */
+                        <tr key={`${item.id}-res`} className="border-b-2 border-b-foreground/20">
+                          <td className="border px-1 py-0.5 text-center font-semibold text-green-600">Result</td>
+                          {sorted.map((r: any) => {
+                            const nv = r.result ? parseFloat(r.result) : null;
+                            const ir = isInRange(nv, r.minValue != null ? Number(r.minValue) : null, r.maxValue != null ? Number(r.maxValue) : null);
+                            return <td key={r.id} className={`border px-1 py-0.5 text-center ${resultCellClass(ir)}`}>
+                              {isDraft ? <Input type="number" step="0.1" value={r.result ?? ""} onChange={(e) => updateMechanicalResult(item.id, r.id, "result", e.target.value)} className="h-6 w-[60px] text-center text-xs p-0.5 mx-auto" />
+                               : <span className="font-mono font-semibold">{nv != null ? nv.toFixed(2) : "--"}</span>}
+                            </td>;
+                          })}
+                        </tr>,
+                      ];
+                    })}
+                  </tbody>
+                </table>
+              );
+            })()}
           </CardContent>
         </Card>
       )}
