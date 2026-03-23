@@ -284,13 +284,14 @@ function CreateSalesOrderPage() {
               <div className="space-y-2">
                 <Label htmlFor="quotationId">Reference Quotation (Optional)</Label>
                 <Select
-                  value={formData.quotationId || undefined}
-                  onValueChange={(value) => handleQuotationChange(value)}
+                  value={formData.quotationId || "NONE"}
+                  onValueChange={(value) => handleQuotationChange(value === "NONE" ? "" : value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select Quotation" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="NONE">None</SelectItem>
                     {quotations.map((q) => (
                       <SelectItem key={q.id} value={q.id}>
                         {q.quotationNo}
@@ -303,9 +304,9 @@ function CreateSalesOrderPage() {
               <div className="space-y-2">
                 <Label htmlFor="customerId">Customer *</Label>
                 <Select
-                  value={formData.customerId || undefined}
+                  value={formData.customerId || "NONE"}
                   onValueChange={(value) =>
-                    setFormData({ ...formData, customerId: value })
+                    setFormData({ ...formData, customerId: value === "NONE" ? "" : value })
                   }
                   disabled={!!formData.quotationId}
                 >
@@ -313,6 +314,7 @@ function CreateSalesOrderPage() {
                     <SelectValue placeholder="Select Customer" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="NONE" disabled>Select Customer</SelectItem>
                     {customers.map((c) => (
                       <SelectItem key={c.id} value={c.id}>
                         {c.name}{c.city ? ` (${c.city})` : ""}

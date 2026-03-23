@@ -217,15 +217,16 @@ function CreatePRPage() {
               <div className="space-y-2">
                 <Label htmlFor="salesOrderId">Sales Order Reference (Optional)</Label>
                 <Select
-                  value={formData.salesOrderId || undefined}
+                  value={formData.salesOrderId || "NONE"}
                   onValueChange={(value) =>
-                    setFormData({ ...formData, salesOrderId: value })
+                    setFormData({ ...formData, salesOrderId: value === "NONE" ? "" : value })
                   }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select SO (if applicable)" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="NONE">None</SelectItem>
                     {salesOrders.map((so) => (
                       <SelectItem key={so.id} value={so.id}>
                         {so.soNo}
@@ -238,15 +239,16 @@ function CreatePRPage() {
               <div className="space-y-2">
                 <Label htmlFor="suggestedVendorId">Suggested Vendor (Optional)</Label>
                 <Select
-                  value={formData.suggestedVendorId || undefined}
+                  value={formData.suggestedVendorId || "NONE"}
                   onValueChange={(value) =>
-                    setFormData({ ...formData, suggestedVendorId: value })
+                    setFormData({ ...formData, suggestedVendorId: value === "NONE" ? "" : value })
                   }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select Vendor" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="NONE">None</SelectItem>
                     {vendors.map((v) => (
                       <SelectItem key={v.id} value={v.id}>
                         {v.name}

@@ -248,11 +248,12 @@ export default function CreateLabLetterPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Select from Stock (optional)</Label>
-                <Select value={selectedStockId} onValueChange={handleStockSelect}>
+                <Select value={selectedStockId || "NONE"} onValueChange={(v) => handleStockSelect(v === "NONE" ? "" : v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select stock to auto-fill" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="NONE">None</SelectItem>
                     {stocks.map((stock) => (
                       <SelectItem key={stock.id} value={stock.id}>
                         {stock.heatNo || "N/A"} — {stock.product || ""} {stock.sizeLabel || ""} ({stock.status})

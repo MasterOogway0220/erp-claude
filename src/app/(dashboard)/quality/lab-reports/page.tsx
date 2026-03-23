@@ -212,13 +212,14 @@ export default function LabReportsPage() {
               className="max-w-sm"
             />
             <Select
-              value={reportTypeFilter || undefined}
-              onValueChange={(value) => setReportTypeFilter(value)}
+              value={reportTypeFilter || "NONE"}
+              onValueChange={(value) => setReportTypeFilter(value === "NONE" ? "" : value)}
             >
               <SelectTrigger className="w-[160px]">
                 <SelectValue placeholder="Report Type" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="NONE">All Types</SelectItem>
                 <SelectItem value="CHEMICAL">Chemical</SelectItem>
                 <SelectItem value="MECHANICAL">Mechanical</SelectItem>
                 <SelectItem value="HYDRO">Hydro</SelectItem>

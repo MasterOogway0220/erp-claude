@@ -351,15 +351,16 @@ function CreateInvoicePage() {
               <div className="space-y-2">
                 <Label>Dispatch Note *</Label>
                 <Select
-                  value={formData.dispatchNoteId || undefined}
+                  value={formData.dispatchNoteId || "NONE"}
                   onValueChange={(value) =>
-                    setFormData({ ...formData, dispatchNoteId: value })
+                    setFormData({ ...formData, dispatchNoteId: value === "NONE" ? "" : value })
                   }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select Dispatch Note" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="NONE" disabled>Select Dispatch Note</SelectItem>
                     {dispatchNotes.map((dn) => (
                       <SelectItem key={dn.id} value={dn.id}>
                         {dn.dnNo} - {dn.salesOrder?.soNo} (
@@ -412,15 +413,16 @@ function CreateInvoicePage() {
               <div className="space-y-2">
                 <Label>Warehouse</Label>
                 <Select
-                  value={formData.warehouseId || undefined}
+                  value={formData.warehouseId || "NONE"}
                   onValueChange={(value) =>
-                    setFormData({ ...formData, warehouseId: value })
+                    setFormData({ ...formData, warehouseId: value === "NONE" ? "" : value })
                   }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select Warehouse" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="NONE">None</SelectItem>
                     {warehouses.map((wh) => (
                       <SelectItem key={wh.id} value={wh.id}>
                         {wh.code} - {wh.name}

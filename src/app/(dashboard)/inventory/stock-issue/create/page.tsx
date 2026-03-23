@@ -155,11 +155,12 @@ export default function CreateStockIssuePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label>Sales Order *</Label>
-              <Select value={selectedSO || undefined} onValueChange={setSelectedSO}>
+              <Select value={selectedSO || "NONE"} onValueChange={(v) => setSelectedSO(v === "NONE" ? "" : v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select Sales Order" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="NONE" disabled>Select Sales Order</SelectItem>
                   {salesOrders.map((so) => (
                     <SelectItem key={so.id} value={so.id}>
                       {so.soNo} - {so.customer?.name}
@@ -170,11 +171,12 @@ export default function CreateStockIssuePage() {
             </div>
             <div className="space-y-2">
               <Label>Authorized By</Label>
-              <Select value={authorizedById || undefined} onValueChange={setAuthorizedById}>
+              <Select value={authorizedById || "NONE"} onValueChange={(v) => setAuthorizedById(v === "NONE" ? "" : v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select Authorizer" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="NONE">None</SelectItem>
                   {users.map((u) => (
                     <SelectItem key={u.id} value={u.id}>
                       {u.name} ({u.role})

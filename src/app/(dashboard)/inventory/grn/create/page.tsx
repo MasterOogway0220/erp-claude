@@ -247,9 +247,10 @@ function CreateGRNPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Purchase Order *</Label>
-                <Select value={formData.poId || undefined} onValueChange={(value) => setFormData({ ...formData, poId: value })}>
+                <Select value={formData.poId || "NONE"} onValueChange={(value) => setFormData({ ...formData, poId: value === "NONE" ? "" : value })}>
                   <SelectTrigger><SelectValue placeholder="Select PO" /></SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="NONE" disabled>Select PO</SelectItem>
                     {purchaseOrders.map((po) => (
                       <SelectItem key={po.id} value={po.id}>{po.poNo} - {po.vendor?.name}</SelectItem>
                     ))}
@@ -328,9 +329,10 @@ function CreateGRNPage() {
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">MTC Type</Label>
-                      <Select value={item.mtcType || undefined} onValueChange={(value) => updateItem(index, "mtcType", value)}>
+                      <Select value={item.mtcType || "NONE"} onValueChange={(value) => updateItem(index, "mtcType", value === "NONE" ? "" : value)}>
                         <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="NONE">Select</SelectItem>
                           <SelectItem value="MTC_3_1">MTC 3.1</SelectItem>
                           <SelectItem value="MTC_3_2">MTC 3.2</SelectItem>
                         </SelectContent>

@@ -562,13 +562,14 @@ export default function SuperAdminDashboard() {
             <div className="space-y-1">
               <Label>Company *</Label>
               <Select
-                value={adminForm.companyId || undefined}
-                onValueChange={(v) => setAdminForm({ ...adminForm, companyId: v })}
+                value={adminForm.companyId || "NONE"}
+                onValueChange={(v) => setAdminForm({ ...adminForm, companyId: v === "NONE" ? "" : v })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select company" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="NONE" disabled>Select company</SelectItem>
                   {companies.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
                       {c.companyName}

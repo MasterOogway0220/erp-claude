@@ -180,13 +180,14 @@ export default function CreateLabReportPage() {
             <div className="space-y-2">
               <Label>Report Type *</Label>
               <Select
-                value={formData.reportType || undefined}
-                onValueChange={(value) => setFormData({ ...formData, reportType: value })}
+                value={formData.reportType || "NONE"}
+                onValueChange={(value) => setFormData({ ...formData, reportType: value === "NONE" ? "" : value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select report type" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="NONE" disabled>Select report type</SelectItem>
                   {REPORT_TYPES.map((type) => (
                     <SelectItem key={type.value} value={type.value}>
                       {type.label}
@@ -277,7 +278,7 @@ export default function CreateLabReportPage() {
               <div className="space-y-2">
                 <Label>Purchase Order</Label>
                 <Select
-                  value={formData.poId || undefined}
+                  value={formData.poId || "NONE"}
                   onValueChange={(value) => setFormData({ ...formData, poId: value === "NONE" ? "" : value })}
                 >
                   <SelectTrigger>
@@ -297,7 +298,7 @@ export default function CreateLabReportPage() {
               <div className="space-y-2">
                 <Label>Inventory Stock (by Heat No.)</Label>
                 <Select
-                  value={formData.inventoryStockId || undefined}
+                  value={formData.inventoryStockId || "NONE"}
                   onValueChange={handleStockSelect}
                 >
                   <SelectTrigger>

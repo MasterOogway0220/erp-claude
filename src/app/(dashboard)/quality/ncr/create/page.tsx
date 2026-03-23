@@ -150,11 +150,12 @@ export default function CreateNCRPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Heat Number (from Stock) *</Label>
-                <Select value={selectedStockId || undefined} onValueChange={handleStockSelect}>
+                <Select value={selectedStockId || "NONE"} onValueChange={(v) => handleStockSelect(v === "NONE" ? "" : v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select stock by heat number" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="NONE" disabled>Select stock by heat number</SelectItem>
                     {stocks.map((stock) => (
                       <SelectItem key={stock.id} value={stock.id}>
                         {stock.heatNo || "N/A"} - {stock.product || ""} {stock.sizeLabel || ""} ({stock.status?.replace(/_/g, " ")})
@@ -199,15 +200,16 @@ export default function CreateNCRPage() {
               <div className="space-y-2">
                 <Label>Non-Conformance Type *</Label>
                 <Select
-                  value={formData.nonConformanceType || undefined}
+                  value={formData.nonConformanceType || "NONE"}
                   onValueChange={(value) =>
-                    setFormData({ ...formData, nonConformanceType: value })
+                    setFormData({ ...formData, nonConformanceType: value === "NONE" ? "" : value })
                   }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="NONE" disabled>Select type</SelectItem>
                     {NCR_TYPES.map((type) => (
                       <SelectItem key={type.value} value={type.value}>
                         {type.label}

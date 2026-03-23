@@ -231,11 +231,12 @@ export default function CreateWarehouseIntimationPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label>Sales Order *</Label>
-              <Select value={selectedSO} onValueChange={setSelectedSO}>
+              <Select value={selectedSO || "NONE"} onValueChange={(v) => setSelectedSO(v === "NONE" ? "" : v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select Sales Order" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="NONE" disabled>Select Sales Order</SelectItem>
                   {salesOrders.map((so) => (
                     <SelectItem key={so.id} value={so.id}>
                       {so.soNo} - {so.customer?.name}
@@ -247,11 +248,12 @@ export default function CreateWarehouseIntimationPage() {
             </div>
             <div className="space-y-2">
               <Label>Warehouse</Label>
-              <Select value={warehouseId} onValueChange={setWarehouseId}>
+              <Select value={warehouseId || "NONE"} onValueChange={(v) => setWarehouseId(v === "NONE" ? "" : v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select Warehouse" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="NONE">None</SelectItem>
                   {warehouses.map((wh) => (
                     <SelectItem key={wh.id} value={wh.id}>
                       {wh.name} ({wh.code})
@@ -285,11 +287,12 @@ export default function CreateWarehouseIntimationPage() {
             </div>
             <div className="space-y-2">
               <Label>Assign To (Warehouse Personnel)</Label>
-              <Select value={assignedToId} onValueChange={setAssignedToId}>
+              <Select value={assignedToId || "NONE"} onValueChange={(v) => setAssignedToId(v === "NONE" ? "" : v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Optional" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="NONE">None</SelectItem>
                   {users.map((u) => (
                     <SelectItem key={u.id} value={u.id}>
                       {u.name}

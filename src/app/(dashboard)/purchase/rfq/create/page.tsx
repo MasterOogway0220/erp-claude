@@ -30,6 +30,18 @@ import { ArrowLeft, Send, Search } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
+interface PRItem {
+  id: string;
+  sNo: number;
+  product?: string;
+  material?: string;
+  additionalSpec?: string;
+  sizeLabel?: string;
+  quantity: number;
+  uom?: string;
+  remarks?: string;
+}
+
 interface PR {
   id: string;
   prNo: string;
@@ -37,15 +49,7 @@ interface PR {
   status: string;
   items: PRItem[];
   salesOrder?: { soNo: string };
-}
-
-interface PRItem {
-  id: string;
-  itemName: string;
-  description?: string;
-  quantity: number;
-  unit: string;
-  specification?: string;
+  suggestedVendor?: { id: string; name: string };
 }
 
 interface Vendor {
@@ -80,6 +84,12 @@ function CreateRFQContent() {
     if (selectedPrId && prs.length > 0) {
       const pr = prs.find((p) => p.id === selectedPrId);
       setSelectedPr(pr || null);
+      // Auto-select suggested vendor if the PR has one
+      if (pr?.suggestedVendor?.id) {
+        setSelectedVendorIds((prev) =>
+          prev.includes(pr.suggestedVendor!.id) ? prev : [...prev, pr.suggestedVendor!.id]
+        );
+      }
     } else {
       setSelectedPr(null);
     }
@@ -164,6 +174,12 @@ function CreateRFQContent() {
     }
   };
 
+  // Build item description from fields
+  const itemDesc = (item: PRItem) => {
+    const parts = [item.material, item.additionalSpec, item.sizeLabel].filter(Boolean);
+    return parts.join(" | ") || "—";
+  };
+
   if (loading) {
     return <PageLoading />;
   }
@@ -190,53 +206,80 @@ function CreateRFQContent() {
         <CardContent className="space-y-4">
           <div className="max-w-md">
             <Label htmlFor="pr-select">Approved Purchase Requisition</Label>
-            <Select value={selectedPrId || undefined} onValueChange={setSelectedPrId}>
+            <Select
+              value={selectedPrId || "NONE"}
+              onValueChange={(v) => setSelectedPrId(v === "NONE" ? "" : v)}
+            >
               <SelectTrigger id="pr-select" className="mt-1">
                 <SelectValue placeholder="Select a PR..." />
               </SelectTrigger>
               <SelectContent>
-                {prs.map((pr) => (
-                  <SelectItem key={pr.id} value={pr.id}>
-                    {pr.prNo} — {format(new Date(pr.prDate), "dd MMM yyyy")}
-                    {pr.salesOrder ? ` (SO: ${pr.salesOrder.soNo})` : ""}
-                  </SelectItem>
-                ))}
+                <SelectItem value="NONE" disabled>Select a PR...</SelectItem>
+                {prs.length === 0 ? (
+                  <SelectItem value="__empty__" disabled>No approved PRs found</SelectItem>
+                ) : (
+                  prs.map((pr) => (
+                    <SelectItem key={pr.id} value={pr.id}>
+                      {pr.prNo} — {format(new Date(pr.prDate), "dd MMM yyyy")}
+                      {pr.salesOrder ? ` (SO: ${pr.salesOrder.soNo})` : ""}
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
           </div>
 
           {selectedPr && (
             <div className="mt-4">
-              <h4 className="font-medium mb-2">PR Items</h4>
+              <div className="flex items-center gap-3 mb-2">
+                <h4 className="font-medium">PR Items</h4>
+                {selectedPr.suggestedVendor && (
+                  <Badge variant="outline">
+                    Suggested Vendor: {selectedPr.suggestedVendor.name}
+                  </Badge>
+                )}
+              </div>
               <div className="border rounded-md">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-12">#</TableHead>
-                      <TableHead>Item Name</TableHead>
-                      <TableHead>Description / Specification</TableHead>
+                      <TableHead>Product</TableHead>
+                      <TableHead>Material / Spec / Size</TableHead>
                       <TableHead className="text-right">Quantity</TableHead>
-                      <TableHead>Unit</TableHead>
+                      <TableHead>UOM</TableHead>
+                      <TableHead>Remarks</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {selectedPr.items.map((item, index) => (
-                      <TableRow key={item.id}>
-                        <TableCell className="text-muted-foreground">
-                          {index + 1}
+                    {selectedPr.items.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground py-6">
+                          No items in this PR
                         </TableCell>
-                        <TableCell className="font-medium">
-                          {item.itemName}
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {item.specification || item.description || "—"}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {item.quantity}
-                        </TableCell>
-                        <TableCell>{item.unit}</TableCell>
                       </TableRow>
-                    ))}
+                    ) : (
+                      selectedPr.items.map((item, index) => (
+                        <TableRow key={item.id}>
+                          <TableCell className="text-muted-foreground">
+                            {item.sNo || index + 1}
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {item.product || "—"}
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {itemDesc(item)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {parseFloat(String(item.quantity))}
+                          </TableCell>
+                          <TableCell>{item.uom || "—"}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {item.remarks || "—"}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
                   </TableBody>
                 </Table>
               </div>
@@ -254,7 +297,7 @@ function CreateRFQContent() {
           <div className="flex items-center gap-2 max-w-md">
             <Search className="w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Search vendors..."
+              placeholder="Search vendors by name or city..."
               value={vendorSearch}
               onChange={(e) => setVendorSearch(e.target.value)}
             />

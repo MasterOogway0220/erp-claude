@@ -291,11 +291,12 @@ export default function CreatePackingListPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Sales Order *</Label>
-                <Select value={selectedSOId || undefined} onValueChange={setSelectedSOId}>
+                <Select value={selectedSOId || "NONE"} onValueChange={(v) => setSelectedSOId(v === "NONE" ? "" : v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select Sales Order" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="NONE" disabled>Select Sales Order</SelectItem>
                     {salesOrders.map((so) => (
                       <SelectItem key={so.id} value={so.id}>
                         {so.soNo} - {so.customer?.name}
@@ -317,11 +318,12 @@ export default function CreatePackingListPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Warehouse</Label>
-                <Select value={warehouseId || undefined} onValueChange={setWarehouseId}>
+                <Select value={warehouseId || "NONE"} onValueChange={(v) => setWarehouseId(v === "NONE" ? "" : v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select Warehouse" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="NONE">None</SelectItem>
                     {warehouses.map((wh) => (
                       <SelectItem key={wh.id} value={wh.id}>
                         {wh.code} - {wh.name}

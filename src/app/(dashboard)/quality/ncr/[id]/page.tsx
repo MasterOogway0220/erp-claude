@@ -292,11 +292,12 @@ export default function NCRDetailPage() {
                   </div>
                   <div className="space-y-2">
                     <Label>Responsible Person</Label>
-                    <Select value={responsiblePersonId} onValueChange={setResponsiblePersonId}>
+                    <Select value={responsiblePersonId || "NONE"} onValueChange={(v) => setResponsiblePersonId(v === "NONE" ? "" : v)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select responsible person" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="NONE">None</SelectItem>
                         {users.map((u: any) => (
                           <SelectItem key={u.id} value={u.id}>
                             {u.name}

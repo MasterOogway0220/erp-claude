@@ -215,15 +215,16 @@ function CreateDispatchNotePage() {
               <div className="space-y-2">
                 <Label>Packing List *</Label>
                 <Select
-                  value={formData.packingListId || undefined}
+                  value={formData.packingListId || "NONE"}
                   onValueChange={(value) =>
-                    setFormData({ ...formData, packingListId: value })
+                    setFormData({ ...formData, packingListId: value === "NONE" ? "" : value })
                   }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select Packing List" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="NONE" disabled>Select Packing List</SelectItem>
                     {packingLists.map((pl) => (
                       <SelectItem key={pl.id} value={pl.id}>
                         {pl.plNo} - {pl.salesOrder?.soNo} ({pl.salesOrder?.customer?.name})
@@ -247,15 +248,16 @@ function CreateDispatchNotePage() {
               <div className="space-y-2">
                 <Label>Warehouse</Label>
                 <Select
-                  value={formData.warehouseId || undefined}
+                  value={formData.warehouseId || "NONE"}
                   onValueChange={(value) =>
-                    setFormData({ ...formData, warehouseId: value })
+                    setFormData({ ...formData, warehouseId: value === "NONE" ? "" : value })
                   }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select Warehouse" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="NONE">None</SelectItem>
                     {warehouses.map((wh) => (
                       <SelectItem key={wh.id} value={wh.id}>
                         {wh.code} - {wh.name}
@@ -300,15 +302,16 @@ function CreateDispatchNotePage() {
               <div className="space-y-2">
                 <Label>Transporter</Label>
                 <Select
-                  value={formData.transporterId || undefined}
+                  value={formData.transporterId || "NONE"}
                   onValueChange={(value) =>
-                    setFormData({ ...formData, transporterId: value })
+                    setFormData({ ...formData, transporterId: value === "NONE" ? "" : value })
                   }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select Transporter" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="NONE">None</SelectItem>
                     {transporters.map((t) => (
                       <SelectItem key={t.id} value={t.id}>
                         {t.name}

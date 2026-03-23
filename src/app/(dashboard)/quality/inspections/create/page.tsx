@@ -439,11 +439,12 @@ export default function CreateInspectionPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Stock Item (Under Inspection) *</Label>
-                <Select value={selectedStockId || undefined} onValueChange={handleStockSelect}>
+                <Select value={selectedStockId || "NONE"} onValueChange={(v) => handleStockSelect(v === "NONE" ? "" : v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select stock to inspect" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="NONE" disabled>Select stock to inspect</SelectItem>
                     {stocks.length === 0 && (
                       <div className="px-2 py-4 text-sm text-center text-muted-foreground">
                         No stocks under inspection
@@ -471,11 +472,12 @@ export default function CreateInspectionPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Inspection Type</Label>
-                <Select value={inspectionType || undefined} onValueChange={setInspectionType}>
+                <Select value={inspectionType || "NONE"} onValueChange={(v) => setInspectionType(v === "NONE" ? "" : v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select inspection type" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="NONE">None</SelectItem>
                     <SelectItem value="VISUAL">Visual</SelectItem>
                     <SelectItem value="DIMENSIONAL">Dimensional</SelectItem>
                     <SelectItem value="CHEMICAL_ANALYSIS">Chemical Analysis</SelectItem>
@@ -490,11 +492,12 @@ export default function CreateInspectionPage() {
               </div>
               <div className="space-y-2">
                 <Label>TPI Agency</Label>
-                <Select value={tpiAgencyId || undefined} onValueChange={setTpiAgencyId}>
+                <Select value={tpiAgencyId || "NONE"} onValueChange={(v) => setTpiAgencyId(v === "NONE" ? "" : v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select TPI agency (if applicable)" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="NONE">None</SelectItem>
                     {agencies.map((agency) => (
                       <SelectItem key={agency.id} value={agency.id}>
                         {agency.name} ({agency.code})

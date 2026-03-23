@@ -294,15 +294,16 @@ function CreatePOPage() {
               <div className="space-y-2">
                 <Label htmlFor="vendorId">Vendor *</Label>
                 <Select
-                  value={formData.vendorId || undefined}
+                  value={formData.vendorId || "NONE"}
                   onValueChange={(value) =>
-                    setFormData({ ...formData, vendorId: value })
+                    setFormData({ ...formData, vendorId: value === "NONE" ? "" : value })
                   }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select Vendor" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="NONE" disabled>Select Vendor</SelectItem>
                     {vendors.map((v) => (
                       <SelectItem key={v.id} value={v.id}>
                         {v.name}
@@ -315,15 +316,16 @@ function CreatePOPage() {
               <div className="space-y-2">
                 <Label htmlFor="prId">PR Reference (Optional)</Label>
                 <Select
-                  value={formData.prId || undefined}
+                  value={formData.prId || "NONE"}
                   onValueChange={(value) =>
-                    setFormData({ ...formData, prId: value })
+                    setFormData({ ...formData, prId: value === "NONE" ? "" : value })
                   }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select PR (if applicable)" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="NONE">None</SelectItem>
                     {prs.map((pr) => (
                       <SelectItem key={pr.id} value={pr.id}>
                         {pr.prNo}
@@ -336,15 +338,16 @@ function CreatePOPage() {
               <div className="space-y-2">
                 <Label htmlFor="salesOrderId">SO Reference (Optional)</Label>
                 <Select
-                  value={formData.salesOrderId || undefined}
+                  value={formData.salesOrderId || "NONE"}
                   onValueChange={(value) =>
-                    setFormData({ ...formData, salesOrderId: value })
+                    setFormData({ ...formData, salesOrderId: value === "NONE" ? "" : value })
                   }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select SO (if applicable)" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="NONE">None</SelectItem>
                     {salesOrders.map((so) => (
                       <SelectItem key={so.id} value={so.id}>
                         {so.soNo}

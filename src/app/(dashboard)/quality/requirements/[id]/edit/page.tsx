@@ -279,9 +279,9 @@ export default function EditQualityRequirementPage() {
                 <div className="grid gap-2">
                   <Label>Inspection Location</Label>
                   <Select
-                    value={formData.inspectionLocation || undefined}
+                    value={formData.inspectionLocation || "NONE"}
                     onValueChange={(v) =>
-                      setFormData((prev) => ({ ...prev, inspectionLocation: v }))
+                      setFormData((prev) => ({ ...prev, inspectionLocation: v === "NONE" ? "" : v }))
                     }
                     disabled={!formData.inspectionRequired}
                   >
@@ -289,6 +289,7 @@ export default function EditQualityRequirementPage() {
                       <SelectValue placeholder="Select location" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="NONE">None</SelectItem>
                       {INSPECTION_LOCATIONS.map((loc) => (
                         <SelectItem key={loc.value} value={loc.value}>
                           {loc.label}
@@ -300,15 +301,16 @@ export default function EditQualityRequirementPage() {
                 <div className="grid gap-2">
                   <Label>TPI Agency</Label>
                   <Select
-                    value={formData.tpiAgencyId || undefined}
+                    value={formData.tpiAgencyId || "NONE"}
                     onValueChange={(v) =>
-                      setFormData((prev) => ({ ...prev, tpiAgencyId: v }))
+                      setFormData((prev) => ({ ...prev, tpiAgencyId: v === "NONE" ? "" : v }))
                     }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select TPI agency" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="NONE">None</SelectItem>
                       {agencies.map((agency) => (
                         <SelectItem key={agency.id} value={agency.id}>
                           {agency.name} ({agency.code})
@@ -323,9 +325,9 @@ export default function EditQualityRequirementPage() {
                 <div className="grid gap-2">
                   <Label>Test Type</Label>
                   <Select
-                    value={formData.testType || undefined}
+                    value={formData.testType || "NONE"}
                     onValueChange={(v) =>
-                      setFormData((prev) => ({ ...prev, testType: v }))
+                      setFormData((prev) => ({ ...prev, testType: v === "NONE" ? "" : v }))
                     }
                     disabled={!formData.testingRequired}
                   >
@@ -333,6 +335,7 @@ export default function EditQualityRequirementPage() {
                       <SelectValue placeholder="Select test type" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="NONE">None</SelectItem>
                       {TEST_TYPES.map((t) => (
                         <SelectItem key={t.value} value={t.value}>
                           {t.label}
