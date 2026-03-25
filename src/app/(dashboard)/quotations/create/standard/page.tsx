@@ -27,7 +27,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, ArrowLeft, Building2, MapPin, ListChecks, FileText, Package, Calculator, Copy } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Building2, MapPin, ListChecks, FileText, Package, Calculator, Copy, Search } from "lucide-react";
 import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
 import { FittingSelect } from "@/components/shared/fitting-select";
@@ -632,6 +632,47 @@ function StandardQuotationPage() {
 
   const addItem = () => setItems([...items, { ...emptyItem }]);
   const [copyResetKey, setCopyResetKey] = useState(0);
+
+  // Past quote lookup
+  const [pastQuoteDialogIndex, setPastQuoteDialogIndex] = useState<number | null>(null);
+  const [pastQuoteResults, setPastQuoteResults] = useState<any[]>([]);
+  const [pastQuoteLoading, setPastQuoteLoading] = useState(false);
+
+  const openPastQuoteLookup = async (index: number) => {
+    const item = items[index];
+    if (!item.product) {
+      toast.error("Please select a product first");
+      return;
+    }
+    setPastQuoteDialogIndex(index);
+    setPastQuoteLoading(true);
+    setPastQuoteResults([]);
+    try {
+      const params = new URLSearchParams({ product: item.product });
+      if (item.material) params.set("material", item.material);
+      const res = await fetch(`/api/quotations/past-prices?${params}`);
+      const data = await res.json();
+      setPastQuoteResults(data.results || []);
+    } catch {
+      toast.error("Failed to fetch past prices");
+    } finally {
+      setPastQuoteLoading(false);
+    }
+  };
+
+  const selectPastQuote = (result: any) => {
+    if (pastQuoteDialogIndex === null) return;
+    setItems((prev) => {
+      const newItems = [...prev];
+      newItems[pastQuoteDialogIndex] = {
+        ...newItems[pastQuoteDialogIndex],
+        pastQuote: result.quotationNo,
+        pastQuotePrice: result.unitRate ? String(result.unitRate) : "",
+      };
+      return newItems;
+    });
+    setPastQuoteDialogIndex(null);
+  };
 
   const removeItem = (index: number) => {
     if (items.length > 1) setItems(items.filter((_, i) => i !== index));
@@ -1449,12 +1490,24 @@ function StandardQuotationPage() {
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs text-muted-foreground">Past Quote#</Label>
-                      <Input
-                        value={item.pastQuote}
-                        onChange={(e) => updateItem(index, "pastQuote", e.target.value)}
-                        placeholder="Quote ref"
-                        className="h-8 text-sm"
-                      />
+                      <div className="flex gap-1">
+                        <Input
+                          value={item.pastQuote}
+                          onChange={(e) => updateItem(index, "pastQuote", e.target.value)}
+                          placeholder="Quote ref"
+                          className="h-8 text-sm"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8 shrink-0"
+                          title="Search past quotation prices"
+                          onClick={() => openPastQuoteLookup(index)}
+                        >
+                          <Search className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs text-muted-foreground">Past Quote Price</Label>
@@ -1876,6 +1929,63 @@ function StandardQuotationPage() {
               {addingCustomer ? "Creating..." : "Create Customer"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Past Quote Lookup Dialog */}
+      <Dialog open={pastQuoteDialogIndex !== null} onOpenChange={(open) => { if (!open) setPastQuoteDialogIndex(null); }}>
+        <DialogContent className="max-w-2xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Search className="h-4 w-4" />
+              Past Quotation Prices
+              {pastQuoteDialogIndex !== null && items[pastQuoteDialogIndex]?.product && (
+                <span className="text-sm font-normal text-muted-foreground">
+                  — {items[pastQuoteDialogIndex].product}
+                  {items[pastQuoteDialogIndex].material ? ` / ${items[pastQuoteDialogIndex].material}` : ""}
+                </span>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="overflow-y-auto max-h-[60vh]">
+            {pastQuoteLoading ? (
+              <div className="flex items-center justify-center py-8 text-muted-foreground">
+                Loading past prices...
+              </div>
+            ) : pastQuoteResults.length === 0 ? (
+              <div className="flex items-center justify-center py-8 text-muted-foreground">
+                No past quotations found for this product
+              </div>
+            ) : (
+              <div className="space-y-1">
+                <div className="grid grid-cols-[1fr_1fr_auto_auto_auto] gap-2 px-3 py-2 text-xs font-medium text-muted-foreground border-b">
+                  <span>Customer</span>
+                  <span>Quotation</span>
+                  <span>Size</span>
+                  <span>Rate</span>
+                  <span>Date</span>
+                </div>
+                {pastQuoteResults.map((r: any) => (
+                  <button
+                    key={r.id}
+                    type="button"
+                    className="w-full grid grid-cols-[1fr_1fr_auto_auto_auto] gap-2 px-3 py-2 text-sm hover:bg-muted/60 rounded-md transition-colors text-left items-center"
+                    onClick={() => selectPastQuote(r)}
+                  >
+                    <span className="font-medium truncate">{r.customerName}</span>
+                    <span className="text-muted-foreground truncate">{r.quotationNo}</span>
+                    <span className="text-muted-foreground text-xs">{r.sizeLabel || "—"}</span>
+                    <span className="font-semibold text-primary whitespace-nowrap">
+                      {r.unitRate != null ? `₹${Number(r.unitRate).toLocaleString("en-IN")}` : "—"}/{r.uom || "Unit"}
+                    </span>
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">
+                      {r.quotationDate ? new Date(r.quotationDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "2-digit" }) : "—"}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
