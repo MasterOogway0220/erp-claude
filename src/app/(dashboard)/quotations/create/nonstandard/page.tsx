@@ -27,7 +27,13 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, ArrowLeft, Building2, MapPin, ListChecks, Copy, Search } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Plus, Trash2, ArrowLeft, Building2, MapPin, ListChecks, Copy, Search, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
 import { FittingSelect } from "@/components/shared/fitting-select";
@@ -537,7 +543,6 @@ function NonStandardQuotationPage() {
     setItems([...items, { ...emptyItem }]);
     setUseStructuredInput([...useStructuredInput, false]);
   };
-  const [copyResetKey, setCopyResetKey] = useState(0);
 
   // Past quote lookup
   const [pastQuoteDialogIndex, setPastQuoteDialogIndex] = useState<number | null>(null);
@@ -967,58 +972,56 @@ function NonStandardQuotationPage() {
                     </div>
                   </div>
                   {items.length > 1 && (
-                    <Select
-                      key={`copy-${index}-${copyResetKey}`}
-                      onValueChange={(val) => {
-                        const srcIdx = parseInt(val);
-                        const src = items[srcIdx];
-                        if (!src) return;
-                        setCopyResetKey((k) => k + 1);
-                        setItems((prev) => {
-                          const newItems = [...prev];
-                          newItems[index] = {
-                            ...newItems[index],
-                            materialCodeId: src.materialCodeId,
-                            materialCodeLabel: src.materialCodeLabel,
-                            materialCode: src.materialCode,
-                            itemDescription: src.itemDescription,
-                            size: src.size,
-                            endType: src.endType,
-                            material: src.material,
-                            quantity: src.quantity,
-                            unitRate: src.unitRate,
-                            uom: src.uom,
-                            delivery: src.delivery,
-                            remark: src.remark,
-                            fittingId: src.fittingId,
-                            fittingLabel: src.fittingLabel,
-                            flangeId: src.flangeId,
-                            flangeLabel: src.flangeLabel,
-                          };
-                          return newItems;
-                        });
-                        // Also sync structured input mode
-                        setUseStructuredInput((prev) => {
-                          const newFlags = [...prev];
-                          newFlags[index] = prev[srcIdx];
-                          return newFlags;
-                        });
-                      }}
-                    >
-                      <SelectTrigger className="h-7 w-auto text-xs gap-1 px-2">
-                        <Copy className="h-3 w-3" />
-                        <span>Copy From</span>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {items.map((_, i) =>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button type="button" variant="outline" size="sm" className="h-7 text-xs gap-1 px-2">
+                          <Copy className="h-3 w-3" />
+                          Copy From
+                          <ChevronDown className="h-3 w-3" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {items.map((src, i) =>
                           i !== index ? (
-                            <SelectItem key={i} value={String(i)}>
-                              Item #{i + 1}{items[i].itemDescription ? ` — ${items[i].itemDescription.substring(0, 40)}` : items[i].material ? ` — ${items[i].material}` : ""}
-                            </SelectItem>
+                            <DropdownMenuItem
+                              key={i}
+                              onSelect={() => {
+                                setItems((prev) => {
+                                  const newItems = [...prev];
+                                  newItems[index] = {
+                                    ...newItems[index],
+                                    materialCodeId: src.materialCodeId,
+                                    materialCodeLabel: src.materialCodeLabel,
+                                    materialCode: src.materialCode,
+                                    itemDescription: src.itemDescription,
+                                    size: src.size,
+                                    endType: src.endType,
+                                    material: src.material,
+                                    quantity: src.quantity,
+                                    unitRate: src.unitRate,
+                                    uom: src.uom,
+                                    delivery: src.delivery,
+                                    remark: src.remark,
+                                    fittingId: src.fittingId,
+                                    fittingLabel: src.fittingLabel,
+                                    flangeId: src.flangeId,
+                                    flangeLabel: src.flangeLabel,
+                                  };
+                                  return newItems;
+                                });
+                                setUseStructuredInput((prev) => {
+                                  const newFlags = [...prev];
+                                  newFlags[index] = prev[i];
+                                  return newFlags;
+                                });
+                              }}
+                            >
+                              Item #{i + 1}{src.itemDescription ? ` — ${src.itemDescription.substring(0, 40)}` : src.material ? ` — ${src.material}` : ""}
+                            </DropdownMenuItem>
                           ) : null
                         )}
-                      </SelectContent>
-                    </Select>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   )}
                   {items.length > 1 && (
                     <Button type="button" variant="ghost" size="icon" onClick={() => removeItem(index)}>

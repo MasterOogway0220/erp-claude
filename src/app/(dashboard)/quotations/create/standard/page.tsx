@@ -27,7 +27,13 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, ArrowLeft, Building2, MapPin, ListChecks, FileText, Package, Calculator, Copy, Search } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Plus, Trash2, ArrowLeft, Building2, MapPin, ListChecks, FileText, Package, Calculator, Copy, Search, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
 import { FittingSelect } from "@/components/shared/fitting-select";
@@ -631,7 +637,6 @@ function StandardQuotationPage() {
   });
 
   const addItem = () => setItems([...items, { ...emptyItem }]);
-  const [copyResetKey, setCopyResetKey] = useState(0);
 
   // Past quote lookup
   const [pastQuoteDialogIndex, setPastQuoteDialogIndex] = useState<number | null>(null);
@@ -1073,57 +1078,56 @@ function StandardQuotationPage() {
                     </div>
                     <div className="flex items-center gap-1">
                       {items.length > 1 && (
-                        <Select
-                          key={`copy-${index}-${copyResetKey}`}
-                          onValueChange={(val) => {
-                            const srcIdx = parseInt(val);
-                            const src = items[srcIdx];
-                            if (!src) return;
-                            setCopyResetKey((k) => k + 1);
-                            setItems((old) => {
-                              const newItems = [...old];
-                              newItems[index] = {
-                                ...newItems[index],
-                                itemCategory: src.itemCategory,
-                                materialCodeId: src.materialCodeId,
-                                materialCodeLabel: src.materialCodeLabel,
-                                product: src.product,
-                                material: src.material,
-                                additionalSpec: src.additionalSpec,
-                                sizeId: src.sizeId,
-                                sizeLabel: src.sizeLabel,
-                                nps: src.nps,
-                                schedule: src.schedule,
-                                od: src.od,
-                                wt: src.wt,
-                                length: src.length,
-                                ends: src.ends,
-                                uom: src.uom,
-                                delivery: src.delivery,
-                                unitWeight: src.unitWeight,
-                                fittingId: src.fittingId,
-                                fittingLabel: src.fittingLabel,
-                                flangeId: src.flangeId,
-                                flangeLabel: src.flangeLabel,
-                              };
-                              return newItems;
-                            });
-                          }}
-                        >
-                          <SelectTrigger className="h-7 w-auto text-xs gap-1 px-2">
-                            <Copy className="h-3 w-3" />
-                            <span>Copy From</span>
-                          </SelectTrigger>
-                          <SelectContent>
-                            {items.map((_, i) =>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button type="button" variant="outline" size="sm" className="h-7 text-xs gap-1 px-2">
+                              <Copy className="h-3 w-3" />
+                              Copy From
+                              <ChevronDown className="h-3 w-3" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {items.map((src, i) =>
                               i !== index ? (
-                                <SelectItem key={i} value={String(i)}>
-                                  Item #{i + 1}{items[i].product ? ` — ${items[i].product}` : ""}
-                                </SelectItem>
+                                <DropdownMenuItem
+                                  key={i}
+                                  onSelect={() => {
+                                    setItems((old) => {
+                                      const newItems = [...old];
+                                      newItems[index] = {
+                                        ...newItems[index],
+                                        itemCategory: src.itemCategory,
+                                        materialCodeId: src.materialCodeId,
+                                        materialCodeLabel: src.materialCodeLabel,
+                                        product: src.product,
+                                        material: src.material,
+                                        additionalSpec: src.additionalSpec,
+                                        sizeId: src.sizeId,
+                                        sizeLabel: src.sizeLabel,
+                                        nps: src.nps,
+                                        schedule: src.schedule,
+                                        od: src.od,
+                                        wt: src.wt,
+                                        length: src.length,
+                                        ends: src.ends,
+                                        uom: src.uom,
+                                        delivery: src.delivery,
+                                        unitWeight: src.unitWeight,
+                                        fittingId: src.fittingId,
+                                        fittingLabel: src.fittingLabel,
+                                        flangeId: src.flangeId,
+                                        flangeLabel: src.flangeLabel,
+                                      };
+                                      return newItems;
+                                    });
+                                  }}
+                                >
+                                  Item #{i + 1}{src.product ? ` — ${src.product}` : ""}
+                                </DropdownMenuItem>
                               ) : null
                             )}
-                          </SelectContent>
-                        </Select>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       )}
                       {items.length > 1 && (
                         <Button type="button" variant="ghost" size="icon" onClick={() => removeItem(index)}>
