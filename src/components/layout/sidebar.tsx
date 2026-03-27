@@ -33,6 +33,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
+  ArrowLeftRight,
   X,
   LogOut,
 } from "lucide-react";
@@ -425,6 +426,24 @@ export function Sidebar() {
               {user?.role || "---"}
             </Badge>
           </div>
+          {(userRole as string) === "SUPER_ADMIN" && (
+            <Tooltip delayDuration={0}>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 shrink-0 text-muted-foreground hover:text-primary"
+                  onClick={async () => {
+                    await fetch("/api/company/switch", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ companyId: null }) });
+                    window.location.href = "/superadmin";
+                  }}
+                >
+                  <ArrowLeftRight className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Switch Company</TooltipContent>
+            </Tooltip>
+          )}
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
               <Button
@@ -456,6 +475,24 @@ export function Sidebar() {
               <p className="text-xs text-muted-foreground">{user?.role}</p>
             </TooltipContent>
           </Tooltip>
+          {(userRole as string) === "SUPER_ADMIN" && (
+            <Tooltip delayDuration={0}>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-muted-foreground hover:text-primary"
+                  onClick={async () => {
+                    await fetch("/api/company/switch", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ companyId: null }) });
+                    window.location.href = "/superadmin";
+                  }}
+                >
+                  <ArrowLeftRight className="h-3 w-3" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Switch Company</TooltipContent>
+            </Tooltip>
+          )}
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
               <Button
