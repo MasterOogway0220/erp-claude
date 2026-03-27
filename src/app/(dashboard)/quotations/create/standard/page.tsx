@@ -1144,7 +1144,18 @@ function StandardQuotationPage() {
                           onSelect={(mc: any) => {
                             setItems((prev) => {
                               const newItems = [...prev];
-                              newItems[index] = { ...newItems[index], materialCodeId: mc.id, materialCodeLabel: mc.code };
+                              newItems[index] = {
+                                ...newItems[index],
+                                materialCodeId: mc.id,
+                                materialCodeLabel: mc.code,
+                                ...(mc.productType ? { product: mc.productType } : {}),
+                                ...(mc.materialGrade ? { material: mc.materialGrade } : {}),
+                                ...(mc.schedule ? { schedule: mc.schedule } : {}),
+                                ...(mc.odSize ? { od: String(mc.odSize) } : {}),
+                                ...(mc.nbSize ? { nps: String(mc.nbSize) } : {}),
+                                ...(mc.thickness ? { wt: String(mc.thickness) } : {}),
+                                ...(mc.unit ? { uom: mc.unit } : {}),
+                              };
                               return newItems;
                             });
                           }}

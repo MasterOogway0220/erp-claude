@@ -21,22 +21,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Product or item description is required" }, { status: 400 });
     }
 
-    // Build filter: match product or itemDescription (case-insensitive), optionally material
-    const where: any = {
-      quotation: {
-        // Only from non-draft quotations (APPROVED, SENT, etc.)
-        status: { notIn: ["DRAFT", "CANCELLED"] },
-      },
-    };
+    // Build filter: match product or itemDescription, optionally material
+    // No company filter — past prices are fetched across all companies by product
+    const where: any = {};
 
     if (product) {
-      where.product = { equals: product, mode: "insensitive" };
+      where.product = { equals: product };
     } else if (itemDescription) {
-      where.itemDescription = { contains: itemDescription, mode: "insensitive" };
+      where.itemDescription = { contains: itemDescription };
     }
 
     if (material) {
-      where.material = { equals: material, mode: "insensitive" };
+      where.material = { equals: material };
     }
 
     const items = await prisma.quotationItem.findMany({

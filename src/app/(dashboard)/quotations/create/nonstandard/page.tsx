@@ -1104,7 +1104,14 @@ function NonStandardQuotationPage() {
                             onSelect={(mc: any) => {
                               setItems((prev) => {
                                 const newItems = [...prev];
-                                newItems[index] = { ...newItems[index], materialCodeId: mc.id, materialCodeLabel: mc.code, materialCode: mc.code };
+                                newItems[index] = {
+                                  ...newItems[index],
+                                  materialCodeId: mc.id,
+                                  materialCodeLabel: mc.code,
+                                  materialCode: mc.code,
+                                  ...(mc.materialGrade ? { material: mc.materialGrade } : {}),
+                                  ...(mc.unit ? { uom: mc.unit } : {}),
+                                };
                                 return newItems;
                               });
                             }}
@@ -1340,7 +1347,14 @@ function NonStandardQuotationPage() {
                           onSelect={(mc: any) => {
                             setItems((prev) => {
                               const newItems = [...prev];
-                              newItems[index] = { ...newItems[index], materialCodeId: mc.id, materialCodeLabel: mc.code, materialCode: mc.code };
+                              newItems[index] = {
+                                ...newItems[index],
+                                materialCodeId: mc.id,
+                                materialCodeLabel: mc.code,
+                                materialCode: mc.code,
+                                ...(mc.materialGrade ? { material: mc.materialGrade } : {}),
+                                ...(mc.unit ? { uom: mc.unit } : {}),
+                              };
                               return newItems;
                             });
                           }}
