@@ -664,8 +664,8 @@ function StandardQuotationPage() {
     if (!q) return;
     updateItem(index, "pastQuote", quotationNo);
     if (q.items.length === 1) {
-      // Single item — auto-fill price directly
-      updateItem(index, "pastQuotePrice", q.items[0].unitRate ? String(q.items[0].unitRate) : "");
+      // Single item — auto-fill all fields directly
+      applyPastQuoteItemFields(index, q.items[0]);
     } else if (q.items.length > 1) {
       // Multiple items — show picker dialog
       setPastQuoteDialogIndex(index);
@@ -673,9 +673,38 @@ function StandardQuotationPage() {
     }
   };
 
+  const applyPastQuoteItemFields = (index: number, item: any) => {
+    // Auto-fill all available fields from the past quote item
+    if (item.product) updateItem(index, "product", item.product);
+    if (item.material) updateItem(index, "material", item.material);
+    if (item.additionalSpec) updateItem(index, "additionalSpec", item.additionalSpec);
+    if (item.sizeId) updateItem(index, "sizeId", item.sizeId);
+    if (item.sizeLabel) updateItem(index, "sizeLabel", item.sizeLabel);
+    if (item.schedule) updateItem(index, "schedule", item.schedule);
+    if (item.materialCodeId) updateItem(index, "materialCodeId", item.materialCodeId);
+    if (item.materialCodeLabel) updateItem(index, "materialCodeLabel", item.materialCodeLabel);
+    if (item.od != null) updateItem(index, "od", String(item.od));
+    if (item.wt != null) updateItem(index, "wt", String(item.wt));
+    if (item.length) updateItem(index, "length", item.length);
+    if (item.ends) updateItem(index, "ends", item.ends);
+    if (item.uom) updateItem(index, "uom", item.uom);
+    if (item.quantity != null) updateItem(index, "quantity", String(item.quantity));
+    if (item.delivery) updateItem(index, "delivery", item.delivery);
+    if (item.remark) updateItem(index, "remark", item.remark);
+    if (item.unitWeight != null) updateItem(index, "unitWeight", String(item.unitWeight));
+    if (item.taxRate != null) updateItem(index, "taxRate", String(item.taxRate));
+    if (item.hsnCode) updateItem(index, "hsnCode", item.hsnCode);
+    if (item.fittingId) updateItem(index, "fittingId", item.fittingId);
+    if (item.fittingLabel) updateItem(index, "fittingLabel", item.fittingLabel || "");
+    if (item.flangeId) updateItem(index, "flangeId", item.flangeId);
+    if (item.flangeLabel) updateItem(index, "flangeLabel", item.flangeLabel || "");
+    updateItem(index, "pastQuotePrice", item.unitRate ? String(item.unitRate) : "");
+    updateItem(index, "unitRate", item.unitRate ? String(item.unitRate) : "");
+  };
+
   const selectPastQuoteItem = (item: any) => {
     if (pastQuoteDialogIndex === null) return;
-    updateItem(pastQuoteDialogIndex, "pastQuotePrice", item.unitRate ? String(item.unitRate) : "");
+    applyPastQuoteItemFields(pastQuoteDialogIndex, item);
     setPastQuoteDialogIndex(null);
     setPastQuoteSelectedItems([]);
   };
@@ -1518,7 +1547,7 @@ function StandardQuotationPage() {
                           <SelectItem value="NONE">— None —</SelectItem>
                           {pastQuotations.map((pq: any) => (
                             <SelectItem key={pq.id} value={pq.quotationNo}>
-                              {pq.quotationNo} ({pq.quotationDate ? new Date(pq.quotationDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "2-digit" }) : "—"})
+                              {pq.quotationNo} {pq.contactPerson ? `[${pq.contactPerson}]` : ""} ({pq.quotationDate ? new Date(pq.quotationDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "2-digit" }) : "—"})
                             </SelectItem>
                           ))}
                         </SelectContent>

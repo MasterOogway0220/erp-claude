@@ -570,16 +570,35 @@ function NonStandardQuotationPage() {
     if (!q) return;
     updateItem(index, "pastQuote", quotationNo);
     if (q.items.length === 1) {
-      updateItem(index, "pastQuotePrice", q.items[0].unitRate ? String(q.items[0].unitRate) : "");
+      applyPastQuoteItemFields(index, q.items[0]);
     } else if (q.items.length > 1) {
       setPastQuoteDialogIndex(index);
       setPastQuoteSelectedItems(q.items);
     }
   };
 
+  const applyPastQuoteItemFields = (index: number, item: any) => {
+    if (item.itemDescription) updateItem(index, "itemDescription", item.itemDescription);
+    if (item.material) updateItem(index, "material", item.material);
+    if (item.sizeLabel) updateItem(index, "size", item.sizeLabel);
+    if (item.ends) updateItem(index, "endType", item.ends);
+    if (item.uom) updateItem(index, "uom", item.uom);
+    if (item.quantity != null) updateItem(index, "quantity", String(item.quantity));
+    if (item.delivery) updateItem(index, "delivery", item.delivery);
+    if (item.remark) updateItem(index, "remark", item.remark);
+    if (item.materialCodeId) updateItem(index, "materialCodeId", item.materialCodeId);
+    if (item.materialCodeLabel) updateItem(index, "materialCodeLabel", item.materialCodeLabel);
+    if (item.fittingId) updateItem(index, "fittingId", item.fittingId);
+    if (item.fittingLabel) updateItem(index, "fittingLabel", item.fittingLabel || "");
+    if (item.flangeId) updateItem(index, "flangeId", item.flangeId);
+    if (item.flangeLabel) updateItem(index, "flangeLabel", item.flangeLabel || "");
+    updateItem(index, "pastQuotePrice", item.unitRate ? String(item.unitRate) : "");
+    updateItem(index, "unitRate", item.unitRate ? String(item.unitRate) : "");
+  };
+
   const selectPastQuoteItem = (item: any) => {
     if (pastQuoteDialogIndex === null) return;
-    updateItem(pastQuoteDialogIndex, "pastQuotePrice", item.unitRate ? String(item.unitRate) : "");
+    applyPastQuoteItemFields(pastQuoteDialogIndex, item);
     setPastQuoteDialogIndex(null);
     setPastQuoteSelectedItems([]);
   };
@@ -1601,7 +1620,7 @@ function NonStandardQuotationPage() {
                             <SelectItem value="NONE">— None —</SelectItem>
                             {pastQuotations.map((pq: any) => (
                               <SelectItem key={pq.id} value={pq.quotationNo}>
-                                {pq.quotationNo} ({pq.quotationDate ? new Date(pq.quotationDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "2-digit" }) : "—"})
+                                {pq.quotationNo} {pq.contactPerson ? `[${pq.contactPerson}]` : ""} ({pq.quotationDate ? new Date(pq.quotationDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "2-digit" }) : "—"})
                               </SelectItem>
                             ))}
                           </SelectContent>
