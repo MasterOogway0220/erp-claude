@@ -33,7 +33,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Trash2, ArrowLeft, Building2, MapPin, ListChecks, Copy, Search, ChevronDown } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Building2, MapPin, ListChecks, Copy, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
 import { FittingSelect } from "@/components/shared/fitting-select";
@@ -544,47 +544,44 @@ function NonStandardQuotationPage() {
     setUseStructuredInput([...useStructuredInput, false]);
   };
 
-  // Past quote lookup
-  const [pastQuoteDialogIndex, setPastQuoteDialogIndex] = useState<number | null>(null);
-  const [pastQuoteResults, setPastQuoteResults] = useState<any[]>([]);
-  const [pastQuoteLoading, setPastQuoteLoading] = useState(false);
+  // Past quotations for customer dropdown
+  const { data: pastQuotationsData } = useQuery({
+    queryKey: ["pastQuotations", formData.customerId],
+    enabled: !!formData.customerId,
+    queryFn: async () => {
+      const res = await fetch(`/api/quotations/past-prices?customerId=${formData.customerId}`);
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+  });
+  const pastQuotations = pastQuotationsData?.results || [];
 
-  const openPastQuoteLookup = async (index: number) => {
-    const item = items[index];
-    const searchTerm = item.itemDescription || item.material;
-    if (!searchTerm) {
-      toast.error("Please fill item description or material first");
+  // When a past quotation is selected from dropdown, show item picker dialog
+  const [pastQuoteDialogIndex, setPastQuoteDialogIndex] = useState<number | null>(null);
+  const [pastQuoteSelectedItems, setPastQuoteSelectedItems] = useState<any[]>([]);
+
+  const onPastQuoteSelect = (quotationNo: string, index: number) => {
+    if (quotationNo === "NONE") {
+      updateItem(index, "pastQuote", "");
+      updateItem(index, "pastQuotePrice", "");
       return;
     }
-    setPastQuoteDialogIndex(index);
-    setPastQuoteLoading(true);
-    setPastQuoteResults([]);
-    try {
-      const params = new URLSearchParams();
-      if (item.itemDescription) params.set("itemDescription", item.itemDescription);
-      if (item.material) params.set("material", item.material);
-      const res = await fetch(`/api/quotations/past-prices?${params}`);
-      const data = await res.json();
-      setPastQuoteResults(data.results || []);
-    } catch {
-      toast.error("Failed to fetch past prices");
-    } finally {
-      setPastQuoteLoading(false);
+    const q = pastQuotations.find((pq: any) => pq.quotationNo === quotationNo);
+    if (!q) return;
+    updateItem(index, "pastQuote", quotationNo);
+    if (q.items.length === 1) {
+      updateItem(index, "pastQuotePrice", q.items[0].unitRate ? String(q.items[0].unitRate) : "");
+    } else if (q.items.length > 1) {
+      setPastQuoteDialogIndex(index);
+      setPastQuoteSelectedItems(q.items);
     }
   };
 
-  const selectPastQuote = (result: any) => {
+  const selectPastQuoteItem = (item: any) => {
     if (pastQuoteDialogIndex === null) return;
-    setItems((prev) => {
-      const newItems = [...prev];
-      newItems[pastQuoteDialogIndex] = {
-        ...newItems[pastQuoteDialogIndex],
-        pastQuote: result.quotationNo,
-        pastQuotePrice: result.unitRate ? String(result.unitRate) : "",
-      };
-      return newItems;
-    });
+    updateItem(pastQuoteDialogIndex, "pastQuotePrice", item.unitRate ? String(item.unitRate) : "");
     setPastQuoteDialogIndex(null);
+    setPastQuoteSelectedItems([]);
   };
 
   const removeItem = (index: number) => {
@@ -1592,23 +1589,23 @@ function NonStandardQuotationPage() {
                     <div className="grid grid-cols-4 gap-4">
                       <div className="grid gap-2">
                         <Label className="text-sm">Past Quote</Label>
-                        <div className="flex gap-1">
-                          <Input
-                            value={item.pastQuote}
-                            onChange={(e) => updateItem(index, "pastQuote", e.target.value)}
-                            placeholder="Quote ref"
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="icon"
-                            className="h-9 w-9 shrink-0"
-                            title="Search past quotation prices"
-                            onClick={() => openPastQuoteLookup(index)}
-                          >
-                            <Search className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
+                        <Select
+                          value={item.pastQuote || "NONE"}
+                          onValueChange={(v) => onPastQuoteSelect(v, index)}
+                          disabled={!formData.customerId}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select past quote" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="NONE">— None —</SelectItem>
+                            {pastQuotations.map((pq: any) => (
+                              <SelectItem key={pq.id} value={pq.quotationNo}>
+                                {pq.quotationNo} ({pq.quotationDate ? new Date(pq.quotationDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "2-digit" }) : "—"})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="grid gap-2">
                         <Label className="text-sm">Past Quote Price</Label>
@@ -1955,58 +1952,36 @@ function NonStandardQuotationPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Past Quote Lookup Dialog */}
-      <Dialog open={pastQuoteDialogIndex !== null} onOpenChange={(open) => { if (!open) setPastQuoteDialogIndex(null); }}>
+      {/* Past Quote Item Picker Dialog (when selected quotation has multiple items) */}
+      <Dialog open={pastQuoteDialogIndex !== null && pastQuoteSelectedItems.length > 0} onOpenChange={(open) => { if (!open) { setPastQuoteDialogIndex(null); setPastQuoteSelectedItems([]); } }}>
         <DialogContent className="max-w-2xl max-h-[80vh]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Search className="h-4 w-4" />
-              Past Quotation Prices
-              {pastQuoteDialogIndex !== null && items[pastQuoteDialogIndex]?.itemDescription && (
-                <span className="text-sm font-normal text-muted-foreground">
-                  — {items[pastQuoteDialogIndex].itemDescription.substring(0, 50)}
-                </span>
-              )}
-            </DialogTitle>
+            <DialogTitle>Select Item for Price</DialogTitle>
           </DialogHeader>
           <div className="overflow-y-auto max-h-[60vh]">
-            {pastQuoteLoading ? (
-              <div className="flex items-center justify-center py-8 text-muted-foreground">
-                Loading past prices...
+            <div className="space-y-1">
+              <div className="grid grid-cols-[1fr_auto_auto_auto] gap-2 px-3 py-2 text-xs font-medium text-muted-foreground border-b">
+                <span>Product / Description</span>
+                <span>Size</span>
+                <span>Rate</span>
+                <span>UOM</span>
               </div>
-            ) : pastQuoteResults.length === 0 ? (
-              <div className="flex items-center justify-center py-8 text-muted-foreground">
-                No past quotations found for this item
-              </div>
-            ) : (
-              <div className="space-y-1">
-                <div className="grid grid-cols-[1fr_1fr_1fr_auto_auto] gap-2 px-3 py-2 text-xs font-medium text-muted-foreground border-b">
-                  <span>Customer</span>
-                  <span>Quotation</span>
-                  <span>Description</span>
-                  <span>Rate</span>
-                  <span>Date</span>
-                </div>
-                {pastQuoteResults.map((r: any) => (
-                  <button
-                    key={r.id}
-                    type="button"
-                    className="w-full grid grid-cols-[1fr_1fr_1fr_auto_auto] gap-2 px-3 py-2 text-sm hover:bg-muted/60 rounded-md transition-colors text-left items-center"
-                    onClick={() => selectPastQuote(r)}
-                  >
-                    <span className="font-medium truncate">{r.customerName}</span>
-                    <span className="text-muted-foreground truncate">{r.quotationNo}</span>
-                    <span className="text-muted-foreground text-xs truncate">{r.itemDescription || r.product || "—"}</span>
-                    <span className="font-semibold text-primary whitespace-nowrap">
-                      {r.unitRate != null ? `₹${Number(r.unitRate).toLocaleString("en-IN")}` : "—"}/{r.uom || "Unit"}
-                    </span>
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">
-                      {r.quotationDate ? new Date(r.quotationDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "2-digit" }) : "—"}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
+              {pastQuoteSelectedItems.map((item: any) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className="w-full grid grid-cols-[1fr_auto_auto_auto] gap-2 px-3 py-2 text-sm hover:bg-muted/60 rounded-md transition-colors text-left items-center"
+                  onClick={() => selectPastQuoteItem(item)}
+                >
+                  <span className="font-medium truncate">{item.product || item.itemDescription || "—"}</span>
+                  <span className="text-muted-foreground text-xs">{item.sizeLabel || "—"}</span>
+                  <span className="font-semibold text-primary whitespace-nowrap">
+                    {item.unitRate != null ? `₹${Number(item.unitRate).toLocaleString("en-IN")}` : "—"}
+                  </span>
+                  <span className="text-xs text-muted-foreground">{item.uom || "Unit"}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </DialogContent>
       </Dialog>

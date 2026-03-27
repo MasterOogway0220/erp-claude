@@ -3,8 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-// GET /api/quotations/past-prices?product=...&material=...
-// Returns past quotation items matching product, with customer name and quote number
+// GET /api/quotations/past-prices?customerId=...
+// Returns past quotations for a customer with their items
 export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) {
@@ -13,80 +13,60 @@ export async function GET(request: NextRequest) {
 
   try {
     const { searchParams } = new URL(request.url);
-    const product = searchParams.get("product")?.trim();
-    const material = searchParams.get("material")?.trim();
-    const itemDescription = searchParams.get("itemDescription")?.trim();
+    const customerId = searchParams.get("customerId")?.trim();
 
-    if (!product && !itemDescription) {
-      return NextResponse.json({ error: "Product or item description is required" }, { status: 400 });
+    if (!customerId) {
+      return NextResponse.json({ error: "Customer ID is required" }, { status: 400 });
     }
 
-    // Build filter: match product or itemDescription, optionally material
-    // No company filter — past prices are fetched across all companies by product
-    const where: any = {};
-
-    if (product) {
-      where.product = { equals: product };
-    } else if (itemDescription) {
-      where.itemDescription = { contains: itemDescription };
-    }
-
-    if (material) {
-      where.material = { equals: material };
-    }
-
-    const items = await prisma.quotationItem.findMany({
-      where,
+    // Fetch past quotations for this customer
+    const quotations = await prisma.quotation.findMany({
+      where: { customerId },
       select: {
         id: true,
-        product: true,
-        material: true,
-        additionalSpec: true,
-        itemDescription: true,
-        sizeLabel: true,
-        schedule: true,
-        unitRate: true,
-        uom: true,
-        quantity: true,
-        quotation: {
+        quotationNo: true,
+        quotationDate: true,
+        status: true,
+        quotationCategory: true,
+        items: {
           select: {
-            quotationNo: true,
-            quotationDate: true,
-            status: true,
-            customer: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
+            id: true,
+            product: true,
+            material: true,
+            additionalSpec: true,
+            itemDescription: true,
+            sizeLabel: true,
+            schedule: true,
+            unitRate: true,
+            uom: true,
+            quantity: true,
           },
         },
       },
-      orderBy: {
-        quotation: {
-          quotationDate: "desc",
-        },
-      },
+      orderBy: { quotationDate: "desc" },
       take: 50,
     });
 
-    // Format response
-    const results = items.map((item) => ({
-      id: item.id,
-      product: item.product,
-      material: item.material,
-      additionalSpec: item.additionalSpec,
-      itemDescription: item.itemDescription,
-      sizeLabel: item.sizeLabel,
-      schedule: item.schedule,
-      unitRate: item.unitRate ? Number(item.unitRate) : null,
-      uom: item.uom,
-      quantity: item.quantity ? Number(item.quantity) : null,
-      quotationNo: item.quotation.quotationNo,
-      quotationDate: item.quotation.quotationDate,
-      quotationStatus: item.quotation.status,
-      customerName: item.quotation.customer.name,
-      customerId: item.quotation.customer.id,
+    // Format: list of quotations with their items
+    const results = quotations.map((q) => ({
+      id: q.id,
+      quotationNo: q.quotationNo,
+      quotationDate: q.quotationDate,
+      status: q.status,
+      quotationCategory: q.quotationCategory,
+      itemCount: q.items.length,
+      items: q.items.map((item) => ({
+        id: item.id,
+        product: item.product,
+        material: item.material,
+        additionalSpec: item.additionalSpec,
+        itemDescription: item.itemDescription,
+        sizeLabel: item.sizeLabel,
+        schedule: item.schedule,
+        unitRate: item.unitRate ? Number(item.unitRate) : null,
+        uom: item.uom,
+        quantity: item.quantity ? Number(item.quantity) : null,
+      })),
     }));
 
     return NextResponse.json({ results });
