@@ -119,12 +119,14 @@ export default function SuperAdminDashboard() {
   const [showAdminPassword, setShowAdminPassword] = useState(false);
   const [savingAdmin, setSavingAdmin] = useState(false);
 
+  const isSuperAdmin = (user?.role as string) === "SUPER_ADMIN";
+
   // Redirect non-super-admins
   useEffect(() => {
-    if (!isLoading && user?.role !== "SUPER_ADMIN") {
+    if (!isLoading && !isSuperAdmin) {
       router.push("/");
     }
-  }, [user, isLoading, router]);
+  }, [user, isLoading, isSuperAdmin, router]);
 
   const fetchCompanies = useCallback(async () => {
     try {
@@ -153,11 +155,11 @@ export default function SuperAdminDashboard() {
   }, []);
 
   useEffect(() => {
-    if (user?.role === "SUPER_ADMIN") {
+    if (isSuperAdmin) {
       fetchCompanies();
       fetchAllUsers();
     }
-  }, [user, fetchCompanies, fetchAllUsers]);
+  }, [isSuperAdmin, fetchCompanies, fetchAllUsers]);
 
   // Keep selectedCompany in sync if companies list refreshes
   useEffect(() => {
@@ -254,7 +256,7 @@ export default function SuperAdminDashboard() {
     setAdminDialogOpen(true);
   };
 
-  if (isLoading || user?.role !== "SUPER_ADMIN") return null;
+  if (isLoading || !isSuperAdmin) return null;
 
   const totalUsers = allUsers.length;
   const activeUsers = allUsers.filter((u) => u.isActive).length;
