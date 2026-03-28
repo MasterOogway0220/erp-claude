@@ -638,6 +638,51 @@ function StandardQuotationPage() {
 
   const addItem = () => setItems([...items, { ...emptyItem }]);
 
+  // Fetch material history (past quote + PO) when material code is selected
+  const fetchMaterialHistory = async (index: number, materialCodeId: string) => {
+    if (!formData.customerId || !materialCodeId) return;
+    try {
+      const res = await fetch(
+        `/api/quotations/material-history?customerId=${formData.customerId}&materialCodeId=${materialCodeId}`
+      );
+      if (!res.ok) return;
+      const data = await res.json();
+      setItems((prev) => {
+        const newItems = [...prev];
+        const updated = { ...newItems[index] };
+        if (data.pastQuote) {
+          updated.pastQuote = data.pastQuote.quotationNo || "";
+          updated.pastQuotePrice = data.pastQuote.unitRate != null ? String(data.pastQuote.unitRate) : "";
+          // Also fill product specs from past quote if not already set from MC master
+          if (!updated.product && data.pastQuote.product) updated.product = data.pastQuote.product;
+          if (!updated.material && data.pastQuote.material) updated.material = data.pastQuote.material;
+          if (!updated.additionalSpec && data.pastQuote.additionalSpec) updated.additionalSpec = data.pastQuote.additionalSpec;
+          if (!updated.sizeLabel && data.pastQuote.sizeLabel) updated.sizeLabel = data.pastQuote.sizeLabel;
+          if (!updated.sizeId && data.pastQuote.sizeId) updated.sizeId = data.pastQuote.sizeId;
+          if (!updated.schedule && data.pastQuote.schedule) updated.schedule = data.pastQuote.schedule;
+          if (!updated.od && data.pastQuote.od != null) updated.od = String(data.pastQuote.od);
+          if (!updated.wt && data.pastQuote.wt != null) updated.wt = String(data.pastQuote.wt);
+          if (!updated.length && data.pastQuote.length) updated.length = data.pastQuote.length;
+          if (!updated.ends && data.pastQuote.ends) updated.ends = data.pastQuote.ends;
+        } else {
+          updated.pastQuote = "";
+          updated.pastQuotePrice = "";
+        }
+        if (data.pastPo) {
+          updated.pastPo = data.pastPo.poNumber || "";
+          updated.pastPoPrice = data.pastPo.unitRate != null ? String(data.pastPo.unitRate) : "";
+        } else {
+          updated.pastPo = "";
+          updated.pastPoPrice = "";
+        }
+        newItems[index] = updated;
+        return newItems;
+      });
+    } catch {
+      // Silently fail — not critical
+    }
+  };
+
   // Past quotations for customer dropdown
   const { data: pastQuotationsData } = useQuery({
     queryKey: ["pastQuotations", formData.customerId],
@@ -1184,6 +1229,8 @@ function StandardQuotationPage() {
                                 materialCodeLabel: mc.code,
                                 ...(mc.productType ? { product: mc.productType } : {}),
                                 ...(mc.materialGrade ? { material: mc.materialGrade } : {}),
+                                ...(mc.standard ? { additionalSpec: mc.standard } : {}),
+                                ...(mc.size ? { sizeLabel: mc.size } : {}),
                                 ...(mc.schedule ? { schedule: mc.schedule } : {}),
                                 ...(mc.odSize ? { od: String(mc.odSize) } : {}),
                                 ...(mc.nbSize ? { nps: String(mc.nbSize) } : {}),
@@ -1192,6 +1239,8 @@ function StandardQuotationPage() {
                               };
                               return newItems;
                             });
+                            // Auto-fetch past quote/PO history for this material code + customer
+                            fetchMaterialHistory(index, mc.id);
                           }}
                           onChange={(text) => {
                             setItems((prev) => {
@@ -1260,7 +1309,7 @@ function StandardQuotationPage() {
                                   return;
                                 }
                                 // No duplicate — create new
-                                const desc = [item.product, item.material, sizeLabel, item.schedule].filter(Boolean).join(" ");
+                                const desc = [item.product, item.material, item.additionalSpec, sizeLabel, item.schedule].filter(Boolean).join(" ");
                                 const createRes = await fetch("/api/masters/material-codes", {
                                   method: "POST",
                                   headers: { "Content-Type": "application/json" },
@@ -1273,6 +1322,7 @@ function StandardQuotationPage() {
                                     nbSize: item.nps || null,
                                     thickness: item.wt || null,
                                     schedule: item.schedule || null,
+                                    standard: item.additionalSpec || null,
                                     description: desc,
                                   }),
                                 });
@@ -1646,6 +1696,7 @@ function StandardQuotationPage() {
                                   materialGrade: item.material,
                                   size: item.sizeLabel,
                                   schedule: item.schedule,
+                                  standard: item.additionalSpec || null,
                                   unit: item.uom || "Mtr",
                                 }),
                               });

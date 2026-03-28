@@ -544,6 +544,43 @@ function NonStandardQuotationPage() {
     setUseStructuredInput([...useStructuredInput, false]);
   };
 
+  // Fetch material history (past quote + PO) when material code is selected
+  const fetchMaterialHistory = async (index: number, materialCodeId: string) => {
+    if (!formData.customerId || !materialCodeId) return;
+    try {
+      const res = await fetch(
+        `/api/quotations/material-history?customerId=${formData.customerId}&materialCodeId=${materialCodeId}`
+      );
+      if (!res.ok) return;
+      const data = await res.json();
+      setItems((prev) => {
+        const newItems = [...prev];
+        const updated = { ...newItems[index] };
+        if (data.pastQuote) {
+          updated.pastQuote = data.pastQuote.quotationNo || "";
+          updated.pastQuotePrice = data.pastQuote.unitRate != null ? String(data.pastQuote.unitRate) : "";
+          if (!updated.itemDescription && data.pastQuote.additionalSpec) updated.itemDescription = data.pastQuote.additionalSpec;
+          if (!updated.size && data.pastQuote.sizeLabel) updated.size = data.pastQuote.sizeLabel;
+          if (!updated.material && data.pastQuote.material) updated.material = data.pastQuote.material;
+        } else {
+          updated.pastQuote = "";
+          updated.pastQuotePrice = "";
+        }
+        if (data.pastPo) {
+          updated.pastPo = data.pastPo.poNumber || "";
+          updated.pastPoPrice = data.pastPo.unitRate != null ? String(data.pastPo.unitRate) : "";
+        } else {
+          updated.pastPo = "";
+          updated.pastPoPrice = "";
+        }
+        newItems[index] = updated;
+        return newItems;
+      });
+    } catch {
+      // Silently fail
+    }
+  };
+
   // Past quotations for customer dropdown
   const { data: pastQuotationsData } = useQuery({
     queryKey: ["pastQuotations", formData.customerId],
@@ -1128,11 +1165,14 @@ function NonStandardQuotationPage() {
                                   materialCodeId: mc.id,
                                   materialCodeLabel: mc.code,
                                   materialCode: mc.code,
+                                  ...(mc.productType ? { itemDescription: mc.productType } : {}),
                                   ...(mc.materialGrade ? { material: mc.materialGrade } : {}),
+                                  ...(mc.size ? { size: mc.size } : {}),
                                   ...(mc.unit ? { uom: mc.unit } : {}),
                                 };
                                 return newItems;
                               });
+                              fetchMaterialHistory(index, mc.id);
                             }}
                             onChange={(text) => {
                               setItems((prev) => {
@@ -1371,11 +1411,14 @@ function NonStandardQuotationPage() {
                                 materialCodeId: mc.id,
                                 materialCodeLabel: mc.code,
                                 materialCode: mc.code,
+                                ...(mc.productType ? { itemDescription: mc.productType } : {}),
                                 ...(mc.materialGrade ? { material: mc.materialGrade } : {}),
+                                ...(mc.size ? { size: mc.size } : {}),
                                 ...(mc.unit ? { uom: mc.unit } : {}),
                               };
                               return newItems;
                             });
+                            fetchMaterialHistory(index, mc.id);
                           }}
                           onChange={(text) => {
                             setItems((prev) => {
