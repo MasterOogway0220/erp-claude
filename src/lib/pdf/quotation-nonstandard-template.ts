@@ -546,48 +546,9 @@ export function generateNonStandardQuotationHtml(
   <!-- ============================================================ -->
   <!-- Grand Total row                                              -->
   <!-- ============================================================ -->
-  <tr class="grand-total">
-    <td colspan="5">Grand Total</td>
-    <td>${formatNumber(totalQty, 0)}</td>
-    <td></td>
-    <td class="cell-right">${isTechnical ? "" : formatNumber(totalAmount, 0)}</td>
-    <td></td>
-  </tr>
-
   ${!isTechnical ? (() => {
-    const sub = parseFloat(String((quotation as any).subtotal)) || totalAmount;
-    const disc = parseFloat(String((quotation as any).additionalDiscount)) || 0;
-    const discAmt = parseFloat(String((quotation as any).discountAmount)) || 0;
-    const afterDisc = parseFloat(String((quotation as any).totalAfterDiscount)) || (sub - discAmt);
-    const tRate = parseFloat(String((quotation as any).taxRate)) || 0;
-    const tAmt = parseFloat(String((quotation as any).taxAmount)) || 0;
-    const rcm = (quotation as any).rcmEnabled || false;
-    const rOff = (quotation as any).roundOff || false;
-    const rOffAmt = parseFloat(String((quotation as any).roundOffAmount)) || 0;
     const gt = parseFloat(String((quotation as any).grandTotal)) || totalAmount;
-    const adv = parseFloat(String((quotation as any).advanceToPay)) || 0;
-    let rows = `<tr><td class="lbl">Sub-total</td><td class="val">${formatNumber(sub)}</td></tr>`;
-    if (disc > 0) {
-      rows += `<tr><td class="lbl">Discount (${formatNumber(disc, 1)}%)</td><td class="val">- ${formatNumber(discAmt)}</td></tr>`;
-      rows += `<tr><td class="lbl">After Discount</td><td class="val">${formatNumber(afterDisc)}</td></tr>`;
-    }
-    if (tRate > 0 && !rcm) {
-      rows += `<tr><td class="lbl">GST (${formatNumber(tRate, 0)}%)</td><td class="val">${formatNumber(tAmt)}</td></tr>`;
-    }
-    if (rcm) {
-      rows += `<tr><td class="lbl">Tax - RCM (buyer)</td><td class="val">0.00</td></tr>`;
-    }
-    if (rOff && rOffAmt !== 0) {
-      rows += `<tr><td class="lbl">Round-off</td><td class="val">${rOffAmt >= 0 ? "+" : ""}${formatNumber(rOffAmt)}</td></tr>`;
-    }
-    rows += `<tr><td class="lbl" style="font-weight:bold;border-top:1px solid #000;padding-top:2px;">Grand Total (${escapeHtml(quotation.currency)})</td><td class="val" style="border-top:1px solid #000;padding-top:2px;">${formatNumber(gt)}</td></tr>`;
-    if (adv > 0) {
-      rows += `<tr><td class="lbl">Advance to Pay</td><td class="val">${formatNumber(adv)}</td></tr>`;
-    }
-    return `<tr><td colspan="9" style="padding:0;border:none;">
-      <table class="fin-summary" style="border-collapse:collapse;margin-left:auto;"><tbody>${rows}</tbody></table>
-    </td></tr>
-    <tr><td colspan="9" style="font-size:8pt;padding:2px 6px;text-align:left;border:0.5px solid #999;">
+    return `<tr><td colspan="9" style="font-size:8pt;padding:4px 6px 2px 6px;text-align:left;border:0.5px solid #999;">
       <strong>Amount in Words:</strong> ${escapeHtml(numberToWords(gt, quotation.currency))}
     </td></tr>`;
   })() : ""}

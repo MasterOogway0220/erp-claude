@@ -312,12 +312,6 @@ export function generateStandardQuotationHtml(
     border-bottom: 1px solid #000;
     line-height: 1.3;
   }
-  .page-no {
-    text-align: center;
-    font-size: 7.5pt;
-    padding: 1px 0;
-  }
-
   .keep-together { page-break-inside: avoid; }
 </style>
 </head>
@@ -410,48 +404,12 @@ export function generateStandardQuotationHtml(
 
   ${itemRows}
 
-  <!-- Total row -->
-  <tr class="total-row">
-    <td class="c" colspan="9"><b>Total</b></td>
-    <td class="r"><b>${fmtPlain(totalQty, 2)}</b></td>
-    <td></td>
-    <td class="r"><b>${isUnquoted ? "" : fmt(totalAmount, 2)}</b></td>
-    <td colspan="2"></td>
   </tr>
 </table>
 
 ${!isUnquoted ? (() => {
-  const sub = parseFloat(String(quotation.subtotal)) || totalAmount;
-  const disc = parseFloat(String(quotation.additionalDiscount)) || 0;
-  const discAmt = parseFloat(String(quotation.discountAmount)) || 0;
-  const afterDisc = parseFloat(String(quotation.totalAfterDiscount)) || (sub - discAmt);
-  const tRate = parseFloat(String(quotation.taxRate)) || 0;
-  const tAmt = parseFloat(String(quotation.taxAmount)) || 0;
-  const rcm = quotation.rcmEnabled || false;
-  const rOff = quotation.roundOff || false;
-  const rOffAmt = parseFloat(String(quotation.roundOffAmount)) || 0;
   const gt = parseFloat(String(quotation.grandTotal)) || totalAmount;
-  const adv = parseFloat(String(quotation.advanceToPay)) || 0;
-  let rows = `<tr><td class="lbl">Sub-total</td><td class="val">${fmt(sub)}</td></tr>`;
-  if (disc > 0) {
-    rows += `<tr><td class="lbl">Discount (${fmtPlain(disc, 1)}%)</td><td class="val">− ${fmt(discAmt)}</td></tr>`;
-    rows += `<tr><td class="lbl">After Discount</td><td class="val">${fmt(afterDisc)}</td></tr>`;
-  }
-  if (tRate > 0 && !rcm) {
-    rows += `<tr><td class="lbl">GST (${fmtPlain(tRate, 0)}%)</td><td class="val">${fmt(tAmt)}</td></tr>`;
-  }
-  if (rcm) {
-    rows += `<tr><td class="lbl">Tax — RCM (buyer)</td><td class="val">0.00</td></tr>`;
-  }
-  if (rOff && rOffAmt !== 0) {
-    rows += `<tr><td class="lbl">Round-off</td><td class="val">${rOffAmt >= 0 ? "+" : ""}${fmtPlain(rOffAmt, 2)}</td></tr>`;
-  }
-  rows += `<tr><td class="lbl" style="font-weight:bold;border-top:1px solid #000;padding-top:2px;">Grand Total (${esc(curr)})</td><td class="val" style="border-top:1px solid #000;padding-top:2px;">${fmt(gt)}</td></tr>`;
-  if (adv > 0) {
-    rows += `<tr><td class="lbl">Advance to Pay</td><td class="val">${fmt(adv)}</td></tr>`;
-  }
-  return `<table class="fin-summary" style="margin-left:auto;"><tbody>${rows}</tbody></table>
-<div style="font-size:8pt;padding:2px 0;text-align:left;">
+  return `<div style="font-size:8pt;padding:4px 0 2px 0;text-align:left;">
   <b>Amount in Words:</b> ${esc(numberToWords(gt, curr))}
 </div>`;
 })() : ""}
@@ -479,7 +437,6 @@ ${!isUnquoted ? (() => {
 <div class="footer-address">
   <b>${esc(footerAddress)}. ${esc(footerContact)}</b>
 </div>
-<div class="page-no">Page 1 of 1</div>
 
 </body>
 </html>`;

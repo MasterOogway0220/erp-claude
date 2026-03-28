@@ -33,7 +33,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Trash2, ArrowLeft, Building2, MapPin, ListChecks, FileText, Package, Calculator, Copy, ChevronDown } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Building2, MapPin, ListChecks, FileText, Package, Copy, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
 import { FittingSelect } from "@/components/shared/fitting-select";
@@ -1741,19 +1741,10 @@ function StandardQuotationPage() {
                 Add Item
               </Button>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Summary */}
-        <Card className="border-border/50 shadow-sm bg-muted/30">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Calculator className="w-4 h-4 text-primary" />
-              Financial Summary
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-end">
+            {/* Grand Total */}
+            <Separator className="mt-4" />
+            <div className="flex justify-end pt-3">
               <div className="space-y-2 text-sm w-72">
                 <div className="flex justify-between py-1">
                   <span className="text-muted-foreground">Subtotal</span>

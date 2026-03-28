@@ -1785,25 +1785,6 @@ function NonStandardQuotationPage() {
           </CardContent>
         </Card>
 
-        {/* Summary */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex justify-end">
-              <div className="space-y-2 text-sm w-64">
-                <div className="flex justify-between py-1">
-                  <span className="text-muted-foreground">Subtotal</span>
-                  <span className="font-medium">{curr} {fmt(subtotal)}</span>
-                </div>
-                <Separator />
-                <div className="flex justify-between py-2">
-                  <span className="font-bold text-base">Grand Total</span>
-                  <span className="font-bold text-base">{curr} {fmt(grandTotal)}</span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Terms & Conditions */}
         {terms.length > 0 && (
           <Card>
