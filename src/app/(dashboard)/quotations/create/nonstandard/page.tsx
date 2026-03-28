@@ -33,7 +33,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Trash2, ArrowLeft, Building2, MapPin, ListChecks, Copy, ChevronDown } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Building2, MapPin, ListChecks, Copy, ChevronDown, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
 import { FittingSelect } from "@/components/shared/fitting-select";
@@ -309,6 +309,18 @@ function NonStandardQuotationPage() {
         : t
     ));
   }, [formData.currency]);
+
+  // Auto-fill place of supply from customer state
+  useEffect(() => {
+    if (selectedCustomer && !editId) {
+      setFormData((prev) => ({
+        ...prev,
+        placeOfSupplyCity: selectedCustomer.city || prev.placeOfSupplyCity,
+        placeOfSupplyState: selectedCustomer.state || prev.placeOfSupplyState,
+        placeOfSupplyCountry: selectedCustomer.country || prev.placeOfSupplyCountry || "India",
+      }));
+    }
+  }, [selectedCustomer, editId]);
 
   // Reset buyer when customer changes (but not during initial edit load)
   const initialEditLoadDone = useRef(false);
@@ -759,14 +771,17 @@ function NonStandardQuotationPage() {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Header */}
         <Card>
-          <CardHeader>
-            <CardTitle>Quotation Details</CardTitle>
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <FileText className="w-4 h-4 text-primary" />
+              Quotation Details
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-5">
-            {/* Row 1: Customer | Buyer | Market Type | Quotation No | Rev No | Currency */}
-            <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(5, minmax(0, 1fr)) minmax(60px, 90px)" }}>
-              <div className="grid gap-2">
-                <Label>Customer *</Label>
+          <CardContent className="space-y-3">
+            {/* Row 1: Customer | Buyer | Market Type | Currency | Quotation No | Rev No | Quotation Date | Inquiry Owner */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8 gap-3">
+              <div className="space-y-1.5 min-w-0">
+                <Label className="text-sm font-medium">Customer <span className="text-destructive">*</span></Label>
                 <div className="flex gap-2">
                   <Select
                     value={formData.customerId || "NONE"}
@@ -774,13 +789,15 @@ function NonStandardQuotationPage() {
                       setFormData({ ...formData, customerId: value === "NONE" ? "" : value })
                     }
                   >
-                    <SelectTrigger className="flex-1">
+                    <SelectTrigger className="flex-1 min-w-0">
                       <SelectValue placeholder="Select customer" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="NONE" disabled>Select customer</SelectItem>
-                      {customersData?.customers?.map((c: any) => (
-                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                      {customersData?.customers?.map((customer: any) => (
+                        <SelectItem key={customer.id} value={customer.id}>
+                          {customer.name}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -796,37 +813,47 @@ function NonStandardQuotationPage() {
                 </div>
               </div>
 
-              <div className="grid gap-2">
-                <Label>Buyer (Attn.)</Label>
-                <Select
-                  value={formData.buyerId || "NONE"}
-                  onValueChange={(value) => {
-                    if (value === "__ADD_NEW__") {
-                      setShowAddBuyerModal(true);
-                      return;
-                    }
-                    setFormData({ ...formData, buyerId: value === "NONE" ? "" : value });
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select buyer (optional)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="NONE">No buyer selected</SelectItem>
-                    {buyersData?.buyers?.map((b: any) => (
-                      <SelectItem key={b.id} value={b.id}>{b.buyerName}</SelectItem>
-                    ))}
-                    {formData.customerId && (
-                      <SelectItem value="__ADD_NEW__" className="text-primary font-medium">
-                        ➕ Add New Client
-                      </SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
+              <div className="space-y-1.5 min-w-0">
+                <Label className="text-sm font-medium">Buyer (Attn.)</Label>
+                <div className="flex gap-2">
+                  <Select
+                    value={formData.buyerId || "NONE"}
+                    onValueChange={(value) => {
+                      if (value === "__ADD_NEW__") {
+                        setShowAddBuyerModal(true);
+                        return;
+                      }
+                      setFormData({ ...formData, buyerId: value === "NONE" ? "" : value });
+                    }}
+                  >
+                    <SelectTrigger className="flex-1 min-w-0">
+                      <SelectValue placeholder="Select buyer" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="NONE">No buyer selected</SelectItem>
+                      {buyersData?.buyers?.map((buyer: any) => (
+                        <SelectItem key={buyer.id} value={buyer.id}>
+                          {buyer.buyerName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {formData.customerId && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="shrink-0"
+                      onClick={() => setShowAddBuyerModal(true)}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
 
-              <div className="grid gap-2">
-                <Label>Market Type</Label>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Market Type</Label>
                 <Select
                   value={formData.quotationType}
                   onValueChange={(value) =>
@@ -843,26 +870,8 @@ function NonStandardQuotationPage() {
                 </Select>
               </div>
 
-              <div className="grid gap-2">
-                <Label>Quotation No.</Label>
-                <Input
-                  value={editId ? (editData?.quotation?.quotationNo || "") : (previewData?.previewNumber || "")}
-                  readOnly
-                  className="bg-muted"
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label>Rev. No.</Label>
-                <Input
-                  value={editId ? String(editData?.quotation?.version ?? 0) : "0"}
-                  readOnly
-                  className="bg-muted"
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label>Currency</Label>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Currency</Label>
                 <Select
                   value={formData.currency}
                   onValueChange={(value) =>
@@ -880,12 +889,27 @@ function NonStandardQuotationPage() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
 
-            {/* Row 2: Quotation Date | Inquiry Date | Inquiry No | Follow Up Date | Deal Owner */}
-            <div className="grid grid-cols-5 gap-4">
-              <div className="grid gap-2">
-                <Label>Quotation Date</Label>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Quotation No.</Label>
+                <Input
+                  value={editId ? (editData?.quotation?.quotationNo || "") : (previewData?.previewNumber || "")}
+                  readOnly
+                  className="bg-muted"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Rev. No.</Label>
+                <Input
+                  value={editId ? String(editData?.quotation?.version ?? 0) : "0"}
+                  readOnly
+                  className="bg-muted"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Quotation Date</Label>
                 <Input
                   type="date"
                   value={formData.quotationDate}
@@ -895,37 +919,8 @@ function NonStandardQuotationPage() {
                 />
               </div>
 
-              <div className="grid gap-2">
-                <Label>Inquiry Date</Label>
-                <Input
-                  type="date"
-                  value={formData.inquiryDate}
-                  onChange={(e) => setFormData({ ...formData, inquiryDate: e.target.value })}
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label>Inquiry No.</Label>
-                <Input
-                  value={formData.inquiryNo}
-                  onChange={(e) => setFormData({ ...formData, inquiryNo: e.target.value })}
-                  placeholder="Client inquiry ref."
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label>Follow Up Date</Label>
-                <Input
-                  type="date"
-                  value={formData.nextActionDate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, nextActionDate: e.target.value })
-                  }
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label>Deal Owner</Label>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Inquiry Owner</Label>
                 <Select
                   value={formData.dealOwnerId || "NONE"}
                   onValueChange={(value) =>
@@ -933,15 +928,65 @@ function NonStandardQuotationPage() {
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select deal owner" />
+                    <SelectValue placeholder="Assign owner" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="NONE">No deal owner</SelectItem>
-                    {usersData?.users?.map((u: any) => (
-                      <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+                    <SelectItem value="NONE">Unassigned</SelectItem>
+                    {usersData?.users?.map((user: any) => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.name}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+
+            {/* Row 2: Address | Inquiry No | Inquiry Date | Follow Up Date */}
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_auto_auto] gap-3">
+              <div className="space-y-1.5 lg:col-span-1">
+                <Label className="text-sm font-medium">Address</Label>
+                <Input
+                  value={
+                    selectedCustomer
+                      ? [selectedCustomer.addressLine1, selectedCustomer.addressLine2, selectedCustomer.city, selectedCustomer.state, selectedCustomer.country, selectedCustomer.pincode]
+                          .filter(Boolean)
+                          .join(", ")
+                      : ""
+                  }
+                  readOnly
+                  className="bg-muted"
+                  placeholder="Select a customer to see address"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Inquiry No.</Label>
+                <Input
+                  value={formData.inquiryNo}
+                  onChange={(e) => setFormData({ ...formData, inquiryNo: e.target.value })}
+                  placeholder="Client inquiry ref."
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Inquiry Date</Label>
+                <Input
+                  type="date"
+                  value={formData.inquiryDate}
+                  onChange={(e) => setFormData({ ...formData, inquiryDate: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Follow Up Date</Label>
+                <Input
+                  type="date"
+                  value={formData.nextActionDate}
+                  onChange={(e) =>
+                    setFormData({ ...formData, nextActionDate: e.target.value })
+                  }
+                />
               </div>
             </div>
 
