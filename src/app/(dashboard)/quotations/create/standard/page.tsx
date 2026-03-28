@@ -651,19 +651,39 @@ function StandardQuotationPage() {
         const newItems = [...prev];
         const updated = { ...newItems[index] };
         if (data.pastQuote) {
-          updated.pastQuote = data.pastQuote.quotationNo || "";
-          updated.pastQuotePrice = data.pastQuote.unitRate != null ? String(data.pastQuote.unitRate) : "";
-          // Also fill product specs from past quote if not already set from MC master
-          if (!updated.product && data.pastQuote.product) updated.product = data.pastQuote.product;
-          if (!updated.material && data.pastQuote.material) updated.material = data.pastQuote.material;
-          if (!updated.additionalSpec && data.pastQuote.additionalSpec) updated.additionalSpec = data.pastQuote.additionalSpec;
-          if (!updated.sizeLabel && data.pastQuote.sizeLabel) updated.sizeLabel = data.pastQuote.sizeLabel;
-          if (!updated.sizeId && data.pastQuote.sizeId) updated.sizeId = data.pastQuote.sizeId;
-          if (!updated.schedule && data.pastQuote.schedule) updated.schedule = data.pastQuote.schedule;
-          if (!updated.od && data.pastQuote.od != null) updated.od = String(data.pastQuote.od);
-          if (!updated.wt && data.pastQuote.wt != null) updated.wt = String(data.pastQuote.wt);
-          if (!updated.length && data.pastQuote.length) updated.length = data.pastQuote.length;
-          if (!updated.ends && data.pastQuote.ends) updated.ends = data.pastQuote.ends;
+          const pq = data.pastQuote;
+          // Past quote reference & price
+          updated.pastQuote = pq.quotationNo || "";
+          updated.pastQuotePrice = pq.unitRate != null ? String(pq.unitRate) : "";
+          // Fill all item fields from past quote (override blanks from MC master)
+          if (pq.product) updated.product = pq.product;
+          if (pq.material) updated.material = pq.material;
+          if (pq.additionalSpec) updated.additionalSpec = pq.additionalSpec;
+          if (pq.sizeLabel) updated.sizeLabel = pq.sizeLabel;
+          if (pq.sizeId) updated.sizeId = pq.sizeId;
+          if (pq.schedule) updated.schedule = pq.schedule;
+          if (pq.od != null) updated.od = String(pq.od);
+          if (pq.wt != null) updated.wt = String(pq.wt);
+          if (pq.nps != null) updated.nps = String(pq.nps);
+          if (pq.length) updated.length = pq.length;
+          if (pq.ends) updated.ends = pq.ends;
+          if (pq.quantity != null) updated.quantity = String(pq.quantity);
+          if (pq.uom) updated.uom = pq.uom;
+          if (pq.unitRate != null) updated.unitRate = String(pq.unitRate);
+          if (pq.delivery) updated.delivery = pq.delivery;
+          if (pq.remark) updated.remark = pq.remark;
+          if (pq.unitWeight != null) updated.unitWeight = String(pq.unitWeight);
+          if (pq.totalWeightMT != null) updated.totalWeightMT = String(pq.totalWeightMT);
+          if (pq.taxRate != null) updated.taxRate = String(pq.taxRate);
+          if (pq.hsnCode) updated.hsnCode = pq.hsnCode;
+          if (pq.fittingId) updated.fittingId = pq.fittingId;
+          if (pq.fittingLabel) updated.fittingLabel = pq.fittingLabel;
+          if (pq.flangeId) updated.flangeId = pq.flangeId;
+          if (pq.flangeLabel) updated.flangeLabel = pq.flangeLabel;
+          // Recalculate amount
+          const qty = parseFloat(updated.quantity) || 0;
+          const rate = parseFloat(updated.unitRate) || 0;
+          updated.amount = (qty * rate).toFixed(2);
         } else {
           updated.pastQuote = "";
           updated.pastQuotePrice = "";

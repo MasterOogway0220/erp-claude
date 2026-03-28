@@ -59,6 +59,20 @@ export async function GET(request: NextRequest) {
         wt: true,
         length: true,
         ends: true,
+        quantity: true,
+        uom: true,
+        delivery: true,
+        remark: true,
+        unitWeight: true,
+        totalWeightMT: true,
+        taxRate: true,
+        hsnCode: true,
+        sizeNPS: true,
+        materialCodeLabel: true,
+        fittingId: true,
+        fitting: { select: { type: true, size: true, materialGrade: true, schedule: true, endType: true } },
+        flangeId: true,
+        flange: { select: { type: true, size: true, rating: true, materialGrade: true } },
         quotation: {
           select: {
             quotationNo: true,
@@ -113,6 +127,24 @@ export async function GET(request: NextRequest) {
             wt: latestQuoteItem.wt ? Number(latestQuoteItem.wt) : null,
             length: latestQuoteItem.length,
             ends: latestQuoteItem.ends,
+            quantity: latestQuoteItem.quantity ? Number(latestQuoteItem.quantity) : null,
+            uom: latestQuoteItem.uom,
+            delivery: latestQuoteItem.delivery,
+            remark: latestQuoteItem.remark,
+            unitWeight: latestQuoteItem.unitWeight ? Number(latestQuoteItem.unitWeight) : null,
+            totalWeightMT: latestQuoteItem.totalWeightMT ? Number(latestQuoteItem.totalWeightMT) : null,
+            taxRate: latestQuoteItem.taxRate ? Number(latestQuoteItem.taxRate) : null,
+            hsnCode: latestQuoteItem.hsnCode,
+            nps: latestQuoteItem.sizeNPS ? Number(latestQuoteItem.sizeNPS) : null,
+            materialCodeLabel: latestQuoteItem.materialCodeLabel,
+            fittingId: latestQuoteItem.fittingId,
+            fittingLabel: latestQuoteItem.fitting
+              ? `${latestQuoteItem.fitting.type} ${latestQuoteItem.fitting.size} ${latestQuoteItem.fitting.materialGrade}`.trim()
+              : null,
+            flangeId: latestQuoteItem.flangeId,
+            flangeLabel: latestQuoteItem.flange
+              ? `${latestQuoteItem.flange.type} ${latestQuoteItem.flange.size} ${latestQuoteItem.flange.rating} ${latestQuoteItem.flange.materialGrade}`.trim()
+              : null,
           }
         : null,
       pastPo: latestPOItem

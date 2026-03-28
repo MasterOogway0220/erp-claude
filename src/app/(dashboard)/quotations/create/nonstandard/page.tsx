@@ -569,11 +569,27 @@ function NonStandardQuotationPage() {
         const newItems = [...prev];
         const updated = { ...newItems[index] };
         if (data.pastQuote) {
-          updated.pastQuote = data.pastQuote.quotationNo || "";
-          updated.pastQuotePrice = data.pastQuote.unitRate != null ? String(data.pastQuote.unitRate) : "";
-          if (!updated.itemDescription && data.pastQuote.additionalSpec) updated.itemDescription = data.pastQuote.additionalSpec;
-          if (!updated.size && data.pastQuote.sizeLabel) updated.size = data.pastQuote.sizeLabel;
-          if (!updated.material && data.pastQuote.material) updated.material = data.pastQuote.material;
+          const pq = data.pastQuote;
+          updated.pastQuote = pq.quotationNo || "";
+          updated.pastQuotePrice = pq.unitRate != null ? String(pq.unitRate) : "";
+          // Fill all available fields from the past quote
+          if (pq.additionalSpec) updated.itemDescription = pq.additionalSpec;
+          if (pq.material) updated.material = pq.material;
+          if (pq.sizeLabel) updated.size = pq.sizeLabel;
+          if (pq.ends) updated.endType = pq.ends;
+          if (pq.quantity != null) updated.quantity = String(pq.quantity);
+          if (pq.unitRate != null) updated.unitRate = String(pq.unitRate);
+          if (pq.uom) updated.uom = pq.uom;
+          if (pq.delivery) updated.delivery = pq.delivery;
+          if (pq.remark) updated.remark = pq.remark;
+          if (pq.fittingId) updated.fittingId = pq.fittingId;
+          if (pq.fittingLabel) updated.fittingLabel = pq.fittingLabel;
+          if (pq.flangeId) updated.flangeId = pq.flangeId;
+          if (pq.flangeLabel) updated.flangeLabel = pq.flangeLabel;
+          // Recalculate amount
+          const qty = parseFloat(updated.quantity) || 0;
+          const rate = parseFloat(updated.unitRate) || 0;
+          updated.amount = (qty * rate).toFixed(2);
         } else {
           updated.pastQuote = "";
           updated.pastQuotePrice = "";
