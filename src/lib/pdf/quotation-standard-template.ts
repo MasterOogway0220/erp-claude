@@ -341,14 +341,9 @@ export function generateStandardQuotationHtml(
     <td style="width:30%"><span class="info-label">Quotation No.</span>&nbsp;&nbsp;: <b>${esc(quotation.quotationNo)}</b></td>
   </tr>
   <tr>
-    <td><span class="info-label">Address</span>&nbsp;&nbsp;: ${esc(customerAddress)}</td>
+    <td><span class="info-label">Address</span>&nbsp;&nbsp;: ${esc(customerAddress)}${customerCountry ? `, ${esc(customerCountry)}` : ""}</td>
     <td><span class="info-label">Date</span>&nbsp;&nbsp;: ${formatDate(quotation.inquiryDate)}</td>
     <td><span class="info-label">Date</span>&nbsp;&nbsp;: ${formatDate(quotation.quotationDate)}</td>
-  </tr>
-  <tr>
-    <td><span class="info-label">Country</span>&nbsp;&nbsp;: ${esc(customerCountry)}</td>
-    <td></td>
-    <td></td>
   </tr>
   <tr>
     <td><span class="info-label">Attn.</span>&nbsp;&nbsp;: ${esc(quotation.buyer?.buyerName || quotation.customer.contactPerson)}</td>
@@ -359,6 +354,11 @@ export function generateStandardQuotationHtml(
     <td><span class="info-label">Email</span>&nbsp;&nbsp;: ${esc(quotation.buyer?.email || quotation.customer.email)}</td>
     <td><span class="info-label">Contact no.</span>&nbsp;&nbsp;: ${esc(quotation.buyer?.mobile || quotation.buyer?.telephone || quotation.customer.phone)}</td>
     <td><span class="info-label">Email</span>&nbsp;&nbsp;: ${esc(quotation.preparedBy?.email)}</td>
+  </tr>
+  <tr>
+    <td><span class="info-label">Phone</span>&nbsp;&nbsp;: ${esc(quotation.customer.phone)}</td>
+    <td></td>
+    <td><span class="info-label">Phone</span>&nbsp;&nbsp;: ${esc(quotation.preparedBy?.phone)}</td>
   </tr>
 </table>
 
