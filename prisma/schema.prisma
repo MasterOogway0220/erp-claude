@@ -402,6 +402,7 @@ model User {
   csApproved              ComparativeStatement[] @relation("CSApprovedBy")
   csPrepared              ComparativeStatement[] @relation("CSPreparedBy")
   mtcCertificatesCreated  MTCCertificate[]       @relation("MTCCertCreatedBy")
+  rateRevisions           RateRevision[]         @relation("RateRevisionChangedBy")
 
   @@index([email])
   @@index([companyId])
@@ -1038,6 +1039,7 @@ model CompanyMaster {
   mtcCertificates       MTCCertificate[]       @relation("MTCCertCompany")
   mtcMaterialSpecs      MTCMaterialSpec[]
   mtcNoteMasters        MTCNoteMaster[]
+  rateRevisions         RateRevision[]
 }
 
 model FinancialYear {
@@ -1413,6 +1415,7 @@ model ClientPurchaseOrder {
   paymentTerms     String?
   deliveryTerms    String?
   deliverySchedule String?
+  deliveryDate     DateTime?
   currency         String    @default("INR")
   subtotal         Decimal?  @db.Decimal(14, 2)
 
@@ -1488,6 +1491,7 @@ model ClientPOItem {
   // Relations
   clientPurchaseOrder ClientPurchaseOrder @relation(fields: [clientPurchaseOrderId], references: [id], onDelete: Cascade)
   quotationItem       QuotationItem       @relation(fields: [quotationItemId], references: [id])
+  rateRevisions       RateRevision[]
 
   @@index([clientPurchaseOrderId])
   @@index([quotationItemId])
@@ -2890,4 +2894,24 @@ model DocumentSequence {
   @@unique([companyId, documentType])
   @@index([companyId])
   @@index([documentType])
+}
+
+// ==================== RATE REVISION ====================
+
+model RateRevision {
+  id              String        @id @default(cuid())
+  clientPOItemId  String
+  clientPOItem    ClientPOItem  @relation(fields: [clientPOItemId], references: [id], onDelete: Cascade)
+  oldRate         Decimal       @db.Decimal(12, 2)
+  newRate         Decimal       @db.Decimal(12, 2)
+  remark          String
+  overallRemark   String?
+  changedById     String
+  changedBy       User          @relation("RateRevisionChangedBy", fields: [changedById], references: [id])
+  changedAt       DateTime      @default(now())
+  companyId       String
+  company         CompanyMaster @relation(fields: [companyId], references: [id])
+
+  @@index([clientPOItemId])
+  @@index([companyId])
 }
