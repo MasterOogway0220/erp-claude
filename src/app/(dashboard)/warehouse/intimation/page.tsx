@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -92,6 +92,7 @@ const ITEM_STATUS_CONFIG: Record<string, { label: string; variant: string }> = {
 export default function WarehouseIntimationPage() {
   const router = useRouter();
   const [intimations, setIntimations] = useState<Intimation[]>([]);
+  const [allIntimations, setAllIntimations] = useState<Intimation[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -101,6 +102,24 @@ export default function WarehouseIntimationPage() {
   useEffect(() => {
     fetchIntimations();
   }, [search, statusFilter, priorityFilter]);
+
+  // Fetch unfiltered list for summary counts (no status/priority filter)
+  useEffect(() => {
+    const fetchAll = async () => {
+      try {
+        const params = new URLSearchParams();
+        if (search) params.set("search", search);
+        const res = await fetch(`/api/warehouse/intimation?${params}`);
+        if (res.ok) {
+          const data = await res.json();
+          setAllIntimations(data.intimations || []);
+        }
+      } catch {
+        // silent — counts are best-effort
+      }
+    };
+    fetchAll();
+  }, [search]);
 
   const fetchIntimations = async () => {
     try {
@@ -122,14 +141,18 @@ export default function WarehouseIntimationPage() {
     }
   };
 
-  // Summary stats
-  const stats = {
-    total: intimations.length,
-    pending: intimations.filter((i) => i.status === "PENDING").length,
-    inProgress: intimations.filter((i) => i.status === "IN_PROGRESS").length,
-    ready: intimations.filter((i) => i.status === "MATERIAL_READY").length,
-    critical: intimations.filter((i) => i.priority === "CRITICAL" && i.status !== "DISPATCHED" && i.status !== "CANCELLED").length,
-  };
+  // Summary counts — always computed from the full (unfiltered) list
+  const statusCounts = useMemo(() => {
+    const counts = { total: 0, pending: 0, inProgress: 0, materialReady: 0, dispatched: 0 };
+    for (const item of allIntimations) {
+      counts.total++;
+      if (item.status === "PENDING") counts.pending++;
+      else if (item.status === "IN_PROGRESS") counts.inProgress++;
+      else if (item.status === "MATERIAL_READY") counts.materialReady++;
+      else if (item.status === "DISPATCHED") counts.dispatched++;
+    }
+    return counts;
+  }, [allIntimations]);
 
   return (
     <div className="space-y-6">
@@ -144,35 +167,35 @@ export default function WarehouseIntimationPage() {
       </PageHeader>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <Card>
-          <CardContent className="pt-4 pb-3 px-4">
-            <div className="text-2xl font-bold">{stats.total}</div>
-            <div className="text-xs text-muted-foreground">Total MPRs</div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+        <Card className="cursor-pointer hover:bg-muted/50" onClick={() => setStatusFilter("all")}>
+          <CardContent className="pt-4 pb-3">
+            <p className="text-xs text-muted-foreground uppercase">Total MPRs</p>
+            <p className="text-2xl font-bold">{statusCounts.total}</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-4 pb-3 px-4">
-            <div className="text-2xl font-bold text-amber-600">{stats.pending}</div>
-            <div className="text-xs text-muted-foreground">Pending</div>
+        <Card className="cursor-pointer hover:bg-muted/50 border-l-4 border-l-yellow-500" onClick={() => setStatusFilter("PENDING")}>
+          <CardContent className="pt-4 pb-3">
+            <p className="text-xs text-muted-foreground uppercase">Pending</p>
+            <p className="text-2xl font-bold text-yellow-600">{statusCounts.pending}</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-4 pb-3 px-4">
-            <div className="text-2xl font-bold text-blue-600">{stats.inProgress}</div>
-            <div className="text-xs text-muted-foreground">In Progress</div>
+        <Card className="cursor-pointer hover:bg-muted/50 border-l-4 border-l-blue-500" onClick={() => setStatusFilter("IN_PROGRESS")}>
+          <CardContent className="pt-4 pb-3">
+            <p className="text-xs text-muted-foreground uppercase">In Progress</p>
+            <p className="text-2xl font-bold text-blue-600">{statusCounts.inProgress}</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-4 pb-3 px-4">
-            <div className="text-2xl font-bold text-green-600">{stats.ready}</div>
-            <div className="text-xs text-muted-foreground">Material Ready</div>
+        <Card className="cursor-pointer hover:bg-muted/50 border-l-4 border-l-green-500" onClick={() => setStatusFilter("MATERIAL_READY")}>
+          <CardContent className="pt-4 pb-3">
+            <p className="text-xs text-muted-foreground uppercase">Material Ready</p>
+            <p className="text-2xl font-bold text-green-600">{statusCounts.materialReady}</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-4 pb-3 px-4">
-            <div className="text-2xl font-bold text-red-600">{stats.critical}</div>
-            <div className="text-xs text-muted-foreground">Critical</div>
+        <Card className="cursor-pointer hover:bg-muted/50 border-l-4 border-l-purple-500" onClick={() => setStatusFilter("DISPATCHED")}>
+          <CardContent className="pt-4 pb-3">
+            <p className="text-xs text-muted-foreground uppercase">Dispatched</p>
+            <p className="text-2xl font-bold text-purple-600">{statusCounts.dispatched}</p>
           </CardContent>
         </Card>
       </div>
