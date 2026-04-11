@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, FileText, FileSearch, Package, AlertCircle, XCircle, Pencil } from "lucide-react";
+import { ArrowLeft, FileText, FileSearch, Package, AlertCircle, XCircle, Pencil, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
@@ -42,6 +42,8 @@ interface SalesOrder {
   deliverySchedule?: string;
   paymentTerms?: string;
   status: string;
+  processingStatus: string;
+  clientPurchaseOrderId?: string | null;
   items: Array<{
     id: string;
     sNo: number;
@@ -89,12 +91,29 @@ export default function SalesOrderDetailPage() {
   const [salesOrder, setSalesOrder] = useState<SalesOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
+  const [processingItems, setProcessingItems] = useState<any[]>([]);
 
   useEffect(() => {
     if (params.id) {
       fetchSalesOrder(params.id as string);
     }
   }, [params.id]);
+
+  useEffect(() => {
+    if (salesOrder && salesOrder.processingStatus !== "UNPROCESSED") {
+      fetch(`/api/sales-orders/${salesOrder.id}/processing`)
+        .then((res) => res.json())
+        .then((data) => {
+          setProcessingItems(
+            data.items?.map((i: any) => ({
+              ...i.salesOrderItem,
+              orderProcessing: i.processing,
+            })) || []
+          );
+        })
+        .catch(console.error);
+    }
+  }, [salesOrder?.processingStatus, salesOrder?.id]);
 
   const fetchSalesOrder = async (id: string) => {
     try {
@@ -165,6 +184,12 @@ export default function SalesOrderDetailPage() {
             >
               <Pencil className="w-4 h-4 mr-2" />
               Edit
+            </Button>
+          )}
+          {salesOrder.status === "OPEN" && salesOrder.processingStatus !== "PROCESSED" && (
+            <Button onClick={() => router.push(`/sales/${salesOrder.id}/process`)}>
+              <CheckCircle className="w-4 h-4 mr-2" />
+              Process Order
             </Button>
           )}
           {salesOrder.poAcceptanceStatus === "PENDING" && (
@@ -251,9 +276,22 @@ export default function SalesOrderDetailPage() {
               </div>
               <div>
                 <div className="text-sm text-muted-foreground">SO Status</div>
-                <Badge className={soStatusColors[salesOrder.status] || "bg-gray-500"}>
-                  {salesOrder.status.replace(/_/g, " ")}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge className={soStatusColors[salesOrder.status] || "bg-gray-500"}>
+                    {salesOrder.status.replace(/_/g, " ")}
+                  </Badge>
+                  {salesOrder.processingStatus && (
+                    <Badge
+                      variant={
+                        salesOrder.processingStatus === "PROCESSED" ? "default" :
+                        salesOrder.processingStatus === "PROCESSING" ? "outline" : "secondary"
+                      }
+                    >
+                      {salesOrder.processingStatus === "PROCESSED" ? "Processed" :
+                       salesOrder.processingStatus === "PROCESSING" ? "Processing" : "Unprocessed"}
+                    </Badge>
+                  )}
+                </div>
               </div>
               <div>
                 <div className="text-sm text-muted-foreground">PO Acceptance</div>
@@ -406,6 +444,47 @@ export default function SalesOrderDetailPage() {
           </div>
         </CardContent>
       </Card>
+
+      {salesOrder.processingStatus !== "UNPROCESSED" && processingItems.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Order Processing Summary</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {processingItems.map((item: any) => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between p-3 rounded-md border cursor-pointer hover:bg-muted/50"
+                  onClick={() => router.push(`/sales/${salesOrder.id}/process`)}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium">#{item.sNo}</span>
+                    <span className="text-sm">{item.product} {item.sizeLabel || ""}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {item.orderProcessing?.tpiRequired && (
+                      <Badge variant="outline" className="text-xs">TPI</Badge>
+                    )}
+                    {item.orderProcessing?.coatingRequired && (
+                      <Badge variant="outline" className="text-xs">Coating</Badge>
+                    )}
+                    {item.orderProcessing?.ndtRequired && (
+                      <Badge variant="outline" className="text-xs">NDT</Badge>
+                    )}
+                    {item.orderProcessing?.pmiRequired && (
+                      <Badge variant="outline" className="text-xs">PMI</Badge>
+                    )}
+                    <Badge variant={item.orderProcessing?.status === "PROCESSED" ? "default" : "secondary"}>
+                      {item.orderProcessing?.status === "PROCESSED" ? "Processed" : "Pending"}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {salesOrder.status !== "CANCELLED" &&
         salesOrder.items.some(
