@@ -162,6 +162,9 @@ function CreateClientPOPage() {
   const [gstRate, setGstRate] = useState<number>(18);
   const [supplierState, setSupplierState] = useState("");
   const [clientState, setClientState] = useState("");
+  const [bulkDiscountPercent, setBulkDiscountPercent] = useState<string>("");
+  const [bulkOverallRemark, setBulkOverallRemark] = useState<string>("");
+  const [showNegotiationSection, setShowNegotiationSection] = useState(false);
 
   useEffect(() => {
     fetchCustomers();
@@ -333,6 +336,29 @@ function CreateClientPOPage() {
 
   const getSelectedItems = () => balanceItems.filter((item) => item.selected && item.qtyOrdered > 0);
 
+  function applyBulkDiscount() {
+    const percent = parseFloat(bulkDiscountPercent);
+    if (isNaN(percent) || percent <= 0 || percent > 100) {
+      toast.error("Enter a valid discount percentage (0-100)");
+      return;
+    }
+    if (!bulkOverallRemark.trim()) {
+      toast.error("Overall remark is required for bulk rate changes");
+      return;
+    }
+    const updated = balanceItems.map((item) => {
+      if (!item.selected) return item;
+      const newRate = Math.round(item.unitRate * (1 - percent / 100) * 100) / 100;
+      return {
+        ...item,
+        negotiatedRate: newRate,
+        rateRemark: item.rateRemark || bulkOverallRemark,
+      };
+    });
+    setBalanceItems(updated);
+    toast.success(`Applied ${percent}% discount to all selected items`);
+  }
+
   // =====================================================
   // Commercial Calculation (reactive, computed every render)
   // =====================================================
@@ -445,6 +471,7 @@ function CreateClientPOPage() {
           gstRate,
           supplierState,
           clientState,
+          bulkOverallRemark: bulkOverallRemark || null,
           items: selectedItems.map((item) => ({
             quotationItemId: item.id,
             product: item.product,
@@ -950,6 +977,176 @@ function CreateClientPOPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Section 2b: Rate Negotiation Summary */}
+        {getSelectedItems().length > 0 && (
+          <Card>
+            <CardHeader
+              className="cursor-pointer select-none"
+              onClick={() => setShowNegotiationSection((v) => !v)}
+            >
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  Rate Negotiation Summary
+                  {(() => {
+                    const negotiatedCount = getSelectedItems().filter(
+                      (i) => i.negotiatedRate !== i.unitRate
+                    ).length;
+                    return negotiatedCount > 0 ? (
+                      <Badge variant="secondary">{negotiatedCount} item{negotiatedCount > 1 ? "s" : ""} with negotiated rates</Badge>
+                    ) : (
+                      <Badge variant="outline">No rates changed</Badge>
+                    );
+                  })()}
+                </CardTitle>
+                <span className="text-muted-foreground text-sm">
+                  {showNegotiationSection ? "▲ Collapse" : "▼ Expand"}
+                </span>
+              </div>
+            </CardHeader>
+            {showNegotiationSection && (
+              <CardContent className="space-y-4">
+                {/* Bulk Actions row */}
+                <div className="flex flex-wrap items-end gap-3 bg-muted/30 p-3 rounded-md">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Bulk Discount %</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                      value={bulkDiscountPercent}
+                      onChange={(e) => setBulkDiscountPercent(e.target.value)}
+                      placeholder="e.g. 5"
+                      className="h-8 w-[120px]"
+                    />
+                  </div>
+                  <div className="space-y-1 flex-1 min-w-[220px]">
+                    <Label className="text-xs">Overall Remark (required)</Label>
+                    <Input
+                      value={bulkOverallRemark}
+                      onChange={(e) => setBulkOverallRemark(e.target.value)}
+                      placeholder="Reason for rate negotiation"
+                      className="h-8"
+                    />
+                  </div>
+                  <Button type="button" size="sm" onClick={applyBulkDiscount}>
+                    Apply to All Selected
+                  </Button>
+                </div>
+
+                {/* Summary Table */}
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[50px]">S.No</TableHead>
+                        <TableHead>Item Description</TableHead>
+                        <TableHead className="text-right">Quoted Rate</TableHead>
+                        <TableHead className="text-right w-[130px]">Order Rate</TableHead>
+                        <TableHead className="text-right">Diff (₹)</TableHead>
+                        <TableHead className="text-right">Diff (%)</TableHead>
+                        <TableHead className="w-[200px]">Remark</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {getSelectedItems().map((item) => {
+                        const origIndex = balanceItems.findIndex((b) => b.id === item.id);
+                        const diff = item.negotiatedRate - item.unitRate;
+                        const diffPct = item.unitRate !== 0 ? (diff / item.unitRate) * 100 : 0;
+                        return (
+                          <TableRow key={item.id} className={item.negotiatedRate !== item.unitRate ? "bg-amber-50/40" : ""}>
+                            <TableCell>{item.sNo}</TableCell>
+                            <TableCell>
+                              <div className="font-medium text-sm">{item.product || "-"}</div>
+                              {item.material && (
+                                <div className="text-xs text-muted-foreground">{item.material}{item.additionalSpec ? ` / ${item.additionalSpec}` : ""}</div>
+                              )}
+                              {item.sizeLabel && (
+                                <div className="text-xs text-muted-foreground">{item.sizeLabel}</div>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right text-muted-foreground">
+                              {item.unitRate.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Input
+                                type="number"
+                                step="0.01"
+                                min={0}
+                                value={item.negotiatedRate}
+                                onChange={(e) => {
+                                  if (origIndex < 0) return;
+                                  const updated = [...balanceItems];
+                                  updated[origIndex] = {
+                                    ...updated[origIndex],
+                                    negotiatedRate: parseFloat(e.target.value) || 0,
+                                  };
+                                  setBalanceItems(updated);
+                                }}
+                                className="h-8 w-[120px] text-right"
+                              />
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {diff !== 0 ? (
+                                <span className={diff < 0 ? "text-red-600" : "text-green-600"}>
+                                  {diff > 0 ? "+" : ""}{diff.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground">—</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {diff !== 0 ? (
+                                <span className={diff < 0 ? "text-red-600" : "text-green-600"}>
+                                  {diffPct > 0 ? "+" : ""}{diffPct.toFixed(2)}%
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground">—</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <Input
+                                value={item.rateRemark}
+                                onChange={(e) => {
+                                  if (origIndex < 0) return;
+                                  const updated = [...balanceItems];
+                                  updated[origIndex] = { ...updated[origIndex], rateRemark: e.target.value };
+                                  setBalanceItems(updated);
+                                }}
+                                placeholder={item.negotiatedRate !== item.unitRate ? "Remark (required)" : "Optional"}
+                                className="h-8 w-[190px]"
+                              />
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Total Impact */}
+                {(() => {
+                  const selected = getSelectedItems();
+                  const totalQuoted = selected.reduce((s, i) => s + i.unitRate * i.qtyOrdered, 0);
+                  const totalNegotiated = selected.reduce((s, i) => s + i.negotiatedRate * i.qtyOrdered, 0);
+                  const totalDiff = totalNegotiated - totalQuoted;
+                  const totalDiffPct = totalQuoted !== 0 ? (totalDiff / totalQuoted) * 100 : 0;
+                  if (totalDiff === 0) return null;
+                  return (
+                    <div className="mt-2 pt-3 border-t flex justify-end gap-6 text-sm">
+                      <span className="text-muted-foreground">Total Impact:</span>
+                      <span className={totalDiff < 0 ? "text-red-600 font-semibold" : "text-green-600 font-semibold"}>
+                        {totalDiff > 0 ? "+" : ""}
+                        {currencySymbol} {fmtAmount(Math.abs(totalDiff))} ({totalDiff < 0 ? "-" : "+"}{Math.abs(totalDiffPct).toFixed(2)}%)
+                      </span>
+                    </div>
+                  );
+                })()}
+              </CardContent>
+            )}
+          </Card>
+        )}
 
         {/* Section 3: Additional Charges */}
         {getSelectedItems().length > 0 && (
