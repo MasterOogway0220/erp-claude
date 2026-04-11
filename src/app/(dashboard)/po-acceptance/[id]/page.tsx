@@ -15,7 +15,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, FileText, CheckCircle, XCircle, Users, Download, Paperclip } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { ArrowLeft, FileText, CheckCircle, XCircle, Users, Download, Paperclip, Mail, Send } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
@@ -83,6 +86,17 @@ interface POAcceptanceDetail {
   };
 }
 
+interface EmailLog {
+  id: string;
+  sentTo: string;
+  sentCc: string | null;
+  subject: string;
+  sentBy: string | null;
+  sentAt: string;
+  status: string;
+  errorMessage: string | null;
+}
+
 const STATUS_COLORS: Record<string, string> = {
   DRAFT: "secondary",
   ISSUED: "default",
@@ -99,9 +113,17 @@ export default function POAcceptanceDetailPage({
   const [acceptance, setAcceptance] = useState<POAcceptanceDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [emailTo, setEmailTo] = useState("");
+  const [emailCc, setEmailCc] = useState("");
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailMessage, setEmailMessage] = useState("");
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailLogs, setEmailLogs] = useState<EmailLog[]>([]);
 
   useEffect(() => {
     fetchAcceptance();
+    fetchEmailLogs();
   }, [id]);
 
   const fetchAcceptance = async () => {
@@ -114,6 +136,17 @@ export default function POAcceptanceDetailPage({
       console.error("Failed to fetch:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchEmailLogs = async () => {
+    try {
+      const res = await fetch(`/api/po-acceptance/${id}/emails`);
+      if (res.ok) {
+        setEmailLogs(await res.json());
+      }
+    } catch (error) {
+      console.error("Failed to fetch email logs:", error);
     }
   };
 
@@ -149,6 +182,43 @@ export default function POAcceptanceDetailPage({
       toast.error("Failed to update status");
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const openEmailDialog = () => {
+    if (!acceptance) return;
+    const cpo = acceptance.clientPurchaseOrder;
+    setEmailTo(cpo.customer.email || acceptance.followUpEmail || "");
+    setEmailCc("");
+    setEmailSubject(`PO Acceptance — ${acceptance.acceptanceNo} | NPS Piping Solutions`);
+    setEmailMessage("Please find below our Purchase Order Acceptance for your reference.");
+    setShowEmailDialog(true);
+  };
+
+  const sendEmail = async () => {
+    if (!emailTo.trim()) {
+      toast.error("Recipient email is required");
+      return;
+    }
+    setSendingEmail(true);
+    try {
+      const res = await fetch(`/api/po-acceptance/${id}/email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to: emailTo, cc: emailCc || null, subject: emailSubject, message: emailMessage }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success("Email sent successfully");
+        setShowEmailDialog(false);
+        fetchEmailLogs();
+      } else {
+        toast.error(data.error || "Failed to send email");
+      }
+    } catch (error) {
+      toast.error("Failed to send email");
+    } finally {
+      setSendingEmail(false);
     }
   };
 
@@ -189,6 +259,21 @@ export default function POAcceptanceDetailPage({
               >
                 <XCircle className="w-4 h-4 mr-2" />
                 Cancel
+              </Button>
+            </>
+          )}
+          {acceptance.status === "ISSUED" && (
+            <>
+              <Button
+                variant="outline"
+                onClick={() => window.open(`/api/po-acceptance/${id}/pdf`, "_blank")}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Download PDF
+              </Button>
+              <Button onClick={openEmailDialog}>
+                <Mail className="w-4 h-4 mr-2" />
+                Send to Client
               </Button>
             </>
           )}
@@ -469,6 +554,80 @@ export default function POAcceptanceDetailPage({
             </p>
           </CardContent>
         </Card>
+      )}
+
+      {/* Email History */}
+      {emailLogs.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Mail className="w-4 h-4" />
+              Email History
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Sent To</TableHead>
+                  <TableHead>Subject</TableHead>
+                  <TableHead>Sent By</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {emailLogs.map((log) => (
+                  <TableRow key={log.id}>
+                    <TableCell>{log.sentTo}</TableCell>
+                    <TableCell className="max-w-[200px] truncate">{log.subject}</TableCell>
+                    <TableCell>{log.sentBy || "-"}</TableCell>
+                    <TableCell>{format(new Date(log.sentAt), "dd MMM yyyy, HH:mm")}</TableCell>
+                    <TableCell>
+                      <Badge variant={log.status === "SUCCESS" ? "default" : "destructive"}>
+                        {log.status}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Send Email Dialog */}
+      {showEmailDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowEmailDialog(false)}>
+          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-lg w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold mb-4">Send PO Acceptance to Client</h3>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>To *</Label>
+                <Input value={emailTo} onChange={(e) => setEmailTo(e.target.value)} placeholder="recipient@email.com" />
+              </div>
+              <div className="space-y-2">
+                <Label>CC</Label>
+                <Input value={emailCc} onChange={(e) => setEmailCc(e.target.value)} placeholder="cc@email.com" />
+              </div>
+              <div className="space-y-2">
+                <Label>Subject</Label>
+                <Input value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Message</Label>
+                <Textarea value={emailMessage} onChange={(e) => setEmailMessage(e.target.value)} rows={3} />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <Button variant="outline" onClick={() => setShowEmailDialog(false)}>Cancel</Button>
+              <Button onClick={sendEmail} disabled={sendingEmail}>
+                <Send className="w-4 h-4 mr-2" />
+                {sendingEmail ? "Sending..." : "Send Email"}
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
