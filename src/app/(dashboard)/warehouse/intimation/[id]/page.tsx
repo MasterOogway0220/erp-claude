@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import React, { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -25,8 +25,10 @@ import {
 } from "@/components/ui/table";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ArrowLeft, CheckCircle2, Clock, Package, Truck, XCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ChevronDown, ChevronRight, Clock, FileSearch, Package, Truck, XCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { PageLoading } from "@/components/shared/page-loading";
+import { useCurrentUser } from "@/hooks/use-current-user";
 
 const STATUS_CONFIG: Record<string, { label: string; variant: string }> = {
   PENDING: { label: "Pending", variant: "secondary" },
@@ -53,10 +55,43 @@ export default function WarehouseIntimationDetailPage({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [itemUpdates, setItemUpdates] = useState<Record<string, any>>({});
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+  const [itemDetails, setItemDetails] = useState<Record<string, any[]>>({});
+  const [showGenerateIODialog, setShowGenerateIODialog] = useState(false);
+  const [selectedIOItems, setSelectedIOItems] = useState<Set<string>>(new Set());
+  const [generatingIO, setGeneratingIO] = useState(false);
+  const { user } = useCurrentUser();
+  const canEditMtc = user?.role === "QC" || user?.role === "ADMIN" || user?.role === "SUPER_ADMIN";
 
   useEffect(() => {
     fetchDetail();
+    fetchItemDetails();
   }, [id]);
+
+  const fetchItemDetails = async () => {
+    try {
+      const res = await fetch(`/api/warehouse/intimation/${id}/details`);
+      if (res.ok) {
+        const result = await res.json();
+        const detailsMap: Record<string, any[]> = {};
+        for (const item of result.items || []) {
+          detailsMap[item.id] = item.details || [];
+        }
+        setItemDetails(detailsMap);
+      }
+    } catch (error) {
+      console.error("Failed to fetch details:", error);
+    }
+  };
+
+  const toggleItem = (itemId: string) => {
+    setExpandedItems((prev) => {
+      const next = new Set(prev);
+      if (next.has(itemId)) next.delete(itemId);
+      else next.add(itemId);
+      return next;
+    });
+  };
 
   const fetchDetail = async () => {
     try {
@@ -175,6 +210,22 @@ export default function WarehouseIntimationDetailPage({
                 </Button>
               )}
             </>
+          )}
+          {data.status !== "CANCELLED" && data.status !== "DISPATCHED" && (
+            <Button size="sm" onClick={() => router.push(`/warehouse/intimation/${id}/prepare`)}>
+              <Package className="w-4 h-4 mr-1" />
+              Prepare Material
+            </Button>
+          )}
+          {data.items?.some((item: any) => item.itemStatus === "READY") && (
+            <Button variant="outline" size="sm" onClick={() => {
+              const readyIds = data.items.filter((i: any) => i.itemStatus === "READY").map((i: any) => i.id);
+              setSelectedIOItems(new Set(readyIds));
+              setShowGenerateIODialog(true);
+            }}>
+              <FileSearch className="w-4 h-4 mr-1" />
+              Generate Inspection Offer
+            </Button>
           )}
         </div>
       </PageHeader>
@@ -313,17 +364,25 @@ export default function WarehouseIntimationDetailPage({
                   const updates = itemUpdates[item.id] || {};
                   const stockInfo = item.inventoryStock;
                   const latestInspection = stockInfo?.inspections?.[0];
+                  const isExpanded = expandedItems.has(item.id);
+                  const details = itemDetails[item.id] || [];
 
                   return (
+                    <React.Fragment key={item.id}>
                     <TableRow
-                      key={item.id}
-                      className={
+                      className={`cursor-pointer ${
                         updates.itemStatus === "READY" ? "bg-green-50/50" :
                         updates.itemStatus === "ISSUED" ? "bg-blue-50/50" :
                         updates.itemStatus === "PREPARING" ? "bg-amber-50/50" : ""
-                      }
+                      }`}
+                      onClick={() => toggleItem(item.id)}
                     >
-                      <TableCell className="text-muted-foreground">{item.sNo}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                          {item.sNo}
+                        </span>
+                      </TableCell>
                       <TableCell className="font-medium">{item.product || "\u2014"}</TableCell>
                       <TableCell>
                         {item.material || "\u2014"}
@@ -363,6 +422,7 @@ export default function WarehouseIntimationDetailPage({
                             value={updates.preparedQty ?? Number(item.preparedQty)}
                             onChange={(e) => updateItem(item.id, "preparedQty", parseFloat(e.target.value) || 0)}
                             className="w-20 text-right border rounded px-1 py-0.5 text-sm"
+                            onClick={(e) => e.stopPropagation()}
                           />
                         )}
                       </TableCell>
@@ -374,6 +434,7 @@ export default function WarehouseIntimationDetailPage({
                             value={updates.inspectionStatus || item.inspectionStatus}
                             onChange={(e) => updateItem(item.id, "inspectionStatus", e.target.value)}
                             className="text-xs border rounded px-1 py-0.5 bg-background"
+                            onClick={(e) => e.stopPropagation()}
                           >
                             <option value="PENDING">Pending</option>
                             <option value="IN_PROGRESS">In Progress</option>
@@ -390,6 +451,7 @@ export default function WarehouseIntimationDetailPage({
                             value={updates.testingStatus || item.testingStatus}
                             onChange={(e) => updateItem(item.id, "testingStatus", e.target.value)}
                             className="text-xs border rounded px-1 py-0.5 bg-background"
+                            onClick={(e) => e.stopPropagation()}
                           >
                             <option value="PENDING">Pending</option>
                             <option value="IN_PROGRESS">In Progress</option>
@@ -406,6 +468,7 @@ export default function WarehouseIntimationDetailPage({
                             value={updates.itemStatus || item.itemStatus}
                             onChange={(e) => updateItem(item.id, "itemStatus", e.target.value)}
                             className="text-xs border rounded px-1 py-1 bg-background font-medium"
+                            onClick={(e) => e.stopPropagation()}
                           >
                             <option value="PENDING">Pending</option>
                             <option value="PREPARING">Preparing</option>
@@ -424,10 +487,103 @@ export default function WarehouseIntimationDetailPage({
                             onChange={(e) => updateItem(item.id, "remarks", e.target.value)}
                             placeholder="Notes..."
                             className="w-28 text-xs border rounded px-1 py-0.5 bg-background"
+                            onClick={(e) => e.stopPropagation()}
                           />
                         )}
                       </TableCell>
                     </TableRow>
+                    {isExpanded && (
+                      <TableRow>
+                        <TableCell colSpan={11} className="p-0 bg-muted/30">
+                          <div className="p-3 pl-10">
+                            {details.length === 0 ? (
+                              <p className="text-sm text-muted-foreground italic">No detail sub-rows yet. Use Prepare Material to add details.</p>
+                            ) : (
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead className="w-8">#</TableHead>
+                                    <TableHead>Length (MTR)</TableHead>
+                                    <TableHead>Pieces</TableHead>
+                                    <TableHead>Make</TableHead>
+                                    <TableHead>Heat No</TableHead>
+                                    <TableHead>MTC No</TableHead>
+                                    <TableHead>MTC Date</TableHead>
+                                    <TableHead>Status</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {details.map((detail: any, idx: number) => (
+                                    <TableRow key={detail.id}>
+                                      <TableCell className="text-muted-foreground text-xs">{idx + 1}</TableCell>
+                                      <TableCell className="text-xs">{detail.length != null ? Number(detail.length).toFixed(3) : "\u2014"}</TableCell>
+                                      <TableCell className="text-xs">{detail.pieces ?? "\u2014"}</TableCell>
+                                      <TableCell className="text-xs">{detail.make || "\u2014"}</TableCell>
+                                      <TableCell className="text-xs font-mono">{detail.heatNo || "\u2014"}</TableCell>
+                                      <TableCell className="text-xs">
+                                        {canEditMtc ? (
+                                          <input
+                                            type="text"
+                                            defaultValue={detail.mtcNo || ""}
+                                            onBlur={async (e) => {
+                                              const val = e.target.value;
+                                              if (val !== (detail.mtcNo || "")) {
+                                                try {
+                                                  await fetch(`/api/warehouse/intimation/${id}/details`, {
+                                                    method: "PATCH",
+                                                    headers: { "Content-Type": "application/json" },
+                                                    body: JSON.stringify({ detailId: detail.id, mtcNo: val }),
+                                                  });
+                                                  fetchItemDetails();
+                                                } catch {}
+                                              }
+                                            }}
+                                            className="w-20 text-xs border rounded px-1 py-0.5 bg-background"
+                                            onClick={(e) => e.stopPropagation()}
+                                          />
+                                        ) : (
+                                          detail.mtcNo || "\u2014"
+                                        )}
+                                      </TableCell>
+                                      <TableCell className="text-xs">
+                                        {canEditMtc ? (
+                                          <input
+                                            type="date"
+                                            defaultValue={detail.mtcDate ? format(new Date(detail.mtcDate), "yyyy-MM-dd") : ""}
+                                            onBlur={async (e) => {
+                                              const val = e.target.value;
+                                              const existing = detail.mtcDate ? format(new Date(detail.mtcDate), "yyyy-MM-dd") : "";
+                                              if (val !== existing) {
+                                                try {
+                                                  await fetch(`/api/warehouse/intimation/${id}/details`, {
+                                                    method: "PATCH",
+                                                    headers: { "Content-Type": "application/json" },
+                                                    body: JSON.stringify({ detailId: detail.id, mtcDate: val || null }),
+                                                  });
+                                                  fetchItemDetails();
+                                                } catch {}
+                                              }
+                                            }}
+                                            className="w-28 text-xs border rounded px-1 py-0.5 bg-background"
+                                            onClick={(e) => e.stopPropagation()}
+                                          />
+                                        ) : (
+                                          detail.mtcDate ? format(new Date(detail.mtcDate), "dd/MM/yyyy") : "\u2014"
+                                        )}
+                                      </TableCell>
+                                      <TableCell>
+                                        <Badge variant="secondary" className="text-xs">{detail.status || "PENDING"}</Badge>
+                                      </TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    </React.Fragment>
                   );
                 })}
               </TableBody>
@@ -448,6 +604,59 @@ export default function WarehouseIntimationDetailPage({
           </div>
         </CardContent>
       </Card>
+
+      {/* Generate Inspection Offer Dialog */}
+      {showGenerateIODialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowGenerateIODialog(false)}>
+          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-lg w-full mx-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold mb-4">Generate Inspection Offer</h3>
+            <p className="text-sm text-muted-foreground mb-4">Select items to include in the inspection offer:</p>
+            <div className="space-y-2 mb-4">
+              {data.items?.filter((item: any) => item.itemStatus === "READY").map((item: any) => (
+                <label key={item.id} className="flex items-center gap-2 p-2 rounded border hover:bg-muted/50 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedIOItems.has(item.id)}
+                    onChange={(e) => {
+                      const next = new Set(selectedIOItems);
+                      if (e.target.checked) next.add(item.id);
+                      else next.delete(item.id);
+                      setSelectedIOItems(next);
+                    }}
+                  />
+                  <span className="text-sm">#{item.sNo} — {item.product} {item.sizeLabel || ""}</span>
+                </label>
+              ))}
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowGenerateIODialog(false)}>Cancel</Button>
+              <Button disabled={selectedIOItems.size === 0 || generatingIO} onClick={async () => {
+                setGeneratingIO(true);
+                try {
+                  const res = await fetch(`/api/warehouse/intimation/${id}/generate-inspection-offer`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ itemIds: Array.from(selectedIOItems) }),
+                  });
+                  const result = await res.json();
+                  if (res.ok) {
+                    toast.success(`Inspection Offer ${result.offerNo} created with ${result.itemCount} items`);
+                    setShowGenerateIODialog(false);
+                  } else {
+                    toast.error(result.error || "Failed to generate inspection offer");
+                  }
+                } catch (error) {
+                  toast.error("Failed to generate inspection offer");
+                } finally {
+                  setGeneratingIO(false);
+                }
+              }}>
+                {generatingIO ? "Generating..." : "Generate"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
