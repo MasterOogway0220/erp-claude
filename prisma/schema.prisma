@@ -403,6 +403,7 @@ model User {
   csPrepared              ComparativeStatement[] @relation("CSPreparedBy")
   mtcCertificatesCreated  MTCCertificate[]       @relation("MTCCertCreatedBy")
   rateRevisions           RateRevision[]         @relation("RateRevisionChangedBy")
+  poaEmailsSent           POAcceptanceEmailLog[]  @relation("POAEmailSentBy")
 
   @@index([email])
   @@index([companyId])
@@ -2740,6 +2741,7 @@ model POAcceptance {
   committedDeliveryDate DateTime
   remarks               String?  @db.Text
   attachmentUrl         String?
+  generatedPath         String?
 
   // Contact details (stored inline for document integrity)
   followUpName  String?
@@ -2761,6 +2763,7 @@ model POAcceptance {
   company             CompanyMaster?      @relation(fields: [companyId], references: [id])
   clientPurchaseOrder ClientPurchaseOrder @relation(fields: [clientPurchaseOrderId], references: [id])
   createdBy           User                @relation("POACreatedBy", fields: [createdById], references: [id])
+  emailLogs           POAcceptanceEmailLog[]
 
   @@index([companyId])
   @@index([clientPurchaseOrderId])
@@ -2914,4 +2917,23 @@ model RateRevision {
 
   @@index([clientPOItemId])
   @@index([companyId])
+}
+
+model POAcceptanceEmailLog {
+  id               String         @id @default(cuid())
+  poAcceptanceId   String
+  sentTo           String
+  sentCc           String?
+  subject          String
+  messageBody      String         @db.Text
+  sentById         String?
+  sentAt           DateTime       @default(now())
+  status           EmailLogStatus
+  errorMessage     String?        @db.Text
+
+  poAcceptance POAcceptance @relation(fields: [poAcceptanceId], references: [id])
+  sentBy       User?        @relation("POAEmailSentBy", fields: [sentById], references: [id])
+
+  @@index([poAcceptanceId])
+  @@index([sentById])
 }
