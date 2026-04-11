@@ -15,7 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, FileText, Calculator, FileCheck } from "lucide-react";
+import { ArrowLeft, FileText, Calculator, FileCheck, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { PageLoading } from "@/components/shared/page-loading";
 import { use } from "react";
@@ -31,6 +31,7 @@ interface ClientPODetail {
   paymentTerms: string | null;
   deliveryTerms: string | null;
   deliverySchedule: string | null;
+  deliveryDate: string | null;
   currency: string;
   subtotal: number | null;
   // Additional Charges
@@ -84,9 +85,11 @@ interface ClientPODetail {
     qtyQuoted: number;
     qtyOrdered: number;
     unitRate: number;
+    quotedRate: number | null;
     amount: number;
     deliveryDate: string | null;
     remark: string | null;
+    rateRevisions: { id: string; oldRate: number; newRate: number; remark: string; overallRemark: string | null; changedBy: string; changedAt: string; }[];
     totalOrderedAllCPOs: number;
     balanceQty: number;
     otherOrders: { cpoNo: string; qtyOrdered: number }[];
@@ -110,6 +113,8 @@ export default function ClientPODetailPage({
   const router = useRouter();
   const [clientPO, setClientPO] = useState<ClientPODetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showRevisionDialog, setShowRevisionDialog] = useState(false);
+  const [selectedItemRevisions, setSelectedItemRevisions] = useState<any[]>([]);
 
   useEffect(() => {
     fetchClientPO();
@@ -230,6 +235,14 @@ export default function ClientPODetailPage({
             <DetailRow label="Payment Terms" value={clientPO.paymentTerms} />
             <DetailRow label="Delivery Terms" value={clientPO.deliveryTerms} />
             <DetailRow label="Delivery Schedule" value={clientPO.deliverySchedule} />
+            {clientPO.deliveryDate && (
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Delivery Date (CDD)</span>
+                <span className="text-sm text-foreground">
+                  {format(new Date(clientPO.deliveryDate), "dd MMM yyyy")}
+                </span>
+              </div>
+            )}
             <DetailRow
               label="Registered On"
               value={format(new Date(clientPO.createdAt), "dd/MM/yyyy HH:mm")}
@@ -256,8 +269,11 @@ export default function ClientPODetailPage({
                   <TableHead className="text-right">Qty Ordered</TableHead>
                   <TableHead className="text-right">Balance</TableHead>
                   <TableHead>UOM</TableHead>
+                  <TableHead className="text-right">Quoted Rate</TableHead>
                   <TableHead className="text-right">Rate</TableHead>
                   <TableHead className="text-right">Amount</TableHead>
+                  <TableHead>Item CDD</TableHead>
+                  <TableHead>Rate History</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -310,6 +326,11 @@ export default function ClientPODetailPage({
                       )}
                     </TableCell>
                     <TableCell>{item.uom || "Mtr"}</TableCell>
+                    <TableCell className="text-right text-muted-foreground">
+                      {item.quotedRate != null
+                        ? item.quotedRate.toLocaleString("en-IN", { minimumFractionDigits: 2 })
+                        : "-"}
+                    </TableCell>
                     <TableCell className="text-right">
                       {item.unitRate.toLocaleString("en-IN", {
                         minimumFractionDigits: 2,
@@ -320,6 +341,29 @@ export default function ClientPODetailPage({
                       {item.amount.toLocaleString("en-IN", {
                         minimumFractionDigits: 2,
                       })}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {item.deliveryDate
+                        ? format(new Date(item.deliveryDate), "dd MMM yyyy")
+                        : clientPO.deliveryDate
+                        ? <span className="text-muted-foreground italic">{format(new Date(clientPO.deliveryDate), "dd MMM yyyy")} (inherited)</span>
+                        : "-"}
+                    </TableCell>
+                    <TableCell>
+                      {item.rateRevisions && item.rateRevisions.length > 0 ? (
+                        <button
+                          className="flex items-center gap-1 text-xs text-blue-600 hover:underline"
+                          onClick={() => {
+                            setSelectedItemRevisions(item.rateRevisions);
+                            setShowRevisionDialog(true);
+                          }}
+                        >
+                          <Clock className="w-3 h-3" />
+                          {item.rateRevisions.length} revision{item.rateRevisions.length !== 1 ? "s" : ""}
+                        </button>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">-</span>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -482,6 +526,65 @@ export default function ClientPODetailPage({
             </p>
           </CardContent>
         </Card>
+      )}
+
+      {/* Rate Revision History Dialog */}
+      {showRevisionDialog && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          onClick={() => setShowRevisionDialog(false)}
+        >
+          <div
+            className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-lg w-full mx-4 max-h-[80vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold mb-4">Rate Revision History</h3>
+            <div className="space-y-4">
+              {selectedItemRevisions.map((rev, idx) => {
+                const pctDiff = rev.oldRate !== 0
+                  ? (((rev.newRate - rev.oldRate) / rev.oldRate) * 100).toFixed(1)
+                  : null;
+                return (
+                  <div key={rev.id} className="border rounded p-3 space-y-1 text-sm">
+                    <div className="font-medium text-muted-foreground text-xs mb-1">
+                      Revision #{idx + 1}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="line-through text-muted-foreground">
+                        {rev.oldRate.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                      </span>
+                      <span>→</span>
+                      <span className="font-semibold">
+                        {rev.newRate.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                      </span>
+                      {pctDiff !== null && (
+                        <span className={`text-xs ${Number(pctDiff) >= 0 ? "text-green-600" : "text-red-600"}`}>
+                          ({Number(pctDiff) >= 0 ? "+" : ""}{pctDiff}%)
+                        </span>
+                      )}
+                    </div>
+                    {rev.remark && (
+                      <div className="text-muted-foreground">
+                        <span className="font-medium">Item remark:</span> {rev.remark}
+                      </div>
+                    )}
+                    {rev.overallRemark && (
+                      <div className="text-muted-foreground">
+                        <span className="font-medium">Overall remark:</span> {rev.overallRemark}
+                      </div>
+                    )}
+                    <div className="text-xs text-muted-foreground">
+                      By {rev.changedBy} on {format(new Date(rev.changedAt), "dd MMM yyyy HH:mm")}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <Button className="mt-4 w-full" variant="outline" onClick={() => setShowRevisionDialog(false)}>
+              Close
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   );
