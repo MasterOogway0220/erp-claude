@@ -38,6 +38,7 @@ interface SalesOrder {
   customerPoDocument?: string;
   poAcceptanceStatus: string;
   poReviewRemarks?: string;
+  allotmentStatus: string;
   projectName?: string;
   deliverySchedule?: string;
   paymentTerms?: string;
@@ -107,6 +108,8 @@ export default function SalesOrderDetailPage() {
           setProcessingItems(
             data.items?.map((i: any) => ({
               ...i.salesOrderItem,
+              allotmentSource: i.salesOrderItem?.allotmentSource || null,
+              allotmentStatus: i.salesOrderItem?.allotmentStatus || null,
               orderProcessing: i.processing,
             })) || []
           );
@@ -190,6 +193,11 @@ export default function SalesOrderDetailPage() {
             <Button onClick={() => router.push(`/sales/${salesOrder.id}/process`)}>
               <CheckCircle className="w-4 h-4 mr-2" />
               Process Order
+            </Button>
+          )}
+          {salesOrder.status === "OPEN" && (salesOrder.processingStatus === "PROCESSING" || salesOrder.processingStatus === "PROCESSED") && (
+            <Button variant="outline" onClick={() => router.push(`/sales/${salesOrder.id}/allotment`)}>
+              Stock Allotment
             </Button>
           )}
           {salesOrder.poAcceptanceStatus === "PENDING" && (
@@ -289,6 +297,17 @@ export default function SalesOrderDetailPage() {
                     >
                       {salesOrder.processingStatus === "PROCESSED" ? "Processed" :
                        salesOrder.processingStatus === "PROCESSING" ? "Processing" : "Unprocessed"}
+                    </Badge>
+                  )}
+                  {salesOrder.allotmentStatus && salesOrder.allotmentStatus !== "PENDING" && (
+                    <Badge
+                      variant={
+                        salesOrder.allotmentStatus === "COMPLETED" ? "default" :
+                        salesOrder.allotmentStatus === "IN_PROGRESS" ? "outline" : "secondary"
+                      }
+                    >
+                      {salesOrder.allotmentStatus === "COMPLETED" ? "Allotted" :
+                       salesOrder.allotmentStatus === "IN_PROGRESS" ? "Partially Allotted" : ""}
                     </Badge>
                   )}
                 </div>
@@ -474,6 +493,12 @@ export default function SalesOrderDetailPage() {
                     )}
                     {item.orderProcessing?.pmiRequired && (
                       <Badge variant="outline" className="text-xs">PMI</Badge>
+                    )}
+                    {item.allotmentSource && (
+                      <Badge variant="outline" className="text-xs">
+                        {item.allotmentSource === "STOCK" ? "Stock" :
+                         item.allotmentSource === "PROCUREMENT" ? "Procurement" : "Split"}
+                      </Badge>
                     )}
                     <Badge variant={item.orderProcessing?.status === "PROCESSED" ? "default" : "secondary"}>
                       {item.orderProcessing?.status === "PROCESSED" ? "Processed" : "Pending"}

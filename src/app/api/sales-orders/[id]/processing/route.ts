@@ -55,6 +55,10 @@ export async function GET(
           quantity: Number(item.quantity),
           unitRate: Number(item.unitRate),
           amount: Number(item.amount),
+          allotmentSource: item.allotmentSource,
+          allotmentStatus: item.allotmentStatus,
+          stockAllocQty: item.stockAllocQty ? Number(item.stockAllocQty) : null,
+          procurementAllocQty: item.procurementAllocQty ? Number(item.procurementAllocQty) : null,
         },
         processing: item.orderProcessing
           ? {
