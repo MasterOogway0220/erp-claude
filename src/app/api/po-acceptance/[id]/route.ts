@@ -149,6 +149,14 @@ export async function PUT(
       });
     }
 
+    // Flag letter as generated when issuing
+    if (status === "ISSUED" && existing.status === "DRAFT") {
+      await prisma.pOAcceptance.update({
+        where: { id },
+        data: { generatedPath: `generated-${new Date().toISOString()}` },
+      });
+    }
+
     return NextResponse.json(acceptance);
   } catch (error) {
     console.error("Failed to update PO acceptance:", error);
