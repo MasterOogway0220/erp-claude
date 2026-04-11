@@ -153,6 +153,7 @@ const navSections: NavSection[] = [
           { title: "Purchase Requisitions", href: "/purchase" },
           { title: "Create PR", href: "/purchase/requisitions/create" },
           { title: "RFQ Management", href: "/purchase/rfq" },
+          { title: "Supplier Quotations", href: "/purchase/supplier-quotations" },
           { title: "Comparative Statements", href: "/purchase/comparative-statement" },
           { title: "Purchase Orders", href: "/purchase/orders/create" },
           { title: "Vendor Tracking", href: "/purchase/follow-up" },
