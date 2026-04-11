@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ERP Software Quotation - NPS Piping Solutions</title>
+<style>
+  @page {
+    size: A4;
+    margin: 15mm 18mm;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 11px;
+    color: #1a1a2e;
+    line-height: 1.5;
+    background: #fff;
+  }
+
+  /* ---- COVER PAGE ---- */
+  .cover-page {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    page-break-after: always;
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%);
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover-page::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at 30% 40%, rgba(59,130,246,0.08) 0%, transparent 50%),
+                radial-gradient(circle at 70% 60%, rgba(16,185,129,0.06) 0%, transparent 50%);
+  }
+  .cover-content { position: relative; z-index: 1; }
+  .cover-logo { width: 120px; height: 120px; border-radius: 20px; margin-bottom: 30px; object-fit: contain; background: #fff; padding: 10px; }
+  .cover-title { font-size: 36px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 8px; }
+  .cover-subtitle { font-size: 18px; font-weight: 300; color: #93c5fd; margin-bottom: 40px; }
+  .cover-divider { width: 80px; height: 3px; background: linear-gradient(90deg, #3b82f6, #10b981); margin: 0 auto 40px; border-radius: 2px; }
+  .cover-meta { font-size: 13px; color: #94a3b8; line-height: 2; }
+  .cover-meta strong { color: #e2e8f0; }
+  .cover-badge {
+    display: inline-block;
+    margin-top: 40px;
+    padding: 8px 24px;
+    border: 1px solid rgba(59,130,246,0.3);
+    border-radius: 20px;
+    font-size: 11px;
+    color: #93c5fd;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* ---- PAGE LAYOUT ---- */
+  .page { page-break-after: always; padding: 10px 0; }
+  .page:last-child { page-break-after: avoid; }
+
+  /* ---- HEADER ---- */
+  .doc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #1e3a5f;
+    margin-bottom: 20px;
+  }
+  .doc-header-left { display: flex; align-items: center; gap: 12px; }
+  .doc-header-logo { height: 36px; }
+  .doc-header-title { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
+  .doc-header-right { text-align: right; font-size: 9px; color: #64748b; }
+
+  /* ---- SECTION HEADINGS ---- */
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 4px;
+  }
+  h2 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1e3a5f;
+    margin: 24px 0 10px;
+    padding-bottom: 4px;
+    border-bottom: 2px solid #e2e8f0;
+  }
+  h3 {
+    font-size: 12px;
+    font-weight: 600;
+    color: #334155;
+    margin: 14px 0 6px;
+  }
+  .section-number {
+    display: inline-block;
+    background: #1e3a5f;
+    color: #fff;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 22px;
+    font-size: 11px;
+    font-weight: 700;
+    margin-right: 8px;
+  }
+
+  /* ---- TABLES ---- */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0 16px;
+    font-size: 10.5px;
+  }
+  th {
+    background: #1e3a5f;
+    color: #fff;
+    padding: 8px 10px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  td {
+    padding: 7px 10px;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #f8fafc; }
+  tr:hover td { background: #eff6ff; }
+  .total-row td {
+    background: #0f172a !important;
+    color: #fff;
+    font-weight: 700;
+    font-size: 12px;
+  }
+  .subtotal-row td {
+    background: #e2e8f0 !important;
+    font-weight: 600;
+  }
+
+  /* ---- BADGES ---- */
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 9px;
+    font-weight: 600;
+  }
+  .badge-blue { background: #dbeafe; color: #1e40af; }
+  .badge-green { background: #dcfce7; color: #166534; }
+  .badge-amber { background: #fef3c7; color: #92400e; }
+  .badge-red { background: #fee2e2; color: #991b1b; }
+
+  /* ---- COMPARISON TABLE ---- */
+  .compare-table th:first-child { background: #334155; }
+  .compare-table .check { color: #16a34a; font-weight: 700; font-size: 14px; }
+  .compare-table .cross { color: #dc2626; font-weight: 700; font-size: 14px; }
+
+  /* ---- INFO BOXES ---- */
+  .info-box {
+    background: #f0f9ff;
+    border-left: 4px solid #3b82f6;
+    padding: 12px 16px;
+    margin: 12px 0;
+    border-radius: 0 6px 6px 0;
+    font-size: 10.5px;
+  }
+  .highlight-box {
+    background: linear-gradient(135deg, #0f172a, #1e3a5f);
+    color: #fff;
+    padding: 16px 20px;
+    border-radius: 8px;
+    margin: 16px 0;
+  }
+  .highlight-box strong { color: #93c5fd; }
+
+  /* ---- PRICING CARD ---- */
+  .pricing-card {
+    border: 2px solid #1e3a5f;
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 16px 0;
+  }
+  .pricing-card-header {
+    background: linear-gradient(135deg, #1e3a5f, #0f172a);
+    color: #fff;
+    padding: 16px 20px;
+    text-align: center;
+  }
+  .pricing-card-header .price {
+    font-size: 32px;
+    font-weight: 800;
+  }
+  .pricing-card-header .price-sub {
+    font-size: 12px;
+    color: #93c5fd;
+  }
+  .pricing-card-body { padding: 16px 20px; }
+
+  /* ---- FEATURE LIST ---- */
+  .feature-list { list-style: none; padding: 0; }
+  .feature-list li {
+    padding: 4px 0 4px 20px;
+    position: relative;
+    font-size: 10.5px;
+  }
+  .feature-list li::before {
+    content: '\2713';
+    position: absolute;
+    left: 0;
+    color: #16a34a;
+    font-weight: 700;
+  }
+
+  /* ---- STATS ROW ---- */
+  .stats-row {
+    display: flex;
+    gap: 12px;
+    margin: 16px 0;
+  }
+  .stat-card {
+    flex: 1;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 14px;
+    text-align: center;
+  }
+  .stat-number {
+    font-size: 24px;
+    font-weight: 800;
+    color: #1e3a5f;
+  }
+  .stat-label {
+    font-size: 9px;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+  }
+
+  /* ---- FOOTER ---- */
+  .doc-footer {
+    margin-top: 30px;
+    padding-top: 10px;
+    border-top: 1px solid #e2e8f0;
+    font-size: 9px;
+    color: #94a3b8;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  /* ---- TERMS ---- */
+  .terms-list { padding-left: 18px; }
+  .terms-list li { margin-bottom: 5px; font-size: 10.5px; }
+
+  /* ---- SIGNATURE ---- */
+  .signature-section {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 60px;
+    padding-top: 20px;
+  }
+  .signature-block {
+    width: 45%;
+    text-align: center;
+  }
+  .signature-line {
+    border-top: 1px solid #1a1a2e;
+    padding-top: 8px;
+    margin-top: 60px;
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .signature-label { font-size: 9px; color: #64748b; }
+
+  /* ---- PRINT ---- */
+  @media print {
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .cover-page { height: 100vh; }
+    .page { page-break-after: always; }
+  }
+
+  .toc-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px dotted #cbd5e1;
+    font-size: 11px;
+  }
+  .toc-item:hover { color: #1e3a5f; }
+  .toc-section { font-weight: 600; color: #0f172a; }
+
+  .module-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+  }
+  .module-card-title {
+    font-weight: 700;
+    color: #1e3a5f;
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+  .module-features {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .module-tag {
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 9px;
+    color: #475569;
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== COVER PAGE ==================== -->
+<div class="cover-page">
+  <div class="cover-content">
+    <img src="../public/n-pipe-logo.jpg.jpeg" class="cover-logo" alt="NPS Logo" onerror="this.style.display='none'">
+    <div class="cover-title">ERP Software Solution</div>
+    <div class="cover-subtitle">Quotation & Product Overview</div>
+    <div class="cover-divider"></div>
+    <div class="cover-meta">
+      <strong>Prepared For:</strong> NPS Piping Solutions<br>
+      <strong>Document No:</strong> QUOT/ERP/2026/001<br>
+      <strong>Date:</strong> 27th March, 2026<br>
+      <strong>Valid Until:</strong> 27th April, 2026
+    </div>
+    <div class="cover-badge">Confidential</div>
+  </div>
+</div>
+
+<!-- ==================== TABLE OF CONTENTS ==================== -->
+<div class="page">
+  <div class="doc-header">
+    <div class="doc-header-left">
+      <div class="doc-header-title">ERP Quotation Document</div>
+    </div>
+    <div class="doc-header-right">QUOT/ERP/2026/001</div>
+  </div>
+
+  <h1>Table of Contents</h1>
+  <div style="margin-top: 20px;">
+    <div class="toc-item toc-section"><span>1. Executive Summary</span><span>3</span></div>
+    <div class="toc-item toc-section"><span>2. System Overview & Statistics</span><span>3</span></div>
+    <div class="toc-item toc-section"><span>3. Module-Wise Feature Breakdown</span><span>4</span></div>
+    <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;3.1 Sales & Quotation Management</span><span>4</span></div>
+    <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;3.2 Client PO & Sales Order Management</span><span>4</span></div>
+    <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;3.3 Purchase Management</span><span>4</span></div>
+    <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;3.4 Inventory & Warehouse Management</span><span>5</span></div>
+    <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;3.5 Quality & Inspection Management</span><span>5</span></div>
+    <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;3.6 Dispatch & Finance</span><span>5</span></div>
+    <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;3.7 Master Data Management</span><span>6</span></div>
+    <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;3.8 Reports & Dashboards</span><span>6</span></div>
+    <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;3.9 Administration & Security</span><span>6</span></div>
+    <div class="toc-item toc-section"><span>4. Technology Stack</span><span>7</span></div>
+    <div class="toc-item toc-section"><span>5. Competitive Analysis</span><span>7</span></div>
+    <div class="toc-item toc-section"><span>6. Commercial Quotation</span><span>8</span></div>
+    <div class="toc-item toc-section"><span>7. Annual Maintenance Contract (AMC)</span><span>9</span></div>
+    <div class="toc-item toc-section"><span>8. Terms & Conditions</span><span>9</span></div>
+    <div class="toc-item toc-section"><span>9. Acceptance</span><span>10</span></div>
+  </div>
+</div>
+
+<!-- ==================== EXECUTIVE SUMMARY ==================== -->
+<div class="page">
+  <div class="doc-header">
+    <div class="doc-header-left"><div class="doc-header-title">ERP Quotation Document</div></div>
+    <div class="doc-header-right">QUOT/ERP/2026/001</div>
+  </div>
+
+  <h2><span class="section-number">1</span> Executive Summary</h2>
+  <p style="margin-bottom:12px;">
+    This document presents the quotation for a <strong>custom-built, cloud-based ERP system</strong> designed exclusively for the <strong>piping and tubular trading industry</strong>. The system covers the complete business lifecycle from customer inquiry to dispatch, including specialized features like pipe specification management, heat number traceability, Material Test Certificate (MTC) management, and GST-compliant e-invoicing.
+  </p>
+  <p style="margin-bottom:12px;">
+    Unlike generic ERP solutions (TranZact, Vyapar, Tally), this system is purpose-built for piping companies with industry-specific workflows, document formats, and quality management processes that off-the-shelf software simply does not provide.
+  </p>
+
+  <div class="highlight-box">
+    <strong>Key Value Proposition:</strong> A complete ERP system tailored for piping & tubular trading at a fraction of the cost of SAP/Oracle, with features that no generic ERP offers — pipe spec masters, flange sizing, heat traceability, MTC management, third-party inspection workflows, and complete dispatch dossier generation.
+  </div>
+
+  <h2><span class="section-number">2</span> System Overview & Statistics</h2>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-number">8</div>
+      <div class="stat-label">Major Modules</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">90+</div>
+      <div class="stat-label">Database Models</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">150+</div>
+      <div class="stat-label">API Endpoints</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">24</div>
+      <div class="stat-label">Document Types</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">12+</div>
+      <div class="stat-label">Reports</div>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-number">25+</div>
+      <div class="stat-label">Master Tables</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">9</div>
+      <div class="stat-label">PDF Templates</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">8</div>
+      <div class="stat-label">User Roles</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">100%</div>
+      <div class="stat-label">GST Compliant</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">24/7</div>
+      <div class="stat-label">Cloud Access</div>
+    </div>
+  </div>
+
+  <h3>Complete Business Lifecycle Coverage</h3>
+  <div class="info-box">
+    <strong>Inquiry &rarr; Quotation &rarr; Client PO &rarr; Sales Order &rarr; Purchase Requisition &rarr; RFQ &rarr; Comparative Statement &rarr; Purchase Order &rarr; GRN &rarr; Quality Inspection &rarr; MTC &rarr; Stock Management &rarr; Stock Reservation &rarr; Packing List &rarr; Dispatch Note &rarr; Invoice &rarr; Payment Receipt</strong>
+    <br><br>
+    Every step is tracked, numbered, and auditable with complete role-based access control.
+  </div>
+</div>
+
+<!-- ==================== MODULE BREAKDOWN ==================== -->
+<div class="page">
+  <div class="doc-header">
+    <div class="doc-header-left"><div class="doc-header-title">ERP Quotation Document</div></div>
+    <div class="doc-header-right">QUOT/ERP/2026/001</div>
+  </div>
+
+  <h2><span class="section-number">3</span> Module-Wise Feature Breakdown</h2>
+
+  <h3>3.1 Sales & Quotation Management</h3>
+  <table>
+    <tr><th style="width:35%">Feature</th><th>Description</th></tr>
+    <tr><td>Standard Quotations</td><td>Create GST-compliant quotations with pipe specifications (OD, WT, Length, Schedule, Grade)</td></tr>
+    <tr><td>Non-Standard Quotations</td><td>Custom format quotations for special items (fittings, flanges, non-pipe items)</td></tr>
+    <tr><td>BOM Quotations</td><td>Bill of Material-based quotations for project-level quoting</td></tr>
+    <tr><td>Past Price History</td><td>Customer-linked past quotation lookup for competitive pricing decisions</td></tr>
+    <tr><td>Quotation Comparison</td><td>Side-by-side comparison of multiple quotation revisions</td></tr>
+    <tr><td>Revision Management</td><td>Full revision history with supersede workflow</td></tr>
+    <tr><td>PDF Generation</td><td>Professional landscape A4 quotation PDFs matching company format</td></tr>
+    <tr><td>Email Integration</td><td>Send quotations directly to customers via email with logging</td></tr>
+    <tr><td>Auto Document Numbering</td><td>NPS/FY/NNNNN format with financial year awareness</td></tr>
+    <tr><td>Status Workflow</td><td>Draft &rarr; Pending Approval &rarr; Approved &rarr; Sent &rarr; Won/Lost/Expired</td></tr>
+  </table>
+
+  <h3>3.2 Client PO & Sales Order Management</h3>
+  <table>
+    <tr><th style="width:35%">Feature</th><th>Description</th></tr>
+    <tr><td>Client PO Registration</td><td>Register and track customer purchase orders with acceptance workflow</td></tr>
+    <tr><td>PO Acceptance</td><td>Formal acceptance documentation with terms verification</td></tr>
+    <tr><td>Sales Order Creation</td><td>Generate sales orders from accepted client POs with full item details</td></tr>
+    <tr><td>Auto Stock Reservation</td><td>Automatically reserve available inventory against sales order items</td></tr>
+    <tr><td>Shortfall Analysis</td><td>Identify items not available in stock and auto-generate Purchase Requisitions</td></tr>
+    <tr><td>Customer PO Review</td><td>Review interface for verifying customer PO terms and specifications</td></tr>
+    <tr><td>SO Status Tracking</td><td>Open &rarr; Partially Dispatched &rarr; Fully Dispatched &rarr; Closed</td></tr>
+  </table>
+
+  <h3>3.3 Purchase Management</h3>
+  <table>
+    <tr><th style="width:35%">Feature</th><th>Description</th></tr>
+    <tr><td>Purchase Requisitions (PR)</td><td>Create PRs manually or auto-generated from SO shortfall; approval workflow</td></tr>
+    <tr><td>Request for Quotation (RFQ)</td><td>Send RFQs to multiple vendors; collect and manage vendor quotations</td></tr>
+    <tr><td>Comparative Statement (CS)</td><td>Multi-vendor price comparison matrix for informed procurement decisions</td></tr>
+    <tr><td>Purchase Orders (PO)</td><td>Create POs from PR/RFQ/CS with full terms, delivery schedule, and PDF generation</td></tr>
+    <tr><td>PO Amendment</td><td>Track and manage order modifications with full history</td></tr>
+    <tr><td>Variance Detection</td><td>Automatic alerts for over-receipt or specification mismatches</td></tr>
+    <tr><td>Delivery Tracking</td><td>Track expected vs actual delivery dates with overdue alerts</td></tr>
+    <tr><td>Purchase Dashboard</td><td>KPIs, overdue POs, delivery schedules, vendor performance at a glance</td></tr>
+  </table>
+</div>
+
+<!-- ==================== MODULE BREAKDOWN CONTINUED ==================== -->
+<div class="page">
+  <div class="doc-header">
+    <div class="doc-header-left"><div class="doc-header-title">ERP Quotation Document</div></div>
+    <div class="doc-header-right">QUOT/ERP/2026/001</div>
+  </div>
+
+  <h3>3.4 Inventory & Warehouse Management</h3>
+  <table>
+    <tr><th style="width:35%">Feature</th><th>Description</th></tr>
+    <tr><td>Heat-Based Stock Tracking</td><td>Unique heat number identification and full lifecycle traceability</td></tr>
+    <tr><td>Goods Receipt Note (GRN)</td><td>Receive goods against POs with quality inspection trigger</td></tr>
+    <tr><td>Pipe Material Details</td><td>Track OD, Wall Thickness, Length, Grade, Schedule per heat</td></tr>
+    <tr><td>Stock Status Lifecycle</td><td>Under Inspection &rarr; Accepted/Rejected/Hold &rarr; Reserved &rarr; Dispatched</td></tr>
+    <tr><td>Stock Reservation</td><td>Allocate specific heats to sales orders</td></tr>
+    <tr><td>Stock Issue</td><td>Issue stock against sales orders with slip generation</td></tr>
+    <tr><td>Multi-Warehouse</td><td>Multiple warehouse support with location tracking</td></tr>
+    <tr><td>Warehouse Intimation (MPR)</td><td>Material Planning & Release for warehouse allocation</td></tr>
+    <tr><td>Inventory Ageing</td><td>Stock holding period analysis and ageing reports</td></tr>
+  </table>
+
+  <h3>3.5 Quality & Inspection Management</h3>
+  <table>
+    <tr><th style="width:35%">Feature</th><th>Description</th></tr>
+    <tr><td>Inspection Management</td><td>Parameter-based inspection with Pass/Fail/Hold results</td></tr>
+    <tr><td>Inspection Offers</td><td>Third-party inspection booking with agency selection, length tally, colour code marking</td></tr>
+    <tr><td>MTC Management</td><td>Complete Material Test Certificate tracking — chemical composition, mechanical & impact properties</td></tr>
+    <tr><td>MTC Certificate Generation</td><td>Generate professional MTC certificate PDFs with full test data</td></tr>
+    <tr><td>NCR (Non-Conformance)</td><td>Full NCR workflow: Open &rarr; Investigation &rarr; Corrective Action &rarr; Closed/Verified</td></tr>
+    <tr><td>NCR Disposition</td><td>Return, Rework, Scrap, or Use-As-Is disposition options</td></tr>
+    <tr><td>QC Release</td><td>Quality clearance approval before dispatch</td></tr>
+    <tr><td>Lab Letters & Reports</td><td>Lab letter creation, lab report tracking with heat number linkage</td></tr>
+    <tr><td>NCR Analysis Dashboard</td><td>Quality trends, defect patterns, and non-conformance analytics</td></tr>
+  </table>
+
+  <h3>3.6 Dispatch & Finance</h3>
+  <table>
+    <tr><th style="width:35%">Feature</th><th>Description</th></tr>
+    <tr><td>Packing Lists</td><td>Create packing lists from SOs with item-wise packaging details and PDF</td></tr>
+    <tr><td>Dispatch Notes</td><td>Dispatch documentation with destination address management</td></tr>
+    <tr><td>Dispatch Dossier</td><td>Complete dispatch documentation package</td></tr>
+    <tr><td>Domestic Invoices</td><td>GST-compliant tax invoices with professional PDF generation</td></tr>
+    <tr><td>Export Invoices</td><td>Export invoice format with currency and terms support</td></tr>
+    <tr><td>E-Invoice Generation</td><td>GST Portal-compliant JSON generation for e-invoicing</td></tr>
+    <tr><td>Credit Notes & Debit Notes</td><td>Full credit/debit note creation and tracking</td></tr>
+    <tr><td>Payment Receipts</td><td>Payment receipt creation with tracking and listing</td></tr>
+    <tr><td>Email Integration</td><td>Send invoices directly via email with delivery logging</td></tr>
+  </table>
+</div>
+
+<!-- ==================== MASTERS, REPORTS, ADMIN ==================== -->
+<div class="page">
+  <div class="doc-header">
+    <div class="doc-header-left"><div class="doc-header-title">ERP Quotation Document</div></div>
+    <div class="doc-header-right">QUOT/ERP/2026/001</div>
+  </div>
+
+  <h3>3.7 Master Data Management (25+ Masters)</h3>
+  <div style="display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 16px;">
+    <div class="module-card" style="width:48%">
+      <div class="module-card-title">Business Partners</div>
+      <div class="module-features">
+        <span class="module-tag">Customers</span>
+        <span class="module-tag">Vendors</span>
+        <span class="module-tag">Customer Contacts</span>
+        <span class="module-tag">Dispatch Addresses</span>
+        <span class="module-tag">Customer Tags</span>
+        <span class="module-tag">Customer Term Defaults</span>
+      </div>
+    </div>
+    <div class="module-card" style="width:48%">
+      <div class="module-card-title">Products & Specifications</div>
+      <div class="module-features">
+        <span class="module-tag">Products</span>
+        <span class="module-tag">Material Codes</span>
+        <span class="module-tag">Sizes</span>
+        <span class="module-tag">Lengths</span>
+        <span class="module-tag">Additional Specs</span>
+        <span class="module-tag">Testing Types</span>
+      </div>
+    </div>
+    <div class="module-card" style="width:48%">
+      <div class="module-card-title">Technical Configuration</div>
+      <div class="module-features">
+        <span class="module-tag">Fittings</span>
+        <span class="module-tag">Flanges (B16.5, B16.47)</span>
+        <span class="module-tag">Dimensional Standards</span>
+        <span class="module-tag">Pipe Spec Master</span>
+      </div>
+    </div>
+    <div class="module-card" style="width:48%">
+      <div class="module-card-title">Business Terms & Finance</div>
+      <div class="module-features">
+        <span class="module-tag">Payment Terms</span>
+        <span class="module-tag">Delivery Terms</span>
+        <span class="module-tag">Offer Terms</span>
+        <span class="module-tag">Tax Master</span>
+        <span class="module-tag">Currency</span>
+        <span class="module-tag">UoM</span>
+      </div>
+    </div>
+    <div class="module-card" style="width:48%">
+      <div class="module-card-title">Organization</div>
+      <div class="module-features">
+        <span class="module-tag">Employees</span>
+        <span class="module-tag">Departments</span>
+        <span class="module-tag">Buyers</span>
+        <span class="module-tag">Industry Segments</span>
+        <span class="module-tag">Warehouses</span>
+        <span class="module-tag">Transporters</span>
+      </div>
+    </div>
+    <div class="module-card" style="width:48%">
+      <div class="module-card-title">Quality</div>
+      <div class="module-features">
+        <span class="module-tag">Inspection Agencies</span>
+        <span class="module-tag">Quality Requirements</span>
+        <span class="module-tag">Certification Types</span>
+        <span class="module-tag">MTC Material Specs</span>
+      </div>
+    </div>
+  </div>
+
+  <h3>3.8 Reports & Dashboards</h3>
+  <table>
+    <tr><th>Report</th><th>Type</th><th>Description</th></tr>
+    <tr><td>Executive Dashboard</td><td><span class="badge badge-blue">Management</span></td><td>Company-wide KPIs, trends, and performance overview</td></tr>
+    <tr><td>Sales Dashboard</td><td><span class="badge badge-blue">Management</span></td><td>Sales metrics, trends, quotation conversion rates</td></tr>
+    <tr><td>Client Status Report</td><td><span class="badge badge-blue">Management</span></td><td>Customer-wise delivery & quality status with PDF export</td></tr>
+    <tr><td>Purchase Dashboard</td><td><span class="badge badge-green">Operations</span></td><td>Procurement KPIs, overdue POs, delivery schedules</td></tr>
+    <tr><td>Inventory Dashboard</td><td><span class="badge badge-green">Operations</span></td><td>Real-time stock levels, warehouse utilization</td></tr>
+    <tr><td>Inventory Ageing</td><td><span class="badge badge-green">Operations</span></td><td>Stock holding periods and slow-moving analysis</td></tr>
+    <tr><td>On-Time Delivery</td><td><span class="badge badge-green">Operations</span></td><td>Delivery compliance and timeline tracking</td></tr>
+    <tr><td>Buyer Performance</td><td><span class="badge badge-amber">Analytics</span></td><td>Procurement staff efficiency metrics</td></tr>
+    <tr><td>Vendor Performance</td><td><span class="badge badge-amber">Analytics</span></td><td>Supplier quality, delivery, and pricing metrics</td></tr>
+    <tr><td>Customer Ageing</td><td><span class="badge badge-amber">Analytics</span></td><td>Accounts receivable ageing and collection tracking</td></tr>
+    <tr><td>NCR Analysis</td><td><span class="badge badge-amber">Analytics</span></td><td>Quality trends, defect patterns, non-conformance rates</td></tr>
+    <tr><td>Inventory Report</td><td><span class="badge badge-green">Operations</span></td><td>Detailed stock listing with Excel export</td></tr>
+  </table>
+
+  <h3>3.9 Administration & Security</h3>
+  <table>
+    <tr><th style="width:35%">Feature</th><th>Description</th></tr>
+    <tr><td>Role-Based Access Control</td><td>8 roles: Super Admin, Admin, Sales, Purchase, QC, Stores, Accounts, Management</td></tr>
+    <tr><td>Multi-Company Support</td><td>Separate data per company with company switching for Super Admin</td></tr>
+    <tr><td>Audit Logging</td><td>Complete audit trail — who changed what, when, from which IP</td></tr>
+    <tr><td>Global Search</td><td>Cross-module search across all documents, heat numbers, parties</td></tr>
+    <tr><td>Real-Time Alerts</td><td>Severity-based alerts (Critical/High/Medium/Low) with role assignment</td></tr>
+    <tr><td>User Management</td><td>Create users, assign roles, manage permissions</td></tr>
+    <tr><td>Financial Year Management</td><td>FY-based document numbering and data segregation</td></tr>
+    <tr><td>Session & Auth Security</td><td>JWT-based authentication, password management, session control</td></tr>
+  </table>
+</div>
+
+<!-- ==================== TECHNOLOGY & COMPETITIVE ANALYSIS ==================== -->
+<div class="page">
+  <div class="doc-header">
+    <div class="doc-header-left"><div class="doc-header-title">ERP Quotation Document</div></div>
+    <div class="doc-header-right">QUOT/ERP/2026/001</div>
+  </div>
+
+  <h2><span class="section-number">4</span> Technology Stack</h2>
+  <table>
+    <tr><th>Layer</th><th>Technology</th><th>Purpose</th></tr>
+    <tr><td>Frontend</td><td>Next.js 16 + React 19 + Tailwind CSS 4</td><td>Modern, responsive UI accessible from any device/browser</td></tr>
+    <tr><td>Backend</td><td>Next.js API Routes (Node.js)</td><td>Secure, scalable server-side logic</td></tr>
+    <tr><td>Database</td><td>PostgreSQL + Prisma ORM</td><td>Enterprise-grade relational database with type-safe queries</td></tr>
+    <tr><td>Authentication</td><td>NextAuth.js (JWT)</td><td>Secure session management with role-based access</td></tr>
+    <tr><td>PDF Engine</td><td>Puppeteer (Headless Chrome)</td><td>Professional-quality PDF generation for all documents</td></tr>
+    <tr><td>Email</td><td>Nodemailer</td><td>Transactional email for quotations, invoices, alerts</td></tr>
+    <tr><td>Hosting</td><td>Cloud (Vercel / AWS)</td><td>99.9% uptime, global CDN, auto-scaling</td></tr>
+    <tr><td>Charts</td><td>Recharts</td><td>Interactive data visualization for dashboards</td></tr>
+    <tr><td>Validation</td><td>Zod + React Hook Form</td><td>Type-safe form validation across all inputs</td></tr>
+  </table>
+
+  <h2><span class="section-number">5</span> Competitive Analysis</h2>
+  <p style="margin-bottom: 12px;">Below is a comparison with existing solutions available in the Indian market:</p>
+
+  <table class="compare-table">
+    <tr>
+      <th>Feature</th>
+      <th>TranZact<br><span style="font-weight:400;font-size:8px;">Rs 16,948/yr</span></th>
+      <th>Vyapar<br><span style="font-weight:400;font-size:8px;">Rs 2,899-3,999/yr</span></th>
+      <th>Tally Prime<br><span style="font-weight:400;font-size:8px;">Rs 18,000+/yr</span></th>
+      <th style="background:#16a34a;">NPS ERP<br><span style="font-weight:400;font-size:8px;">Custom Built</span></th>
+    </tr>
+    <tr><td><strong>Piping Industry Specific</strong></td><td class="cross">&#10007;</td><td class="cross">&#10007;</td><td class="cross">&#10007;</td><td class="check">&#10003;</td></tr>
+    <tr><td>Pipe Spec / Flange Master</td><td class="cross">&#10007;</td><td class="cross">&#10007;</td><td class="cross">&#10007;</td><td class="check">&#10003;</td></tr>
+    <tr><td>Heat Number Traceability</td><td class="cross">&#10007;</td><td class="cross">&#10007;</td><td class="cross">&#10007;</td><td class="check">&#10003;</td></tr>
+    <tr><td>MTC Certificate Management</td><td class="cross">&#10007;</td><td class="cross">&#10007;</td><td class="cross">&#10007;</td><td class="check">&#10003;</td></tr>
+    <tr><td>Third-Party Inspection</td><td class="cross">&#10007;</td><td class="cross">&#10007;</td><td class="cross">&#10007;</td><td class="check">&#10003;</td></tr>
+    <tr><td>NCR / Quality Management</td><td class="cross">&#10007;</td><td class="cross">&#10007;</td><td class="cross">&#10007;</td><td class="check">&#10003;</td></tr>
+    <tr><td>Full ERP Lifecycle (PR to Dispatch)</td><td>Partial</td><td class="cross">&#10007;</td><td class="cross">&#10007;</td><td class="check">&#10003;</td></tr>
+    <tr><td>Quotation Management</td><td class="check">&#10003;</td><td>Basic</td><td class="cross">&#10007;</td><td class="check">&#10003;</td></tr>
+    <tr><td>Purchase Management (PR/RFQ/CS/PO)</td><td>Partial</td><td>Basic PO</td><td class="cross">&#10007;</td><td class="check">&#10003;</td></tr>
+    <tr><td>Inventory Management</td><td class="check">&#10003;</td><td>Basic</td><td>Basic</td><td class="check">&#10003;</td></tr>
+    <tr><td>GST E-Invoicing</td><td class="check">&#10003;</td><td class="check">&#10003;</td><td class="check">&#10003;</td><td class="check">&#10003;</td></tr>
+    <tr><td>Multi-Company Support</td><td class="cross">&#10007;</td><td>Up to 3</td><td>Add-on</td><td class="check">&#10003;</td></tr>
+    <tr><td>Cloud / Web-Based</td><td class="check">&#10003;</td><td class="cross">&#10007;</td><td class="cross">&#10007;</td><td class="check">&#10003;</td></tr>
+    <tr><td>Unlimited Users</td><td class="check">&#10003;</td><td class="cross">&#10007;</td><td>Per License</td><td class="check">&#10003;</td></tr>
+    <tr><td>Role-Based Access (8 roles)</td><td>Basic</td><td class="cross">&#10007;</td><td>Basic</td><td class="check">&#10003;</td></tr>
+    <tr><td>Custom PDF Templates</td><td>Generic</td><td>Generic</td><td>Generic</td><td class="check">&#10003;</td></tr>
+    <tr><td>Auto PR from SO Shortfall</td><td class="cross">&#10007;</td><td class="cross">&#10007;</td><td class="cross">&#10007;</td><td class="check">&#10003;</td></tr>
+    <tr><td>Dispatch Dossier</td><td class="cross">&#10007;</td><td class="cross">&#10007;</td><td class="cross">&#10007;</td><td class="check">&#10003;</td></tr>
+    <tr><td>Customizable for Your Business</td><td class="cross">&#10007;</td><td class="cross">&#10007;</td><td class="cross">&#10007;</td><td class="check">&#10003;</td></tr>
+  </table>
+
+  <div class="info-box">
+    <strong>Bottom Line:</strong> Generic ERP tools cover only 20-30% of what a piping/tubular trading company needs. The remaining 70% — heat traceability, MTC management, inspection workflows, pipe specifications, dispatch dossiers — requires either expensive customization of SAP/Oracle (Rs 30-80 Lakhs) or a purpose-built solution like this one.
+  </div>
+</div>
+
+<!-- ==================== COMMERCIAL QUOTATION ==================== -->
+<div class="page">
+  <div class="doc-header">
+    <div class="doc-header-left"><div class="doc-header-title">ERP Quotation Document</div></div>
+    <div class="doc-header-right">QUOT/ERP/2026/001</div>
+  </div>
+
+  <h2><span class="section-number">6</span> Commercial Quotation</h2>
+
+  <div class="pricing-card">
+    <div class="pricing-card-header">
+      <div class="price-sub">One-Time Software Delivery</div>
+      <div class="price">Rs 60,000/-</div>
+      <div class="price-sub">Sixty Thousand Rupees Only (Exclusive of GST)</div>
+    </div>
+    <div class="pricing-card-body">
+      <table>
+        <tr><th style="width:8%">Sr.</th><th style="width:52%">Deliverable</th><th style="width:20%">Details</th><th style="width:20%; text-align:right;">Amount (Rs)</th></tr>
+        <tr>
+          <td>1</td>
+          <td>ERP Software — All 8 Modules<br><span style="font-size:9px;color:#64748b;">Sales, Purchase, Inventory, Quality, Dispatch, Finance, Masters, Admin</span></td>
+          <td><span class="badge badge-green">Delivered</span></td>
+          <td style="text-align:right;">Included</td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td>24 Document Types with Auto-Numbering<br><span style="font-size:9px;color:#64748b;">Quotation, SO, PO, GRN, Invoice, MTC, NCR, Dispatch Note, etc.</span></td>
+          <td>FY-aware numbering</td>
+          <td style="text-align:right;">Included</td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td>9 Professional PDF Templates<br><span style="font-size:9px;color:#64748b;">Quotation, PO, Invoice, Packing List, MTC Certificate, etc.</span></td>
+          <td>Company branded</td>
+          <td style="text-align:right;">Included</td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td>12+ Reports & Dashboards<br><span style="font-size:9px;color:#64748b;">Executive, Sales, Purchase, Inventory, Quality, Vendor, Buyer performance</span></td>
+          <td>With Excel export</td>
+          <td style="text-align:right;">Included</td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td>Deployment & Configuration<br><span style="font-size:9px;color:#64748b;">Cloud server setup, domain, SSL, database configuration</span></td>
+          <td>Production-ready</td>
+          <td style="text-align:right;">Included</td>
+        </tr>
+        <tr>
+          <td>6</td>
+          <td>User Training & Onboarding<br><span style="font-size:9px;color:#64748b;">Admin setup, user creation, workflow walkthrough</span></td>
+          <td>Remote sessions</td>
+          <td style="text-align:right;">Included</td>
+        </tr>
+        <tr>
+          <td>7</td>
+          <td>Master Data Setup Assistance<br><span style="font-size:9px;color:#64748b;">Initial customer, vendor, product, spec data entry support</span></td>
+          <td>One-time</td>
+          <td style="text-align:right;">Included</td>
+        </tr>
+        <tr class="total-row">
+          <td colspan="3" style="text-align:right;">Total One-Time Cost</td>
+          <td style="text-align:right;">Rs 60,000/-</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <h2><span class="section-number">7</span> Annual Maintenance Contract (AMC)</h2>
+
+  <div class="info-box">
+    <strong>Note:</strong> AMC is mandatory starting from the second month of go-live. The first month post-deployment is covered as a complimentary support period.
+  </div>
+
+  <table>
+    <tr><th style="width:8%">Sr.</th><th style="width:52%">AMC Coverage</th><th style="width:20%">Frequency</th><th style="width:20%; text-align:right;">Amount (Rs)</th></tr>
+    <tr>
+      <td>1</td>
+      <td>Bug Fixes & Issue Resolution<br><span style="font-size:9px;color:#64748b;">Fix any bugs, errors, or issues in existing functionality</span></td>
+      <td>As needed</td>
+      <td style="text-align:right;" rowspan="6"><strong style="font-size:16px;">8,000<br><span style="font-size:9px;font-weight:400;">/month</span></strong></td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>Server & Infrastructure Monitoring<br><span style="font-size:9px;color:#64748b;">Uptime monitoring, database maintenance, backup management</span></td>
+      <td>Continuous</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>Security Updates & Patches<br><span style="font-size:9px;color:#64748b;">Framework updates, dependency patches, security fixes</span></td>
+      <td>Monthly</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>Database Backup Management<br><span style="font-size:9px;color:#64748b;">Daily automated backups with disaster recovery</span></td>
+      <td>Daily</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>Minor Enhancements<br><span style="font-size:9px;color:#64748b;">Small UI tweaks, field additions, minor workflow adjustments</span></td>
+      <td>Up to 4 hrs/month</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td>Technical Support<br><span style="font-size:9px;color:#64748b;">Email & phone support during business hours</span></td>
+      <td>Mon-Sat</td>
+    </tr>
+    <tr class="subtotal-row">
+      <td colspan="3" style="text-align:right;">Monthly AMC</td>
+      <td style="text-align:right;">Rs 8,000/month</td>
+    </tr>
+    <tr class="total-row">
+      <td colspan="3" style="text-align:right;">Annual AMC (12 months)</td>
+      <td style="text-align:right;">Rs 96,000/year</td>
+    </tr>
+  </table>
+
+  <div style="margin-top:12px;">
+    <strong>Enhancement Requests (Beyond AMC scope):</strong>
+    <table style="margin-top:6px;">
+      <tr><th>Type</th><th>Rate</th><th>Description</th></tr>
+      <tr><td>New Feature / Module</td><td>Rs 2,500/hour</td><td>New modules, major features, integrations</td></tr>
+      <tr><td>Custom Report</td><td>Rs 5,000 - 15,000</td><td>Per report depending on complexity</td></tr>
+      <tr><td>Third-Party Integration</td><td>On estimate</td><td>Tally, payment gateways, shipping APIs, etc.</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ==================== TERMS & CONDITIONS ==================== -->
+<div class="page">
+  <div class="doc-header">
+    <div class="doc-header-left"><div class="doc-header-title">ERP Quotation Document</div></div>
+    <div class="doc-header-right">QUOT/ERP/2026/001</div>
+  </div>
+
+  <h2><span class="section-number">8</span> Terms & Conditions</h2>
+
+  <h3>8.1 Payment Terms</h3>
+  <ol class="terms-list">
+    <li>One-time software delivery fee of Rs 60,000/- is payable upon acceptance of this quotation.</li>
+    <li>AMC charges of Rs 8,000/month are payable monthly in advance, starting from the second month of go-live.</li>
+    <li>All amounts are exclusive of GST (18% applicable).</li>
+    <li>Enhancement requests will be estimated and billed separately upon client approval.</li>
+    <li>Payment mode: Bank Transfer / UPI. Invoice will be raised prior to payment.</li>
+  </ol>
+
+  <h3>8.2 Software Licensing</h3>
+  <ol class="terms-list">
+    <li>This is a <strong>software license agreement</strong>, not a source code sale. The source code remains the intellectual property of the developer.</li>
+    <li>The client is granted an <strong>unlimited, non-transferable license</strong> to use the software for their business operations.</li>
+    <li>The license covers <strong>unlimited users</strong> within the client's organization.</li>
+    <li>The software may not be resold, sublicensed, or provided to third parties.</li>
+    <li>Source code handover, if required, will be quoted separately.</li>
+  </ol>
+
+  <h3>8.3 Support & SLA</h3>
+  <ol class="terms-list">
+    <li><strong>First month:</strong> Complimentary support post go-live (bug fixes, setup assistance, training).</li>
+    <li><strong>Response time:</strong> Critical issues within 4 hours, non-critical within 24 hours (business days).</li>
+    <li><strong>Support hours:</strong> Monday to Saturday, 10:00 AM to 7:00 PM IST.</li>
+    <li><strong>Uptime target:</strong> 99.5% monthly uptime for cloud-hosted infrastructure.</li>
+    <li><strong>Backup:</strong> Daily automated backups with 30-day retention.</li>
+  </ol>
+
+  <h3>8.4 Hosting & Infrastructure</h3>
+  <ol class="terms-list">
+    <li>The system will be hosted on cloud infrastructure (Vercel / AWS) managed by the developer.</li>
+    <li>Hosting costs are included in the AMC for standard usage. Excessive data/traffic beyond normal operations may incur additional charges (communicated in advance).</li>
+    <li>Domain and SSL certificate management is included.</li>
+    <li>The client is responsible for providing a stable internet connection for system access.</li>
+  </ol>
+
+  <h3>8.5 Quotation Validity</h3>
+  <ol class="terms-list">
+    <li>This quotation is valid for <strong>30 days</strong> from the date of issue (27th March, 2026).</li>
+    <li>Prices are subject to revision after the validity period.</li>
+    <li>AMC rates may be revised annually with 30 days prior notice.</li>
+  </ol>
+
+  <h3>8.6 Confidentiality</h3>
+  <ol class="terms-list">
+    <li>All business data entered into the system remains the exclusive property of the client.</li>
+    <li>The developer shall maintain strict confidentiality of all client data.</li>
+    <li>Data will not be shared with any third party without written consent.</li>
+    <li>Upon termination, client data will be exported and provided, then securely deleted from servers.</li>
+  </ol>
+
+  <h3>8.7 Termination</h3>
+  <ol class="terms-list">
+    <li>Either party may terminate the AMC with 30 days written notice.</li>
+    <li>Upon AMC termination, the developer is not liable for bug fixes, updates, or server management.</li>
+    <li>The one-time software delivery fee is non-refundable once the system is delivered and accepted.</li>
+  </ol>
+</div>
+
+<!-- ==================== SUMMARY & ACCEPTANCE ==================== -->
+<div class="page">
+  <div class="doc-header">
+    <div class="doc-header-left"><div class="doc-header-title">ERP Quotation Document</div></div>
+    <div class="doc-header-right">QUOT/ERP/2026/001</div>
+  </div>
+
+  <h2><span class="section-number">9</span> Investment Summary</h2>
+
+  <div class="highlight-box">
+    <table style="width:100%;color:#fff;">
+      <tr><td style="border:none;padding:4px 0;"><strong>One-Time Software Delivery</strong></td><td style="border:none;padding:4px 0;text-align:right;font-size:16px;font-weight:700;">Rs 60,000/-</td></tr>
+      <tr><td style="border:none;padding:4px 0;">Monthly AMC (from Month 2)</td><td style="border:none;padding:4px 0;text-align:right;">Rs 8,000/month</td></tr>
+      <tr><td style="border:none;padding:4px 0;">Annual AMC Cost</td><td style="border:none;padding:4px 0;text-align:right;">Rs 96,000/year</td></tr>
+      <tr><td style="border:none;padding:12px 0 4px;border-top:1px solid rgba(255,255,255,0.2);"><strong style="color:#93c5fd;">First Year Total (incl. AMC from Month 2)</strong></td><td style="border:none;padding:12px 0 4px;text-align:right;font-size:18px;font-weight:800;border-top:1px solid rgba(255,255,255,0.2);color:#93c5fd;">Rs 1,48,000/-</td></tr>
+      <tr><td style="border:none;padding:4px 0;font-size:9px;color:#94a3b8;" colspan="2">* All amounts exclusive of GST @ 18%</td></tr>
+    </table>
+  </div>
+
+  <div class="info-box">
+    <strong>For comparison:</strong> SAP Business One for a similar scope costs Rs 30-80 Lakhs + annual licensing. TranZact at Rs 16,948/year provides only 20-30% of the features with zero piping industry capabilities. This solution delivers enterprise-grade ERP at less than <strong>1% of SAP cost</strong>.
+  </div>
+
+  <h2><span class="section-number">10</span> Acceptance</h2>
+  <p style="margin-bottom:20px;">By signing below, the client acknowledges and accepts the terms, scope, and pricing outlined in this quotation document.</p>
+
+  <div class="signature-section">
+    <div class="signature-block">
+      <div class="signature-line">For: Developer</div>
+      <div class="signature-label">Authorized Signatory</div>
+      <br>
+      <div class="signature-label">Name: ________________________</div>
+      <br>
+      <div class="signature-label">Date: ________________________</div>
+    </div>
+    <div class="signature-block">
+      <div class="signature-line">For: NPS Piping Solutions</div>
+      <div class="signature-label">Authorized Signatory</div>
+      <br>
+      <div class="signature-label">Name: ________________________</div>
+      <br>
+      <div class="signature-label">Date: ________________________</div>
+      <br>
+      <div class="signature-label">Company Stamp</div>
+    </div>
+  </div>
+
+  <div class="doc-footer">
+    <span>QUOT/ERP/2026/001 | Confidential</span>
+    <span>Generated on 27th March, 2026</span>
+  </div>
+</div>
+
+</body>
+</html>

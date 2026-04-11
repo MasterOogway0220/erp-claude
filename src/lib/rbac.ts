@@ -218,8 +218,45 @@ async function getActiveCompanyId(session: any): Promise<string | null> {
 }
 
 /**
+ * Maps RBAC module keys to the sidebar moduleKey values used in
+ * EmployeeMaster.moduleAccess. Multiple RBAC modules can map to
+ * the same sidebar key (e.g. purchaseRequisition → "purchase").
+ */
+const MODULE_TO_ACCESS_KEY: Record<string, string> = {
+  quotation: "quotation",
+  salesOrder: "sales",
+  clientPO: "sales",
+  poAcceptance: "sales",
+  customerContacts: "sales",
+  purchaseRequisition: "purchase",
+  purchaseOrder: "purchase",
+  grn: "inventory",
+  inventory: "inventory",
+  stockIssue: "inventory",
+  inspection: "quality",
+  inspectionOffer: "quality",
+  qcRelease: "quality",
+  ncr: "quality",
+  mtc: "quality",
+  qualityRequirement: "quality",
+  labLetter: "quality",
+  labReport: "quality",
+  packingList: "dispatch",
+  dispatchNote: "dispatch",
+  warehouseIntimation: "dispatch",
+  invoice: "finance",
+  payment: "finance",
+  masters: "masters",
+  reports: "reports",
+  dispatch: "dispatch",
+  // admin & alerts have no moduleKey — accessible to all authenticated users with the right role
+};
+
+/**
  * Check if user has access to a module action.
- * Returns session and companyId if authorized.
+ * Enforces both role-based access (MODULE_ACCESS matrix) and
+ * per-employee module access (EmployeeMaster.moduleAccess).
+ * SUPER_ADMIN and ADMIN bypass the moduleAccess check.
  */
 export async function checkAccess(
   module: keyof typeof MODULE_ACCESS,
@@ -259,6 +296,28 @@ export async function checkAccess(
         { status: 403 }
       ),
     };
+  }
+
+  // moduleAccess enforcement for non-admin roles
+  const isAdminOrAbove = userRole === "SUPER_ADMIN" || userRole === "ADMIN";
+  if (!isAdminOrAbove) {
+    const accessKey = MODULE_TO_ACCESS_KEY[module];
+    const userModuleAccess: string[] = session.user?.moduleAccess || [];
+
+    // If a moduleAccess key exists for this module and the user has a moduleAccess
+    // list (i.e. they are an employee), enforce it
+    if (accessKey && userModuleAccess.length > 0 && !userModuleAccess.includes(accessKey)) {
+      return {
+        authorized: false,
+        session,
+        response: NextResponse.json(
+          {
+            error: `Access denied. You do not have access to the ${accessKey} module.`,
+          },
+          { status: 403 }
+        ),
+      };
+    }
   }
 
   const companyId = await getActiveCompanyId(session);

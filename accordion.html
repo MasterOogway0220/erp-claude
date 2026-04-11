@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modern Accordion</title>
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      padding: 2rem;
+    }
+
+    .accordion-wrapper {
+      width: 100%;
+      max-width: 720px;
+    }
+
+    .accordion-wrapper h1 {
+      text-align: center;
+      color: #fff;
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 2rem;
+      letter-spacing: -0.5px;
+    }
+
+    .accordion-item {
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      margin-bottom: 12px;
+      overflow: hidden;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .accordion-item:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .accordion-item.active {
+      border-color: rgba(124, 96, 255, 0.5);
+      box-shadow: 0 8px 32px rgba(124, 96, 255, 0.15);
+    }
+
+    .accordion-header {
+      width: 100%;
+      background: none;
+      border: none;
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      color: #e0e0e0;
+      font-size: 1.05rem;
+      font-weight: 600;
+      text-align: left;
+      transition: color 0.3s ease;
+      gap: 1rem;
+    }
+
+    .accordion-header:hover {
+      color: #fff;
+    }
+
+    .accordion-item.active .accordion-header {
+      color: #c4b5fd;
+    }
+
+    .accordion-header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    .accordion-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, rgba(124, 96, 255, 0.3), rgba(168, 85, 247, 0.3));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+      transition: background 0.3s ease, transform 0.3s ease;
+    }
+
+    .accordion-item.active .accordion-icon {
+      background: linear-gradient(135deg, #7c60ff, #a855f7);
+      transform: scale(1.05);
+    }
+
+    .accordion-chevron {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .accordion-chevron svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      stroke-width: 2.5;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .accordion-item.active .accordion-chevron {
+      transform: rotate(180deg);
+    }
+
+    .accordion-body {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+                  padding 0.35s ease;
+    }
+
+    .accordion-item.active .accordion-body {
+      max-height: 500px;
+    }
+
+    .accordion-content {
+      padding: 0 1.5rem 1.5rem 1.5rem;
+      color: #b0aec4;
+      font-size: 0.95rem;
+      line-height: 1.7;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      padding-top: 1.25rem;
+      margin-top: 0;
+    }
+
+    .accordion-content p {
+      margin-bottom: 0.75rem;
+    }
+
+    .accordion-content p:last-child {
+      margin-bottom: 0;
+    }
+
+    .accordion-content ul {
+      list-style: none;
+      padding-left: 0;
+      margin-top: 0.5rem;
+    }
+
+    .accordion-content ul li {
+      position: relative;
+      padding-left: 1.25rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .accordion-content ul li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0.55em;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #7c60ff, #a855f7);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: rgba(124, 96, 255, 0.2);
+      color: #c4b5fd;
+      margin-left: 0.5rem;
+      vertical-align: middle;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 1rem;
+      }
+
+      .accordion-wrapper h1 {
+        font-size: 1.5rem;
+      }
+
+      .accordion-header {
+        padding: 1rem 1.15rem;
+        font-size: 0.95rem;
+      }
+
+      .accordion-content {
+        padding: 0 1.15rem 1.15rem 1.15rem;
+        font-size: 0.9rem;
+      }
+
+      .accordion-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 1rem;
+        border-radius: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="accordion-wrapper">
+    <h1>Frequently Asked Questions</h1>
+
+    <div class="accordion-item active">
+      <button class="accordion-header" aria-expanded="true">
+        <span class="accordion-header-left">
+          <span class="accordion-icon">&#x1f680;</span>
+          <span>What is this accordion component?</span>
+        </span>
+        <span class="accordion-chevron">
+          <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </span>
+      </button>
+      <div class="accordion-body">
+        <div class="accordion-content">
+          <p>This is a modern, fully functional accordion built with pure HTML, CSS, and vanilla JavaScript. It features smooth animations, glassmorphism styling, and full keyboard accessibility.</p>
+          <ul>
+            <li>No external libraries required</li>
+            <li>Responsive across all devices</li>
+            <li>Smooth open/close transitions</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-item">
+      <button class="accordion-header" aria-expanded="false">
+        <span class="accordion-header-left">
+          <span class="accordion-icon">&#x2728;</span>
+          <span>What features does it include? <span class="badge">New</span></span>
+        </span>
+        <span class="accordion-chevron">
+          <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </span>
+      </button>
+      <div class="accordion-body">
+        <div class="accordion-content">
+          <p>This accordion comes packed with modern UI features out of the box:</p>
+          <ul>
+            <li>Glassmorphism design with frosted-glass effect</li>
+            <li>Smooth cubic-bezier animations for open and close</li>
+            <li>Animated chevron rotation indicator</li>
+            <li>Active state highlighting with purple glow</li>
+            <li>Keyboard navigation support (Enter &amp; Space)</li>
+            <li>ARIA attributes for screen readers</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-item">
+      <button class="accordion-header" aria-expanded="false">
+        <span class="accordion-header-left">
+          <span class="accordion-icon">&#x1f3a8;</span>
+          <span>Can I customize the colors?</span>
+        </span>
+        <span class="accordion-chevron">
+          <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </span>
+      </button>
+      <div class="accordion-body">
+        <div class="accordion-content">
+          <p>Absolutely! The color scheme uses a purple-violet gradient palette that you can easily modify. The key color values to change are:</p>
+          <ul>
+            <li>Background gradient on the body element</li>
+            <li>Accent color <code style="color:#c4b5fd; background:rgba(124,96,255,0.15); padding:0.1rem 0.4rem; border-radius:4px;">#7c60ff</code> used for highlights</li>
+            <li>Glass panel background opacity and blur values</li>
+            <li>Border colors and glow shadow values</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-item">
+      <button class="accordion-header" aria-expanded="false">
+        <span class="accordion-header-left">
+          <span class="accordion-icon">&#x1f4f1;</span>
+          <span>Is it mobile responsive?</span>
+        </span>
+        <span class="accordion-chevron">
+          <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </span>
+      </button>
+      <div class="accordion-body">
+        <div class="accordion-content">
+          <p>Yes, the accordion is fully responsive. It adapts to all screen sizes with adjusted padding, font sizes, and icon dimensions on smaller screens. The glassmorphism effect works beautifully on both desktop and mobile browsers.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-item">
+      <button class="accordion-header" aria-expanded="false">
+        <span class="accordion-header-left">
+          <span class="accordion-icon">&#x26a1;</span>
+          <span>How does the toggle behavior work?</span>
+        </span>
+        <span class="accordion-chevron">
+          <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </span>
+      </button>
+      <div class="accordion-body">
+        <div class="accordion-content">
+          <p>The accordion uses a single-open mode by default, meaning only one panel can be expanded at a time. When you click a new panel, the previously open one closes automatically with a smooth animation. Clicking an already open panel will close it.</p>
+          <p>The transition uses <code style="color:#c4b5fd; background:rgba(124,96,255,0.15); padding:0.1rem 0.4rem; border-radius:4px;">max-height</code> with a cubic-bezier easing for a natural, fluid motion.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-item">
+      <button class="accordion-header" aria-expanded="false">
+        <span class="accordion-header-left">
+          <span class="accordion-icon">&#x1f512;</span>
+          <span>Is it accessible?</span>
+        </span>
+        <span class="accordion-chevron">
+          <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </span>
+      </button>
+      <div class="accordion-body">
+        <div class="accordion-content">
+          <p>Accessibility is built in from the ground up:</p>
+          <ul>
+            <li>Semantic button elements for keyboard focus</li>
+            <li><code style="color:#c4b5fd; background:rgba(124,96,255,0.15); padding:0.1rem 0.4rem; border-radius:4px;">aria-expanded</code> attributes toggle dynamically</li>
+            <li>Full keyboard support with Enter and Space keys</li>
+            <li>Visible focus indicators for keyboard navigation</li>
+            <li>Proper contrast ratios for all text elements</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const items = document.querySelectorAll('.accordion-item');
+
+      items.forEach(item => {
+        const header = item.querySelector('.accordion-header');
+
+        header.addEventListener('click', () => {
+          const isActive = item.classList.contains('active');
+
+          // Close all items
+          items.forEach(i => {
+            i.classList.remove('active');
+            i.querySelector('.accordion-header').setAttribute('aria-expanded', 'false');
+          });
+
+          // Open clicked item if it wasn't already open
+          if (!isActive) {
+            item.classList.add('active');
+            header.setAttribute('aria-expanded', 'true');
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>

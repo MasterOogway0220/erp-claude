@@ -64,6 +64,22 @@ export async function GET(
                 },
               },
             },
+            details: {
+              orderBy: { sNo: "asc" as const },
+              select: {
+                id: true,
+                sNo: true,
+                lengthMtr: true,
+                pieces: true,
+                make: true,
+                heatNo: true,
+                mtcNo: true,
+                mtcDate: true,
+                inventoryStockId: true,
+                remarks: true,
+                status: true,
+              },
+            },
           },
           orderBy: { sNo: "asc" },
         },
@@ -74,7 +90,19 @@ export async function GET(
       return NextResponse.json({ error: "Warehouse intimation not found" }, { status: 404 });
     }
 
-    return NextResponse.json(intimation);
+    // Transform items to include details with Decimal conversion
+    const transformedIntimation = {
+      ...intimation,
+      items: (intimation as any).items?.map((item: any) => ({
+        ...item,
+        details: item.details?.map((d: any) => ({
+          ...d,
+          lengthMtr: d.lengthMtr ? Number(d.lengthMtr) : null,
+        })) || [],
+      })) || [],
+    };
+
+    return NextResponse.json(transformedIntimation);
   } catch (error) {
     console.error("Error fetching warehouse intimation:", error);
     return NextResponse.json({ error: "Failed to fetch warehouse intimation" }, { status: 500 });

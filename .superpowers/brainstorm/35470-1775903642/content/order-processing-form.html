@@ -1,0 +1,185 @@
+<h2>Order Processing Form Layout</h2>
+<p class="subtitle">How should the item-wise processing form be structured?</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Accordion per Item</h3>
+      <div class="mockup" style="margin-top:12px">
+        <div class="mockup-header">Process Order — SO-2026-00142</div>
+        <div class="mockup-body" style="padding:16px;font-size:12px">
+          <!-- Item 1 expanded -->
+          <div style="border:1px solid #3b82f6;border-radius:8px;margin-bottom:8px">
+            <div style="background:#eff6ff;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;border-radius:8px 8px 0 0;cursor:pointer">
+              <div>
+                <span style="font-weight:700;color:#1e40af">Item 1:</span>
+                <span style="color:#334155"> SS 304 Seamless Pipe — 2" NB Sch 40</span>
+              </div>
+              <span style="color:#3b82f6">▼</span>
+            </div>
+            <div style="padding:14px">
+              <!-- Row 1: PO refs -->
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:12px">
+                <div>
+                  <div style="font-size:10px;color:#64748b;margin-bottom:2px">S.No as per PO</div>
+                  <input style="width:100%;padding:4px 8px;border:1px solid #cbd5e1;border-radius:4px" value="1">
+                </div>
+                <div>
+                  <div style="font-size:10px;color:#64748b;margin-bottom:2px">Item Code as per PO</div>
+                  <input style="width:100%;padding:4px 8px;border:1px solid #cbd5e1;border-radius:4px" value="SS304-2NB-S40">
+                </div>
+                <div>
+                  <div style="font-size:10px;color:#64748b;margin-bottom:2px">Colour Coding</div>
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <input type="checkbox" checked> <span>Yes</span>
+                    <input style="flex:1;padding:4px 8px;border:1px solid #cbd5e1;border-radius:4px" value="Blue band">
+                  </div>
+                </div>
+                <div>
+                  <div style="font-size:10px;color:#64748b;margin-bottom:2px">Additional Spec (stencil)</div>
+                  <input style="width:100%;padding:4px 8px;border:1px solid #cbd5e1;border-radius:4px" placeholder="e.g. NACE MR0175">
+                </div>
+              </div>
+              <!-- Outsourced Processes -->
+              <div style="background:#f8fafc;border-radius:6px;padding:10px;margin-bottom:12px">
+                <div style="font-weight:600;font-size:11px;color:#475569;margin-bottom:8px">OUTSOURCED PROCESSES</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                  <label style="display:flex;align-items:center;gap:6px"><input type="checkbox"> Hot Dip Galvanising</label>
+                  <label style="display:flex;align-items:center;gap:6px"><input type="checkbox"> Screwed Ends</label>
+                  <div>
+                    <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" checked> Coating</label>
+                    <div style="margin-left:22px;display:flex;gap:6px;margin-top:4px">
+                      <input style="flex:1;padding:3px 6px;border:1px solid #cbd5e1;border-radius:4px;font-size:11px" placeholder="Type" value="Epoxy">
+                      <select style="padding:3px 6px;border:1px solid #cbd5e1;border-radius:4px;font-size:11px"><option>Inside</option><option>Outside</option><option selected>Both</option></select>
+                    </div>
+                  </div>
+                  <div>
+                    <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" checked> Third Party Inspection</label>
+                    <div style="margin-left:22px;margin-top:4px">
+                      <select style="width:100%;padding:3px 6px;border:1px solid #cbd5e1;border-radius:4px;font-size:11px">
+                        <option selected>Inspection under TPI/Client QA</option>
+                        <option>Inspection by Inhouse QA</option>
+                      </select>
+                    </div>
+                  </div>
+                  <label style="display:flex;align-items:center;gap:6px"><input type="checkbox"> Lab Testing</label>
+                  <div>
+                    <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" checked> PMI Inspection</label>
+                    <div style="margin-left:22px;margin-top:4px">
+                      <select style="width:100%;padding:3px 6px;border:1px solid #cbd5e1;border-radius:4px;font-size:11px"><option>Internal</option><option selected>Under Witness</option><option>Both</option></select>
+                    </div>
+                  </div>
+                  <div>
+                    <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" checked> NDT Inspection</label>
+                    <div style="margin-left:22px;display:flex;gap:4px;margin-top:4px;flex-wrap:wrap">
+                      <label style="font-size:11px;display:flex;align-items:center;gap:3px"><input type="checkbox" checked> DP Test</label>
+                      <label style="font-size:11px;display:flex;align-items:center;gap:3px"><input type="checkbox"> MP Test</label>
+                      <label style="font-size:11px;display:flex;align-items:center;gap:3px"><input type="checkbox" checked> UT Test</label>
+                      <label style="font-size:11px;display:flex;align-items:center;gap:3px"><input type="checkbox"> Radiography</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!-- TPI Parameters (shown because TPI/Client QA selected) -->
+              <div style="background:#fef9ee;border:1px solid #fde68a;border-radius:6px;padding:10px">
+                <div style="font-weight:600;font-size:11px;color:#92400e;margin-bottom:8px">TPI / CLIENT QA — INSPECTION PARAMETERS</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+                  <div>
+                    <div style="font-size:10px;color:#64748b;margin-bottom:2px">VDI Inspection</div>
+                    <div style="display:flex;gap:6px;align-items:center">
+                      <input type="checkbox" checked> <span style="font-size:11px">Required</span>
+                      <input style="width:60px;padding:3px 6px;border:1px solid #cbd5e1;border-radius:4px;font-size:11px" value="100" placeholder="%">
+                      <span style="font-size:11px;color:#64748b">% witness</span>
+                    </div>
+                  </div>
+                  <div>
+                    <div style="font-size:10px;color:#64748b;margin-bottom:2px">Hydro Test</div>
+                    <div style="display:flex;gap:6px;align-items:center">
+                      <input type="checkbox" checked> <span style="font-size:11px">Required</span>
+                      <input style="width:60px;padding:3px 6px;border:1px solid #cbd5e1;border-radius:4px;font-size:11px" value="50" placeholder="%">
+                      <span style="font-size:11px;color:#64748b">% witness</span>
+                    </div>
+                  </div>
+                </div>
+                <div style="font-size:10px;color:#64748b;margin-bottom:4px">Lab Tests Required</div>
+                <div style="display:flex;flex-wrap:wrap;gap:6px">
+                  <label style="font-size:11px;display:flex;align-items:center;gap:3px;background:#fff;padding:2px 8px;border-radius:4px;border:1px solid #e2e8f0"><input type="checkbox" checked> Chemical</label>
+                  <label style="font-size:11px;display:flex;align-items:center;gap:3px;background:#fff;padding:2px 8px;border-radius:4px;border:1px solid #e2e8f0"><input type="checkbox" checked> Tensile</label>
+                  <label style="font-size:11px;display:flex;align-items:center;gap:3px;background:#fff;padding:2px 8px;border-radius:4px;border:1px solid #e2e8f0"><input type="checkbox"> Bend</label>
+                  <label style="font-size:11px;display:flex;align-items:center;gap:3px;background:#fff;padding:2px 8px;border-radius:4px;border:1px solid #e2e8f0"><input type="checkbox"> Flattening</label>
+                  <label style="font-size:11px;display:flex;align-items:center;gap:3px;background:#fff;padding:2px 8px;border-radius:4px;border:1px solid #e2e8f0"><input type="checkbox"> Flaring</label>
+                  <label style="font-size:11px;display:flex;align-items:center;gap:3px;background:#fff;padding:2px 8px;border-radius:4px;border:1px solid #e2e8f0"><input type="checkbox"> IGC 'E'</label>
+                  <label style="font-size:11px;display:flex;align-items:center;gap:3px;background:#fff;padding:2px 8px;border-radius:4px;border:1px solid #e2e8f0"><input type="checkbox"> IGC 'E' 20X-250X</label>
+                  <label style="font-size:11px;display:flex;align-items:center;gap:3px;background:#fff;padding:2px 8px;border-radius:4px;border:1px solid #e2e8f0"><input type="checkbox" checked> Hardness</label>
+                  <label style="font-size:11px;display:flex;align-items:center;gap:3px;background:#fff;padding:2px 8px;border-radius:4px;border:1px solid #e2e8f0"><input type="checkbox"> Impact</label>
+                  <label style="font-size:11px;display:flex;align-items:center;gap:3px;background:#fff;padding:2px 8px;border-radius:4px;border:1px solid #e2e8f0"><input type="checkbox"> Macro (Seamless)</label>
+                  <label style="font-size:11px;display:flex;align-items:center;gap:3px;background:#fff;padding:2px 8px;border-radius:4px;border:1px solid #e2e8f0"><input type="checkbox"> Micro</label>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Item 2 collapsed -->
+          <div style="border:1px solid #e2e8f0;border-radius:8px;margin-bottom:8px">
+            <div style="background:#f8fafc;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;border-radius:8px;cursor:pointer">
+              <div>
+                <span style="font-weight:700;color:#475569">Item 2:</span>
+                <span style="color:#334155"> SS 316L Seamless Pipe — 3" NB Sch 80</span>
+                <span style="margin-left:8px;background:#dcfce7;color:#166534;padding:1px 8px;border-radius:10px;font-size:10px">Configured</span>
+              </div>
+              <span style="color:#94a3b8">▶</span>
+            </div>
+          </div>
+          <!-- Item 3 collapsed -->
+          <div style="border:1px solid #e2e8f0;border-radius:8px;margin-bottom:8px">
+            <div style="background:#f8fafc;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;border-radius:8px;cursor:pointer">
+              <div>
+                <span style="font-weight:700;color:#475569">Item 3:</span>
+                <span style="color:#334155"> CS A106 Gr.B ERW Pipe — 4" NB Sch 40</span>
+                <span style="margin-left:8px;background:#fef9c3;color:#854d0e;padding:1px 8px;border-radius:10px;font-size:10px">Pending</span>
+              </div>
+              <span style="color:#94a3b8">▶</span>
+            </div>
+          </div>
+          <!-- Actions -->
+          <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;padding-top:12px;border-top:1px solid #e2e8f0">
+            <button style="padding:6px 16px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;font-size:12px;cursor:pointer">Save Draft</button>
+            <button style="padding:6px 16px;border:none;border-radius:6px;background:#2563eb;color:#fff;font-size:12px;cursor:pointer">Complete Processing</button>
+          </div>
+        </div>
+      </div>
+      <p style="margin-top:8px;font-size:13px">Each item is an expandable accordion. Click to expand and configure. Shows "Configured"/"Pending" badge. All fields for one item are visible when expanded. Good for 3-10 items.</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Stepper / Wizard</h3>
+      <div class="mockup" style="margin-top:12px">
+        <div class="mockup-header">Process Order — SO-2026-00142</div>
+        <div class="mockup-body" style="padding:16px;font-size:12px">
+          <!-- Step indicator -->
+          <div style="display:flex;align-items:center;gap:4px;margin-bottom:16px">
+            <div style="width:28px;height:28px;border-radius:50%;background:#dcfce7;color:#166534;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px">✓</div>
+            <div style="height:2px;flex:1;background:#22c55e"></div>
+            <div style="width:28px;height:28px;border-radius:50%;background:#2563eb;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px">2</div>
+            <div style="height:2px;flex:1;background:#e2e8f0"></div>
+            <div style="width:28px;height:28px;border-radius:50%;background:#f1f5f9;color:#94a3b8;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px">3</div>
+          </div>
+          <div style="font-size:11px;color:#64748b;text-align:center;margin-bottom:16px">Item 2 of 3: SS 316L Seamless Pipe — 3" NB Sch 80</div>
+          <!-- Form for current item -->
+          <div style="border:1px solid #e2e8f0;border-radius:8px;padding:14px">
+            <div style="font-size:11px;color:#64748b;margin-bottom:8px">Configure this item, then proceed to next</div>
+            <div style="background:#f8fafc;border-radius:4px;padding:8px;text-align:center;color:#94a3b8;font-size:11px">[Same fields as Option A — one item at a time]</div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:16px">
+            <button style="padding:6px 16px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;font-size:12px">← Previous</button>
+            <button style="padding:6px 16px;border:none;border-radius:6px;background:#2563eb;color:#fff;font-size:12px">Next →</button>
+          </div>
+        </div>
+      </div>
+      <p style="margin-top:8px;font-size:13px">One item at a time in a wizard flow. Step indicator shows progress. Forces sequential completion. Simpler UX but harder to go back and compare items.</p>
+    </div>
+  </div>
+</div>

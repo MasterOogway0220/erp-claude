@@ -1,0 +1,161 @@
+<h2>Sales Dashboard Layout</h2>
+<p class="subtitle">Which layout structure works better for the dashboard?</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Card Grid + Table</h3>
+      <div class="mockup" style="margin-top:12px">
+        <div class="mockup-header">Sales Dashboard</div>
+        <div class="mockup-body" style="padding:16px">
+          <!-- KPI Row 1 -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
+            <div style="background:#f0f4ff;border-radius:8px;padding:14px;border-left:4px solid #3b82f6">
+              <div style="font-size:11px;color:#666;text-transform:uppercase">Total Client POs</div>
+              <div style="font-size:28px;font-weight:700;color:#1e293b">47</div>
+              <div style="font-size:11px;color:#22c55e">+12% this month</div>
+            </div>
+            <div style="background:#fef9ee;border-radius:8px;padding:14px;border-left:4px solid #f59e0b">
+              <div style="font-size:11px;color:#666;text-transform:uppercase">Pending Acceptance</div>
+              <div style="font-size:28px;font-weight:700;color:#1e293b">8</div>
+              <div style="font-size:11px;color:#ef4444">3 aging > 7 days</div>
+            </div>
+            <div style="background:#f0fdf4;border-radius:8px;padding:14px;border-left:4px solid #22c55e">
+              <div style="font-size:11px;color:#666;text-transform:uppercase">Order Value (Month)</div>
+              <div style="font-size:28px;font-weight:700;color:#1e293b">&#8377;2.4Cr</div>
+              <div style="font-size:11px;color:#22c55e">+18% vs last month</div>
+            </div>
+            <div style="background:#fef2f2;border-radius:8px;padding:14px;border-left:4px solid #ef4444">
+              <div style="font-size:11px;color:#666;text-transform:uppercase">Overdue Deliveries</div>
+              <div style="font-size:28px;font-weight:700;color:#ef4444">5</div>
+              <div style="font-size:11px;color:#666">Avg 4 days overdue</div>
+            </div>
+          </div>
+          <!-- KPI Row 2 -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
+            <div style="background:#faf5ff;border-radius:8px;padding:14px;border-left:4px solid #a855f7">
+              <div style="font-size:11px;color:#666;text-transform:uppercase">Pending Processing</div>
+              <div style="font-size:28px;font-weight:700;color:#1e293b">6</div>
+            </div>
+            <div style="background:#f0f9ff;border-radius:8px;padding:14px;border-left:4px solid #06b6d4">
+              <div style="font-size:11px;color:#666;text-transform:uppercase">Stock Allotment</div>
+              <div style="font-size:28px;font-weight:700;color:#1e293b">12</div>
+              <div style="font-size:11px;color:#666">4 partial, 8 pending</div>
+            </div>
+            <div style="background:#f8fafc;border-radius:8px;padding:14px;border-left:4px solid #64748b">
+              <div style="font-size:11px;color:#666;text-transform:uppercase">Quotation Conversion</div>
+              <div style="font-size:28px;font-weight:700;color:#1e293b">34%</div>
+              <div style="font-size:11px;color:#22c55e">+5% vs last quarter</div>
+            </div>
+            <div style="background:#fff7ed;border-radius:8px;padding:14px;border-left:4px solid #f97316">
+              <div style="font-size:11px;color:#666;text-transform:uppercase">Rate Negotiation Impact</div>
+              <div style="font-size:28px;font-weight:700;color:#1e293b">-&#8377;3.2L</div>
+              <div style="font-size:11px;color:#666">Avg 2.1% discount</div>
+            </div>
+          </div>
+          <!-- Middle section -->
+          <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:16px">
+            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:14px">
+              <div style="font-weight:600;margin-bottom:8px;font-size:13px">Deliveries Due This Week</div>
+              <div style="font-size:12px;color:#666;border-bottom:1px solid #f1f5f9;padding:6px 0">SO-2026-00142 &mdash; ABC Pvt Ltd &mdash; 15 Apr</div>
+              <div style="font-size:12px;color:#666;border-bottom:1px solid #f1f5f9;padding:6px 0">SO-2026-00138 &mdash; XYZ Corp &mdash; 16 Apr</div>
+              <div style="font-size:12px;color:#ef4444;border-bottom:1px solid #f1f5f9;padding:6px 0">SO-2026-00131 &mdash; DEF Ltd &mdash; 12 Apr (OVERDUE)</div>
+            </div>
+            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:14px">
+              <div style="font-weight:600;margin-bottom:8px;font-size:13px">Top Customers (Month)</div>
+              <div style="font-size:12px;color:#666;padding:4px 0">1. ABC Pvt Ltd &mdash; &#8377;84L</div>
+              <div style="font-size:12px;color:#666;padding:4px 0">2. XYZ Corp &mdash; &#8377;62L</div>
+              <div style="font-size:12px;color:#666;padding:4px 0">3. DEF Industries &mdash; &#8377;41L</div>
+            </div>
+          </div>
+          <!-- Quick Actions + Recent -->
+          <div style="display:flex;gap:8px;margin-bottom:12px">
+            <button class="mock-button" style="font-size:12px">+ Register New PO</button>
+            <button class="mock-button" style="font-size:12px;background:#f1f5f9;color:#334155">View All Orders</button>
+          </div>
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:14px">
+            <div style="font-weight:600;margin-bottom:8px;font-size:13px">Recent Client POs</div>
+            <table style="width:100%;font-size:11px;border-collapse:collapse">
+              <tr style="background:#f8fafc;font-weight:600;text-align:left"><td style="padding:6px">CPO No.</td><td style="padding:6px">Customer</td><td style="padding:6px">Client PO</td><td style="padding:6px">Value</td><td style="padding:6px">Status</td><td style="padding:6px">CDD</td></tr>
+              <tr style="border-bottom:1px solid #f1f5f9"><td style="padding:6px">CPO-2026-00047</td><td style="padding:6px">ABC Pvt Ltd</td><td style="padding:6px">PO/2026/1234</td><td style="padding:6px">&#8377;18.5L</td><td style="padding:6px"><span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:10px;font-size:10px">ACCEPTED</span></td><td style="padding:6px">20 Apr</td></tr>
+              <tr style="border-bottom:1px solid #f1f5f9"><td style="padding:6px">CPO-2026-00046</td><td style="padding:6px">XYZ Corp</td><td style="padding:6px">PO/XYZ/5678</td><td style="padding:6px">&#8377;12.3L</td><td style="padding:6px"><span style="background:#fef9c3;color:#854d0e;padding:2px 8px;border-radius:10px;font-size:10px">PENDING</span></td><td style="padding:6px">25 Apr</td></tr>
+              <tr><td style="padding:6px">CPO-2026-00045</td><td style="padding:6px">DEF Ltd</td><td style="padding:6px">DEF/PO/9012</td><td style="padding:6px">&#8377;8.7L</td><td style="padding:6px"><span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:10px;font-size:10px">ACCEPTED</span></td><td style="padding:6px">18 Apr</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+      <p style="margin-top:8px;font-size:13px">8 KPI cards in 2 rows, then deliveries + top customers side-by-side, quick actions, and recent POs table at the bottom. Everything on one scrollable page.</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Tabbed Dashboard</h3>
+      <div class="mockup" style="margin-top:12px">
+        <div class="mockup-header">Sales Dashboard</div>
+        <div class="mockup-body" style="padding:16px">
+          <!-- KPI Row (compact) -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">
+            <div style="background:#f0f4ff;border-radius:8px;padding:12px;border-left:4px solid #3b82f6">
+              <div style="font-size:10px;color:#666;text-transform:uppercase">Total POs</div>
+              <div style="font-size:24px;font-weight:700">47</div>
+            </div>
+            <div style="background:#fef9ee;border-radius:8px;padding:12px;border-left:4px solid #f59e0b">
+              <div style="font-size:10px;color:#666;text-transform:uppercase">Pending</div>
+              <div style="font-size:24px;font-weight:700">8</div>
+            </div>
+            <div style="background:#f0fdf4;border-radius:8px;padding:12px;border-left:4px solid #22c55e">
+              <div style="font-size:10px;color:#666;text-transform:uppercase">Value (Month)</div>
+              <div style="font-size:24px;font-weight:700">&#8377;2.4Cr</div>
+            </div>
+            <div style="background:#fef2f2;border-radius:8px;padding:12px;border-left:4px solid #ef4444">
+              <div style="font-size:10px;color:#666;text-transform:uppercase">Overdue</div>
+              <div style="font-size:24px;font-weight:700;color:#ef4444">5</div>
+            </div>
+          </div>
+          <!-- Tabs -->
+          <div style="display:flex;gap:0;border-bottom:2px solid #e2e8f0;margin-bottom:14px">
+            <div style="padding:8px 16px;font-size:12px;font-weight:600;color:#3b82f6;border-bottom:2px solid #3b82f6;margin-bottom:-2px">Pipeline</div>
+            <div style="padding:8px 16px;font-size:12px;color:#94a3b8">Deliveries</div>
+            <div style="padding:8px 16px;font-size:12px;color:#94a3b8">Customers</div>
+            <div style="padding:8px 16px;font-size:12px;color:#94a3b8">Negotiations</div>
+            <div style="padding:8px 16px;font-size:12px;color:#94a3b8">Recent POs</div>
+          </div>
+          <!-- Tab content -->
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:14px">
+            <div style="font-weight:600;margin-bottom:10px;font-size:13px">Order Pipeline</div>
+            <div style="display:flex;gap:12px;align-items:center;justify-content:space-between;padding:8px 0">
+              <div style="text-align:center;flex:1">
+                <div style="background:#dbeafe;border-radius:50%;width:48px;height:48px;display:flex;align-items:center;justify-content:center;margin:0 auto 4px;font-weight:700;font-size:18px;color:#2563eb">8</div>
+                <div style="font-size:10px;color:#666">Pending<br>Acceptance</div>
+              </div>
+              <div style="color:#cbd5e1;font-size:20px">&rarr;</div>
+              <div style="text-align:center;flex:1">
+                <div style="background:#fae8ff;border-radius:50%;width:48px;height:48px;display:flex;align-items:center;justify-content:center;margin:0 auto 4px;font-weight:700;font-size:18px;color:#a855f7">6</div>
+                <div style="font-size:10px;color:#666">Pending<br>Processing</div>
+              </div>
+              <div style="color:#cbd5e1;font-size:20px">&rarr;</div>
+              <div style="text-align:center;flex:1">
+                <div style="background:#ccfbf1;border-radius:50%;width:48px;height:48px;display:flex;align-items:center;justify-content:center;margin:0 auto 4px;font-weight:700;font-size:18px;color:#0d9488">12</div>
+                <div style="font-size:10px;color:#666">Stock<br>Allotment</div>
+              </div>
+              <div style="color:#cbd5e1;font-size:20px">&rarr;</div>
+              <div style="text-align:center;flex:1">
+                <div style="background:#fef3c7;border-radius:50%;width:48px;height:48px;display:flex;align-items:center;justify-content:center;margin:0 auto 4px;font-weight:700;font-size:18px;color:#d97706">9</div>
+                <div style="font-size:10px;color:#666">Warehouse<br>Processing</div>
+              </div>
+              <div style="color:#cbd5e1;font-size:20px">&rarr;</div>
+              <div style="text-align:center;flex:1">
+                <div style="background:#dcfce7;border-radius:50%;width:48px;height:48px;display:flex;align-items:center;justify-content:center;margin:0 auto 4px;font-weight:700;font-size:18px;color:#16a34a">21</div>
+                <div style="font-size:10px;color:#666">Dispatched</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p style="margin-top:8px;font-size:13px">4 key KPI cards on top, then tabbed sections below for Pipeline, Deliveries, Customers, Negotiations, and Recent POs. Keeps the page clean — users switch between views via tabs.</p>
+    </div>
+  </div>
+</div>
