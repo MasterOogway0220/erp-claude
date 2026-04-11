@@ -122,8 +122,9 @@ const navSections: NavSection[] = [
         roles: ["SALES", "MANAGEMENT", "ADMIN", "SUPER_ADMIN"],
         moduleKey: "sales",
         children: [
-          { title: "Client P.O. Register", href: "/client-purchase-orders" },
+          { title: "Dashboard", href: "/sales/dashboard" },
           { title: "Register Client P.O.", href: "/client-purchase-orders/create" },
+          { title: "Client P.O. Register", href: "/client-purchase-orders" },
           { title: "P.O. Acceptance", href: "/po-acceptance" },
           { title: "Sales Orders", href: "/sales" },
           { title: "Order Tracking", href: "/po-tracking" },
