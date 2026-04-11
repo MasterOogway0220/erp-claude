@@ -407,8 +407,10 @@ model User {
   rateRevisions           RateRevision[]         @relation("RateRevisionChangedBy")
   poaEmailsSent           POAcceptanceEmailLog[]  @relation("POAEmailSentBy")
   orderProcessingItems    OrderProcessingItem[]   @relation("OrderProcessedBy")
-  tendersCreated          Tender[]                @relation("TenderCreatedBy")
-  tenderDocsUploaded      TenderDocument[]        @relation("TenderDocUploadedBy")
+  tendersCreated             Tender[]                   @relation("TenderCreatedBy")
+  tenderDocsUploaded         TenderDocument[]            @relation("TenderDocUploadedBy")
+  supplierQuotationsCreated  SupplierQuotation[]         @relation("SQCreatedBy")
+  sqDocsUploaded             SupplierQuotationDocument[] @relation("SQDocUploadedBy")
 
   @@index([email])
   @@index([companyId])
@@ -538,6 +540,7 @@ model VendorMaster {
   rfqVendors           RFQVendor[]
   csEntries            CSEntry[]
   selectedInCS         ComparativeStatement[] @relation("CSSelectedVendor")
+  supplierQuotations   SupplierQuotation[]    @relation("SQVendor")
 
   @@index([companyId])
 }
@@ -1049,6 +1052,7 @@ model CompanyMaster {
   rateRevisions         RateRevision[]
   orderProcessingItems  OrderProcessingItem[]
   tenders               Tender[]
+  supplierQuotations    SupplierQuotation[]   @relation("SQCompany")
 }
 
 model FinancialYear {
@@ -1658,6 +1662,7 @@ model RFQ {
   createdBy            User?                 @relation("RFQCreatedBy", fields: [createdById], references: [id])
   vendors              RFQVendor[]
   comparativeStatement ComparativeStatement?
+  supplierQuotations   SupplierQuotation[]   @relation("SQFromRFQ")
 
   @@index([companyId])
   @@index([rfqNo])
@@ -3106,4 +3111,94 @@ model TenderDocument {
   uploadedBy   User?    @relation("TenderDocUploadedBy", fields: [uploadedById], references: [id])
 
   @@index([tenderId])
+}
+
+// ==================== SUPPLIER QUOTATION ====================
+
+model SupplierQuotation {
+  id              String         @id @default(cuid())
+  companyId       String?
+  company         CompanyMaster? @relation("SQCompany", fields: [companyId], references: [id])
+  sqNo            String         @unique
+  sqDate          DateTime       @default(now())
+  vendorId        String
+  vendor          VendorMaster   @relation("SQVendor", fields: [vendorId], references: [id])
+  vendorRef       String?
+  quotationDate   DateTime?
+  validUntil      DateTime?
+  currency        String         @default("INR")
+  paymentTerms    String?
+  deliveryDays    Int?
+  priceBasis      String?
+  rfqId           String?
+  rfq             RFQ?           @relation("SQFromRFQ", fields: [rfqId], references: [id])
+  rfqVendorId     String?
+  prId            String?
+  subtotal        Decimal?       @db.Decimal(14, 2)
+  totalCharges    Decimal?       @db.Decimal(14, 2)
+  grandTotal      Decimal?       @db.Decimal(14, 2)
+  status          String         @default("RECEIVED")
+  remarks         String?        @db.Text
+  createdById     String?
+  createdBy       User?          @relation("SQCreatedBy", fields: [createdById], references: [id])
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  items           SupplierQuotationItem[]
+  charges         SupplierQuotationCharge[]
+  documents       SupplierQuotationDocument[]
+
+  @@index([companyId])
+  @@index([sqNo])
+  @@index([vendorId])
+  @@index([rfqId])
+  @@index([status])
+}
+
+model SupplierQuotationItem {
+  id                    String            @id @default(cuid())
+  supplierQuotationId   String
+  supplierQuotation     SupplierQuotation @relation(fields: [supplierQuotationId], references: [id], onDelete: Cascade)
+  sNo                   Int
+  product               String?
+  material              String?
+  additionalSpec        String?
+  sizeLabel             String?
+  quantity              Decimal           @db.Decimal(10, 3)
+  uom                   String?
+  pricingUnit           String            @default("PER_MTR")
+  unitRate              Decimal           @db.Decimal(12, 2)
+  amount                Decimal           @db.Decimal(14, 2)
+  deliveryDays          Int?
+  remarks               String?
+
+  @@index([supplierQuotationId])
+}
+
+model SupplierQuotationCharge {
+  id                    String            @id @default(cuid())
+  supplierQuotationId   String
+  supplierQuotation     SupplierQuotation @relation(fields: [supplierQuotationId], references: [id], onDelete: Cascade)
+  chargeType            String
+  label                 String
+  amount                Decimal           @db.Decimal(12, 2)
+  taxApplicable         Boolean           @default(false)
+  remarks               String?
+
+  @@index([supplierQuotationId])
+}
+
+model SupplierQuotationDocument {
+  id                    String            @id @default(cuid())
+  supplierQuotationId   String
+  supplierQuotation     SupplierQuotation @relation(fields: [supplierQuotationId], references: [id], onDelete: Cascade)
+  fileName              String
+  fileType              String
+  filePath              String
+  fileSize              Int?
+  uploadedAt            DateTime          @default(now())
+  uploadedById          String?
+  uploadedBy            User?             @relation("SQDocUploadedBy", fields: [uploadedById], references: [id])
+
+  @@index([supplierQuotationId])
 }
