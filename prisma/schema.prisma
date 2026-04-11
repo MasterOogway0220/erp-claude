@@ -270,6 +270,8 @@ enum AlertType {
   LAB_TESTING_PENDING
   DELIVERY_DEADLINE
   MATERIAL_PREPARATION
+  STOCK_ALLOTMENT
+  PROCUREMENT_REQUIRED
 }
 
 enum AlertSeverity {
@@ -1325,6 +1327,7 @@ model SalesOrder {
   dispatchAddressId     String?
   clientPurchaseOrderId String?
   processingStatus      String   @default("UNPROCESSED")
+  allotmentStatus       String   @default("PENDING")
   poAcceptanceStatus POAcceptanceStatus @default(PENDING)
   poReviewRemarks    String?
   status             SOStatus           @default(OPEN)
@@ -1373,7 +1376,11 @@ model SalesOrderItem {
   totalWeightMT  Decimal?  @db.Decimal(12, 4)
   heatNo         String?
   qtyDispatched  Decimal   @default(0) @db.Decimal(10, 3)
-  itemStatus     String    @default("OPEN")
+  itemStatus            String    @default("OPEN")
+  allotmentSource       String?
+  stockAllocQty         Decimal?  @db.Decimal(10, 3)
+  procurementAllocQty   Decimal?  @db.Decimal(10, 3)
+  allotmentStatus       String    @default("PENDING")
   fittingId      String?
   flangeId       String?
 
