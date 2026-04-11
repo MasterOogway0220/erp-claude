@@ -59,6 +59,58 @@ export function TopBar() {
 
   const isSuperAdmin = user?.role === "SUPER_ADMIN";
 
+  const [alerts, setAlerts] = useState<any[]>([]);
+  const [alertCount, setAlertCount] = useState(0);
+
+  const fetchAlerts = async () => {
+    try {
+      const res = await fetch("/api/alerts?status=UNREAD&limit=10");
+      if (res.ok) {
+        const data = await res.json();
+        const alertList = data.alerts || data || [];
+        setAlerts(Array.isArray(alertList) ? alertList.slice(0, 10) : []);
+        setAlertCount(Array.isArray(alertList) ? alertList.length : 0);
+      }
+    } catch (error) {
+      console.error("Failed to fetch alerts:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchAlerts();
+    const interval = setInterval(fetchAlerts, 60000);
+    return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const markAlertRead = async (alertId: string) => {
+    try {
+      await fetch("/api/alerts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "markRead", ids: [alertId] }),
+      });
+      fetchAlerts();
+    } catch (error) {
+      console.error("Failed to mark alert read:", error);
+    }
+  };
+
+  const markAllRead = async () => {
+    try {
+      const ids = alerts.map((a: any) => a.id).filter(Boolean);
+      if (ids.length === 0) return;
+      await fetch("/api/alerts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "markRead", ids }),
+      });
+      fetchAlerts();
+    } catch (error) {
+      console.error("Failed to mark all read:", error);
+    }
+  };
+
   useEffect(() => {
     if (!isSuperAdmin) return;
     fetch("/api/company/switch")
@@ -212,16 +264,64 @@ export function TopBar() {
                 title="Notifications"
               >
                 <Bell className="h-4 w-4" />
+                {alertCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center">
+                    {alertCount > 9 ? "9+" : alertCount}
+                  </span>
+                )}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-72 mt-1">
-              <DropdownMenuLabel className="font-semibold">Notifications</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
-                <Bell className="h-8 w-8 text-muted-foreground/40 mb-3" />
-                <p className="text-sm font-medium text-muted-foreground">No new notifications</p>
-                <p className="text-xs text-muted-foreground/70 mt-1">You&apos;re all caught up</p>
+            <DropdownMenuContent align="end" className="w-80 mt-1">
+              <div className="flex items-center justify-between px-3 py-2">
+                <span className="font-semibold text-sm">Notifications</span>
+                {alertCount > 0 && (
+                  <button onClick={markAllRead} className="text-xs text-blue-600 hover:underline">
+                    Mark all read
+                  </button>
+                )}
               </div>
+              <DropdownMenuSeparator />
+              {alerts.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
+                  <Bell className="h-8 w-8 text-muted-foreground/40 mb-3" />
+                  <p className="text-sm font-medium text-muted-foreground">No new notifications</p>
+                  <p className="text-xs text-muted-foreground/70 mt-1">You&apos;re all caught up</p>
+                </div>
+              ) : (
+                <div className="max-h-[300px] overflow-y-auto">
+                  {alerts.map((alert: any) => (
+                    <DropdownMenuItem
+                      key={alert.id}
+                      className="flex flex-col items-start gap-1 p-3 cursor-pointer"
+                      onClick={() => {
+                        markAlertRead(alert.id);
+                        if (alert.relatedModule && alert.relatedId) {
+                          const routes: Record<string, string> = {
+                            WarehouseIntimation: "/warehouse/intimation",
+                            PurchaseRequisition: "/purchase/requisitions",
+                            SalesOrder: "/sales",
+                          };
+                          const base = routes[alert.relatedModule] || "";
+                          if (base) window.location.href = `${base}/${alert.relatedId}`;
+                        }
+                      }}
+                    >
+                      <div className="flex items-center gap-2 w-full">
+                        <span className={`h-2 w-2 rounded-full flex-shrink-0 ${
+                          alert.severity === "CRITICAL" ? "bg-red-500" :
+                          alert.severity === "HIGH" ? "bg-orange-500" :
+                          alert.severity === "MEDIUM" ? "bg-yellow-500" : "bg-blue-500"
+                        }`} />
+                        <span className="text-sm font-medium truncate flex-1">{alert.title}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground line-clamp-2 pl-4">{alert.message}</p>
+                      <span className="text-[10px] text-muted-foreground/60 pl-4">
+                        {alert.createdAt ? new Date(alert.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : ""}
+                      </span>
+                    </DropdownMenuItem>
+                  ))}
+                </div>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
 
