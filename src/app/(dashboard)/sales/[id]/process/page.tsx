@@ -193,6 +193,12 @@ export default function OrderProcessingPage({
   const [formData, setFormData] = useState<ProcessingData>({
     ...defaultFormData,
   });
+  const [allotmentAnalysis, setAllotmentAnalysis] = useState<any>(null);
+  const [allotmentSource, setAllotmentSource] = useState<string>("");
+  const [allotmentStockQty, setAllotmentStockQty] = useState<string>("");
+  const [allotmentProcQty, setAllotmentProcQty] = useState<string>("");
+  const [allottingItem, setAllottingItem] = useState(false);
+  const [allotmentConfirmed, setAllotmentConfirmed] = useState(false);
 
   // -----------------------------------------------------------------------
   // Fetch data
@@ -216,6 +222,9 @@ export default function OrderProcessingPage({
     }
   }, [id]);
 
+  // Alias so confirmAllotment (non-useCallback) can call it
+  const fetchProcessingData = fetchData;
+
   useEffect(() => {
     fetchData().then((loadedItems) => {
       if (loadedItems && loadedItems.length > 0) {
@@ -226,14 +235,82 @@ export default function OrderProcessingPage({
   }, [fetchData]);
 
   // -----------------------------------------------------------------------
+  // Allotment analysis
+  // -----------------------------------------------------------------------
+
+  const fetchAllotmentAnalysis = async (itemId: string) => {
+    try {
+      const res = await fetch(`/api/sales-orders/${id}/allotment/analyze?itemId=${itemId}`);
+      if (res.ok) {
+        const data = await res.json();
+        const analysis = data.items?.[0];
+        if (analysis) {
+          setAllotmentAnalysis(analysis);
+          setAllotmentSource(analysis.currentAllotment?.source || analysis.suggestedSource);
+          if (analysis.currentAllotment) {
+            setAllotmentStockQty(String(analysis.currentAllotment.stockQty || 0));
+            setAllotmentProcQty(String(analysis.currentAllotment.procurementQty || 0));
+            setAllotmentConfirmed(true);
+          } else {
+            setAllotmentStockQty(String(analysis.suggestedStockQty));
+            setAllotmentProcQty(String(analysis.suggestedProcurementQty));
+            setAllotmentConfirmed(false);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Failed to analyze allotment:", error);
+    }
+  };
+
+  const confirmAllotment = async () => {
+    if (!allotmentAnalysis) return;
+    setAllottingItem(true);
+    try {
+      const res = await fetch(`/api/sales-orders/${id}/allotment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: [{
+            salesOrderItemId: allotmentAnalysis.salesOrderItemId,
+            source: allotmentSource,
+            stockAllocQty: parseFloat(allotmentStockQty) || 0,
+            procurementAllocQty: parseFloat(allotmentProcQty) || 0,
+          }],
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(`Allotment confirmed${data.mprNo ? ` — MPR ${data.mprNo} created` : ""}${data.prNo ? ` — PR ${data.prNo} created` : ""}`);
+        setAllotmentConfirmed(true);
+        fetchProcessingData();
+      } else {
+        toast.error(data.error || "Failed to confirm allotment");
+      }
+    } catch (error) {
+      toast.error("Failed to confirm allotment");
+    } finally {
+      setAllottingItem(false);
+    }
+  };
+
+  // -----------------------------------------------------------------------
   // Load item form at a given index
   // -----------------------------------------------------------------------
 
   const loadItemForm = useCallback(
     (index: number) => {
       setCurrentIndex(index);
-      setFormData(recordToFormData(items[index]?.processing ?? null));
+      const item = items[index];
+      setFormData(recordToFormData(item?.processing ?? null));
+      if (item?.processing?.status === "PROCESSED") {
+        fetchAllotmentAnalysis(item.salesOrderItem.id);
+      } else {
+        setAllotmentAnalysis(null);
+        setAllotmentConfirmed(false);
+      }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [items]
   );
 
@@ -319,6 +396,7 @@ export default function OrderProcessingPage({
         setFormData(recordToFormData(reloaded[currentIndex]?.processing ?? null));
       }
       toast.success("Item marked as processed");
+      fetchAllotmentAnalysis(items[currentIndex].salesOrderItem.id);
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Failed to mark as processed";
@@ -372,6 +450,13 @@ export default function OrderProcessingPage({
     const next = currentIndex + 1;
     setCurrentIndex(next);
     setFormData(recordToFormData(items[next]?.processing ?? null));
+    if (items[next]?.processing?.status === "PROCESSED") {
+      fetchAllotmentAnalysis(items[next].salesOrderItem.id);
+    } else {
+      setAllotmentAnalysis(null);
+      setAllotmentConfirmed(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIndex, items, saveDraft]);
 
   const goPrev = useCallback(async () => {
@@ -380,6 +465,13 @@ export default function OrderProcessingPage({
     const prev = currentIndex - 1;
     setCurrentIndex(prev);
     setFormData(recordToFormData(items[prev]?.processing ?? null));
+    if (items[prev]?.processing?.status === "PROCESSED") {
+      fetchAllotmentAnalysis(items[prev].salesOrderItem.id);
+    } else {
+      setAllotmentAnalysis(null);
+      setAllotmentConfirmed(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIndex, items, saveDraft]);
 
   const jumpToItem = useCallback(
@@ -388,7 +480,14 @@ export default function OrderProcessingPage({
       await saveDraft();
       setCurrentIndex(index);
       setFormData(recordToFormData(items[index]?.processing ?? null));
+      if (items[index]?.processing?.status === "PROCESSED") {
+        fetchAllotmentAnalysis(items[index].salesOrderItem.id);
+      } else {
+        setAllotmentAnalysis(null);
+        setAllotmentConfirmed(false);
+      }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [currentIndex, items, saveDraft]
   );
 
@@ -976,6 +1075,69 @@ export default function OrderProcessingPage({
           )}
         </CardContent>
       </Card>
+
+      {/* Allotment section — visible after item is marked Processed */}
+      {items[currentIndex]?.processing?.status === "PROCESSED" && allotmentAnalysis && (
+        <Card className={allotmentConfirmed ? "border-green-200 bg-green-50/30 dark:bg-green-950/10" : "border-amber-200 bg-amber-50/30 dark:bg-amber-950/10"}>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              Stock Allotment
+              {allotmentConfirmed && <Badge variant="default" className="text-xs">Allocated</Badge>}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-4 text-sm">
+              <span>Ordered: <strong>{allotmentAnalysis.orderedQty} MTR</strong></span>
+              <span>Available Stock: <strong className={allotmentAnalysis.availableStockQty > 0 ? "text-green-600" : "text-red-600"}>
+                {allotmentAnalysis.availableStockQty} MTR
+              </strong></span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs">Source</Label>
+                <Select
+                  value={allotmentSource}
+                  onValueChange={(val) => {
+                    setAllotmentSource(val);
+                    const qty = allotmentAnalysis.remainingQty;
+                    const avail = allotmentAnalysis.availableStockQty;
+                    if (val === "STOCK") { setAllotmentStockQty(String(qty)); setAllotmentProcQty("0"); }
+                    else if (val === "PROCUREMENT") { setAllotmentStockQty("0"); setAllotmentProcQty(String(qty)); }
+                    else { setAllotmentStockQty(String(Math.min(avail, qty))); setAllotmentProcQty(String(Math.max(0, qty - avail))); }
+                  }}
+                  disabled={allotmentConfirmed}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="STOCK" disabled={allotmentAnalysis.availableStockQty <= 0}>Stock</SelectItem>
+                    <SelectItem value="PROCUREMENT">Procurement</SelectItem>
+                    <SelectItem value="SPLIT" disabled={allotmentAnalysis.availableStockQty <= 0}>Split</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Stock Qty (MTR)</Label>
+                <Input type="number" value={allotmentStockQty} onChange={(e) => setAllotmentStockQty(e.target.value)} disabled={allotmentConfirmed || allotmentSource === "PROCUREMENT"} min={0} step={0.001} />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Procurement Qty (MTR)</Label>
+                <Input type="number" value={allotmentProcQty} onChange={(e) => setAllotmentProcQty(e.target.value)} disabled={allotmentConfirmed || allotmentSource === "STOCK"} min={0} step={0.001} />
+              </div>
+            </div>
+
+            {!allotmentConfirmed ? (
+              <Button onClick={confirmAllotment} disabled={allottingItem} className="w-full">
+                {allottingItem ? "Allocating..." : "Confirm Allotment"}
+              </Button>
+            ) : (
+              <div className="text-sm text-green-700 dark:text-green-400 text-center">
+                Allotment confirmed — {allotmentSource === "STOCK" ? "Warehouse notified" : allotmentSource === "PROCUREMENT" ? "Purchase Requisition created" : "Warehouse notified + PR created"}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Footer buttons */}
       <div className="flex items-center justify-between">
