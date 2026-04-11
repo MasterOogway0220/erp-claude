@@ -33,6 +33,7 @@ export async function GET(
               select: {
                 id: true,
                 quantity: true,
+                unitRate: true,
                 clientPOItems: {
                   include: {
                     clientPurchaseOrder: {
@@ -42,8 +43,14 @@ export async function GET(
                 },
               },
             },
+            rateRevisions: {
+              include: {
+                changedBy: { select: { name: true } },
+              },
+              orderBy: { changedAt: "desc" as const },
+            },
           },
-          orderBy: { sNo: "asc" },
+          orderBy: { sNo: "asc" as const },
         },
       },
     });
@@ -68,6 +75,7 @@ export async function GET(
         qtyOrdered: Number(item.qtyOrdered),
         unitRate: Number(item.unitRate),
         amount: Number(item.amount),
+        quotedRate: item.quotationItem.unitRate ? Number(item.quotationItem.unitRate) : Number(item.unitRate),
         totalOrderedAllCPOs,
         balanceQty,
         otherOrders: item.quotationItem.clientPOItems
@@ -80,6 +88,15 @@ export async function GET(
             cpoNo: cpoItem.clientPurchaseOrder.cpoNo,
             qtyOrdered: Number(cpoItem.qtyOrdered),
           })),
+        rateRevisions: item.rateRevisions.map((rev: any) => ({
+          id: rev.id,
+          oldRate: Number(rev.oldRate),
+          newRate: Number(rev.newRate),
+          remark: rev.remark,
+          overallRemark: rev.overallRemark,
+          changedBy: rev.changedBy.name,
+          changedAt: rev.changedAt,
+        })),
       };
     });
 
@@ -112,5 +129,99 @@ export async function GET(
       { error: "Failed to fetch client purchase order" },
       { status: 500 }
     );
+  }
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { authorized, session, response, companyId } = await checkAccess("clientPO", "write");
+    if (!authorized) return response!;
+
+    const { id } = await params;
+    const body = await request.json();
+    const { items, bulkOverallRemark } = body;
+
+    const existingCPO = await prisma.clientPurchaseOrder.findUnique({
+      where: { id },
+      include: { items: true },
+    });
+
+    if (!existingCPO) {
+      return NextResponse.json({ error: "Client Purchase Order not found" }, { status: 404 });
+    }
+
+    if (existingCPO.status === "CANCELLED" || existingCPO.status === "FULLY_FULFILLED") {
+      return NextResponse.json({ error: "Cannot modify a cancelled or fulfilled order" }, { status: 400 });
+    }
+
+    if (items && Array.isArray(items)) {
+      const rateRevisions = [];
+
+      for (const itemUpdate of items) {
+        const existingItem = existingCPO.items.find((i) => i.id === itemUpdate.id);
+        if (!existingItem) continue;
+
+        const oldRate = Number(existingItem.unitRate);
+        const newRate = parseFloat(itemUpdate.unitRate);
+
+        if (isNaN(newRate) || newRate <= 0) continue;
+        if (oldRate === newRate) continue;
+
+        const newAmount = Number(existingItem.qtyOrdered) * newRate;
+        await prisma.clientPOItem.update({
+          where: { id: itemUpdate.id },
+          data: { unitRate: newRate, amount: newAmount },
+        });
+
+        rateRevisions.push({
+          clientPOItemId: itemUpdate.id,
+          oldRate: oldRate,
+          newRate: newRate,
+          remark: itemUpdate.rateRemark || "Rate updated",
+          overallRemark: bulkOverallRemark || null,
+          changedById: session.user.id,
+          companyId: companyId!,
+        });
+      }
+
+      if (rateRevisions.length > 0) {
+        await prisma.rateRevision.createMany({ data: rateRevisions });
+      }
+
+      // Recalculate subtotal and grand total
+      const updatedItems = await prisma.clientPOItem.findMany({
+        where: { clientPurchaseOrderId: id },
+      });
+      const newSubtotal = updatedItems.reduce((sum, item) => sum + Number(item.amount), 0);
+
+      const additionalChargesTotal = Number(existingCPO.additionalChargesTotal || 0);
+      const taxableAmount = newSubtotal + additionalChargesTotal;
+      const gstRate = Number(existingCPO.gstRate || 18);
+      const isInterState = existingCPO.isInterState;
+
+      let cgst = 0, sgst = 0, igst = 0;
+      if (isInterState) {
+        igst = (taxableAmount * gstRate) / 100;
+      } else {
+        cgst = (taxableAmount * gstRate) / 200;
+        sgst = (taxableAmount * gstRate) / 200;
+      }
+
+      const grandTotalRaw = taxableAmount + cgst + sgst + igst;
+      const roundOff = Math.round(grandTotalRaw) - grandTotalRaw;
+
+      await prisma.clientPurchaseOrder.update({
+        where: { id },
+        data: { subtotal: newSubtotal, taxableAmount, cgst, sgst, igst, roundOff, grandTotal: Math.round(grandTotalRaw) },
+      });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error updating client purchase order:", error);
+    return NextResponse.json({ error: "Failed to update client purchase order" }, { status: 500 });
   }
 }
