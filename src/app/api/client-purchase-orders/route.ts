@@ -67,6 +67,8 @@ export async function POST(request: NextRequest) {
       deliverySchedule,
       currency,
       remarks,
+      deliveryDate,
+      bulkOverallRemark,
       items,
       // Additional Charges
       freight,
@@ -244,7 +246,7 @@ export async function POST(request: NextRequest) {
     const roundOffAmount = Math.round(grandTotalBeforeRound) - grandTotalBeforeRound;
     const grandTotal = grandTotalBeforeRound + roundOffAmount;
 
-    const clientPO = await prisma.clientPurchaseOrder.create({
+    const createdCPO = await prisma.clientPurchaseOrder.create({
       data: {
         companyId,
         cpoNo,
@@ -252,6 +254,7 @@ export async function POST(request: NextRequest) {
         quotationId,
         clientPoNumber,
         clientPoDate: clientPoDate ? new Date(clientPoDate) : null,
+        deliveryDate: deliveryDate ? new Date(deliveryDate) : null,
         projectName: projectName || null,
         contactPerson: contactPerson || null,
         paymentTerms: paymentTerms || null,
@@ -315,20 +318,41 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Create rate revisions for negotiated rates
+    const rateRevisions = [];
+    for (let idx = 0; idx < createdCPO.items.length; idx++) {
+      const createdItem = createdCPO.items[idx];
+      const inputItem = items[idx];
+      if (inputItem?.quotedRate && Number(inputItem.quotedRate) !== Number(inputItem.unitRate)) {
+        rateRevisions.push({
+          clientPOItemId: createdItem.id,
+          oldRate: inputItem.quotedRate,
+          newRate: inputItem.unitRate,
+          remark: inputItem.rateRemark || "Rate negotiated at PO registration",
+          overallRemark: bulkOverallRemark || null,
+          changedById: session.user.id,
+          companyId: companyId!,
+        });
+      }
+    }
+    if (rateRevisions.length > 0) {
+      await prisma.rateRevision.createMany({ data: rateRevisions });
+    }
+
     createAuditLog({
       userId: session.user.id,
       companyId,
       action: "CREATE",
       tableName: "ClientPurchaseOrder",
-      recordId: clientPO.id,
+      recordId: createdCPO.id,
       newValue: JSON.stringify({
-        cpoNo: clientPO.cpoNo,
+        cpoNo: createdCPO.cpoNo,
         clientPoNumber,
-        quotationNo: clientPO.quotation.quotationNo,
+        quotationNo: createdCPO.quotation.quotationNo,
       }),
     }).catch(console.error);
 
-    return NextResponse.json(clientPO, { status: 201 });
+    return NextResponse.json(createdCPO, { status: 201 });
   } catch (error: any) {
     console.error("Error creating client purchase order:", error);
     return NextResponse.json(
