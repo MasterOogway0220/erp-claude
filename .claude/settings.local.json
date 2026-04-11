@@ -110,7 +110,9 @@
       "Bash(ls /Users/adi0220/projects/erp-claude/src/app/\\\\\\(dashboard\\\\\\)/sales/)",
       "Bash(claude mcp:*)",
       "Bash(NEXT_TELEMETRY_DISABLED=1 npx next build)",
-      "Bash(grep -i \"sales\\\\|SO\" /Users/adi0220/projects/erp-claude/src/app/\\\\\\(dashboard\\\\\\)/client-purchase-orders/[id]/page.tsx)"
+      "Bash(grep -i \"sales\\\\|SO\" /Users/adi0220/projects/erp-claude/src/app/\\\\\\(dashboard\\\\\\)/client-purchase-orders/[id]/page.tsx)",
+      "Bash(ls /Users/adi0220/projects/erp-claude/src/app/\\\\\\(dashboard\\\\\\)/tenders/)",
+      "Bash(ls /Users/adi0220/projects/erp-claude/src/app/\\\\\\(dashboard\\\\\\)/purchase/supplier-quotations/[id]/)"
     ]
   }
 }
