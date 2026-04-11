@@ -80,6 +80,7 @@ interface BalanceItem {
 interface SelectedItem extends BalanceItem {
   selected: boolean;
   qtyOrdered: number;
+  itemDeliveryDate: string;
 }
 
 interface QuotationMeta {
@@ -148,7 +149,7 @@ function CreateClientPOPage() {
     contactPerson: "",
     paymentTerms: "",
     deliveryTerms: "",
-    deliverySchedule: "",
+    deliveryDate: "",
     currency: "INR",
     remarks: "",
   });
@@ -215,6 +216,7 @@ function CreateClientPOPage() {
           ...item,
           selected: item.balanceQty > 0,
           qtyOrdered: item.balanceQty,
+          itemDeliveryDate: "",
         }));
 
         setBalanceItems(selectedItems);
@@ -228,7 +230,6 @@ function CreateClientPOPage() {
           contactPerson: prev.contactPerson || q.customer.contactPerson || "",
           paymentTerms: prev.paymentTerms || q.paymentTerms || "",
           deliveryTerms: prev.deliveryTerms || q.deliveryTerms || "",
-          deliverySchedule: prev.deliverySchedule || q.deliveryPeriod || "",
           currency: q.currency || "INR",
         }));
 
@@ -427,6 +428,7 @@ function CreateClientPOPage() {
         body: JSON.stringify({
           ...formData,
           clientPoDate: formData.clientPoDate || null,
+          deliveryDate: formData.deliveryDate || null,
           ...chargePayload,
           gstRate,
           supplierState,
@@ -445,7 +447,7 @@ function CreateClientPOPage() {
             qtyQuoted: item.qtyQuoted,
             qtyOrdered: item.qtyOrdered,
             unitRate: item.unitRate,
-            deliveryDate: null,
+            deliveryDate: item.itemDeliveryDate || null,
             remark: item.remark,
           })),
         }),
@@ -608,13 +610,13 @@ function CreateClientPOPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label>Delivery Schedule</Label>
+                <Label>Delivery Date (CDD)</Label>
                 <Input
-                  value={formData.deliverySchedule}
+                  type="date"
+                  value={formData.deliveryDate}
                   onChange={(e) =>
-                    setFormData({ ...formData, deliverySchedule: e.target.value })
+                    setFormData({ ...formData, deliveryDate: e.target.value })
                   }
-                  placeholder="e.g. 4-6 weeks from PO"
                 />
               </div>
 
@@ -718,6 +720,7 @@ function CreateClientPOPage() {
                         <TableHead>UOM</TableHead>
                         <TableHead className="text-right">Rate</TableHead>
                         <TableHead className="text-right">Amount</TableHead>
+                        <TableHead>Item CDD</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -841,6 +844,21 @@ function CreateClientPOPage() {
                                     { minimumFractionDigits: 2 }
                                   )
                                 : "-"}
+                            </TableCell>
+                            <TableCell>
+                              {item.selected && (
+                                <Input
+                                  type="date"
+                                  className="w-[140px]"
+                                  value={item.itemDeliveryDate}
+                                  onChange={(e) => {
+                                    const updated = [...balanceItems];
+                                    updated[index] = { ...updated[index], itemDeliveryDate: e.target.value };
+                                    setBalanceItems(updated);
+                                  }}
+                                  min={formData.deliveryDate || undefined}
+                                />
+                              )}
                             </TableCell>
                           </TableRow>
                         );
