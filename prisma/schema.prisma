@@ -1898,6 +1898,7 @@ model InventoryStock {
   labReports               LabReport[]
   labLetters               LabLetter[]
   warehouseIntimationItems WarehouseIntimationItem[]
+  warehouseItemDetails      WarehouseItemDetail[] @relation("DetailStock")
 
   @@index([companyId])
   @@index([heatNo])
@@ -2840,6 +2841,7 @@ model WarehouseIntimationItem {
   warehouseIntimation WarehouseIntimation @relation(fields: [warehouseIntimationId], references: [id], onDelete: Cascade)
   salesOrderItem      SalesOrderItem?     @relation(fields: [salesOrderItemId], references: [id])
   inventoryStock      InventoryStock?     @relation(fields: [inventoryStockId], references: [id])
+  details             WarehouseItemDetail[]
 
   @@index([warehouseIntimationId])
   @@index([salesOrderItemId])
@@ -3004,4 +3006,26 @@ model OrderProcessingItem {
 
   @@index([salesOrderItemId])
   @@index([companyId])
+}
+
+model WarehouseItemDetail {
+  id                        String    @id @default(cuid())
+  warehouseIntimationItemId String
+  warehouseIntimationItem   WarehouseIntimationItem @relation(fields: [warehouseIntimationItemId], references: [id], onDelete: Cascade)
+  sNo                       Int
+  lengthMtr                 Decimal?  @db.Decimal(10, 3)
+  pieces                    Int?
+  make                      String?
+  heatNo                    String?
+  mtcNo                     String?
+  mtcDate                   DateTime?
+  inventoryStockId          String?
+  inventoryStock            InventoryStock? @relation("DetailStock", fields: [inventoryStockId], references: [id])
+  remarks                   String?
+  status                    String    @default("PENDING")
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
+
+  @@index([warehouseIntimationItemId])
+  @@index([inventoryStockId])
 }
