@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -115,9 +116,13 @@ export default function ClientPODetailPage({
   const [loading, setLoading] = useState(true);
   const [showRevisionDialog, setShowRevisionDialog] = useState(false);
   const [selectedItemRevisions, setSelectedItemRevisions] = useState<any[]>([]);
+  const [linkedSO, setLinkedSO] = useState<{ id: string; soNo: string } | null>(null);
+  const [showCreateSODialog, setShowCreateSODialog] = useState(false);
+  const [creatingSO, setCreatingSO] = useState(false);
 
   useEffect(() => {
     fetchClientPO();
+    fetchLinkedSO();
   }, [id]);
 
   const fetchClientPO = async () => {
@@ -131,6 +136,45 @@ export default function ClientPODetailPage({
       console.error("Failed to fetch client PO:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchLinkedSO = async () => {
+    try {
+      const res = await fetch(`/api/sales-orders?clientPurchaseOrderId=${id}`);
+      if (res.ok) {
+        const data = await res.json();
+        const sos = data.salesOrders || data;
+        const activeSO = Array.isArray(sos) ? sos.find((so: any) => so.status !== "CANCELLED") : null;
+        if (activeSO) {
+          setLinkedSO({ id: activeSO.id, soNo: activeSO.soNo });
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch linked SO:", error);
+    }
+  };
+
+  const createSOFromCPO = async () => {
+    setCreatingSO(true);
+    try {
+      const res = await fetch("/api/sales-orders/from-cpo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientPurchaseOrderId: clientPO?.id }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(`Sales Order ${data.soNo} created successfully`);
+        setLinkedSO({ id: data.id, soNo: data.soNo });
+        setShowCreateSODialog(false);
+      } else {
+        toast.error(data.error || "Failed to create Sales Order");
+      }
+    } catch (error) {
+      toast.error("Failed to create Sales Order");
+    } finally {
+      setCreatingSO(false);
     }
   };
 
@@ -178,6 +222,16 @@ export default function ClientPODetailPage({
           >
             <FileCheck className="w-4 h-4 mr-2" />
             Generate Acceptance
+          </Button>
+        )}
+        {clientPO.status !== "CANCELLED" && !linkedSO && (
+          <Button variant="outline" onClick={() => setShowCreateSODialog(true)}>
+            Create Sales Order
+          </Button>
+        )}
+        {linkedSO && (
+          <Button variant="outline" onClick={() => router.push(`/sales/${linkedSO.id}`)}>
+            Sales Order: {linkedSO.soNo} →
           </Button>
         )}
         <Button variant="outline" onClick={() => router.back()}>
@@ -526,6 +580,48 @@ export default function ClientPODetailPage({
             </p>
           </CardContent>
         </Card>
+      )}
+
+      {/* Create Sales Order Dialog */}
+      {showCreateSODialog && clientPO && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowCreateSODialog(false)}>
+          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold mb-2">Create Sales Order from CPO</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              A Sales Order will be created with the following items from {clientPO.cpoNo}:
+            </p>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>S.No</TableHead>
+                  <TableHead>Product</TableHead>
+                  <TableHead>Size</TableHead>
+                  <TableHead className="text-right">Qty</TableHead>
+                  <TableHead className="text-right">Rate</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {clientPO.items.map((item: any) => (
+                  <TableRow key={item.id}>
+                    <TableCell>{item.sNo}</TableCell>
+                    <TableCell>{item.product || "-"} {item.material ? `/ ${item.material}` : ""}</TableCell>
+                    <TableCell>{item.sizeLabel || "-"}</TableCell>
+                    <TableCell className="text-right">{item.qtyOrdered}</TableCell>
+                    <TableCell className="text-right">{item.unitRate?.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</TableCell>
+                    <TableCell className="text-right">{item.amount?.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            <div className="flex justify-end gap-2 mt-6">
+              <Button variant="outline" onClick={() => setShowCreateSODialog(false)}>Cancel</Button>
+              <Button onClick={createSOFromCPO} disabled={creatingSO}>
+                {creatingSO ? "Creating..." : "Create Sales Order"}
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Rate Revision History Dialog */}

@@ -29,6 +29,11 @@ export async function GET(request: NextRequest) {
       where.status = status;
     }
 
+    const clientPurchaseOrderId = searchParams.get("clientPurchaseOrderId");
+    if (clientPurchaseOrderId) {
+      where.clientPurchaseOrderId = clientPurchaseOrderId;
+    }
+
     const salesOrders = await prisma.salesOrder.findMany({
       where,
       include: {
