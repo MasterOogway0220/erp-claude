@@ -81,6 +81,8 @@ interface SelectedItem extends BalanceItem {
   selected: boolean;
   qtyOrdered: number;
   itemDeliveryDate: string;
+  negotiatedRate: number;
+  rateRemark: string;
 }
 
 interface QuotationMeta {
@@ -217,6 +219,8 @@ function CreateClientPOPage() {
           selected: item.balanceQty > 0,
           qtyOrdered: item.balanceQty,
           itemDeliveryDate: "",
+          negotiatedRate: item.unitRate,
+          rateRemark: "",
         }));
 
         setBalanceItems(selectedItems);
@@ -335,7 +339,7 @@ function CreateClientPOPage() {
   const commercials = useMemo(() => {
     const selectedItems = getSelectedItems();
     const materialValue = selectedItems.reduce(
-      (sum, item) => sum + item.qtyOrdered * item.unitRate,
+      (sum, item) => sum + item.qtyOrdered * item.negotiatedRate,
       0
     );
 
@@ -402,6 +406,14 @@ function CreateClientPOPage() {
       return;
     }
 
+    const itemsMissingRemark = selectedItems.filter(
+      (item) => item.negotiatedRate !== item.unitRate && !item.rateRemark.trim()
+    );
+    if (itemsMissingRemark.length > 0) {
+      toast.error("Rate remark is required for all items with negotiated rates");
+      return;
+    }
+
     for (const item of selectedItems) {
       if (item.qtyOrdered > item.balanceQty) {
         toast.error(
@@ -446,7 +458,10 @@ function CreateClientPOPage() {
             hsnCode: item.hsnCode,
             qtyQuoted: item.qtyQuoted,
             qtyOrdered: item.qtyOrdered,
-            unitRate: item.unitRate,
+            unitRate: item.negotiatedRate,
+            quotedRate: item.unitRate,
+            rateRemark: item.rateRemark || null,
+            amount: item.qtyOrdered * item.negotiatedRate,
             deliveryDate: item.itemDeliveryDate || null,
             remark: item.remark,
           })),
@@ -718,7 +733,10 @@ function CreateClientPOPage() {
                         <TableHead className="text-right">Balance</TableHead>
                         <TableHead className="text-right w-[130px]">Qty Ordered</TableHead>
                         <TableHead>UOM</TableHead>
-                        <TableHead className="text-right">Rate</TableHead>
+                        <TableHead className="text-right">Quoted Rate</TableHead>
+                        <TableHead className="text-right w-[120px]">Order Rate</TableHead>
+                        <TableHead className="text-right">Diff</TableHead>
+                        <TableHead className="w-[180px]">Rate Remark</TableHead>
                         <TableHead className="text-right">Amount</TableHead>
                         <TableHead>Item CDD</TableHead>
                       </TableRow>
@@ -832,17 +850,66 @@ function CreateClientPOPage() {
                               )}
                             </TableCell>
                             <TableCell>{item.uom || "Mtr"}</TableCell>
-                            <TableCell className="text-right">
-                              {item.unitRate.toLocaleString("en-IN", {
-                                minimumFractionDigits: 2,
-                              })}
+                            {/* Quoted Rate (read-only) */}
+                            <TableCell className="text-right text-muted-foreground">
+                              {item.unitRate.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                             </TableCell>
+
+                            {/* Negotiated Rate (editable when selected) */}
+                            <TableCell className="text-right">
+                              {item.selected ? (
+                                <Input
+                                  type="number"
+                                  className="w-[120px] text-right"
+                                  value={item.negotiatedRate}
+                                  onChange={(e) => {
+                                    const updated = [...balanceItems];
+                                    updated[index] = {
+                                      ...updated[index],
+                                      negotiatedRate: parseFloat(e.target.value) || 0,
+                                    };
+                                    setBalanceItems(updated);
+                                  }}
+                                  min={0}
+                                  step={0.01}
+                                />
+                              ) : (
+                                item.unitRate.toLocaleString("en-IN", { minimumFractionDigits: 2 })
+                              )}
+                            </TableCell>
+
+                            {/* Diff */}
+                            <TableCell className="text-right">
+                              {item.selected && item.negotiatedRate !== item.unitRate ? (
+                                <span className={item.negotiatedRate < item.unitRate ? "text-red-600" : "text-green-600"}>
+                                  {item.negotiatedRate < item.unitRate ? "-" : "+"}
+                                  {Math.abs(item.unitRate - item.negotiatedRate).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                                  {" "}({Math.abs(((item.unitRate - item.negotiatedRate) / item.unitRate) * 100).toFixed(1)}%)
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground">—</span>
+                              )}
+                            </TableCell>
+
+                            {/* Rate Remark (mandatory when rate differs) */}
+                            <TableCell>
+                              {item.selected && item.negotiatedRate !== item.unitRate ? (
+                                <Input
+                                  className="w-[180px]"
+                                  value={item.rateRemark}
+                                  onChange={(e) => {
+                                    const updated = [...balanceItems];
+                                    updated[index] = { ...updated[index], rateRemark: e.target.value };
+                                    setBalanceItems(updated);
+                                  }}
+                                  placeholder="Remark (required)"
+                                />
+                              ) : null}
+                            </TableCell>
+
                             <TableCell className="text-right font-medium">
-                              {item.selected && item.qtyOrdered > 0
-                                ? (item.qtyOrdered * item.unitRate).toLocaleString(
-                                    "en-IN",
-                                    { minimumFractionDigits: 2 }
-                                  )
+                              {item.selected
+                                ? (item.qtyOrdered * item.negotiatedRate).toLocaleString("en-IN", { minimumFractionDigits: 2 })
                                 : "-"}
                             </TableCell>
                             <TableCell>
