@@ -407,6 +407,8 @@ model User {
   rateRevisions           RateRevision[]         @relation("RateRevisionChangedBy")
   poaEmailsSent           POAcceptanceEmailLog[]  @relation("POAEmailSentBy")
   orderProcessingItems    OrderProcessingItem[]   @relation("OrderProcessedBy")
+  tendersCreated          Tender[]                @relation("TenderCreatedBy")
+  tenderDocsUploaded      TenderDocument[]        @relation("TenderDocUploadedBy")
 
   @@index([email])
   @@index([companyId])
@@ -469,6 +471,7 @@ model CustomerMaster {
   inspectionOffers     InspectionOffer[]
   termDefaults         CustomerTermDefault[]
   mtcCertificates      MTCCertificate[]          @relation("MTCCertCustomer")
+  tenders              Tender[]                  @relation("TenderCustomer")
 
   @@index([companyId])
   @@index([companyType])
@@ -1045,6 +1048,7 @@ model CompanyMaster {
   mtcNoteMasters        MTCNoteMaster[]
   rateRevisions         RateRevision[]
   orderProcessingItems  OrderProcessingItem[]
+  tenders               Tender[]
 }
 
 model FinancialYear {
@@ -3028,4 +3032,78 @@ model WarehouseItemDetail {
 
   @@index([warehouseIntimationItemId])
   @@index([inventoryStockId])
+}
+
+// ==================== TENDER MANAGEMENT ====================
+
+model Tender {
+  id                String         @id @default(cuid())
+  companyId         String?
+  company           CompanyMaster? @relation(fields: [companyId], references: [id])
+  tenderNo          String         @unique
+  tenderDate        DateTime       @default(now())
+  closingDate       DateTime?
+  openingDate       DateTime?
+  tenderSource      String?
+  tenderRef         String?
+  organization      String?
+  projectName       String?
+  location          String?
+  estimatedValue    Decimal?       @db.Decimal(14, 2)
+  currency          String         @default("INR")
+  emdRequired       Boolean        @default(false)
+  emdAmount         Decimal?       @db.Decimal(14, 2)
+  emdType           String?
+  emdSubmitted      Boolean        @default(false)
+  emdReturnDate     DateTime?
+  status            String         @default("IDENTIFIED")
+  remarks           String?        @db.Text
+  customerId        String?
+  customer          CustomerMaster? @relation("TenderCustomer", fields: [customerId], references: [id])
+  createdById       String?
+  createdBy         User?          @relation("TenderCreatedBy", fields: [createdById], references: [id])
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  items             TenderItem[]
+  documents         TenderDocument[]
+
+  @@index([companyId])
+  @@index([tenderNo])
+  @@index([status])
+  @@index([closingDate])
+}
+
+model TenderItem {
+  id             String   @id @default(cuid())
+  tenderId       String
+  tender         Tender   @relation(fields: [tenderId], references: [id], onDelete: Cascade)
+  sNo            Int
+  product        String?
+  material       String?
+  additionalSpec String?
+  sizeLabel      String?
+  quantity       Decimal  @db.Decimal(10, 3)
+  uom            String?
+  estimatedRate  Decimal? @db.Decimal(12, 2)
+  amount         Decimal? @db.Decimal(14, 2)
+  remarks        String?
+
+  @@index([tenderId])
+}
+
+model TenderDocument {
+  id           String   @id @default(cuid())
+  tenderId     String
+  tender       Tender   @relation(fields: [tenderId], references: [id], onDelete: Cascade)
+  fileName     String
+  fileType     String
+  filePath     String
+  fileSize     Int?
+  category     String
+  uploadedAt   DateTime @default(now())
+  uploadedById String?
+  uploadedBy   User?    @relation("TenderDocUploadedBy", fields: [uploadedById], references: [id])
+
+  @@index([tenderId])
 }
