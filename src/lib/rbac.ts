@@ -189,6 +189,12 @@ const MODULE_ACCESS: Record<string, Record<RBACAction, UserRole[]>> = {
     delete: ["STORES", "ADMIN", "SUPER_ADMIN"],
     approve: ["MANAGEMENT", "ADMIN", "SUPER_ADMIN"],
   },
+  tender: {
+    read: ["SALES", "MANAGEMENT", "ADMIN", "SUPER_ADMIN"],
+    write: ["SALES", "ADMIN", "SUPER_ADMIN"],
+    delete: ["ADMIN", "SUPER_ADMIN"],
+    approve: ["MANAGEMENT", "ADMIN", "SUPER_ADMIN"],
+  },
 };
 
 export interface AuthResult {
@@ -228,6 +234,7 @@ const MODULE_TO_ACCESS_KEY: Record<string, string> = {
   clientPO: "sales",
   poAcceptance: "sales",
   customerContacts: "sales",
+  tender: "sales",
   purchaseRequisition: "purchase",
   purchaseOrder: "purchase",
   grn: "inventory",

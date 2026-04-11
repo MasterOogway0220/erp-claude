@@ -25,7 +25,8 @@ export type DocumentType =
   | "LAB_LETTER"
   | "RFQ"
   | "COMPARATIVE_STATEMENT"
-  | "MTC_CERTIFICATE";
+  | "MTC_CERTIFICATE"
+  | "TENDER";
 
 export const PREFIXES: Record<DocumentType, string> = {
   QUOTATION: "NPS",
@@ -53,6 +54,7 @@ export const PREFIXES: Record<DocumentType, string> = {
   RFQ: "RFQ",
   COMPARATIVE_STATEMENT: "CS",
   MTC_CERTIFICATE: "MTC",
+  TENDER: "TND",
 };
 
 export function getCurrentFinancialYear(): string {
