@@ -404,6 +404,7 @@ model User {
   mtcCertificatesCreated  MTCCertificate[]       @relation("MTCCertCreatedBy")
   rateRevisions           RateRevision[]         @relation("RateRevisionChangedBy")
   poaEmailsSent           POAcceptanceEmailLog[]  @relation("POAEmailSentBy")
+  orderProcessingItems    OrderProcessingItem[]   @relation("OrderProcessedBy")
 
   @@index([email])
   @@index([companyId])
@@ -1041,6 +1042,7 @@ model CompanyMaster {
   mtcMaterialSpecs      MTCMaterialSpec[]
   mtcNoteMasters        MTCNoteMaster[]
   rateRevisions         RateRevision[]
+  orderProcessingItems  OrderProcessingItem[]
 }
 
 model FinancialYear {
@@ -1320,7 +1322,9 @@ model SalesOrder {
   projectName        String?
   deliverySchedule   String?
   paymentTerms       String?
-  dispatchAddressId  String?
+  dispatchAddressId     String?
+  clientPurchaseOrderId String?
+  processingStatus      String   @default("UNPROCESSED")
   poAcceptanceStatus POAcceptanceStatus @default(PENDING)
   poReviewRemarks    String?
   status             SOStatus           @default(OPEN)
@@ -1332,6 +1336,7 @@ model SalesOrder {
   customer             CustomerMaster           @relation(fields: [customerId], references: [id])
   quotation            Quotation?               @relation(fields: [quotationId], references: [id])
   dispatchAddress      CustomerDispatchAddress? @relation(fields: [dispatchAddressId], references: [id])
+  clientPurchaseOrder  ClientPurchaseOrder?     @relation("SOFromCPO", fields: [clientPurchaseOrderId], references: [id])
   items                SalesOrderItem[]
   purchaseRequisitions PurchaseRequisition[]
   purchaseOrders       PurchaseOrder[]          @relation("POSalesOrder")
@@ -1346,6 +1351,7 @@ model SalesOrder {
   @@index([soNo])
   @@index([customerId])
   @@index([dispatchAddressId])
+  @@index([clientPurchaseOrderId])
 }
 
 model SalesOrderItem {
@@ -1377,6 +1383,7 @@ model SalesOrderItem {
   fitting                  FittingMaster?            @relation(fields: [fittingId], references: [id])
   flange                   FlangeMaster?             @relation(fields: [flangeId], references: [id])
   warehouseIntimationItems WarehouseIntimationItem[]
+  orderProcessing          OrderProcessingItem?
 
   @@index([salesOrderId])
   @@index([fittingId])
@@ -1461,6 +1468,7 @@ model ClientPurchaseOrder {
   items            ClientPOItem[]
   poAcceptance     POAcceptance?
   inspectionOffers InspectionOffer[]
+  salesOrders      SalesOrder[]      @relation("SOFromCPO")
 
   @@index([companyId])
   @@index([cpoNo])
@@ -2936,4 +2944,57 @@ model POAcceptanceEmailLog {
 
   @@index([poAcceptanceId])
   @@index([sentById])
+}
+
+// ==================== ORDER PROCESSING ====================
+
+model OrderProcessingItem {
+  id                    String    @id @default(cuid())
+  salesOrderItemId      String    @unique
+  salesOrderItem        SalesOrderItem @relation(fields: [salesOrderItemId], references: [id], onDelete: Cascade)
+
+  poSlNo                String?
+  poItemCode            String?
+
+  colourCodingRequired  Boolean   @default(false)
+  colourCode            String?
+
+  additionalPipeSpec    String?
+
+  hotDipGalvanising     Boolean   @default(false)
+  screwedEnds           Boolean   @default(false)
+  coatingRequired       Boolean   @default(false)
+  coatingType           String?
+  coatingSide           String?
+
+  tpiRequired           Boolean   @default(false)
+  tpiType               String?
+
+  labTestingRequired    Boolean   @default(false)
+
+  pmiRequired           Boolean   @default(false)
+  pmiType               String?
+
+  ndtRequired           Boolean   @default(false)
+  ndtTests              Json?
+
+  vdiRequired           Boolean   @default(false)
+  vdiWitnessPercent     Int?
+  hydroTestRequired     Boolean   @default(false)
+  hydroWitnessPercent   Int?
+
+  requiredLabTests      Json?
+
+  status                String    @default("PENDING")
+  processedAt           DateTime?
+  processedById         String?
+  processedBy           User?     @relation("OrderProcessedBy", fields: [processedById], references: [id])
+
+  companyId             String
+  company               CompanyMaster @relation(fields: [companyId], references: [id])
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([salesOrderItemId])
+  @@index([companyId])
 }
