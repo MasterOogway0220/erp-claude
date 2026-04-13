@@ -23,6 +23,14 @@ export async function GET(
           orderBy: { uploadedAt: "desc" },
           include: { uploadedBy: { select: { name: true } } },
         },
+        quotations: {
+          select: { id: true, quotationNo: true, quotationDate: true, status: true, quotationCategory: true },
+          orderBy: { quotationDate: "desc" },
+        },
+        salesOrders: {
+          select: { id: true, soNo: true, soDate: true, status: true },
+          orderBy: { soDate: "desc" },
+        },
       },
     });
 
