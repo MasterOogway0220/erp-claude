@@ -71,6 +71,7 @@ export async function POST(request: NextRequest) {
       paymentTerms,
       items,
       forceCreate,
+      sourceTenderId,
     } = body;
 
     if (!customerId) {
@@ -205,6 +206,7 @@ export async function POST(request: NextRequest) {
           projectName: projectName || null,
           deliverySchedule: deliverySchedule || null,
           paymentTerms: paymentTerms || null,
+          sourceTenderId: sourceTenderId || null,
           poAcceptanceStatus: "PENDING",
           items: {
             create: items.map((item: any, index: number) => ({
