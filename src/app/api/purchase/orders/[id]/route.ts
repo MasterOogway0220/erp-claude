@@ -124,7 +124,7 @@ export async function PATCH(
     if (!authorized) return response!;
 
     const body = await request.json();
-    const { action, deliveryDate, specialRequirements, approvalRemarks, status, followUpNotes } = body;
+    const { action, deliveryDate, specialRequirements, approvalRemarks, status, followUpNotes, vendorId, currency, items: editItems } = body;
 
     const existing = await prisma.purchaseOrder.findFirst({
       where: { id, ...companyFilter(companyId) },
@@ -208,6 +208,65 @@ export async function PATCH(
       }
       updateData.status = "SENT_TO_VENDOR";
       auditAction = "STATUS_CHANGE";
+    } else if (action === "full_edit") {
+      if (existing.status !== "DRAFT") {
+        return NextResponse.json(
+          { error: "Only DRAFT purchase orders can be fully edited" },
+          { status: 400 }
+        );
+      }
+      if (!vendorId) {
+        return NextResponse.json({ error: "Vendor is required" }, { status: 400 });
+      }
+      if (!editItems || !Array.isArray(editItems) || editItems.length === 0) {
+        return NextResponse.json({ error: "At least one item is required" }, { status: 400 });
+      }
+
+      const totalAmount = editItems.reduce(
+        (sum: number, item: any) => sum + (parseFloat(item.amount) || 0),
+        0
+      );
+
+      await prisma.purchaseOrderItem.deleteMany({ where: { purchaseOrderId: id } });
+
+      await prisma.purchaseOrder.update({
+        where: { id },
+        data: {
+          vendorId,
+          currency: currency || "INR",
+          ...(deliveryDate ? { deliveryDate: new Date(deliveryDate) } : {}),
+          specialRequirements: specialRequirements || null,
+          totalAmount,
+          items: {
+            create: editItems.map((item: any, idx: number) => ({
+              sNo: idx + 1,
+              product: item.product || null,
+              material: item.material || null,
+              additionalSpec: item.additionalSpec || null,
+              sizeLabel: item.sizeLabel || null,
+              quantity: parseFloat(item.quantity) || 0,
+              unitRate: parseFloat(item.unitRate) || 0,
+              amount: parseFloat(item.amount) || 0,
+              deliveryDate: item.deliveryDate ? new Date(item.deliveryDate) : null,
+              fittingId: item.fittingId || null,
+              flangeId: item.flangeId || null,
+            })),
+          },
+        },
+      });
+
+      createAuditLog({
+        userId: session.user.id,
+        action: "UPDATE",
+        tableName: "PurchaseOrder",
+        recordId: id,
+        fieldName: "full_edit",
+        oldValue: existing.status,
+        newValue: JSON.stringify({ vendorId, itemCount: editItems.length }),
+        companyId,
+      }).catch(console.error);
+
+      return NextResponse.json({ success: true });
     } else {
       // Legacy: direct field updates
       if (status) {

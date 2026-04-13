@@ -319,6 +319,12 @@ export default function PurchaseOrderDetailPage() {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
+          {po.status === "DRAFT" && (
+            <Button variant="outline" onClick={() => router.push(`/purchase/orders/${po.id}/edit`)}>
+              <Edit className="w-4 h-4 mr-2" />
+              Edit PO
+            </Button>
+          )}
           <Button variant="outline" onClick={handleDownloadPDF}>
             <FileDown className="w-4 h-4 mr-2" />
             Download PDF
