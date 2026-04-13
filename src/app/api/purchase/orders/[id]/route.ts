@@ -227,7 +227,7 @@ export async function PATCH(
         0
       );
 
-      await prisma.purchaseOrderItem.deleteMany({ where: { purchaseOrderId: id } });
+      await prisma.pOItem.deleteMany({ where: { poId: id } });
 
       await prisma.purchaseOrder.update({
         where: { id },
