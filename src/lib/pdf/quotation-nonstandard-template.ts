@@ -196,6 +196,7 @@ export function generateNonStandardQuotationHtml(
 
   // Prepared by
   const preparedByName = quotation.preparedBy?.name || "";
+  const preparedByEmail = quotation.preparedBy?.email || "";
   const preparedByPhone = quotation.preparedBy?.phone || "";
 
   const itemRows = quotation.items
@@ -487,7 +488,7 @@ export function generateNonStandardQuotationHtml(
   <tr class="info-grid">
     <td class="info-customer-name" colspan="3">M/s. ${escapeHtml(quotation.customer.name)}</td>
     <td class="info-value" colspan="3">${escapeHtml(buyerName)}</td>
-    <td class="info-value" colspan="3">Direct Line : ${escapeHtml(preparedByPhone)}</td>
+    <td class="info-value" colspan="3">Direct Line : ${escapeHtml(preparedByPhone)}${preparedByEmail ? ` &nbsp;|&nbsp; Email : ${escapeHtml(preparedByEmail)}` : ""}</td>
   </tr>
 
   <!-- ROW 8: Customer address line 1 / Buyer designation / Enquiry Reference -->
