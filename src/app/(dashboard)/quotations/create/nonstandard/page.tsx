@@ -129,8 +129,10 @@ function NonStandardQuotationPage() {
     placeOfSupplyState: "",
     placeOfSupplyCountry: "India",
     dealOwnerId: "",
+    preparedById: "",
     nextActionDate: "",
     kindAttention: "",
+    sourceTenderId: "",
   });
   const [items, setItems] = useState<NonStdItem[]>([emptyItem]);
   const [terms, setTerms] = useState<{
@@ -475,8 +477,10 @@ function NonStandardQuotationPage() {
         placeOfSupplyState: q.placeOfSupplyState || "",
         placeOfSupplyCountry: q.placeOfSupplyCountry || "India",
         dealOwnerId: q.dealOwnerId || "",
+        preparedById: q.preparedById || "",
         nextActionDate: q.nextActionDate ? new Date(q.nextActionDate).toISOString().split("T")[0] : "",
         kindAttention: q.kindAttention || "",
+        sourceTenderId: q.sourceTenderId || "",
       });
       setTaxRate(q.taxRate ? String(q.taxRate) : "");
       setAdditionalDiscount(q.additionalDiscount ? String(q.additionalDiscount) : "");
@@ -528,6 +532,37 @@ function NonStandardQuotationPage() {
       editCurrencyLoadedRef.current = true;
     }
   }, [editData]);
+
+  // Pre-fill from tender if tenderId is in URL params
+  useEffect(() => {
+    const tenderId = searchParams.get("tenderId");
+    if (!tenderId) return;
+    fetch(`/api/tenders/${tenderId}`)
+      .then((r) => r.json())
+      .then((tender) => {
+        if (!tender?.id) return;
+        setFormData((prev) => ({
+          ...prev,
+          customerId: tender.customerId || prev.customerId,
+          kindAttention: tender.projectName || prev.kindAttention,
+          sourceTenderId: tender.id,
+        }));
+        if (tender.items?.length > 0) {
+          setItems(
+            tender.items.map((ti: any) => ({
+              ...emptyItem,
+              itemDescription: [ti.product, ti.material, ti.additionalSpec, ti.size || ti.sizeLabel]
+                .filter(Boolean)
+                .join(" "),
+              material: ti.material || "",
+              quantity: String(ti.quantity || ""),
+              uom: ti.uom || "Mtr",
+            }))
+          );
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -945,6 +980,28 @@ function NonStandardQuotationPage() {
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Assign owner" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NONE">Unassigned</SelectItem>
+                    {usersData?.users?.map((user: any) => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Prepared By</Label>
+                <Select
+                  value={formData.preparedById || "NONE"}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, preparedById: value === "NONE" ? "" : value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select person" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="NONE">Unassigned</SelectItem>
@@ -1722,7 +1779,7 @@ function NonStandardQuotationPage() {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="NONE">— None —</SelectItem>
-                            {pastQuotations.map((pq: any) => (
+                            {pastQuotations.filter((pq: any) => pq.quotationCategory === "NON_STANDARD").map((pq: any) => (
                               <SelectItem key={pq.id} value={pq.quotationNo}>
                                 {pq.quotationNo} {pq.contactPerson ? `[${pq.contactPerson}]` : ""} ({pq.quotationDate ? new Date(pq.quotationDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "2-digit" }) : "—"})
                               </SelectItem>

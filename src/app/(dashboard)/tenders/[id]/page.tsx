@@ -1,8 +1,14 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { use } from "react";
+import { useRouter } from "next/navigation";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -88,6 +94,19 @@ interface Tender {
   documents: TenderDocument[];
   createdAt: string;
   updatedAt: string;
+  quotations?: Array<{
+    id: string;
+    quotationNo: string;
+    quotationDate: string;
+    status: string;
+    quotationCategory: string;
+  }>;
+  salesOrders?: Array<{
+    id: string;
+    soNo: string;
+    soDate: string;
+    status: string;
+  }>;
 }
 
 const STATUS_STEPS = [
@@ -184,6 +203,7 @@ export default function TenderDetailPage({
   const [tender, setTender] = useState<Tender | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [quoteTypeDialogOpen, setQuoteTypeDialogOpen] = useState(false);
   const [uploadCategory, setUploadCategory] = useState("TENDER_DOCUMENT");
   const [nextStatus, setNextStatus] = useState<string>("");
   const [advancingStatus, setAdvancingStatus] = useState(false);
@@ -389,6 +409,44 @@ export default function TenderDetailPage({
         </CardContent>
       </Card>
 
+      {tender.status === "WON" && (
+        <div className="flex gap-2 flex-wrap">
+          <Button onClick={() => setQuoteTypeDialogOpen(true)}>
+            Create Quotation
+          </Button>
+          <Button variant="outline" onClick={() => router.push(`/sales/create?tenderId=${tender.id}`)}>
+            Create Sales Order
+          </Button>
+        </div>
+      )}
+
+      <Dialog open={quoteTypeDialogOpen} onOpenChange={setQuoteTypeDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Choose Quotation Type</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 py-2">
+            <Button
+              onClick={() => {
+                setQuoteTypeDialogOpen(false);
+                router.push(`/quotations/create/standard?tenderId=${tender.id}`);
+              }}
+            >
+              Standard Quotation
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setQuoteTypeDialogOpen(false);
+                router.push(`/quotations/create/nonstandard?tenderId=${tender.id}`);
+              }}
+            >
+              Non-Standard Quotation
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Details + EMD */}
       <div className="grid gap-6 md:grid-cols-2">
         {/* Details Card */}
@@ -575,6 +633,57 @@ export default function TenderDetailPage({
           )}
         </CardContent>
       </Card>
+
+      {((tender.quotations && tender.quotations.length > 0) || (tender.salesOrders && tender.salesOrders.length > 0)) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Linked Documents</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {tender.quotations && tender.quotations.length > 0 && (
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-2">Quotations</p>
+                <div className="space-y-2">
+                  {tender.quotations.map((q) => (
+                    <div
+                      key={q.id}
+                      className="flex items-center justify-between rounded border px-3 py-2 text-sm cursor-pointer hover:bg-muted"
+                      onClick={() => router.push(`/quotations/${q.id}`)}
+                    >
+                      <span className="font-medium">{q.quotationNo}</span>
+                      <div className="flex items-center gap-3 text-muted-foreground">
+                        <span>{q.quotationCategory === "NON_STANDARD" ? "Non-Std" : "Std"}</span>
+                        <span>{q.quotationDate ? new Date(q.quotationDate).toLocaleDateString("en-IN") : "—"}</span>
+                        <Badge variant="outline">{q.status}</Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {tender.salesOrders && tender.salesOrders.length > 0 && (
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-2">Sales Orders</p>
+                <div className="space-y-2">
+                  {tender.salesOrders.map((so) => (
+                    <div
+                      key={so.id}
+                      className="flex items-center justify-between rounded border px-3 py-2 text-sm cursor-pointer hover:bg-muted"
+                      onClick={() => router.push(`/sales/${so.id}`)}
+                    >
+                      <span className="font-medium">{so.soNo}</span>
+                      <div className="flex items-center gap-3 text-muted-foreground">
+                        <span>{so.soDate ? new Date(so.soDate).toLocaleDateString("en-IN") : "—"}</span>
+                        <Badge variant="outline">{so.status}</Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Documents Section */}
       <Card>

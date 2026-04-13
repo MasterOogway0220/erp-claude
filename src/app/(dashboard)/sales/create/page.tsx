@@ -76,6 +76,7 @@ function CreateSalesOrderPage() {
     projectName: "",
     deliverySchedule: "",
     paymentTerms: "",
+    sourceTenderId: "",
   });
 
   const [items, setItems] = useState<SOItem[]>([]);
@@ -149,6 +150,23 @@ function CreateSalesOrderPage() {
       handleQuotationChange(preselectedQuotationId);
     }
   }, [preselectedQuotationId, quotations, formData.quotationId, handleQuotationChange]);
+
+  useEffect(() => {
+    const tenderId = searchParams.get("tenderId");
+    if (!tenderId) return;
+    fetch(`/api/tenders/${tenderId}`)
+      .then((r) => r.json())
+      .then((tender) => {
+        if (!tender?.id) return;
+        setFormData((prev) => ({
+          ...prev,
+          customerId: tender.customerId || prev.customerId,
+          projectName: tender.projectName || prev.projectName,
+          sourceTenderId: tender.id,
+        }));
+      })
+      .catch(() => {});
+  }, []);
 
   const addItem = () => {
     setItems([
