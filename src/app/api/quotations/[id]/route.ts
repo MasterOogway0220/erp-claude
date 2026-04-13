@@ -343,6 +343,8 @@ export async function PUT(
       inquiryDate,
       // New fields
       dealOwnerId,
+      preparedById: preparedByIdPatch,
+      sourceTenderId: sourceTenderIdPatch,
       nextActionDate,
       kindAttention,
       additionalDiscount,
@@ -398,6 +400,8 @@ export async function PUT(
           deliveryPeriod: deliveryPeriod || null,
           // New fields
           dealOwnerId: dealOwnerId || null,
+          ...(preparedByIdPatch !== undefined ? { preparedById: preparedByIdPatch || null } : {}),
+          ...(sourceTenderIdPatch !== undefined ? { sourceTenderId: sourceTenderIdPatch || null } : {}),
           nextActionDate: nextActionDate ? new Date(nextActionDate) : null,
           kindAttention: kindAttention || null,
           additionalDiscount: parsedDiscount || null,

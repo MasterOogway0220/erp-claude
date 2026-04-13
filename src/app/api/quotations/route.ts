@@ -106,6 +106,8 @@ export async function POST(request: NextRequest) {
       inquiryDate,
       // New fields
       dealOwnerId,
+      preparedById: preparedByIdBody,
+      sourceTenderId,
       nextActionDate,
       kindAttention,
       additionalDiscount,
@@ -154,7 +156,7 @@ export async function POST(request: NextRequest) {
       where: { id: session.user.id },
       select: { id: true },
     });
-    const preparedById = userInDb ? session.user.id : null;
+    const preparedById = preparedByIdBody || (userInDb ? session.user.id : null);
 
     // Generate quotation number using shared document numbering utility
     const quotationNo = await generateDocumentNumber("QUOTATION", companyId);
@@ -214,6 +216,7 @@ export async function POST(request: NextRequest) {
         grandTotal,
         amountInWords: computedAmountInWords,
         preparedById,
+        sourceTenderId: sourceTenderId || null,
         items: {
           create: items.map((item: any, index: number) => ({
             sNo: index + 1,
