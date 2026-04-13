@@ -822,6 +822,10 @@ model Quotation {
   lossCompetitor String?
   lossNotes      String? @db.Text
 
+  // Tender linkage
+  sourceTenderId String?
+  sourceTender   Tender? @relation("TenderQuotations", fields: [sourceTenderId], references: [id])
+
   // Deal management (TranZact parity)
   dealOwnerId    String?
   nextActionDate DateTime?
@@ -1341,6 +1345,10 @@ model SalesOrder {
   status             SOStatus           @default(OPEN)
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
+
+  // Tender linkage
+  sourceTenderId String?
+  sourceTender   Tender? @relation("TenderSalesOrders", fields: [sourceTenderId], references: [id])
 
   // Relations
   company              CompanyMaster?           @relation(fields: [companyId], references: [id])
@@ -3072,6 +3080,8 @@ model Tender {
 
   items             TenderItem[]
   documents         TenderDocument[]
+  quotations        Quotation[]      @relation("TenderQuotations")
+  salesOrders       SalesOrder[]     @relation("TenderSalesOrders")
 
   @@index([companyId])
   @@index([tenderNo])
