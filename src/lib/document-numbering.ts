@@ -27,7 +27,8 @@ export type DocumentType =
   | "COMPARATIVE_STATEMENT"
   | "MTC_CERTIFICATE"
   | "TENDER"
-  | "SUPPLIER_QUOTATION";
+  | "SUPPLIER_QUOTATION"
+  | "INSPECTION_PREP";
 
 export const PREFIXES: Record<DocumentType, string> = {
   QUOTATION: "NPS",
@@ -57,6 +58,7 @@ export const PREFIXES: Record<DocumentType, string> = {
   MTC_CERTIFICATE: "MTC",
   TENDER: "TND",
   SUPPLIER_QUOTATION: "SQ",
+  INSPECTION_PREP: "IPR",
 };
 
 export function getCurrentFinancialYear(): string {
