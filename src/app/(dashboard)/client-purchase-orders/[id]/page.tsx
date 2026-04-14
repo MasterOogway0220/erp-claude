@@ -234,15 +234,6 @@ export default function ClientPODetailPage({
             Sales Order: {linkedSO.soNo} →
           </Button>
         )}
-        {(clientPO.status === "REGISTERED" || clientPO.status === "APPROVED" || clientPO.status === "CONFIRMED") && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.push(`/quality/inspection-prep/create?poId=${id}`)}
-          >
-            Prepare for Inspection
-          </Button>
-        )}
         <Button variant="outline" onClick={() => router.back()}>
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back

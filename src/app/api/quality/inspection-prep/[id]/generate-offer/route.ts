@@ -49,6 +49,13 @@ export async function POST(
       return NextResponse.json({ error: "Inspection Prep not found" }, { status: 404 });
     }
 
+    if (prep.status === "OFFER_GENERATED") {
+      return NextResponse.json(
+        { error: "An inspection offer has already been generated from this preparation" },
+        { status: 409 }
+      );
+    }
+
     const offerNo = await generateDocumentNumber("INSPECTION_OFFER", companyId);
 
     const [offer] = await prisma.$transaction(async (tx) => {
