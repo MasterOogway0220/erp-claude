@@ -411,6 +411,11 @@ model User {
   tenderDocsUploaded         TenderDocument[]            @relation("TenderDocUploadedBy")
   supplierQuotationsCreated  SupplierQuotation[]         @relation("SQCreatedBy")
   sqDocsUploaded             SupplierQuotationDocument[] @relation("SQDocUploadedBy")
+  inspectionPrepsCreated     InspectionPrep[]            @relation("IPPreparedBy")
+  heatEntriesAdded           HeatEntry[]                 @relation("HEAddedBy")
+  mtcDocumentsAdded          HeatMTCDocument[]           @relation("MTCAddedBy")
+  inspectionOffersApproved   InspectionOffer[]           @relation("IOApprovedBy")
+  inspectionOffersRejected   InspectionOffer[]           @relation("IORejectedBy")
 
   @@index([email])
   @@index([companyId])
@@ -1057,6 +1062,7 @@ model CompanyMaster {
   orderProcessingItems  OrderProcessingItem[]
   tenders               Tender[]
   supplierQuotations    SupplierQuotation[]   @relation("SQCompany")
+  inspectionPreps       InspectionPrep[]
 }
 
 model FinancialYear {
@@ -1618,6 +1624,7 @@ model PurchaseOrder {
   mtcDocuments        MTCDocument[]
   ncrs                NCR[]
   labReports          LabReport[]
+  inspectionPreps     InspectionPrep[]
 
   @@index([companyId])
   @@index([poNo])
@@ -1640,9 +1647,10 @@ model POItem {
   flangeId       String?
 
   // Relations
-  purchaseOrder PurchaseOrder  @relation(fields: [poId], references: [id], onDelete: Cascade)
-  fitting       FittingMaster? @relation(fields: [fittingId], references: [id])
-  flange        FlangeMaster?  @relation(fields: [flangeId], references: [id])
+  purchaseOrder       PurchaseOrder       @relation(fields: [poId], references: [id], onDelete: Cascade)
+  fitting             FittingMaster?      @relation(fields: [fittingId], references: [id])
+  flange              FlangeMaster?       @relation(fields: [flangeId], references: [id])
+  inspectionPrepItems InspectionPrepItem[]
 
   @@index([poId])
   @@index([fittingId])
@@ -2018,6 +2026,14 @@ model InspectionOffer {
   quantityReady          String?
   remarks                String?   @db.Text
   status                 String    @default("DRAFT")
+  inspectionPrepId       String?
+  approvedById           String?
+  approvedAt             DateTime?
+  rejectedById           String?
+  rejectedAt             DateTime?
+  rejectionRemarks       String?   @db.Text
+  sentAt                 DateTime?
+  tpiSignedAt            DateTime?
   createdById            String?
   createdAt              DateTime  @default(now())
   updatedAt              DateTime  @updatedAt
@@ -2030,6 +2046,9 @@ model InspectionOffer {
   tpiAgency           InspectionAgencyMaster? @relation("IOTpiAgency", fields: [tpiAgencyId], references: [id])
   createdBy           User?                   @relation("IOCreatedBy", fields: [createdById], references: [id])
   items               InspectionOfferItem[]
+  inspectionPrep      InspectionPrep?         @relation(fields: [inspectionPrepId], references: [id])
+  approvedBy          User?                   @relation("IOApprovedBy", fields: [approvedById], references: [id])
+  rejectedBy          User?                   @relation("IORejectedBy", fields: [rejectedById], references: [id])
 
   @@index([companyId])
   @@index([offerNo])
@@ -2052,9 +2071,11 @@ model InspectionOfferItem {
   colourCodeRequired Boolean @default(false)
   colourCode         String?
   remark             String?
+  piecesSelected     Int?
 
   // Relations
-  inspectionOffer InspectionOffer @relation(fields: [inspectionOfferId], references: [id], onDelete: Cascade)
+  inspectionOffer InspectionOffer          @relation(fields: [inspectionOfferId], references: [id], onDelete: Cascade)
+  heatSelections  InspectionOfferItemHeat[]
 
   @@index([inspectionOfferId])
 }
@@ -2825,9 +2846,10 @@ model WarehouseIntimation {
   company    CompanyMaster?            @relation(fields: [companyId], references: [id])
   salesOrder SalesOrder                @relation(fields: [salesOrderId], references: [id])
   warehouse  WarehouseMaster?          @relation(fields: [warehouseId], references: [id])
-  createdBy  User                      @relation("MPRCreatedBy", fields: [createdById], references: [id])
-  assignedTo User?                     @relation("MPRAssignedTo", fields: [assignedToId], references: [id])
-  items      WarehouseIntimationItem[]
+  createdBy       User                      @relation("MPRCreatedBy", fields: [createdById], references: [id])
+  assignedTo      User?                     @relation("MPRAssignedTo", fields: [assignedToId], references: [id])
+  items           WarehouseIntimationItem[]
+  inspectionPreps InspectionPrep[]
 
   @@index([companyId])
   @@index([salesOrderId])
@@ -3211,4 +3233,98 @@ model SupplierQuotationDocument {
   uploadedBy            User?             @relation("SQDocUploadedBy", fields: [uploadedById], references: [id])
 
   @@index([supplierQuotationId])
+}
+
+// ==================== INSPECTION PREP MODULE ====================
+
+model InspectionPrep {
+  id                    String    @id @default(cuid())
+  prepNo                String    @unique
+  poId                  String?
+  warehouseIntimationId String?
+  status                String    @default("DRAFT")
+  companyId             String?
+  preparedById          String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  company             CompanyMaster?        @relation(fields: [companyId], references: [id])
+  purchaseOrder       PurchaseOrder?        @relation(fields: [poId], references: [id])
+  warehouseIntimation WarehouseIntimation?  @relation(fields: [warehouseIntimationId], references: [id])
+  preparedBy          User?                 @relation("IPPreparedBy", fields: [preparedById], references: [id])
+  items               InspectionPrepItem[]
+  inspectionOffers    InspectionOffer[]
+
+  @@index([companyId])
+  @@index([poId])
+  @@index([warehouseIntimationId])
+}
+
+model InspectionPrepItem {
+  id               String   @id @default(cuid())
+  inspectionPrepId String
+  poItemId         String?
+  description      String?
+  sizeLabel        String?
+  uom              String?
+  make             String?
+  status           String   @default("PENDING")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  inspectionPrep InspectionPrep @relation(fields: [inspectionPrepId], references: [id], onDelete: Cascade)
+  poItem         POItem?        @relation(fields: [poItemId], references: [id])
+  heatEntries    HeatEntry[]
+
+  @@index([inspectionPrepId])
+  @@index([poItemId])
+}
+
+model HeatEntry {
+  id                   String   @id @default(cuid())
+  inspectionPrepItemId String
+  heatNo               String
+  lengthMtr            Decimal? @db.Decimal(10, 3)
+  pieces               Int?
+  make                 String?
+  addedById            String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  inspectionPrepItem InspectionPrepItem        @relation(fields: [inspectionPrepItemId], references: [id], onDelete: Cascade)
+  addedBy            User?                     @relation("HEAddedBy", fields: [addedById], references: [id])
+  mtcDocuments       HeatMTCDocument[]
+  offerItemHeats     InspectionOfferItemHeat[]
+
+  @@index([inspectionPrepItemId])
+}
+
+model HeatMTCDocument {
+  id          String    @id @default(cuid())
+  heatEntryId String
+  mtcNo       String
+  mtcDate     DateTime?
+  fileUrl     String?
+  addedById   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  heatEntry HeatEntry @relation(fields: [heatEntryId], references: [id], onDelete: Cascade)
+  addedBy   User?     @relation("MTCAddedBy", fields: [addedById], references: [id])
+
+  @@index([heatEntryId])
+}
+
+model InspectionOfferItemHeat {
+  id                    String @id @default(cuid())
+  inspectionOfferItemId String
+  heatEntryId           String
+  piecesSelected        Int?
+
+  inspectionOfferItem InspectionOfferItem @relation(fields: [inspectionOfferItemId], references: [id], onDelete: Cascade)
+  heatEntry           HeatEntry           @relation(fields: [heatEntryId], references: [id])
+
+  @@unique([inspectionOfferItemId, heatEntryId])
+  @@index([inspectionOfferItemId])
+  @@index([heatEntryId])
 }
