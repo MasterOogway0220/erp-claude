@@ -539,6 +539,7 @@ export default function InspectionPrepDetailPage({
                                 parseInt(e.target.value) || 0
                               )
                             }
+                            disabled={!sel?.selected}
                           />
                         </div>
                       </div>
@@ -770,6 +771,7 @@ function ItemHeatCard({
                               size="icon"
                               variant="ghost"
                               className="h-8 w-8"
+                              aria-label="Cancel"
                               onClick={() => {
                                 setAddingHeat(false);
                                 setHeatForm({ heatNo: "", lengthMtr: "", pieces: "", make: "" });
@@ -967,6 +969,7 @@ function MtcHeatBlock({ heat, prepId, itemId, isQA, onRefresh }: MtcHeatBlockPro
                 size="icon"
                 variant="ghost"
                 className="h-8 w-8"
+                aria-label="Cancel"
                 onClick={() => {
                   setAddingMtc(false);
                   setMtcForm({ mtcNo: "", mtcDate: "" });

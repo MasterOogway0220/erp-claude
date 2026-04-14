@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,9 +58,11 @@ export default function InspectionPrepListPage() {
       if (res.ok) {
         const data = await res.json();
         setPreps(data.preps || []);
+      } else {
+        toast.error("Failed to load inspection prep records");
       }
     } catch (err) {
-      console.error(err);
+      toast.error("Failed to load inspection prep records");
     } finally {
       setLoading(false);
     }
