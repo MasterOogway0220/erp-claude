@@ -124,9 +124,10 @@ export async function POST(request: NextRequest) {
           remarks: remarks || null,
           reportPath: reportPath || null,
           tpiAgencyId: tpiAgencyId || null,
-          imagePaths: Array.isArray(imagePaths) && imagePaths.length > 0 ? imagePaths : undefined,
-          reportPaths: Array.isArray(reportPaths) && reportPaths.length > 0 ? reportPaths : undefined,
-          tpiSignOffPaths: Array.isArray(tpiSignOffPaths) && tpiSignOffPaths.length > 0 ? tpiSignOffPaths : undefined,
+
+          imagePaths: Array.isArray(imagePaths) && imagePaths.length > 0 ? JSON.stringify(imagePaths) : undefined,
+          reportPaths: Array.isArray(reportPaths) && reportPaths.length > 0 ? JSON.stringify(reportPaths) : undefined,
+          tpiSignOffPaths: Array.isArray(tpiSignOffPaths) && tpiSignOffPaths.length > 0 ? JSON.stringify(tpiSignOffPaths) : undefined,
           parameters: {
             create: parameters.map((p: any) => ({
               parameterName: p.parameterName,
