@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess } from "@/lib/rbac";
-
-const QA_ROLES = ["QC", "MANAGEMENT", "ADMIN", "SUPER_ADMIN"];
+import { checkAccess, QA_ROLES } from "@/lib/rbac";
 
 export async function PATCH(
   request: NextRequest,
@@ -12,7 +10,7 @@ export async function PATCH(
     const { authorized, session, response } = await checkAccess("inspectionPrep", "write");
     if (!authorized) return response!;
 
-    if (!QA_ROLES.includes(session.user.role)) {
+    if (!(QA_ROLES as readonly string[]).includes(session.user.role)) {
       return NextResponse.json({ error: "Only QA/Manager can edit MTC documents" }, { status: 403 });
     }
 
@@ -47,7 +45,7 @@ export async function DELETE(
     const { authorized, session, response } = await checkAccess("inspectionPrep", "write");
     if (!authorized) return response!;
 
-    if (!QA_ROLES.includes(session.user.role)) {
+    if (!(QA_ROLES as readonly string[]).includes(session.user.role)) {
       return NextResponse.json({ error: "Only QA/Manager can delete MTC documents" }, { status: 403 });
     }
 

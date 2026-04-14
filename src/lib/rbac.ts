@@ -365,6 +365,9 @@ export async function checkAuth(): Promise<AuthResult> {
   return { authorized: true, session, companyId };
 }
 
+export const QA_ROLES = ["QC", "MANAGEMENT", "ADMIN", "SUPER_ADMIN"] as const;
+export const MANAGER_ROLES = ["MANAGEMENT", "ADMIN", "SUPER_ADMIN"] as const;
+
 /**
  * Build a Prisma where-clause filter for company isolation.
  * Returns { companyId } if the user has an active company, otherwise empty object.

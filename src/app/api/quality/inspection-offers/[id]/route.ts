@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, MANAGER_ROLES } from "@/lib/rbac";
 
 export async function GET(
   request: NextRequest,
@@ -53,7 +53,6 @@ export async function PATCH(
       return NextResponse.json({ error: "Inspection Offer not found" }, { status: 404 });
     }
 
-    const MANAGER_ROLES = ["MANAGEMENT", "ADMIN", "SUPER_ADMIN"];
     let updateData: any = {};
 
     switch (action) {
@@ -65,7 +64,7 @@ export async function PATCH(
         break;
 
       case "approve":
-        if (!MANAGER_ROLES.includes(session.user.role)) {
+        if (!(MANAGER_ROLES as readonly string[]).includes(session.user.role)) {
           return NextResponse.json({ error: "Only managers can approve offers" }, { status: 403 });
         }
         if (existing.status !== "PENDING_APPROVAL") {
@@ -75,7 +74,7 @@ export async function PATCH(
         break;
 
       case "reject":
-        if (!MANAGER_ROLES.includes(session.user.role)) {
+        if (!(MANAGER_ROLES as readonly string[]).includes(session.user.role)) {
           return NextResponse.json({ error: "Only managers can reject offers" }, { status: 403 });
         }
         if (existing.status !== "PENDING_APPROVAL") {

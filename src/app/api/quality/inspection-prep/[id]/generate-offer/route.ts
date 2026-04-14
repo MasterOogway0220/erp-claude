@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
 import { generateDocumentNumber } from "@/lib/document-numbering";
-import { checkAccess } from "@/lib/rbac";
-
-const QA_ROLES = ["QC", "MANAGEMENT", "ADMIN", "SUPER_ADMIN"];
+import { checkAccess, QA_ROLES } from "@/lib/rbac";
 
 export async function POST(
   request: NextRequest,
@@ -14,7 +12,7 @@ export async function POST(
     const { authorized, session, response, companyId } = await checkAccess("inspectionOffer", "write");
     if (!authorized) return response!;
 
-    if (!QA_ROLES.includes(session.user.role)) {
+    if (!(QA_ROLES as readonly string[]).includes(session.user.role)) {
       return NextResponse.json({ error: "Only QA/Manager can generate inspection offers" }, { status: 403 });
     }
 
@@ -53,49 +51,53 @@ export async function POST(
 
     const offerNo = await generateDocumentNumber("INSPECTION_OFFER", companyId);
 
-    const offer = await prisma.inspectionOffer.create({
-      data: {
-        companyId,
-        offerNo,
-        customerId,
-        inspectionPrepId: id,
-        tpiAgencyId: tpiAgencyId || null,
-        inspectionLocation: inspectionLocation || null,
-        proposedInspectionDate: proposedInspectionDate ? new Date(proposedInspectionDate) : null,
-        remarks: remarks || null,
-        status: "DRAFT",
-        createdById: session.user.id,
-        items: {
-          create: selectedItems.map((sel: any, idx: number) => {
-            const prepItem = prep.items.find((i: any) => i.id === sel.itemId);
-            const totalPiecesSelected = (sel.heats || []).reduce(
-              (sum: number, h: any) => sum + (parseInt(h.piecesSelected) || 0),
-              0
-            );
-            return {
-              sNo: idx + 1,
-              product: prepItem?.description || null,
-              sizeLabel: prepItem?.sizeLabel || null,
-              uom: prepItem?.uom || null,
-              piecesSelected: totalPiecesSelected || null,
-              heatSelections: {
-                create: (sel.heats || []).map((h: any) => ({
-                  heatEntryId: h.heatId,
-                  piecesSelected: parseInt(h.piecesSelected) || null,
-                })),
-              },
-            };
-          }),
+    const [offer] = await prisma.$transaction(async (tx) => {
+      const newOffer = await tx.inspectionOffer.create({
+        data: {
+          companyId,
+          offerNo,
+          customerId,
+          inspectionPrepId: id,
+          tpiAgencyId: tpiAgencyId || null,
+          inspectionLocation: inspectionLocation || null,
+          proposedInspectionDate: proposedInspectionDate ? new Date(proposedInspectionDate) : null,
+          remarks: remarks || null,
+          status: "DRAFT",
+          createdById: session.user.id,
+          items: {
+            create: selectedItems.map((sel: any, idx: number) => {
+              const prepItem = prep.items.find((i: any) => i.id === sel.itemId);
+              const totalPiecesSelected = (sel.heats || []).reduce(
+                (sum: number, h: any) => sum + (parseInt(h.piecesSelected) || 0),
+                0
+              );
+              return {
+                sNo: idx + 1,
+                product: prepItem?.description || null,
+                sizeLabel: prepItem?.sizeLabel || null,
+                uom: prepItem?.uom || null,
+                piecesSelected: totalPiecesSelected || null,
+                heatSelections: {
+                  create: (sel.heats || []).map((h: any) => ({
+                    heatEntryId: h.heatId,
+                    piecesSelected: parseInt(h.piecesSelected) || null,
+                  })),
+                },
+              };
+            }),
+          },
         },
-      },
-      include: {
-        items: { include: { heatSelections: true } },
-      },
-    });
+        include: {
+          items: { include: { heatSelections: true } },
+        },
+      });
 
-    await prisma.inspectionPrep.update({
-      where: { id },
-      data: { status: "OFFER_GENERATED" },
+      await tx.inspectionPrep.update({
+        where: { id },
+        data: { status: "OFFER_GENERATED" },
+      });
+
+      return [newOffer];
     });
 
     createAuditLog({
