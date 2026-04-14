@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
@@ -314,7 +313,7 @@ export async function POST(
           revisionSubReason: revisionSubReason || null,
           revisionNotes: revisionNotes || null,
           customerReference: customerReference || null,
-          changeSnapshot: changeSnapshot ?? Prisma.JsonNull,
+          changeSnapshot: changeSnapshot ? JSON.stringify(changeSnapshot) : null,
           // Copy items
           items: {
             create: sourceQuotation.items.map((item) => ({
