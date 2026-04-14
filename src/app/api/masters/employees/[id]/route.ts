@@ -58,7 +58,7 @@ export async function PATCH(
         designation: body.designation ?? undefined,
         email: body.email ?? undefined,
         mobile: body.mobile ?? undefined,
-        moduleAccess: Array.isArray(body.moduleAccess) ? body.moduleAccess : undefined,
+        moduleAccess: Array.isArray(body.moduleAccess) ? JSON.stringify(body.moduleAccess) : undefined,
         isActive: body.isActive ?? undefined,
       },
     });

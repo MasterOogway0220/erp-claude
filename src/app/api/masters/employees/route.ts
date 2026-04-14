@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
       userId: e.linkedUserId,
       user: e.linkedUser,
       role: e.linkedUser?.role || null,
-      moduleAccess: e.moduleAccess ?? [],
+      moduleAccess: e.moduleAccess ? (() => { try { return JSON.parse(e.moduleAccess!); } catch { return []; } })() : [],
       isActive: e.isActive,
       createdAt: e.createdAt,
       updatedAt: e.updatedAt,
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
         email: body.email,
         mobile: body.mobile || null,
         linkedUserId: user.id,
-        moduleAccess: Array.isArray(body.moduleAccess) ? body.moduleAccess : [],
+        moduleAccess: Array.isArray(body.moduleAccess) ? JSON.stringify(body.moduleAccess) : "[]",
         isActive: true,
       },
       include: {

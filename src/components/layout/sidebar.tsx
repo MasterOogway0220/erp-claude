@@ -214,7 +214,7 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    label: "REPORTS & ADMIN",
+    label: "",
     items: [
       {
         title: "Reports",
