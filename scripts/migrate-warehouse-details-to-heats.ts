@@ -75,11 +75,17 @@ async function main() {
       }
     }
 
-    // Find or create InspectionPrepItem for this intimation item
-    // Note: WarehouseIntimationItem does not have poItemId, so we create prep items per intimation item
+    // Find or create InspectionPrepItem keyed by intimation item ID
+    // Store a mapping so we don't create duplicates
+    const intimationItemId = detail.warehouseIntimationItem.id;
+
     let prepItem = await prisma.inspectionPrepItem.findFirst({
       where: {
         inspectionPrepId: prep.id,
+        // We use description as a proxy — but better to use a deterministic field
+        // Since there's no direct FK to WarehouseIntimationItem on InspectionPrepItem,
+        // we store the intimationItemId in the description field for migration tracking
+        description: `MIGRATED_ITEM_${intimationItemId}`,
       },
     });
 
@@ -87,11 +93,13 @@ async function main() {
       prepItem = await prisma.inspectionPrepItem.create({
         data: {
           inspectionPrepId: prep.id,
-          poItemId: null,
+          poItemId: null, // WarehouseIntimationItem has no poItemId per schema check
+          description: `MIGRATED_ITEM_${intimationItemId}`,
           make: detail.make || null,
           status: "READY",
         },
       });
+      console.log(`  Created InspectionPrepItem for intimation item ${intimationItemId}`);
     }
 
     // Create HeatEntry (check unique constraint: inspectionPrepItemId + heatNo)

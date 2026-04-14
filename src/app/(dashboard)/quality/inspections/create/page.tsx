@@ -316,6 +316,7 @@ function CreateInspectionForm() {
       }
     } catch (err) {
       console.error("Failed to pre-fill from offer:", err);
+      toast.error("Could not load offer details for pre-fill");
     }
   };
 
