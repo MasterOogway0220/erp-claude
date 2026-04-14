@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +16,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   ArrowLeft,
   FileText,
@@ -39,6 +49,7 @@ interface InspectionOfferDetail {
   quantityReady: string | null;
   remarks: string | null;
   status: string;
+  rejectionRemarks: string | null;
   createdAt: string;
   customer: { name: string; city: string | null; state: string | null };
   tpiAgency: { name: string; contactPerson: string | null; phone: string | null; email: string | null } | null;
@@ -69,9 +80,17 @@ export default function InspectionOfferDetailPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
+  const { data: session } = useSession();
+  const userRole = (session?.user as any)?.role || "";
+  const isManager = ["MANAGEMENT", "ADMIN", "SUPER_ADMIN"].includes(userRole);
+  const isQA = ["QC", "MANAGEMENT", "ADMIN", "SUPER_ADMIN"].includes(userRole);
+
   const [offer, setOffer] = useState<InspectionOfferDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState<string | null>(null);
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [rejectionRemarks, setRejectionRemarks] = useState("");
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     fetchOffer();
@@ -108,6 +127,27 @@ export default function InspectionOfferDetailPage({
     }
   };
 
+  const handleOfferAction = async (action: string, extra?: Record<string, string>) => {
+    setActionLoading(true);
+    try {
+      const res = await fetch(`/api/quality/inspection-offers/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, ...extra }),
+      });
+      if (!res.ok) {
+        const e = await res.json();
+        throw new Error(e.error || "Action failed");
+      }
+      toast.success("Status updated");
+      await fetchOffer();
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   if (loading) return <PageLoading />;
   if (!offer) return <div className="text-center py-12 text-muted-foreground">Not found</div>;
 
@@ -124,6 +164,57 @@ export default function InspectionOfferDetailPage({
           Back
         </Button>
       </PageHeader>
+
+      {/* Approval workflow */}
+      <div className="flex items-center gap-2 flex-wrap mt-2">
+        <Badge variant={
+          offer?.status === "APPROVED" ? "default" :
+          offer?.status === "PENDING_APPROVAL" ? "secondary" :
+          offer?.status === "SENT" ? "outline" :
+          offer?.status === "INSPECTION_DONE" ? "default" :
+          offer?.status === "COMPLETED" ? "default" :
+          "secondary"
+        }>
+          {offer?.status?.replace(/_/g, " ")}
+        </Badge>
+
+        {offer?.status === "DRAFT" && isQA && (
+          <Button size="sm" variant="outline" onClick={() => handleOfferAction("submit_for_approval")} disabled={actionLoading}>
+            Submit for Approval
+          </Button>
+        )}
+        {offer?.status === "PENDING_APPROVAL" && isManager && (
+          <>
+            <Button size="sm" onClick={() => handleOfferAction("approve")} disabled={actionLoading}>
+              Approve
+            </Button>
+            <Button size="sm" variant="destructive" onClick={() => setShowRejectDialog(true)} disabled={actionLoading}>
+              Reject
+            </Button>
+          </>
+        )}
+        {offer?.status === "APPROVED" && isQA && (
+          <Button size="sm" variant="outline" onClick={() => handleOfferAction("mark_sent")} disabled={actionLoading}>
+            Mark as Sent to TPI
+          </Button>
+        )}
+        {offer?.status === "SENT" && isQA && (
+          <Button size="sm" variant="outline" onClick={() => handleOfferAction("mark_tpi_signed")} disabled={actionLoading}>
+            Mark TPI Sign-off Received
+          </Button>
+        )}
+        {offer?.status === "INSPECTION_DONE" && isQA && (
+          <Button size="sm" onClick={() => router.push(`/quality/inspections/create?offerId=${id}`)}>
+            Create Inspection Report
+          </Button>
+        )}
+      </div>
+
+      {offer?.rejectionRemarks && (
+        <p className="text-sm text-destructive mt-1 flex items-center gap-1">
+          <span className="font-medium">Rejection remarks:</span> {offer.rejectionRemarks}
+        </p>
+      )}
 
       {/* Document Generation Buttons */}
       <Card>
@@ -275,6 +366,44 @@ export default function InspectionOfferDetailPage({
           </CardContent>
         </Card>
       )}
+
+      {/* Rejection Dialog */}
+      <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reject Inspection Offer</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Label htmlFor="rejectionRemarks">Rejection Remarks *</Label>
+            <Textarea
+              id="rejectionRemarks"
+              value={rejectionRemarks}
+              onChange={(e) => setRejectionRemarks(e.target.value)}
+              placeholder="Explain why this offer is being rejected..."
+              rows={3}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRejectDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (!rejectionRemarks.trim()) {
+                  toast.error("Rejection remarks are required");
+                  return;
+                }
+                handleOfferAction("reject", { rejectionRemarks });
+                setShowRejectDialog(false);
+                setRejectionRemarks("");
+              }}
+            >
+              Reject Offer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

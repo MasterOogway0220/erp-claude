@@ -218,14 +218,23 @@ export default function WarehouseIntimationDetailPage({
             </Button>
           )}
           {data.items?.some((item: any) => item.itemStatus === "READY") && (
-            <Button variant="outline" size="sm" onClick={() => {
-              const readyIds = data.items.filter((i: any) => i.itemStatus === "READY").map((i: any) => i.id);
-              setSelectedIOItems(new Set(readyIds));
-              setShowGenerateIODialog(true);
-            }}>
-              <FileSearch className="w-4 h-4 mr-1" />
-              Generate Inspection Offer
-            </Button>
+            <>
+              <Button variant="outline" size="sm" onClick={() => {
+                const readyIds = data.items.filter((i: any) => i.itemStatus === "READY").map((i: any) => i.id);
+                setSelectedIOItems(new Set(readyIds));
+                setShowGenerateIODialog(true);
+              }}>
+                <FileSearch className="w-4 h-4 mr-1" />
+                Generate Inspection Offer
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push(`/quality/inspection-prep/create?intimationId=${id}`)}
+              >
+                Prepare for Inspection
+              </Button>
+            </>
           )}
         </div>
       </PageHeader>
