@@ -256,9 +256,6 @@ function CreateInspectionForm() {
   const [agencies, setAgencies] = useState<TPIAgency[]>([]);
   const [tpiAgencyId, setTpiAgencyId] = useState("");
 
-  // Inspection Offer pre-fill
-  const [inspectionOfferId, setInspectionOfferId] = useState<string | null>(null);
-
   // File uploads
   const [inspectionImages, setInspectionImages] = useState<UploadedFile[]>([]);
   const [inspectionReports, setInspectionReports] = useState<UploadedFile[]>([]);
@@ -307,7 +304,6 @@ function CreateInspectionForm() {
       const offer = await res.json();
 
       // Pre-fill form fields from the inspection offer
-      setInspectionOfferId(offer.id);
 
       // Set TPI Agency if available
       if (offer.tpiAgency?.id) {
