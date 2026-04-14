@@ -76,13 +76,10 @@ async function main() {
     }
 
     // Find or create InspectionPrepItem for this intimation item
+    // Note: WarehouseIntimationItem does not have poItemId, so we create prep items per intimation item
     let prepItem = await prisma.inspectionPrepItem.findFirst({
       where: {
         inspectionPrepId: prep.id,
-        // match by poItemId if available, otherwise just by prep
-        ...(detail.warehouseIntimationItem.poItemId
-          ? { poItemId: detail.warehouseIntimationItem.poItemId }
-          : {}),
       },
     });
 
@@ -90,7 +87,7 @@ async function main() {
       prepItem = await prisma.inspectionPrepItem.create({
         data: {
           inspectionPrepId: prep.id,
-          poItemId: detail.warehouseIntimationItem.poItemId || null,
+          poItemId: null,
           make: detail.make || null,
           status: "READY",
         },
@@ -98,12 +95,11 @@ async function main() {
     }
 
     // Create HeatEntry (check unique constraint: inspectionPrepItemId + heatNo)
-    let heatEntry = await prisma.heatEntry.findUnique({
+    // Find by compound unique constraint
+    let heatEntry = await prisma.heatEntry.findFirst({
       where: {
-        inspectionPrepItemId_heatNo: {
-          inspectionPrepItemId: prepItem.id,
-          heatNo: detail.heatNo!,
-        },
+        inspectionPrepItemId: prepItem.id,
+        heatNo: detail.heatNo!,
       },
     });
 
