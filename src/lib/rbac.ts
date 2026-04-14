@@ -93,6 +93,12 @@ const MODULE_ACCESS: Record<string, Record<RBACAction, UserRole[]>> = {
     delete: ["QC", "ADMIN", "SUPER_ADMIN"],
     approve: ["MANAGEMENT", "ADMIN", "SUPER_ADMIN"],
   },
+  inspectionPrep: {
+    read: ["QC", "SALES", "STORES", "MANAGEMENT", "ADMIN", "SUPER_ADMIN"],
+    write: ["QC", "STORES", "MANAGEMENT", "ADMIN", "SUPER_ADMIN"],
+    delete: ["QC", "MANAGEMENT", "ADMIN", "SUPER_ADMIN"],
+    approve: ["MANAGEMENT", "ADMIN", "SUPER_ADMIN"],
+  },
   qcRelease: {
     read: ["QC", "STORES", "MANAGEMENT", "ADMIN", "SUPER_ADMIN"],
     write: ["QC", "ADMIN", "SUPER_ADMIN"],
@@ -249,6 +255,7 @@ const MODULE_TO_ACCESS_KEY: Record<string, string> = {
   stockIssue: "inventory",
   inspection: "quality",
   inspectionOffer: "quality",
+  inspectionPrep: "quality",
   qcRelease: "quality",
   ncr: "quality",
   mtc: "quality",
@@ -357,6 +364,9 @@ export async function checkAuth(): Promise<AuthResult> {
 
   return { authorized: true, session, companyId };
 }
+
+export const QA_ROLES = ["QC", "MANAGEMENT", "ADMIN", "SUPER_ADMIN"] as const;
+export const MANAGER_ROLES = ["MANAGEMENT", "ADMIN", "SUPER_ADMIN"] as const;
 
 /**
  * Build a Prisma where-clause filter for company isolation.

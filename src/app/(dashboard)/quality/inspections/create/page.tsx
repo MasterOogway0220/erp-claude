@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageLoading } from "@/components/shared/page-loading";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -236,8 +237,11 @@ function FileUploadSection({
 // Main Component
 // ---------------------------------------------------------------------------
 
-export default function CreateInspectionPage() {
+function CreateInspectionForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const offerId = searchParams.get("offerId");
+
   const [loading, setLoading] = useState(false);
   const [stocks, setStocks] = useState<any[]>([]);
   const [selectedStockId, setSelectedStockId] = useState("");
@@ -263,6 +267,12 @@ export default function CreateInspectionPage() {
     fetchAgencies();
   }, []);
 
+  useEffect(() => {
+    if (offerId) {
+      fetchFromOffer(offerId);
+    }
+  }, [offerId]);
+
   const fetchStocks = async () => {
     try {
       const response = await fetch("/api/inventory/stock?status=UNDER_INSPECTION");
@@ -284,6 +294,29 @@ export default function CreateInspectionPage() {
       }
     } catch {
       // Silently fail
+    }
+  };
+
+  const fetchFromOffer = async (id: string) => {
+    try {
+      const res = await fetch(`/api/quality/inspection-offers/${id}`);
+      if (!res.ok) return;
+      const offer = await res.json();
+
+      // Pre-fill form fields from the inspection offer
+
+      // Set TPI Agency if available
+      if (offer.tpiAgency?.id) {
+        setTpiAgencyId(offer.tpiAgency.id);
+      }
+
+      // Set remarks from offer
+      if (offer.remarks) {
+        setRemarks(offer.remarks);
+      }
+    } catch (err) {
+      console.error("Failed to pre-fill from offer:", err);
+      toast.error("Could not load offer details for pre-fill");
     }
   };
 
@@ -712,5 +745,13 @@ export default function CreateInspectionPage() {
         </div>
       </form>
     </div>
+  );
+}
+
+export default function CreateInspectionPage() {
+  return (
+    <Suspense fallback={<PageLoading />}>
+      <CreateInspectionForm />
+    </Suspense>
   );
 }

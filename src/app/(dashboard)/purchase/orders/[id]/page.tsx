@@ -329,6 +329,15 @@ export default function PurchaseOrderDetailPage() {
             <FileDown className="w-4 h-4 mr-2" />
             Download PDF
           </Button>
+          {(po?.status === "APPROVED" || po?.status === "CONFIRMED") && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push(`/quality/inspection-prep/create?poId=${po.id}`)}
+            >
+              Prepare for Inspection
+            </Button>
+          )}
           {po.status !== "CLOSED" && po.status !== "CANCELLED" && (
             <Dialog open={amendDialogOpen} onOpenChange={setAmendDialogOpen}>
               <DialogTrigger asChild>

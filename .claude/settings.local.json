@@ -112,7 +112,15 @@
       "Bash(NEXT_TELEMETRY_DISABLED=1 npx next build)",
       "Bash(grep -i \"sales\\\\|SO\" /Users/adi0220/projects/erp-claude/src/app/\\\\\\(dashboard\\\\\\)/client-purchase-orders/[id]/page.tsx)",
       "Bash(ls /Users/adi0220/projects/erp-claude/src/app/\\\\\\(dashboard\\\\\\)/tenders/)",
-      "Bash(ls /Users/adi0220/projects/erp-claude/src/app/\\\\\\(dashboard\\\\\\)/purchase/supplier-quotations/[id]/)"
+      "Bash(ls /Users/adi0220/projects/erp-claude/src/app/\\\\\\(dashboard\\\\\\)/purchase/supplier-quotations/[id]/)",
+      "Read(//c/Users/Admin/**)",
+      "Read(//c/Users/Admin/Documents/**)",
+      "Read(//e/freelance/**)",
+      "Bash(env)",
+      "Bash(cat prisma/prisma.config.ts)",
+      "Bash(cat prisma.config.ts)",
+      "Bash(C:/Users/Admin/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.7/scripts/start-server.sh:*)",
+      "Bash(C:/Users/Admin/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.7/skills/brainstorming/scripts/start-server.sh:*)"
     ]
   }
 }
