@@ -86,7 +86,7 @@ function CreateInspectionPrepForm() {
             .filter(Boolean)
             .join(" – "),
           sizeLabel: item.sizeLabel || "",
-          uom: "",
+          uom: item.uom || "Mtr",
           make: "",
           selected: true,
         }))

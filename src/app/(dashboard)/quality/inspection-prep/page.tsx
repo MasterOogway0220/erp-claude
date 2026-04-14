@@ -119,7 +119,11 @@ export default function InspectionPrepListPage() {
                     ).length;
                     const totalCount = prep.items.length;
                     return (
-                      <TableRow key={prep.id}>
+                      <TableRow
+                        key={prep.id}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => router.push(`/quality/inspection-prep/${prep.id}`)}
+                      >
                         <TableCell className="font-medium">
                           {prep.prepNo}
                         </TableCell>
@@ -145,9 +149,10 @@ export default function InspectionPrepListPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() =>
-                              router.push(`/quality/inspection-prep/${prep.id}`)
-                            }
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push(`/quality/inspection-prep/${prep.id}`);
+                            }}
                           >
                             <Eye className="w-4 h-4" />
                           </Button>
