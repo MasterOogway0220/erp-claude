@@ -363,6 +363,32 @@ export async function PUT(
       );
     }
 
+    // Resolve cc_ buyerId (from CustomerContact) to a real BuyerMaster entry
+    let resolvedBuyerId = buyerId || null;
+    if (buyerId && String(buyerId).startsWith("cc_")) {
+      const contactId = String(buyerId).slice(3);
+      const contact = await prisma.customerContact.findUnique({ where: { id: contactId } });
+      if (contact) {
+        let existing = await prisma.buyerMaster.findFirst({
+          where: { customerId: contact.customerId, buyerName: contact.contactName },
+        });
+        if (!existing) {
+          existing = await prisma.buyerMaster.create({
+            data: {
+              customerId: contact.customerId,
+              buyerName: contact.contactName,
+              designation: contact.designation || null,
+              email: contact.email || null,
+              companyId: companyId || undefined,
+            },
+          });
+        }
+        resolvedBuyerId = existing.id;
+      } else {
+        return NextResponse.json({ error: "Invalid buyer contact ID" }, { status: 400 });
+      }
+    }
+
     // Calculate totals
     const subtotal = items.reduce(
       (sum: number, item: any) => sum + (parseFloat(item.amount) || 0),
@@ -392,7 +418,7 @@ export async function PUT(
           currency: effectiveCurrency,
           ...(quotationDate ? { quotationDate: new Date(quotationDate) } : {}),
           validUpto: validUpto ? new Date(validUpto) : null,
-          buyerId: buyerId || null,
+          buyerId: resolvedBuyerId,
           inquiryNo: inquiryNo || null,
           inquiryDate: inquiryDate ? new Date(inquiryDate) : null,
           paymentTermsId: paymentTermsId || null,
