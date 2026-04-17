@@ -151,6 +151,32 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Resolve cc_ buyerId (from CustomerContact) to a real BuyerMaster entry
+    let resolvedBuyerId = buyerId || null;
+    if (buyerId && String(buyerId).startsWith("cc_")) {
+      const contactId = String(buyerId).slice(3);
+      const contact = await prisma.customerContact.findUnique({ where: { id: contactId } });
+      if (contact) {
+        let existing = await prisma.buyerMaster.findFirst({
+          where: { customerId: contact.customerId, buyerName: contact.contactName },
+        });
+        if (!existing) {
+          existing = await prisma.buyerMaster.create({
+            data: {
+              customerId: contact.customerId,
+              buyerName: contact.contactName,
+              designation: contact.designation || null,
+              email: contact.email || null,
+              companyId: companyId || undefined,
+            },
+          });
+        }
+        resolvedBuyerId = existing.id;
+      } else {
+        resolvedBuyerId = null;
+      }
+    }
+
     // Verify user exists in DB (guards against stale JWT after DB reset)
     const userInDb = await prisma.user.findUnique({
       where: { id: session.user.id },
@@ -189,7 +215,7 @@ export async function POST(request: NextRequest) {
         currency: currency || "INR",
         ...(quotationDate ? { quotationDate: new Date(quotationDate) } : {}),
         validUpto: validUpto ? new Date(validUpto) : null,
-        buyerId: buyerId || null,
+        buyerId: resolvedBuyerId,
         inquiryNo: inquiryNo || null,
         inquiryDate: inquiryDate ? new Date(inquiryDate) : null,
         paymentTermsId: paymentTermsId || null,
