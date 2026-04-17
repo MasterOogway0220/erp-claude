@@ -348,6 +348,17 @@ function StandardQuotationPage() {
     }
   }, [selectedCustomer?.defaultCurrency]);
 
+  // Auto-set market type and currency from customer's type (DOMESTIC/INTERNATIONAL)
+  useEffect(() => {
+    if (editId) return;
+    if (!selectedCustomer?.customerType) return;
+    if (selectedCustomer.customerType === "INTERNATIONAL") {
+      setFormData((prev) => ({ ...prev, quotationType: "EXPORT", currency: "USD" }));
+    } else {
+      setFormData((prev) => ({ ...prev, quotationType: "DOMESTIC", currency: "INR" }));
+    }
+  }, [selectedCustomer?.customerType]);
+
   // Convert item prices when currency changes
   useEffect(() => {
     const prev = prevCurrencyRef.current;
