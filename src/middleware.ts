@@ -26,6 +26,7 @@ export default withAuth(
 
 export const config = {
   matcher: [
+    "/",
     "/(dashboard)(.*)",
     "/masters/:path*",
     "/quotations/:path*",
