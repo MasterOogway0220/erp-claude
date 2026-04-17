@@ -2272,7 +2272,7 @@ model CustomerContact {
   designation String?
   email       String?
   phone       String?
-  department  ContactDepartment
+  department  String            @default("OTHER")
   isActive    Boolean           @default(true)
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
@@ -3019,13 +3019,6 @@ enum QuotationCategory {
 enum EmailLogStatus {
   SUCCESS
   FAILED
-}
-
-enum ContactDepartment {
-  FOLLOW_UP
-  QUALITY_INSPECTION
-  ACCOUNTS
-  OTHER
 }
 
 enum ProductCategory {
