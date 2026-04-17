@@ -13,11 +13,7 @@ export async function GET(request: NextRequest) {
     const customerId = searchParams.get("customerId") || "";
 
     const where: any = { ...companyFilter(companyId) };
-
-    if (customerId) {
-      where.customerId = customerId;
-    }
-
+    if (customerId) where.customerId = customerId;
     if (search) {
       where.OR = [
         { buyerName: { contains: search } },
@@ -27,19 +23,45 @@ export async function GET(request: NextRequest) {
 
     const buyers = await prisma.buyerMaster.findMany({
       where,
-      include: {
-        customer: { select: { id: true, name: true } },
-      },
+      include: { customer: { select: { id: true, name: true } } },
       orderBy: { buyerName: "asc" },
     });
 
-    return NextResponse.json({ buyers });
+    // Also include CustomerContact records so contacts added in the Buyer Contact master appear here
+    const contactWhere: any = {};
+    if (customerId) contactWhere.customerId = customerId;
+    if (search) {
+      contactWhere.OR = [
+        { contactName: { contains: search } },
+        { email: { contains: search } },
+      ];
+    }
+    const contacts = await prisma.customerContact.findMany({
+      where: contactWhere,
+      include: { customer: { select: { id: true, name: true } } },
+      orderBy: { contactName: "asc" },
+    });
+
+    // Merge: skip contacts whose name already exists as a BuyerMaster entry for that customer
+    const buyerKeys = new Set(buyers.map((b) => `${b.customerId}:${b.buyerName.toLowerCase()}`));
+    const contactBuyers = contacts
+      .filter((c) => !buyerKeys.has(`${c.customerId}:${c.contactName.toLowerCase()}`))
+      .map((c) => ({
+        id: `cc_${c.id}`,
+        customerId: c.customerId,
+        buyerName: c.contactName,
+        designation: c.designation,
+        email: c.email,
+        mobile: null,
+        telephone: null,
+        isActive: c.isActive,
+        customer: c.customer,
+      }));
+
+    return NextResponse.json({ buyers: [...buyers, ...contactBuyers] });
   } catch (error) {
     console.error("Error fetching buyers:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch buyers" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch buyers" }, { status: 500 });
   }
 }
 
