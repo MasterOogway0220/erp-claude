@@ -173,7 +173,7 @@ export async function POST(request: NextRequest) {
         }
         resolvedBuyerId = existing.id;
       } else {
-        resolvedBuyerId = null;
+        return NextResponse.json({ error: "Invalid buyer contact ID" }, { status: 400 });
       }
     }
 
