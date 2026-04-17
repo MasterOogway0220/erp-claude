@@ -234,12 +234,12 @@ export default function CustomerContactsPage() {
                 />
               </div>
             </div>
-            <Select value={filterCustomer} onValueChange={setFilterCustomer}>
+            <Select value={filterCustomer || "__ALL_CUST__"} onValueChange={(v) => setFilterCustomer(v === "__ALL_CUST__" ? "" : v)}>
               <SelectTrigger className="w-[220px]">
                 <SelectValue placeholder="All Customers" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Customers</SelectItem>
+                <SelectItem value="__ALL_CUST__">All Customers</SelectItem>
                 {customers.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
                     {c.name}
