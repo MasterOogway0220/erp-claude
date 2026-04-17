@@ -85,7 +85,9 @@ export default function CustomerContactsPage() {
         const data = await res.json();
         setDepartments(data.departments || []);
       }
-    } catch {}
+    } catch (error) {
+      console.error("Failed to fetch departments:", error);
+    }
   };
 
   const fetchContacts = async () => {
@@ -245,12 +247,15 @@ export default function CustomerContactsPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={filterDepartment} onValueChange={setFilterDepartment}>
+            <Select
+              value={filterDepartment || "__ALL__"}
+              onValueChange={(v) => setFilterDepartment(v === "__ALL__" ? "" : v)}
+            >
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="All Departments" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Departments</SelectItem>
+                <SelectItem value="__ALL__">All Departments</SelectItem>
                 {departments.map((d) => (
                   <SelectItem key={d.id} value={d.name}>
                     {d.name}
@@ -365,7 +370,7 @@ export default function CustomerContactsPage() {
                 onValueChange={(v) => setForm({ ...form, department: v })}
               >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Select department" />
                 </SelectTrigger>
                 <SelectContent>
                   {departments.map((d) => (
