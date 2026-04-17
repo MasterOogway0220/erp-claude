@@ -55,9 +55,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const validDepartments = ["FOLLOW_UP", "QUALITY_INSPECTION", "ACCOUNTS", "OTHER"];
-    if (!validDepartments.includes(department)) {
-      return NextResponse.json({ error: "Invalid department" }, { status: 400 });
+    if (!department || typeof department !== "string" || !department.trim()) {
+      return NextResponse.json({ error: "Department is required" }, { status: 400 });
     }
 
     const contact = await prisma.customerContact.create({
