@@ -340,9 +340,10 @@ function StandardQuotationPage() {
     }
   }, [formData.quotationType]);
 
-  // Auto-set currency from customer (skip in edit mode — quotation already has the right currency)
+  // Auto-set currency from customer's defaultCurrency — only when customerType is absent (fallback)
   useEffect(() => {
     if (editId) return;
+    if (selectedCustomer?.customerType) return; // customerType effect handles currency
     if (selectedCustomer?.defaultCurrency) {
       setFormData((prev) => ({ ...prev, currency: selectedCustomer.defaultCurrency }));
     }
