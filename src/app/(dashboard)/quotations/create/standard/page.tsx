@@ -686,39 +686,8 @@ function StandardQuotationPage() {
         const newItems = [...prev];
         const updated = { ...newItems[index] };
         if (data.pastQuote) {
-          const pq = data.pastQuote;
-          // Past quote reference & price
-          updated.pastQuote = pq.quotationNo || "";
-          updated.pastQuotePrice = pq.unitRate != null ? String(pq.unitRate) : "";
-          // Fill all item fields from past quote (override blanks from MC master)
-          if (pq.product) updated.product = pq.product;
-          if (pq.material) updated.material = pq.material;
-          if (pq.additionalSpec) updated.additionalSpec = pq.additionalSpec;
-          if (pq.sizeLabel) updated.sizeLabel = pq.sizeLabel;
-          if (pq.sizeId) updated.sizeId = pq.sizeId;
-          if (pq.schedule) updated.schedule = pq.schedule;
-          if (pq.od != null) updated.od = String(pq.od);
-          if (pq.wt != null) updated.wt = String(pq.wt);
-          if (pq.nps != null) updated.nps = String(pq.nps);
-          if (pq.length) updated.length = pq.length;
-          if (pq.ends) updated.ends = pq.ends;
-          if (pq.quantity != null) updated.quantity = String(pq.quantity);
-          if (pq.uom) updated.uom = pq.uom;
-          if (pq.unitRate != null) updated.unitRate = String(pq.unitRate);
-          if (pq.delivery) updated.delivery = pq.delivery;
-          if (pq.remark) updated.remark = pq.remark;
-          if (pq.unitWeight != null) updated.unitWeight = String(pq.unitWeight);
-          if (pq.totalWeightMT != null) updated.totalWeightMT = String(pq.totalWeightMT);
-          if (pq.taxRate != null) updated.taxRate = String(pq.taxRate);
-          if (pq.hsnCode) updated.hsnCode = pq.hsnCode;
-          if (pq.fittingId) updated.fittingId = pq.fittingId;
-          if (pq.fittingLabel) updated.fittingLabel = pq.fittingLabel;
-          if (pq.flangeId) updated.flangeId = pq.flangeId;
-          if (pq.flangeLabel) updated.flangeLabel = pq.flangeLabel;
-          // Recalculate amount
-          const qty = parseFloat(updated.quantity) || 0;
-          const rate = parseFloat(updated.unitRate) || 0;
-          updated.amount = (qty * rate).toFixed(2);
+          updated.pastQuote = data.pastQuote.quotationNo || "";
+          updated.pastQuotePrice = data.pastQuote.unitRate != null ? String(data.pastQuote.unitRate) : "";
         } else {
           updated.pastQuote = "";
           updated.pastQuotePrice = "";
@@ -774,32 +743,7 @@ function StandardQuotationPage() {
   };
 
   const applyPastQuoteItemFields = (index: number, item: any) => {
-    // Auto-fill all available fields from the past quote item
-    if (item.product) updateItem(index, "product", item.product);
-    if (item.material) updateItem(index, "material", item.material);
-    if (item.additionalSpec) updateItem(index, "additionalSpec", item.additionalSpec);
-    if (item.sizeId) updateItem(index, "sizeId", item.sizeId);
-    if (item.sizeLabel) updateItem(index, "sizeLabel", item.sizeLabel);
-    if (item.schedule) updateItem(index, "schedule", item.schedule);
-    if (item.materialCodeId) updateItem(index, "materialCodeId", item.materialCodeId);
-    if (item.materialCodeLabel) updateItem(index, "materialCodeLabel", item.materialCodeLabel);
-    if (item.od != null) updateItem(index, "od", String(item.od));
-    if (item.wt != null) updateItem(index, "wt", String(item.wt));
-    if (item.length) updateItem(index, "length", item.length);
-    if (item.ends) updateItem(index, "ends", item.ends);
-    if (item.uom) updateItem(index, "uom", item.uom);
-    if (item.quantity != null) updateItem(index, "quantity", String(item.quantity));
-    if (item.delivery) updateItem(index, "delivery", item.delivery);
-    if (item.remark) updateItem(index, "remark", item.remark);
-    if (item.unitWeight != null) updateItem(index, "unitWeight", String(item.unitWeight));
-    if (item.taxRate != null) updateItem(index, "taxRate", String(item.taxRate));
-    if (item.hsnCode) updateItem(index, "hsnCode", item.hsnCode);
-    if (item.fittingId) updateItem(index, "fittingId", item.fittingId);
-    if (item.fittingLabel) updateItem(index, "fittingLabel", item.fittingLabel || "");
-    if (item.flangeId) updateItem(index, "flangeId", item.flangeId);
-    if (item.flangeLabel) updateItem(index, "flangeLabel", item.flangeLabel || "");
     updateItem(index, "pastQuotePrice", item.unitRate ? String(item.unitRate) : "");
-    updateItem(index, "unitRate", item.unitRate ? String(item.unitRate) : "");
   };
 
   const selectPastQuoteItem = (item: any) => {
