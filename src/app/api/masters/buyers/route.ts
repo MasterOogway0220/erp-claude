@@ -30,6 +30,10 @@ export async function GET(request: NextRequest) {
     // Also include CustomerContact records so contacts added in the Buyer Contact master appear here
     const contactWhere: any = {};
     if (customerId) contactWhere.customerId = customerId;
+    // Scope contacts to the current company via the customer relation
+    if (companyId) {
+      contactWhere.customer = { companyId };
+    }
     if (search) {
       contactWhere.OR = [
         { contactName: { contains: search } },
