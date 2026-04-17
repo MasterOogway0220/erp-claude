@@ -733,7 +733,6 @@ function StandardQuotationPage() {
     if (!q) return;
     updateItem(index, "pastQuote", quotationNo);
     if (q.items.length === 1) {
-      // Single item — auto-fill all fields directly
       applyPastQuoteItemFields(index, q.items[0]);
     } else if (q.items.length > 1) {
       // Multiple items — show picker dialog
