@@ -85,7 +85,7 @@ const labelMap: Record<string, string> = {
   "client-status": "Client Status Report",
   // PO Acceptance
   "po-acceptance": "P.O. Acceptance",
-  "customer-contacts": "Customer Contacts",
+  "customer-contacts": "Buyer Contact",
   dossier: "Dispatch Dossier",
   // Admin sub-pages
   traceability: "Traceability",
