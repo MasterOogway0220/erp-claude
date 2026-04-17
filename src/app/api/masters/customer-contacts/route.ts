@@ -55,10 +55,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!department || typeof department !== "string" || !department.trim()) {
-      return NextResponse.json({ error: "Department is required" }, { status: 400 });
-    }
-
     const contact = await prisma.customerContact.create({
       data: {
         customerId,
