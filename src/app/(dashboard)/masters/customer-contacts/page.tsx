@@ -50,23 +50,10 @@ interface CustomerContact {
   customer: { id: string; name: string };
 }
 
-const DEPARTMENT_LABELS: Record<string, string> = {
-  FOLLOW_UP: "Follow-up",
-  QUALITY_INSPECTION: "Quality / Inspection",
-  ACCOUNTS: "Accounts",
-  OTHER: "Other",
-};
-
-const DEPARTMENT_COLORS: Record<string, string> = {
-  FOLLOW_UP: "default",
-  QUALITY_INSPECTION: "secondary",
-  ACCOUNTS: "outline",
-  OTHER: "secondary",
-};
-
 export default function CustomerContactsPage() {
   const [contacts, setContacts] = useState<CustomerContact[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterCustomer, setFilterCustomer] = useState("");
@@ -82,13 +69,24 @@ export default function CustomerContactsPage() {
     designation: "",
     email: "",
     phone: "",
-    department: "FOLLOW_UP",
+    department: "",
   });
 
   useEffect(() => {
     fetchContacts();
     fetchCustomers();
+    fetchDepartments();
   }, []);
+
+  const fetchDepartments = async () => {
+    try {
+      const res = await fetch("/api/masters/departments");
+      if (res.ok) {
+        const data = await res.json();
+        setDepartments(data.departments || []);
+      }
+    } catch {}
+  };
 
   const fetchContacts = async () => {
     try {
@@ -135,7 +133,7 @@ export default function CustomerContactsPage() {
       designation: "",
       email: "",
       phone: "",
-      department: "FOLLOW_UP",
+      department: "",
     });
     setDialogOpen(true);
   };
@@ -148,7 +146,7 @@ export default function CustomerContactsPage() {
       designation: contact.designation || "",
       email: contact.email || "",
       phone: contact.phone || "",
-      department: contact.department,
+      department: contact.department || "",
     });
     setDialogOpen(true);
   };
@@ -253,10 +251,11 @@ export default function CustomerContactsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Departments</SelectItem>
-                <SelectItem value="FOLLOW_UP">Follow-up</SelectItem>
-                <SelectItem value="QUALITY_INSPECTION">Quality / Inspection</SelectItem>
-                <SelectItem value="ACCOUNTS">Accounts</SelectItem>
-                <SelectItem value="OTHER">Other</SelectItem>
+                {departments.map((d) => (
+                  <SelectItem key={d.id} value={d.name}>
+                    {d.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -294,9 +293,7 @@ export default function CustomerContactsPage() {
                     <TableCell>{contact.designation || "-"}</TableCell>
                     <TableCell>{contact.customer.name}</TableCell>
                     <TableCell>
-                      <Badge variant={DEPARTMENT_COLORS[contact.department] as any}>
-                        {DEPARTMENT_LABELS[contact.department]}
-                      </Badge>
+                      <Badge variant="secondary">{contact.department}</Badge>
                     </TableCell>
                     <TableCell className="text-sm">{contact.email || "-"}</TableCell>
                     <TableCell className="text-sm">{contact.phone || "-"}</TableCell>
@@ -371,10 +368,11 @@ export default function CustomerContactsPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="FOLLOW_UP">Follow-up</SelectItem>
-                  <SelectItem value="QUALITY_INSPECTION">Quality / Inspection</SelectItem>
-                  <SelectItem value="ACCOUNTS">Accounts</SelectItem>
-                  <SelectItem value="OTHER">Other</SelectItem>
+                  {departments.map((d) => (
+                    <SelectItem key={d.id} value={d.name}>
+                      {d.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
