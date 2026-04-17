@@ -210,12 +210,12 @@ export default function CustomerContactsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Customer / Vendor Contacts"
-        description="Company directory — manage contacts for follow-up, quality, and accounts"
+        title="Buyer Contact"
+        description="Manage buyer contacts for customers"
       >
         <Button onClick={openCreateDialog}>
           <Plus className="w-4 h-4 mr-2" />
-          Add Contact
+          Add Buyer Contact
         </Button>
       </PageHeader>
 
@@ -273,7 +273,7 @@ export default function CustomerContactsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Contact Name</TableHead>
+                <TableHead>Buyer Name</TableHead>
                 <TableHead>Designation</TableHead>
                 <TableHead>Customer</TableHead>
                 <TableHead>Department</TableHead>
@@ -340,7 +340,7 @@ export default function CustomerContactsPage() {
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>
-              {editingContact ? "Edit Contact" : "Add Contact"}
+              {editingContact ? "Edit Buyer Contact" : "Add Buyer Contact"}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -382,7 +382,7 @@ export default function CustomerContactsPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Contact Name *</Label>
+              <Label>Buyer Name *</Label>
               <Input
                 value={form.contactName}
                 onChange={(e) => setForm({ ...form, contactName: e.target.value })}
