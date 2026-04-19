@@ -34,6 +34,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Plus,
@@ -118,6 +119,28 @@ export default function VendorsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["vendors"] });
       toast.success("Vendor deleted successfully");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const toggleActiveMutation = useMutation({
+    mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
+      const res = await fetch(`/api/masters/vendors/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to update status");
+      }
+      return res.json();
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["vendors"] });
+      toast.success(variables.isActive ? "Vendor activated" : "Vendor deactivated");
     },
     onError: (error: Error) => {
       toast.error(error.message);
@@ -275,9 +298,22 @@ export default function VendorsPage() {
                             Pending
                           </Badge>
                         )}
-                        {!vendor.isActive && (
-                          <Badge variant="destructive">Inactive</Badge>
-                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={vendor.isActive}
+                          onCheckedChange={(v) =>
+                            toggleActiveMutation.mutate({ id: vendor.id, isActive: v })
+                          }
+                          aria-label={vendor.isActive ? "Deactivate vendor" : "Activate vendor"}
+                        />
+                        <span
+                          className={
+                            vendor.isActive ? "text-xs text-foreground" : "text-xs text-muted-foreground"
+                          }
+                        >
+                          {vendor.isActive ? "Active" : "Inactive"}
+                        </span>
                       </div>
                       {vendor.approvedBy && vendor.approvedStatus && (
                         <span className="text-xs text-muted-foreground">

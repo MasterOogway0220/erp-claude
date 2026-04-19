@@ -210,6 +210,14 @@ function NonStandardQuotationPage() {
     },
   });
 
+  // Auto-select the sole buyer when a customer has exactly one
+  useEffect(() => {
+    const buyers = buyersData?.buyers;
+    if (buyers && buyers.length === 1 && !formData.buyerId) {
+      setFormData((prev) => ({ ...prev, buyerId: buyers[0].id }));
+    }
+  }, [buyersData, formData.buyerId]);
+
   // Fetch users for Deal Owner dropdown
   const { data: usersData } = useQuery({
     queryKey: ["users"],
@@ -503,7 +511,7 @@ function NonStandardQuotationPage() {
         setItems(q.items.map((item: any) => ({
           itemCategory: item.fittingId ? "Fitting" as NonStdItemCategory : item.flangeId ? "Flange" as NonStdItemCategory : "Item" as NonStdItemCategory,
           materialCodeId: item.materialCodeId || "",
-          materialCodeLabel: item.materialCode?.code || "",
+          materialCodeLabel: item.materialCodeLabel || item.materialCode?.code || "",
           itemDescription: item.itemDescription || "",
           materialCode: item.material || "",
           size: item.sizeLabel || "",

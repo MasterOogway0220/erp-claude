@@ -26,6 +26,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 
 type TabValue = "ALL" | "BUYER" | "SUPPLIER";
@@ -60,6 +61,29 @@ export default function CustomersPage() {
   useEffect(() => {
     fetchCustomers();
   }, [fetchCustomers]);
+
+  const handleToggleActive = async (id: string, next: boolean) => {
+    setCustomers((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, isActive: next } : c))
+    );
+    try {
+      const res = await fetch(`/api/masters/customers/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: next }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to update status");
+      }
+      toast.success(next ? "Customer activated" : "Customer deactivated");
+    } catch (error: any) {
+      setCustomers((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, isActive: !next } : c))
+      );
+      toast.error(error.message || "Failed to update status");
+    }
+  };
 
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -172,9 +196,16 @@ export default function CustomersPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={c.isActive ? "default" : "secondary"}>
-                        {c.isActive ? "Active" : "Inactive"}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={c.isActive}
+                          onCheckedChange={(v) => handleToggleActive(c.id, v)}
+                          aria-label={c.isActive ? "Deactivate customer" : "Activate customer"}
+                        />
+                        <span className={c.isActive ? "text-xs text-foreground" : "text-xs text-muted-foreground"}>
+                          {c.isActive ? "Active" : "Inactive"}
+                        </span>
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">

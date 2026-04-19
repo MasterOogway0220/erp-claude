@@ -240,6 +240,14 @@ function StandardQuotationPage() {
     },
   });
 
+  // Auto-select the sole buyer when a customer has exactly one
+  useEffect(() => {
+    const buyers = buyersData?.buyers;
+    if (buyers && buyers.length === 1 && !formData.buyerId) {
+      setFormData((prev) => ({ ...prev, buyerId: buyers[0].id }));
+    }
+  }, [buyersData, formData.buyerId]);
+
   // Fetch sizes for Size dropdown
   const { data: sizesData } = useQuery({
     queryKey: ["sizes"],
@@ -567,7 +575,7 @@ function StandardQuotationPage() {
         setItems(q.items.map((item: any) => ({
           itemCategory: item.fittingId ? "Fitting" as ItemCategory : item.flangeId ? "Flange" as ItemCategory : "Pipe" as ItemCategory,
           materialCodeId: item.materialCodeId || "",
-          materialCodeLabel: item.materialCode?.code || "",
+          materialCodeLabel: item.materialCodeLabel || item.materialCode?.code || "",
           product: item.product || "",
           material: item.material || "",
           additionalSpec: item.additionalSpec || "",

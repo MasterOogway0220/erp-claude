@@ -126,6 +126,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const customerRecord = await prisma.customerMaster.findFirst({
+      where: { id: customerId, ...companyFilter(companyId) },
+      select: { isActive: true, name: true },
+    });
+    if (!customerRecord) {
+      return NextResponse.json(
+        { error: "Customer not found" },
+        { status: 400 }
+      );
+    }
+    if (!customerRecord.isActive) {
+      return NextResponse.json(
+        { error: `Customer "${customerRecord.name}" is deactivated. Reactivate the customer to create a quotation.` },
+        { status: 400 }
+      );
+    }
+
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
         { error: "At least one item is required" },
