@@ -904,9 +904,9 @@ function StandardQuotationPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {/* Row 1: Customer | Buyer | Market Type | Currency | Quotation No | Rev No | Quotation Date | Inquiry Owner */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8 gap-3">
-              <div className="space-y-1.5 min-w-0">
+            {/* Row 1 (xl:8 cols): Customer(2) | Buyer(2) | Quotation No | Rev No | Quotation Date | Follow Up Date */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-8 gap-3">
+              <div className="space-y-1.5 min-w-0 xl:col-span-2">
                 <Label className="text-sm font-medium">Customer <span className="text-destructive">*</span></Label>
                 <div className="flex gap-2">
                   <Select
@@ -939,7 +939,7 @@ function StandardQuotationPage() {
                 </div>
               </div>
 
-              <div className="space-y-1.5 min-w-0">
+              <div className="space-y-1.5 min-w-0 xl:col-span-2">
                 <Label className="text-sm font-medium">Buyer (Attn.)</Label>
                 <div className="flex gap-2">
                   <Select
@@ -976,6 +976,65 @@ function StandardQuotationPage() {
                     </Button>
                   )}
                 </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Quotation No.</Label>
+                <Input
+                  value={editId ? (editData?.quotation?.quotationNo || "") : (previewData?.previewNumber || "")}
+                  readOnly
+                  className="bg-muted"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Rev. No.</Label>
+                <Input
+                  value={editId ? String(editData?.quotation?.version ?? 0) : "0"}
+                  readOnly
+                  className="bg-muted"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Quotation Date</Label>
+                <Input
+                  type="date"
+                  value={formData.quotationDate}
+                  onChange={(e) =>
+                    setFormData({ ...formData, quotationDate: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Follow Up Date</Label>
+                <Input
+                  type="date"
+                  value={formData.nextActionDate}
+                  onChange={(e) =>
+                    setFormData({ ...formData, nextActionDate: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+
+            {/* Row 2 (xl:8 cols): Address(2) | Market Type | Currency | Inquiry No | Inquiry Date | Inquiry Owner | Prepared By */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-8 gap-3">
+              <div className="space-y-1.5 xl:col-span-2">
+                <Label className="text-sm font-medium">Address</Label>
+                <Input
+                  value={
+                    selectedCustomer
+                      ? [selectedCustomer.addressLine1, selectedCustomer.addressLine2, selectedCustomer.city, selectedCustomer.state, selectedCustomer.country, selectedCustomer.pincode]
+                          .filter(Boolean)
+                          .join(", ")
+                      : ""
+                  }
+                  readOnly
+                  className="bg-muted"
+                  placeholder="Select a customer to see address"
+                />
               </div>
 
               <div className="space-y-1.5">
@@ -1017,31 +1076,20 @@ function StandardQuotationPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-sm font-medium">Quotation No.</Label>
+                <Label className="text-sm font-medium">Inquiry No.</Label>
                 <Input
-                  value={editId ? (editData?.quotation?.quotationNo || "") : (previewData?.previewNumber || "")}
-                  readOnly
-                  className="bg-muted"
+                  value={formData.inquiryNo}
+                  onChange={(e) => setFormData({ ...formData, inquiryNo: e.target.value })}
+                  placeholder="Client inquiry ref."
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-sm font-medium">Rev. No.</Label>
-                <Input
-                  value={editId ? String(editData?.quotation?.version ?? 0) : "0"}
-                  readOnly
-                  className="bg-muted"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-sm font-medium">Quotation Date</Label>
+                <Label className="text-sm font-medium">Inquiry Date</Label>
                 <Input
                   type="date"
-                  value={formData.quotationDate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, quotationDate: e.target.value })
-                  }
+                  value={formData.inquiryDate}
+                  onChange={(e) => setFormData({ ...formData, inquiryDate: e.target.value })}
                 />
               </div>
 
@@ -1087,54 +1135,6 @@ function StandardQuotationPage() {
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-            </div>
-
-            {/* Row 2: Address | Inquiry No | Inquiry Date | Follow Up Date */}
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_auto_auto] gap-3">
-              <div className="space-y-1.5 lg:col-span-1">
-                <Label className="text-sm font-medium">Address</Label>
-                <Input
-                  value={
-                    selectedCustomer
-                      ? [selectedCustomer.addressLine1, selectedCustomer.addressLine2, selectedCustomer.city, selectedCustomer.state, selectedCustomer.country, selectedCustomer.pincode]
-                          .filter(Boolean)
-                          .join(", ")
-                      : ""
-                  }
-                  readOnly
-                  className="bg-muted"
-                  placeholder="Select a customer to see address"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-sm font-medium">Inquiry No.</Label>
-                <Input
-                  value={formData.inquiryNo}
-                  onChange={(e) => setFormData({ ...formData, inquiryNo: e.target.value })}
-                  placeholder="Client inquiry ref."
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-sm font-medium">Inquiry Date</Label>
-                <Input
-                  type="date"
-                  value={formData.inquiryDate}
-                  onChange={(e) => setFormData({ ...formData, inquiryDate: e.target.value })}
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-sm font-medium">Follow Up Date</Label>
-                <Input
-                  type="date"
-                  value={formData.nextActionDate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, nextActionDate: e.target.value })
-                  }
-                />
               </div>
             </div>
 
