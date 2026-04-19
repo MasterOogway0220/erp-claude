@@ -249,7 +249,7 @@ export default function CompanyCreatePage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
             <div className="space-y-1.5">
               <Label>Company Name *</Label>
               <Input
@@ -271,8 +271,6 @@ export default function CompanyCreatePage() {
                 </SelectContent>
               </Select>
             </div>
-          </div>
-          <div className="grid grid-cols-3 gap-4">
             <div className="space-y-1.5">
               <Label>Email</Label>
               <Input type="email" value={formData.email} onChange={(e) => updateField("email", e.target.value)} placeholder="company@email.com" />
@@ -314,47 +312,46 @@ export default function CompanyCreatePage() {
         </CardContent>
       </Card>
 
-      {/* Row 2: Statutory + Financial Year side by side */}
-      <div className="grid grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <FileText className="w-4 h-4" />
-              Statutory Details
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label>PAN No.</Label>
-                <Input value={formData.panNo} onChange={(e) => updateField("panNo", e.target.value.toUpperCase())} placeholder="ABCDE1234F" className="font-mono" />
-              </div>
-              <div className="space-y-1.5">
-                <Label>TAN No.</Label>
-                <Input value={formData.tanNo} onChange={(e) => updateField("tanNo", e.target.value.toUpperCase())} className="font-mono" />
-              </div>
+      {/* Statutory Details — single row */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <FileText className="w-4 h-4" />
+            Statutory Details
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="space-y-1.5">
+              <Label>PAN No.</Label>
+              <Input value={formData.panNo} onChange={(e) => updateField("panNo", e.target.value.toUpperCase())} placeholder="ABCDE1234F" className="font-mono" />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label>GST No.</Label>
-                <Input value={formData.gstNo} onChange={(e) => handleGstinChange(e.target.value)} placeholder="15-char GST" className="font-mono" maxLength={15} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>CIN No.</Label>
-                <Input value={formData.cinNo} onChange={(e) => updateField("cinNo", e.target.value.toUpperCase())} className="font-mono" />
-              </div>
+            <div className="space-y-1.5">
+              <Label>TAN No.</Label>
+              <Input value={formData.tanNo} onChange={(e) => updateField("tanNo", e.target.value.toUpperCase())} className="font-mono" />
             </div>
-          </CardContent>
-        </Card>
+            <div className="space-y-1.5">
+              <Label>GST No.</Label>
+              <Input value={formData.gstNo} onChange={(e) => handleGstinChange(e.target.value)} placeholder="15-char GST" className="font-mono" maxLength={15} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>CIN No.</Label>
+              <Input value={formData.cinNo} onChange={(e) => updateField("cinNo", e.target.value.toUpperCase())} className="font-mono" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Calendar className="w-4 h-4" />
-              Financial Year
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+      {/* Financial Year — single row */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Calendar className="w-4 h-4" />
+            Financial Year
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1.5">
               <Label>FY Start Month</Label>
               <Select value={formData.fyStartMonth.toString()} onValueChange={(v) => updateField("fyStartMonth", parseInt(v))}>
@@ -364,30 +361,28 @@ export default function CompanyCreatePage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label>FY Start Date</Label>
-                <Input type="date" value={formData.fyStartDate} onChange={(e) => updateField("fyStartDate", e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>FY End Date</Label>
-                <Input type="date" value={formData.fyEndDate} onChange={(e) => updateField("fyEndDate", e.target.value)} />
-              </div>
+            <div className="space-y-1.5">
+              <Label>FY Start Date</Label>
+              <Input type="date" value={formData.fyStartDate} onChange={(e) => updateField("fyStartDate", e.target.value)} />
             </div>
-          </CardContent>
-        </Card>
-      </div>
+            <div className="space-y-1.5">
+              <Label>FY End Date</Label>
+              <Input type="date" value={formData.fyEndDate} onChange={(e) => updateField("fyEndDate", e.target.value)} />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* Row 3: Registered Address + Warehouse Address side by side */}
-      <div className="grid grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <MapPin className="w-4 h-4" />
-              Registered Address
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+      {/* Registered Address — single row */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <MapPin className="w-4 h-4" />
+            Registered Address
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
             <div className="space-y-1.5">
               <Label>Address Line 1</Label>
               <Input value={formData.regAddressLine1} onChange={(e) => updateField("regAddressLine1", e.target.value)} placeholder="Street address" />
@@ -396,31 +391,30 @@ export default function CompanyCreatePage() {
               <Label>Address Line 2</Label>
               <Input value={formData.regAddressLine2} onChange={(e) => updateField("regAddressLine2", e.target.value)} placeholder="Area, landmark" />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5"><Label>City</Label><Input value={formData.regCity} onChange={(e) => updateField("regCity", e.target.value)} placeholder="Mumbai" /></div>
-              <div className="space-y-1.5">
-                <Label>Pincode</Label>
-                <div className="relative">
-                  <Input value={formData.regPincode} onChange={(e) => handlePincodeChange("reg", e.target.value)} placeholder="400001" maxLength={6} />
-                  {fetchingPincode === "reg" && <Loader2 className="w-4 h-4 animate-spin absolute right-2.5 top-2.5 text-muted-foreground" />}
-                </div>
+            <div className="space-y-1.5"><Label>City</Label><Input value={formData.regCity} onChange={(e) => updateField("regCity", e.target.value)} placeholder="Mumbai" /></div>
+            <div className="space-y-1.5">
+              <Label>Pincode</Label>
+              <div className="relative">
+                <Input value={formData.regPincode} onChange={(e) => handlePincodeChange("reg", e.target.value)} placeholder="400001" maxLength={6} />
+                {fetchingPincode === "reg" && <Loader2 className="w-4 h-4 animate-spin absolute right-2.5 top-2.5 text-muted-foreground" />}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5"><Label>State</Label><Input value={formData.regState} onChange={(e) => updateField("regState", e.target.value)} placeholder="Maharashtra" /></div>
-              <div className="space-y-1.5"><Label>Country</Label><Input value={formData.regCountry} onChange={(e) => updateField("regCountry", e.target.value)} /></div>
-            </div>
-          </CardContent>
-        </Card>
+            <div className="space-y-1.5"><Label>State</Label><Input value={formData.regState} onChange={(e) => updateField("regState", e.target.value)} placeholder="Maharashtra" /></div>
+            <div className="space-y-1.5"><Label>Country</Label><Input value={formData.regCountry} onChange={(e) => updateField("regCountry", e.target.value)} /></div>
+          </div>
+        </CardContent>
+      </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <MapPin className="w-4 h-4" />
-              Warehouse Address
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+      {/* Warehouse Address — single row */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <MapPin className="w-4 h-4" />
+            Warehouse Address
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
             <div className="space-y-1.5">
               <Label>Address Line 1</Label>
               <Input value={formData.whAddressLine1} onChange={(e) => updateField("whAddressLine1", e.target.value)} placeholder="Street address" />
@@ -429,23 +423,19 @@ export default function CompanyCreatePage() {
               <Label>Address Line 2</Label>
               <Input value={formData.whAddressLine2} onChange={(e) => updateField("whAddressLine2", e.target.value)} placeholder="Area, landmark" />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5"><Label>City</Label><Input value={formData.whCity} onChange={(e) => updateField("whCity", e.target.value)} placeholder="Mumbai" /></div>
-              <div className="space-y-1.5">
-                <Label>Pincode</Label>
-                <div className="relative">
-                  <Input value={formData.whPincode} onChange={(e) => handlePincodeChange("wh", e.target.value)} placeholder="400001" maxLength={6} />
-                  {fetchingPincode === "wh" && <Loader2 className="w-4 h-4 animate-spin absolute right-2.5 top-2.5 text-muted-foreground" />}
-                </div>
+            <div className="space-y-1.5"><Label>City</Label><Input value={formData.whCity} onChange={(e) => updateField("whCity", e.target.value)} placeholder="Mumbai" /></div>
+            <div className="space-y-1.5">
+              <Label>Pincode</Label>
+              <div className="relative">
+                <Input value={formData.whPincode} onChange={(e) => handlePincodeChange("wh", e.target.value)} placeholder="400001" maxLength={6} />
+                {fetchingPincode === "wh" && <Loader2 className="w-4 h-4 animate-spin absolute right-2.5 top-2.5 text-muted-foreground" />}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5"><Label>State</Label><Input value={formData.whState} onChange={(e) => updateField("whState", e.target.value)} placeholder="Maharashtra" /></div>
-              <div className="space-y-1.5"><Label>Country</Label><Input value={formData.whCountry} onChange={(e) => updateField("whCountry", e.target.value)} /></div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            <div className="space-y-1.5"><Label>State</Label><Input value={formData.whState} onChange={(e) => updateField("whState", e.target.value)} placeholder="Maharashtra" /></div>
+            <div className="space-y-1.5"><Label>Country</Label><Input value={formData.whCountry} onChange={(e) => updateField("whCountry", e.target.value)} /></div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Separator />
 
