@@ -1259,40 +1259,57 @@ function NonStandardQuotationPage() {
                       <div className="grid gap-2">
                         <Label className="text-sm">Material Code</Label>
                         <div className="flex gap-1">
-                          <SmartCombobox
-                            options={materialCodes}
-                            value={item.materialCodeLabel || ""}
-                            onSelect={(mc: any) => {
-                              setItems((prev) => {
-                                const newItems = [...prev];
-                                newItems[index] = {
-                                  ...newItems[index],
-                                  materialCodeId: mc.id,
-                                  materialCodeLabel: mc.code,
-                                  materialCode: mc.code,
-                                  ...(mc.productType ? { itemDescription: mc.productType } : {}),
-                                  ...(mc.materialGrade ? { material: mc.materialGrade } : {}),
-                                  ...(mc.size ? { size: mc.size } : {}),
-                                  ...(mc.unit ? { uom: mc.unit } : {}),
-                                };
-                                return newItems;
-                              });
-                              fetchMaterialHistory(index, mc.id);
-                            }}
-                            onChange={(text) => {
-                              setItems((prev) => {
-                                const newItems = [...prev];
-                                newItems[index] = { ...newItems[index], materialCodeLabel: text, materialCodeId: "", materialCode: text };
-                                return newItems;
-                              });
-                            }}
-                            displayFn={(mc: any) => `${mc.code}${mc.description ? ` — ${mc.description}` : ""}`}
-                            filterFn={(mc: any, query) =>
-                              mc.code.toLowerCase().includes(query.toLowerCase()) ||
-                              (mc.description || "").toLowerCase().includes(query.toLowerCase())
-                            }
-                            placeholder="Search material code..."
-                          />
+                          {materialCodes.length > 0 ? (
+                            <SmartCombobox
+                              options={materialCodes}
+                              value={item.materialCodeLabel || ""}
+                              onSelect={(mc: any) => {
+                                setItems((prev) => {
+                                  const newItems = [...prev];
+                                  newItems[index] = {
+                                    ...newItems[index],
+                                    materialCodeId: mc.id,
+                                    materialCodeLabel: mc.code,
+                                    materialCode: mc.code,
+                                    ...(mc.productType ? { itemDescription: mc.productType } : {}),
+                                    ...(mc.materialGrade ? { material: mc.materialGrade } : {}),
+                                    ...(mc.size ? { size: mc.size } : {}),
+                                    ...(mc.unit ? { uom: mc.unit } : {}),
+                                  };
+                                  return newItems;
+                                });
+                                fetchMaterialHistory(index, mc.id);
+                              }}
+                              onChange={(text) => {
+                                setItems((prev) => {
+                                  const newItems = [...prev];
+                                  newItems[index] = { ...newItems[index], materialCodeLabel: text, materialCodeId: "", materialCode: text };
+                                  return newItems;
+                                });
+                              }}
+                              displayFn={(mc: any) => `${mc.code}${mc.description ? ` — ${mc.description}` : ""}`}
+                              filterFn={(mc: any, query) =>
+                                mc.code.toLowerCase().includes(query.toLowerCase()) ||
+                                (mc.description || "").toLowerCase().includes(query.toLowerCase())
+                              }
+                              placeholder="Search material code..."
+                            />
+                          ) : (
+                            <Input
+                              value={item.materialCodeLabel || ""}
+                              onChange={(e) => {
+                                const text = e.target.value;
+                                setItems((prev) => {
+                                  const newItems = [...prev];
+                                  newItems[index] = { ...newItems[index], materialCodeLabel: text, materialCodeId: "", materialCode: text };
+                                  return newItems;
+                                });
+                              }}
+                              placeholder={formData.customerId ? "Enter new material code" : "Select customer first"}
+                              disabled={!formData.customerId}
+                              className="h-8"
+                            />
+                          )}
                           {item.materialCodeLabel && (item.material || item.itemDescription) && (
                             <Button
                               type="button"
@@ -1505,40 +1522,57 @@ function NonStandardQuotationPage() {
                     <div className="grid gap-2">
                       <Label className="text-sm">Material Code</Label>
                       <div className="flex gap-1">
-                        <SmartCombobox
-                          options={materialCodes}
-                          value={item.materialCodeLabel || ""}
-                          onSelect={(mc: any) => {
-                            setItems((prev) => {
-                              const newItems = [...prev];
-                              newItems[index] = {
-                                ...newItems[index],
-                                materialCodeId: mc.id,
-                                materialCodeLabel: mc.code,
-                                materialCode: mc.code,
-                                ...(mc.productType ? { itemDescription: mc.productType } : {}),
-                                ...(mc.materialGrade ? { material: mc.materialGrade } : {}),
-                                ...(mc.size ? { size: mc.size } : {}),
-                                ...(mc.unit ? { uom: mc.unit } : {}),
-                              };
-                              return newItems;
-                            });
-                            fetchMaterialHistory(index, mc.id);
-                          }}
-                          onChange={(text) => {
-                            setItems((prev) => {
-                              const newItems = [...prev];
-                              newItems[index] = { ...newItems[index], materialCodeLabel: text, materialCodeId: "", materialCode: text };
-                              return newItems;
-                            });
-                          }}
-                          displayFn={(mc: any) => `${mc.code}${mc.description ? ` — ${mc.description}` : ""}`}
-                          filterFn={(mc: any, query) =>
-                            mc.code.toLowerCase().includes(query.toLowerCase()) ||
-                            (mc.description || "").toLowerCase().includes(query.toLowerCase())
-                          }
-                          placeholder="Search material code..."
-                        />
+                        {materialCodes.length > 0 ? (
+                          <SmartCombobox
+                            options={materialCodes}
+                            value={item.materialCodeLabel || ""}
+                            onSelect={(mc: any) => {
+                              setItems((prev) => {
+                                const newItems = [...prev];
+                                newItems[index] = {
+                                  ...newItems[index],
+                                  materialCodeId: mc.id,
+                                  materialCodeLabel: mc.code,
+                                  materialCode: mc.code,
+                                  ...(mc.productType ? { itemDescription: mc.productType } : {}),
+                                  ...(mc.materialGrade ? { material: mc.materialGrade } : {}),
+                                  ...(mc.size ? { size: mc.size } : {}),
+                                  ...(mc.unit ? { uom: mc.unit } : {}),
+                                };
+                                return newItems;
+                              });
+                              fetchMaterialHistory(index, mc.id);
+                            }}
+                            onChange={(text) => {
+                              setItems((prev) => {
+                                const newItems = [...prev];
+                                newItems[index] = { ...newItems[index], materialCodeLabel: text, materialCodeId: "", materialCode: text };
+                                return newItems;
+                              });
+                            }}
+                            displayFn={(mc: any) => `${mc.code}${mc.description ? ` — ${mc.description}` : ""}`}
+                            filterFn={(mc: any, query) =>
+                              mc.code.toLowerCase().includes(query.toLowerCase()) ||
+                              (mc.description || "").toLowerCase().includes(query.toLowerCase())
+                            }
+                            placeholder="Search material code..."
+                          />
+                        ) : (
+                          <Input
+                            value={item.materialCodeLabel || ""}
+                            onChange={(e) => {
+                              const text = e.target.value;
+                              setItems((prev) => {
+                                const newItems = [...prev];
+                                newItems[index] = { ...newItems[index], materialCodeLabel: text, materialCodeId: "", materialCode: text };
+                                return newItems;
+                              });
+                            }}
+                            placeholder={formData.customerId ? "Enter new material code" : "Select customer first"}
+                            disabled={!formData.customerId}
+                            className="h-8"
+                          />
+                        )}
                         {item.materialCodeLabel && item.itemDescription && (
                           <Button
                             type="button"
