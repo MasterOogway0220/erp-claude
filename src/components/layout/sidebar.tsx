@@ -121,7 +121,6 @@ const navSections: NavSection[] = [
         moduleKey: "sales",
         children: [
           { title: "Dashboard", href: "/sales/dashboard" },
-          { title: "Register Client P.O.", href: "/client-purchase-orders/create" },
           { title: "Client P.O. Register", href: "/client-purchase-orders" },
           { title: "P.O. Acceptance", href: "/po-acceptance" },
           { title: "Sales Orders", href: "/sales" },
@@ -138,7 +137,6 @@ const navSections: NavSection[] = [
         children: [
           { title: "Dashboard", href: "/purchase/dashboard" },
           { title: "Purchase Requisitions", href: "/purchase" },
-          { title: "Create PR", href: "/purchase/requisitions/create" },
           { title: "RFQ Management", href: "/purchase/rfq" },
           { title: "Supplier Quotations", href: "/purchase/supplier-quotations" },
           { title: "Comparative Statements", href: "/purchase/comparative-statement" },
