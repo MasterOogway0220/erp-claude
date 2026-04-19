@@ -1252,8 +1252,8 @@ function StandardQuotationPage() {
                     </div>
                   </div>
 
-                  {/* Line 1a: Material Code | Product | Material | Additional Spec */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {/* Row 1 (xl:11 cols): Material Code | Product | Material | Additional Spec | Size/Fitting/Flange | Length | Ends | Qty | UOM | Unit Rate | Delivery */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-11 gap-2">
                     <div className="space-y-1">
                       <Label className="text-xs font-medium">Material Code</Label>
                       <div className="flex gap-1">
@@ -1384,7 +1384,7 @@ function StandardQuotationPage() {
                       </div>
                     </div>
                     <ProductMaterialSelect
-                      className="sm:col-span-3"
+                      className="sm:col-span-3 lg:col-span-3 xl:col-span-3"
                       product={item.product}
                       material={item.material}
                       additionalSpec={item.additionalSpec}
@@ -1396,11 +1396,8 @@ function StandardQuotationPage() {
                         // Additional spec auto-fill handled by the component
                       }}
                     />
-                  </div>
-                  {/* Line 1b: Size/Fitting/Flange | Length | Ends | Qty | UOM | Unit Rate | Delivery */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-8 gap-3">
                     {item.itemCategory === "Fitting" ? (
-                      <div className="space-y-1 lg:col-span-2">
+                      <div className="space-y-1 lg:col-span-2 xl:col-span-2">
                         <Label className="text-xs font-medium">Select Fitting <span className="text-destructive">*</span></Label>
                         <FittingSelect
                           value={item.fittingLabel}
@@ -1429,7 +1426,7 @@ function StandardQuotationPage() {
                         />
                       </div>
                     ) : item.itemCategory === "Flange" ? (
-                      <div className="space-y-1 lg:col-span-2">
+                      <div className="space-y-1 lg:col-span-2 xl:col-span-2">
                         <Label className="text-xs font-medium">Select Flange <span className="text-destructive">*</span></Label>
                         <FlangeSelect
                           value={item.flangeLabel}
@@ -1574,8 +1571,8 @@ function StandardQuotationPage() {
                     </div>
                   </div>
 
-                  {/* Line 2: OD | WT | Unit Wt | Total Wt | Past Quote# | Past Quote Price | Past PO# | Past PO Price | Remarks | Total */}
-                  <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-10 gap-3">
+                  {/* Row 2 (xl:10 cols): OD | WT | Unit Wt | Total Wt | Past Quote# | Past Quote Price | Past PO# | Past PO Price | Remarks | Total */}
+                  <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-10 xl:grid-cols-10 gap-2">
                     <div className="space-y-1">
                       <Label className="text-xs text-muted-foreground">OD (mm)</Label>
                       <Input
@@ -1679,83 +1676,10 @@ function StandardQuotationPage() {
                       <Label className="text-xs font-medium">Total ({curr})</Label>
                       <Input value={item.amount} readOnly className="bg-muted h-8 font-semibold" />
                     </div>
-                    {item.materialCodeLabel && item.product && (
-                      <div className="flex items-end">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="h-8 text-xs whitespace-nowrap"
-                          onClick={async () => {
-                            const code = item.materialCodeLabel;
-                            const desc = [item.product, item.material, item.additionalSpec, item.sizeLabel].filter(Boolean).join(" / ");
-                            try {
-                              // Check for duplicate specs with different code
-                              const checkRes = await fetch(`/api/masters/material-codes?search=${encodeURIComponent(item.product)}`);
-                              const checkData = await checkRes.json();
-                              const existing = (checkData.materialCodes || []).find((mc: any) =>
-                                mc.code !== code &&
-                                mc.productType === item.product &&
-                                mc.materialGrade === item.material &&
-                                mc.size === item.sizeLabel
-                              );
-                              if (existing) {
-                                const replace = confirm(
-                                  `A product with same specifications exists with material code "${existing.code}".\n\nDo you want to replace it with "${code}"?`
-                                );
-                                if (replace) {
-                                  await fetch(`/api/masters/material-codes/${existing.id}`, {
-                                    method: "PATCH",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({ code }),
-                                  });
-                                  toast.success(`Material code updated from ${existing.code} to ${code}`);
-                                  return;
-                                }
-                                return;
-                              }
-                              // Check if this code already exists
-                              const existingCode = (checkData.materialCodes || []).find((mc: any) => mc.code === code);
-                              if (existingCode) {
-                                toast.info(`Material code ${code} already exists in master`);
-                                return;
-                              }
-                              // Create new
-                              const res = await fetch("/api/masters/material-codes", {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({
-                                  code,
-                                  description: desc,
-                                  productType: item.product,
-                                  materialGrade: item.material,
-                                  size: item.sizeLabel,
-                                  schedule: item.schedule,
-                                  standard: item.additionalSpec || null,
-                                  unit: item.uom || "Mtr",
-                                }),
-                              });
-                              if (!res.ok) throw new Error("Failed to save");
-                              toast.success(`Material code ${code} saved to master`);
-                            } catch {
-                              toast.error("Failed to record material code");
-                            }
-                          }}
-                        >
-                          Record MC
-                        </Button>
-                      </div>
-                    )}
                   </div>
                 </div>
               );
             })}
-            <div className="flex justify-center pt-2">
-              <Button type="button" variant="outline" size="sm" onClick={addItem}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Item
-              </Button>
-            </div>
 
             {/* Grand Total */}
             <Separator className="mt-4" />

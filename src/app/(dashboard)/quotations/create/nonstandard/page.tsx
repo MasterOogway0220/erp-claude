@@ -1805,13 +1805,6 @@ function NonStandardQuotationPage() {
               </div>
             ))}
 
-            <div className="flex justify-center pt-2">
-              <Button type="button" variant="outline" size="sm" onClick={addItem}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Item
-              </Button>
-            </div>
-
             {/* Totals */}
             <div className="flex justify-end gap-8 pt-4 border-t">
               <div className="text-right">
