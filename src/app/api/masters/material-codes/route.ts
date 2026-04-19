@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
+    const customerId = searchParams.get("customerId") || "";
 
     const where: any = { ...companyFilter(companyId) };
     if (search) {
@@ -21,6 +22,11 @@ export async function GET(request: NextRequest) {
         { materialGrade: { contains: search } },
         { standard: { contains: search } },
       ];
+    }
+    if (customerId) {
+      where.quotationItems = {
+        some: { quotation: { customerId } },
+      };
     }
 
     const materialCodes = await prisma.materialCodeMaster.findMany({

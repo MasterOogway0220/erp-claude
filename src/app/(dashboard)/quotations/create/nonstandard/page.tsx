@@ -228,11 +228,12 @@ function NonStandardQuotationPage() {
     },
   });
 
-  // Fetch material codes for autocomplete
+  // Fetch material codes for autocomplete — scoped to selected customer (only codes used in their past quotations)
   const { data: materialCodesData } = useQuery({
-    queryKey: ["material-codes"],
+    queryKey: ["material-codes", formData.customerId],
+    enabled: !!formData.customerId,
     queryFn: async () => {
-      const res = await fetch("/api/masters/material-codes");
+      const res = await fetch(`/api/masters/material-codes?customerId=${formData.customerId}`);
       if (!res.ok) throw new Error("Failed to fetch material codes");
       return res.json();
     },
