@@ -170,6 +170,7 @@ function StandardQuotationPage() {
     isCustom: boolean;
     isHeadingEditable: boolean;
   }[]>([]);
+  const [showTerms, setShowTerms] = useState(false);
 
   // Add New Client modal state
   const [showAddBuyerModal, setShowAddBuyerModal] = useState(false);
@@ -1726,20 +1727,31 @@ function StandardQuotationPage() {
         </Card>
 
         {/* Terms & Conditions */}
-        {terms.length > 0 && (
+        {formData.customerId && terms.length > 0 && (
           <Card className="border-border/50 shadow-sm">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-base">
+                <button
+                  type="button"
+                  onClick={() => setShowTerms((v) => !v)}
+                  className="flex items-center gap-2 text-base font-semibold hover:text-primary transition-colors"
+                >
                   <ListChecks className="h-4 w-4 text-primary" />
                   Terms & Conditions
-                </CardTitle>
-                <Button type="button" variant="outline" size="sm" onClick={addCustomTerm}>
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Custom Term
-                </Button>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${showTerms ? "rotate-180" : ""}`} />
+                  <span className="text-xs text-muted-foreground font-normal ml-1">
+                    ({terms.filter((t) => t.isIncluded).length} included)
+                  </span>
+                </button>
+                {showTerms && (
+                  <Button type="button" variant="outline" size="sm" onClick={addCustomTerm}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add Custom Term
+                  </Button>
+                )}
               </div>
             </CardHeader>
+            {showTerms && (
             <CardContent>
               <div className="space-y-0.5">
                 {terms.map((term, index) => (
@@ -1784,6 +1796,7 @@ function StandardQuotationPage() {
                 ))}
               </div>
             </CardContent>
+            )}
           </Card>
         )}
 

@@ -142,6 +142,7 @@ function NonStandardQuotationPage() {
     isCustom: boolean;
     isHeadingEditable: boolean;
   }[]>([]);
+  const [showTerms, setShowTerms] = useState(false);
   const [useStructuredInput, setUseStructuredInput] = useState<boolean[]>([false]);
 
   // Financial controls
@@ -1860,20 +1861,31 @@ function NonStandardQuotationPage() {
         </Card>
 
         {/* Terms & Conditions */}
-        {terms.length > 0 && (
+        {formData.customerId && terms.length > 0 && (
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowTerms((v) => !v)}
+                  className="flex items-center gap-2 font-semibold hover:text-primary transition-colors"
+                >
                   <ListChecks className="h-5 w-5" />
                   Terms & Conditions
-                </CardTitle>
-                <Button type="button" variant="outline" size="sm" onClick={addCustomTerm}>
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Custom Term
-                </Button>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${showTerms ? "rotate-180" : ""}`} />
+                  <span className="text-xs text-muted-foreground font-normal ml-1">
+                    ({terms.filter((t) => t.isIncluded).length} included)
+                  </span>
+                </button>
+                {showTerms && (
+                  <Button type="button" variant="outline" size="sm" onClick={addCustomTerm}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add Custom Term
+                  </Button>
+                )}
               </div>
             </CardHeader>
+            {showTerms && (
             <CardContent>
               <div className="space-y-4">
                 {terms.map((term, index) => (
@@ -1918,6 +1930,7 @@ function NonStandardQuotationPage() {
                 ))}
               </div>
             </CardContent>
+            )}
           </Card>
         )}
 
