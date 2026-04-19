@@ -131,17 +131,6 @@ const navSections: NavSection[] = [
         ],
       },
       {
-        title: "Tenders",
-        icon: <FileText className="h-5 w-5" />,
-        iconColorClass: "text-orange-500",
-        roles: ["SALES", "MANAGEMENT", "ADMIN", "SUPER_ADMIN"],
-        moduleKey: "sales",
-        children: [
-          { title: "Tender Register", href: "/tenders" },
-          { title: "Create Tender", href: "/tenders/create" },
-        ],
-      },
-      {
         title: "Purchase",
         icon: <Package className="h-5 w-5" />,
         iconColorClass: "text-orange-500",
