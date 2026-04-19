@@ -627,6 +627,9 @@ function NonStandardQuotationPage() {
         if (data.pastQuote) {
           updated.pastQuote = data.pastQuote.quotationNo || "";
           updated.pastQuotePrice = data.pastQuote.unitRate != null ? String(data.pastQuote.unitRate) : "";
+          if (data.pastQuote.remark && !updated.remark) {
+            updated.remark = data.pastQuote.remark;
+          }
         } else {
           updated.pastQuote = "";
           updated.pastQuotePrice = "";
