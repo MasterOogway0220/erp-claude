@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { DataTable, Column } from "@/components/shared/data-table";
 import { Plus, Pencil } from "lucide-react";
 import { toast } from "sonner";
@@ -48,6 +49,25 @@ export default function EmployeesPage() {
   useEffect(() => {
     fetchEmployees();
   }, [fetchEmployees]);
+
+  const handleToggleActive = async (id: string, next: boolean) => {
+    setEmployees((prev) => prev.map((e) => (e.id === id ? { ...e, isActive: next } : e)));
+    try {
+      const res = await fetch(`/api/masters/employees/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: next }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to update status");
+      }
+      toast.success(next ? "Employee activated — login enabled" : "Employee deactivated — login blocked");
+    } catch (error: any) {
+      setEmployees((prev) => prev.map((e) => (e.id === id ? { ...e, isActive: !next } : e)));
+      toast.error(error.message || "Failed to update status");
+    }
+  };
 
   const columns: Column<Employee>[] = [
     {
@@ -102,9 +122,16 @@ export default function EmployeesPage() {
       key: "isActive",
       header: "Status",
       cell: (row: Employee) => (
-        <Badge variant={row.isActive ? "default" : "secondary"}>
-          {row.isActive ? "Active" : "Inactive"}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Switch
+            checked={row.isActive}
+            onCheckedChange={(v) => handleToggleActive(row.id, v)}
+            aria-label={row.isActive ? "Deactivate employee" : "Activate employee"}
+          />
+          <span className={row.isActive ? "text-xs text-foreground" : "text-xs text-muted-foreground"}>
+            {row.isActive ? "Active" : "Inactive"}
+          </span>
+        </div>
       ),
     },
     {

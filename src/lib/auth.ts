@@ -98,10 +98,26 @@ export const authOptions: NextAuthOptions = {
         token.role = user.role;
         token.companyId = user.companyId;
         token.moduleAccess = user.moduleAccess;
+        return token;
+      }
+      // Re-verify on subsequent requests so deactivated users get booted mid-session
+      if (token.id) {
+        const current = await prisma.user.findUnique({
+          where: { id: token.id },
+          select: { isActive: true, role: true, companyId: true },
+        });
+        if (!current || !current.isActive) {
+          return {} as typeof token;
+        }
+        token.role = current.role;
+        token.companyId = current.companyId;
       }
       return token;
     },
     async session({ session, token }) {
+      if (!token?.id) {
+        return { ...session, user: undefined } as typeof session;
+      }
       if (session.user) {
         session.user.id = token.id;
         session.user.role = token.role;

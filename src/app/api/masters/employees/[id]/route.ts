@@ -63,7 +63,7 @@ export async function PATCH(
       },
     });
 
-    // Update linked user's role and optionally password
+    // Update linked user's role, isActive, and optionally password
     if (employee.linkedUserId) {
       const userUpdate: Record<string, unknown> = {};
 
@@ -78,6 +78,9 @@ export async function PATCH(
       }
       if (body.password && body.password.length >= 6) {
         userUpdate.passwordHash = await bcrypt.hash(body.password, 10);
+      }
+      if (typeof body.isActive === "boolean") {
+        userUpdate.isActive = body.isActive;
       }
 
       if (Object.keys(userUpdate).length > 0) {

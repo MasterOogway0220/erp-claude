@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -15,8 +14,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Save, User, Shield, Eye, EyeOff } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ArrowLeft, Save, User, Shield, Eye, EyeOff, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 
 interface EmployeeFormData {
@@ -140,191 +146,178 @@ export default function CreateEmployeePage() {
         </Button>
       </PageHeader>
 
-      <form id="employee-form" onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Personal Information (2/3 width) */}
-          <div className="lg:col-span-2 space-y-6">
-            <Card className="border-border/50 shadow-sm">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <User className="w-4 h-4 text-primary" />
-                  Personal Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-5">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="name" className="text-sm font-medium">
-                      Name <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => update("name", e.target.value)}
-                      placeholder="Employee name"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="designation" className="text-sm font-medium">
-                      Designation <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      id="designation"
-                      value={formData.designation}
-                      onChange={(e) => update("designation", e.target.value)}
-                      placeholder="e.g. Manager"
-                    />
-                  </div>
+      <form id="employee-form" onSubmit={handleSubmit} className="space-y-6">
+        {/* Personal Information — single row */}
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <User className="w-4 h-4 text-primary" />
+              Personal Information
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="name" className="text-sm font-medium">
+                  Name <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => update("name", e.target.value)}
+                  placeholder="Employee name"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="designation" className="text-sm font-medium">
+                  Designation <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="designation"
+                  value={formData.designation}
+                  onChange={(e) => update("designation", e.target.value)}
+                  placeholder="e.g. Manager"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="email" className="text-sm font-medium">
+                  Email <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => update("email", e.target.value)}
+                  placeholder="employee@company.com"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="password" className="text-sm font-medium">
+                  Password <span className="text-destructive">*</span>
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={(e) => update("password", e.target.value)}
+                    placeholder="Min 6 characters"
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    onClick={() => setShowPassword(!showPassword)}
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                 </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="mobile" className="text-sm font-medium">
+                  Mobile <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="mobile"
+                  value={formData.mobile}
+                  onChange={(e) => update("mobile", e.target.value)}
+                  placeholder="+91 9876543210"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="department" className="text-sm font-medium">Department</Label>
+                <Select
+                  value={formData.department || "__none__"}
+                  onValueChange={(v) => update("department", v === "__none__" ? "" : v)}
+                >
+                  <SelectTrigger id="department">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">-- None --</SelectItem>
+                    {DEPARTMENTS.map((dept) => (
+                      <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-                <Separator />
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="email" className="text-sm font-medium">
-                      Email <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => update("email", e.target.value)}
-                      placeholder="employee@company.com"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="password" className="text-sm font-medium">
-                      Password <span className="text-destructive">*</span>
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        id="password"
-                        type={showPassword ? "text" : "password"}
-                        value={formData.password}
-                        onChange={(e) => update("password", e.target.value)}
-                        placeholder="Min 6 characters"
-                        className="pr-10"
-                      />
+        {/* Role & Access — Role select + Module Access multi-select dropdown */}
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Shield className="w-4 h-4 text-primary" />
+              Role & Access
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="role" className="text-sm font-medium">
+                  Role <span className="text-destructive">*</span>
+                </Label>
+                <Select value={formData.role || "__none__"} onValueChange={(v) => update("role", v === "__none__" ? "" : v)}>
+                  <SelectTrigger id="role">
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">-- Select Role --</SelectItem>
+                    {USER_ROLES.map((role) => (
+                      <SelectItem key={role} value={role}>{role}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Module Access</Label>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button type="button" variant="outline" className="w-full justify-between font-normal">
+                      <span className="truncate">
+                        {formData.moduleAccess.length === 0
+                          ? "Select modules"
+                          : formData.moduleAccess.length === MODULE_GROUPS.length
+                            ? "All modules"
+                            : `${formData.moduleAccess.length} module${formData.moduleAccess.length === 1 ? "" : "s"} selected`}
+                      </span>
+                      <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]" align="start">
+                    <DropdownMenuLabel className="flex items-center justify-between py-1.5">
+                      <span>Modules</span>
                       <button
                         type="button"
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                        onClick={() => setShowPassword(!showPassword)}
-                        tabIndex={-1}
+                        className="text-xs text-primary hover:underline"
+                        onClick={(e) => { e.preventDefault(); toggleAll(); }}
                       >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="mobile" className="text-sm font-medium">
-                      Mobile <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      id="mobile"
-                      value={formData.mobile}
-                      onChange={(e) => update("mobile", e.target.value)}
-                      placeholder="+91 9876543210"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="department" className="text-sm font-medium">Department</Label>
-                    <Select
-                      value={formData.department || "__none__"}
-                      onValueChange={(v) => update("department", v === "__none__" ? "" : v)}
-                    >
-                      <SelectTrigger id="department">
-                        <SelectValue placeholder="Select" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__none__">-- None --</SelectItem>
-                        {DEPARTMENTS.map((dept) => (
-                          <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Right Column - Role & Module Access (1/3 width) */}
-          <div className="space-y-6">
-            <Card className="border-border/50 shadow-sm">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Shield className="w-4 h-4 text-primary" />
-                  Role & Access
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-5">
-                <div className="space-y-1.5">
-                  <Label htmlFor="role" className="text-sm font-medium">
-                    Role <span className="text-destructive">*</span>
-                  </Label>
-                  <Select value={formData.role || "__none__"} onValueChange={(v) => update("role", v === "__none__" ? "" : v)}>
-                    <SelectTrigger id="role">
-                      <SelectValue placeholder="Select role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none__">-- Select Role --</SelectItem>
-                      {USER_ROLES.map((role) => (
-                        <SelectItem key={role} value={role}>{role}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <Separator />
-
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-medium">Module Access</span>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <Checkbox
-                        id="select-all"
-                        checked={allSelected}
-                        onCheckedChange={() => toggleAll()}
-                      />
-                      <span className="text-xs text-muted-foreground">
                         {allSelected ? "Deselect All" : "Select All"}
-                      </span>
-                    </label>
-                  </div>
-                  <div className="grid grid-cols-1 gap-2">
-                    {MODULE_GROUPS.map((mod) => {
-                      const checked = formData.moduleAccess.includes(mod.key);
-                      return (
-                        <label
-                          key={mod.key}
-                          htmlFor={`mod-${mod.key}`}
-                          className={`flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-colors select-none ${
-                            checked
-                              ? "border-primary bg-primary/5"
-                              : "border-border/50 hover:border-primary/40 hover:bg-muted/40"
-                          }`}
-                        >
-                          <Checkbox
-                            id={`mod-${mod.key}`}
-                            checked={checked}
-                            onCheckedChange={() => toggleModule(mod.key)}
-                          />
-                          <div className="flex-1 min-w-0">
-                            <span className="text-sm font-medium">{mod.group}</span>
-                            <p className="text-xs text-muted-foreground leading-tight">{mod.description}</p>
-                          </div>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+                      </button>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {MODULE_GROUPS.map((mod) => (
+                      <DropdownMenuCheckboxItem
+                        key={mod.key}
+                        checked={formData.moduleAccess.includes(mod.key)}
+                        onCheckedChange={() => toggleModule(mod.key)}
+                        onSelect={(e) => e.preventDefault()}
+                      >
+                        <div className="flex flex-col">
+                          <span className="text-sm">{mod.group}</span>
+                          <span className="text-xs text-muted-foreground">{mod.description}</span>
+                        </div>
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </form>
     </div>
   );

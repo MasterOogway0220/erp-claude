@@ -7,7 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
@@ -16,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Save, User, LayoutGrid, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Save, User, LayoutGrid, Eye, EyeOff, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
 
@@ -323,7 +330,7 @@ export default function EditEmployeePage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4 pb-4 border-b">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label htmlFor="role">Role *</Label>
                 <Select value={formData.role || "__none__"} onValueChange={(v) => update("role", v === "__none__" ? "" : v)}>
@@ -338,43 +345,49 @@ export default function EditEmployeePage() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-
-            <div className="flex items-center gap-2 mb-4 pb-3 border-b">
-              <Checkbox
-                id="select-all"
-                checked={allSelected}
-                onCheckedChange={() => toggleAll()}
-              />
-              <Label htmlFor="select-all" className="font-medium cursor-pointer">
-                {allSelected ? "Deselect All" : "Select All Modules"}
-              </Label>
-            </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-4">
-              {MODULE_GROUPS.map((mod) => {
-                const checked = formData.moduleAccess.includes(mod.key);
-                return (
-                  <label
-                    key={mod.key}
-                    htmlFor={`mod-${mod.key}`}
-                    className={`flex flex-col gap-1.5 rounded-lg border p-3 cursor-pointer transition-colors select-none ${
-                      checked
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/40 hover:bg-muted/40"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">{mod.group}</span>
-                      <Checkbox
-                        id={`mod-${mod.key}`}
-                        checked={checked}
+              <div className="space-y-1.5">
+                <Label>Module Access</Label>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button type="button" variant="outline" className="w-full justify-between font-normal">
+                      <span className="truncate">
+                        {formData.moduleAccess.length === 0
+                          ? "Select modules"
+                          : formData.moduleAccess.length === MODULE_GROUPS.length
+                            ? "All modules"
+                            : `${formData.moduleAccess.length} module${formData.moduleAccess.length === 1 ? "" : "s"} selected`}
+                      </span>
+                      <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]" align="start">
+                    <DropdownMenuLabel className="flex items-center justify-between py-1.5">
+                      <span>Modules</span>
+                      <button
+                        type="button"
+                        className="text-xs text-primary hover:underline"
+                        onClick={(e) => { e.preventDefault(); toggleAll(); }}
+                      >
+                        {allSelected ? "Deselect All" : "Select All"}
+                      </button>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {MODULE_GROUPS.map((mod) => (
+                      <DropdownMenuCheckboxItem
+                        key={mod.key}
+                        checked={formData.moduleAccess.includes(mod.key)}
                         onCheckedChange={() => toggleModule(mod.key)}
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground leading-tight">{mod.description}</p>
-                  </label>
-                );
-              })}
+                        onSelect={(e) => e.preventDefault()}
+                      >
+                        <div className="flex flex-col">
+                          <span className="text-sm">{mod.group}</span>
+                          <span className="text-xs text-muted-foreground">{mod.description}</span>
+                        </div>
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
           </CardContent>
         </Card>
