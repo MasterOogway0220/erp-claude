@@ -11,8 +11,13 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
     const companyType = searchParams.get("companyType") || "";
+    const includeInactive = searchParams.get("includeInactive") === "true";
 
     const where: any = { ...companyFilter(companyId) };
+
+    if (!includeInactive) {
+      where.isActive = true;
+    }
 
     if (search) {
       where.OR = [

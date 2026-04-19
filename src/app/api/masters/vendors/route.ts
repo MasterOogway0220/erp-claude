@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
+    const includeInactive = searchParams.get("includeInactive") === "true";
 
     const where: any = search
       ? {
@@ -23,6 +24,10 @@ export async function GET(request: NextRequest) {
           ],
         }
       : { ...companyFilter(companyId) };
+
+    if (!includeInactive) {
+      where.isActive = true;
+    }
 
     const vendors = await prisma.vendorMaster.findMany({
       where,

@@ -98,7 +98,7 @@ export default function VendorsPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["vendors", search],
     queryFn: async () => {
-      const params = new URLSearchParams({ search });
+      const params = new URLSearchParams({ search, includeInactive: "true" });
       const res = await fetch(`/api/masters/vendors?${params}`);
       if (!res.ok) throw new Error("Failed to fetch vendors");
       return res.json();

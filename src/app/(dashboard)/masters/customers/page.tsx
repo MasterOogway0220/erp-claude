@@ -45,6 +45,7 @@ export default function CustomersPage() {
       const params = new URLSearchParams();
       if (search) params.set("search", search);
       if (activeTab !== "ALL") params.set("companyType", activeTab);
+      params.set("includeInactive", "true");
       const res = await fetch(`/api/masters/customers?${params}`);
       if (res.ok) {
         const d = await res.json();
