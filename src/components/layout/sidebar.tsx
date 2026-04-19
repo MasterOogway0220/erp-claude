@@ -105,13 +105,11 @@ const navSections: NavSection[] = [
     items: [
       {
         title: "Quotations",
+        href: "/quotations",
         icon: <FileText className="h-5 w-5" />,
         iconColorClass: "text-indigo-500",
         roles: ["SALES", "MANAGEMENT", "ADMIN", "SUPER_ADMIN"],
         moduleKey: "quotation",
-        children: [
-          { title: "Quotation List", href: "/quotations" },
-        ],
       },
       {
         title: "Sales",
