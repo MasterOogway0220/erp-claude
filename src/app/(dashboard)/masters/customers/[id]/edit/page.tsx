@@ -202,6 +202,11 @@ export default function CustomerEditPage() {
   const [savingTerms, setSavingTerms] = useState(false);
 
   useEffect(() => {
+    if (!formData?.customerType) return;
+    setTermsQuotationType(formData.customerType === "INTERNATIONAL" ? "EXPORT" : "DOMESTIC");
+  }, [formData?.customerType]);
+
+  useEffect(() => {
     const fetchCustomer = async () => {
       try {
         const res = await fetch(`/api/masters/customers/${id}`);

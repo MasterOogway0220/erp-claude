@@ -234,6 +234,10 @@ export default function CustomerCreatePage() {
   const [termsLoaded, setTermsLoaded] = useState(false);
 
   useEffect(() => {
+    setTermsQuotationType(formData.customerType === "INTERNATIONAL" ? "EXPORT" : "DOMESTIC");
+  }, [formData.customerType]);
+
+  useEffect(() => {
     const loadTerms = async () => {
       try {
         const res = await fetch(`/api/offer-term-templates?quotationType=${termsQuotationType}`);
