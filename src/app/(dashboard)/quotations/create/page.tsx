@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FileText, PenLine } from "lucide-react";
+import { ArrowLeft, FileText, PenLine, Gavel } from "lucide-react";
 
 export default function CreateQuotationPage() {
   const router = useRouter();
@@ -21,7 +21,7 @@ export default function CreateQuotationPage() {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Standard Quotation Card */}
         <Card
           className="cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-primary/50 hover:-translate-y-1 group"
@@ -62,6 +62,28 @@ export default function CreateQuotationPage() {
             </p>
             <Button variant="outline" className="mt-6 w-full group-hover:bg-orange-500 group-hover:text-white transition-colors">
               Create Non-Standard Quotation
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Tender Quotation Card */}
+        <Card
+          className="cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-primary/50 hover:-translate-y-1 group"
+          onClick={() => router.push("/tenders/create")}
+        >
+          <CardHeader className="text-center pb-2">
+            <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors">
+              <Gavel className="h-8 w-8 text-blue-600" />
+            </div>
+            <CardTitle className="text-xl">Tender Quotation</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center">
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              For tender submissions — capture tender reference, bid details,
+              and submission deadlines
+            </p>
+            <Button variant="outline" className="mt-6 w-full group-hover:bg-blue-600 group-hover:text-white transition-colors">
+              Create Tender Quotation
             </Button>
           </CardContent>
         </Card>

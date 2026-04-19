@@ -66,13 +66,6 @@ export default function LoginPage() {
           }}
         />
 
-        {/* Top section - Logo & Company */}
-        <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-2">
-            <img src="/n-pipe-logo.jpg.jpeg" alt="N-Pipe Solutions" className="h-10" />
-          </div>
-        </div>
-
         {/* Middle section - Main heading & features */}
         <div className="relative z-10 space-y-8">
           <div className="space-y-3">
@@ -118,11 +111,6 @@ export default function LoginPage() {
         <div className="w-full max-w-[420px] space-y-8">
           {/* Mobile branding - shown only on small screens */}
           <div className="lg:hidden text-center space-y-1">
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <span className="text-base font-bold">N</span>
-              </div>
-            </div>
             <h1 className="text-xl font-semibold text-foreground">
               NPS Piping Solutions
             </h1>
