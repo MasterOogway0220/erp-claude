@@ -111,7 +111,6 @@ const navSections: NavSection[] = [
         moduleKey: "quotation",
         children: [
           { title: "Quotation List", href: "/quotations" },
-          { title: "Create Quotation", href: "/quotations/create" },
         ],
       },
       {
