@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
-import { notDeleted } from "@/lib/soft-delete";
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,7 +13,7 @@ export async function GET(request: NextRequest) {
     const companyType = searchParams.get("companyType") || "";
     const includeInactive = searchParams.get("includeInactive") === "true";
 
-    const where: any = { ...notDeleted, ...companyFilter(companyId) };
+    const where: any = { ...companyFilter(companyId) };
 
     if (!includeInactive) {
       where.isActive = true;

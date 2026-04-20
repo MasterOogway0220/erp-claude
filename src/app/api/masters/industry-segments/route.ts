@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
-import { notDeleted } from "@/lib/soft-delete";
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,7 +11,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const category = searchParams.get("category") || "";
 
-    const where: any = { ...notDeleted, ...companyFilter(companyId), isActive: true };
+    const where: any = { ...companyFilter(companyId), isActive: true };
     if (category) where.category = category;
 
     const segments = await prisma.industrySegmentMaster.findMany({

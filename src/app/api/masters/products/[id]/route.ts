@@ -14,7 +14,7 @@ export async function GET(
     if (!authorized) return response!;
 
     const product = await prisma.productSpecMaster.findFirst({
-      where: { id, deletedAt: null, ...companyFilter(companyId) },
+      where: { id, ...companyFilter(companyId) },
       include: { dimensionalStandard: true },
     });
 

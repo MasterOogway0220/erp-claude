@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
-import { notDeleted } from "@/lib/soft-delete";
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,7 +12,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search") || "";
     const customerId = searchParams.get("customerId") || "";
 
-    const where: any = { ...notDeleted, ...companyFilter(companyId) };
+    const where: any = { ...companyFilter(companyId) };
     if (search) {
       where.OR = [
         { code: { contains: search } },

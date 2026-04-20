@@ -3,7 +3,6 @@ import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-import { notDeleted } from "@/lib/soft-delete";
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,7 +12,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
 
-    const where: any = { ...notDeleted, ...companyFilter(companyId) };
+    const where: any = { ...companyFilter(companyId) };
     if (search) {
       where.OR = [
         { name: { contains: search } },

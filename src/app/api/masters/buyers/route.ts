@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
-import { notDeleted } from "@/lib/soft-delete";
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,7 +12,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search") || "";
     const customerId = searchParams.get("customerId") || "";
 
-    const where: any = { ...notDeleted, ...companyFilter(companyId) };
+    const where: any = { ...companyFilter(companyId) };
     if (customerId) where.customerId = customerId;
     if (search) {
       where.OR = [
@@ -29,7 +28,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Also include CustomerContact records so contacts added in the Buyer Contact master appear here
-    const contactWhere: any = { ...notDeleted };
+    const contactWhere: any = {};
     if (customerId) contactWhere.customerId = customerId;
     // Scope contacts to the current company via the customer relation
     if (companyId) {

@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
-import { notDeleted } from "@/lib/soft-delete";
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,8 +12,8 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search") || "";
 
     const where = search
-      ? { ...notDeleted, label: { contains: search }, ...companyFilter(companyId) }
-      : { ...notDeleted, ...companyFilter(companyId) };
+      ? { label: { contains: search }, ...companyFilter(companyId) }
+      : { ...companyFilter(companyId) };
 
     const lengths = await prisma.lengthMaster.findMany({
       where,

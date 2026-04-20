@@ -30,7 +30,7 @@ export async function GET(
     if (!authorized) return response!;
 
     const quotation = await prisma.quotation.findFirst({
-      where: { id, deletedAt: null, ...companyFilter(companyId) },
+      where: { id, ...companyFilter(companyId) },
       include: {
         customer: true,
         buyer: true,
