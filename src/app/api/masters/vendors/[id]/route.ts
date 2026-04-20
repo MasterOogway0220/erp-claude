@@ -14,7 +14,7 @@ export async function GET(
     if (!authorized) return response!;
 
     const vendor = await prisma.vendorMaster.findFirst({
-      where: { id, ...companyFilter(companyId) },
+      where: { id, deletedAt: null, ...companyFilter(companyId) },
     });
 
     if (!vendor) {

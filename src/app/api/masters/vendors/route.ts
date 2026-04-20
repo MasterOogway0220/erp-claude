@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
+import { notDeleted } from "@/lib/soft-delete";
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,6 +15,7 @@ export async function GET(request: NextRequest) {
 
     const where: any = search
       ? {
+          ...notDeleted,
           ...companyFilter(companyId),
           OR: [
             { name: { contains: search } },
@@ -23,7 +25,7 @@ export async function GET(request: NextRequest) {
             { contactPerson: { contains: search } },
           ],
         }
-      : { ...companyFilter(companyId) };
+      : { ...notDeleted, ...companyFilter(companyId) };
 
     if (!includeInactive) {
       where.isActive = true;

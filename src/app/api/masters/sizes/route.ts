@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { PipeType } from "@prisma/client";
 import { createAuditLog } from "@/lib/audit";
 import { checkAccess, companyFilter } from "@/lib/rbac";
+import { notDeleted } from "@/lib/soft-delete";
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,7 +14,7 @@ export async function GET(request: NextRequest) {
     const pipeType = searchParams.get("pipeType") as PipeType | null;
     const search = searchParams.get("search") || "";
 
-    const where: any = { ...companyFilter(companyId) };
+    const where: any = { ...notDeleted, ...companyFilter(companyId) };
     if (pipeType) {
       where.pipeType = pipeType;
     }

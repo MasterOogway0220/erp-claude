@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
+import { notDeleted } from "@/lib/soft-delete";
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,7 +10,7 @@ export async function GET(request: NextRequest) {
     if (!authorized) return response!;
 
     const departments = await prisma.departmentMaster.findMany({
-      where: { ...companyFilter(companyId), isActive: true },
+      where: { ...notDeleted, ...companyFilter(companyId), isActive: true },
       orderBy: { name: "asc" },
     });
 

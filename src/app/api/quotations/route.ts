@@ -5,6 +5,7 @@ import { numberToWords } from "@/lib/amount-in-words";
 import { generateDocumentNumber } from "@/lib/document-numbering";
 import { QuotationStatus, QuotationType, QuotationCategory } from "@prisma/client";
 import { checkAccess, companyFilter } from "@/lib/rbac";
+import { notDeleted } from "@/lib/soft-delete";
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,7 +20,7 @@ export async function GET(request: NextRequest) {
     const conversionStatus = searchParams.get("conversionStatus") || ""; // "pending" | "converted"
     const category = searchParams.get("category") || ""; // "STANDARD" | "NON_STANDARD"
 
-    const where: any = { ...companyFilter(companyId) };
+    const where: any = { ...notDeleted, ...companyFilter(companyId) };
 
     if (category) {
       where.quotationCategory = category as QuotationCategory;

@@ -15,7 +15,7 @@ export async function GET(
     const { id } = await params;
 
     const materialCode = await prisma.materialCodeMaster.findUnique({
-      where: { id },
+      where: { id, deletedAt: null },
     });
 
     if (!materialCode) {

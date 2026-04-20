@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
+import { notDeleted } from "@/lib/soft-delete";
 
 const VALID_TEST_TYPES = ["HYDRO", "CHEMICAL", "MECHANICAL", "IGC", "IMPACT"];
 const VALID_LOCATIONS = ["WAREHOUSE", "LAB"];
@@ -15,6 +16,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search") || "";
 
     const where: any = {
+      ...notDeleted,
       ...companyFilter(companyId),
     };
 

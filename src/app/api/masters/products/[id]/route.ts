@@ -14,7 +14,7 @@ export async function GET(
     if (!authorized) return response!;
 
     const product = await prisma.productSpecMaster.findUnique({
-      where: { id, ...companyFilter(companyId) },
+      where: { id, deletedAt: null, ...companyFilter(companyId) },
       include: { dimensionalStandard: true },
     });
 

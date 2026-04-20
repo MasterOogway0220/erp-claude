@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
 import { checkAccess, companyFilter } from "@/lib/rbac";
+import { notDeleted } from "@/lib/soft-delete";
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,7 +13,7 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get("type");
     const search = searchParams.get("search") || "";
 
-    const where: any = { isActive: true, ...companyFilter(companyId) };
+    const where: any = { ...notDeleted, isActive: true, ...companyFilter(companyId) };
     if (type) {
       where.type = type;
     }

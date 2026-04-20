@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkAccess, companyFilter } from "@/lib/rbac";
+import { notDeleted } from "@/lib/soft-delete";
 
 // GET /api/masters/customer-contacts - List contacts, optionally filter by customerId and department
 export async function GET(request: NextRequest) {
@@ -13,7 +14,7 @@ export async function GET(request: NextRequest) {
     const department = searchParams.get("department");
     const search = searchParams.get("search");
 
-    const where: any = {};
+    const where: any = { ...notDeleted };
     if (customerId) where.customerId = customerId;
     if (department) where.department = department;
     if (search) {

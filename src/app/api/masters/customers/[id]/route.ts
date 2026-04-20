@@ -14,7 +14,7 @@ export async function GET(
     if (!authorized) return response!;
 
     const customer = await prisma.customerMaster.findUnique({
-      where: { id, ...companyFilter(companyId) },
+      where: { id, deletedAt: null, ...companyFilter(companyId) },
       include: {
         tags: { include: { tag: true } },
         buyers: true,

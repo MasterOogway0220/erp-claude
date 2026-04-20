@@ -15,7 +15,7 @@ export async function GET(
     const { id } = await params;
 
     const buyer = await prisma.buyerMaster.findUnique({
-      where: { id, ...companyFilter(companyId) },
+      where: { id, deletedAt: null, ...companyFilter(companyId) },
       include: {
         customer: { select: { id: true, name: true } },
       },

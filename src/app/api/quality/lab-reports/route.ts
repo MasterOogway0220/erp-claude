@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { checkAccess, companyFilter } from "@/lib/rbac";
 import { generateDocumentNumber } from "@/lib/document-numbering";
 import { createAuditLog } from "@/lib/audit";
+import { notDeleted } from "@/lib/soft-delete";
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,6 +16,7 @@ export async function GET(request: NextRequest) {
     const heatNo = searchParams.get("heatNo") || "";
 
     const where: any = {
+      ...notDeleted,
       ...companyFilter(companyId),
     };
 
