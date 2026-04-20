@@ -133,7 +133,10 @@ export async function PUT(
 
     // Replace all pipe details in a transaction
     await prisma.$transaction(async (tx) => {
-      await tx.pipeMaterialDetail.deleteMany({ where: { inventoryStockId: id } });
+      await tx.pipeMaterialDetail.updateMany({
+        where: { inventoryStockId: id },
+        data: softDeleteData(),
+      });
 
       if (pipes.length > 0) {
         await tx.pipeMaterialDetail.createMany({
