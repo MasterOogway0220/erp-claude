@@ -54,7 +54,7 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen">
       {/* Left Panel - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 xl:w-[55%] relative overflow-hidden flex-col justify-between p-12 text-white"
+      <div className="hidden lg:flex lg:w-1/2 xl:w-[55%] relative overflow-hidden flex-col justify-center items-center p-12 text-white text-center"
         style={{
           background: "linear-gradient(135deg, oklch(0.40 0.18 260) 0%, oklch(0.32 0.16 280) 50%, oklch(0.28 0.14 290) 100%)",
         }}
@@ -67,19 +67,19 @@ export default function LoginPage() {
         />
 
         {/* Middle section - Main heading & features */}
-        <div className="relative z-10 space-y-8">
+        <div className="relative z-10 space-y-8 flex flex-col items-center">
           <div className="space-y-3">
             <h2 className="text-4xl xl:text-5xl font-bold tracking-tight leading-tight">
               Enterprise Resource
               <br />
               Planning
             </h2>
-            <p className="text-lg text-white/70 max-w-md">
+            <p className="text-lg text-white/70 max-w-md mx-auto">
               Streamline your piping and tubular trading operations with an integrated management platform.
             </p>
           </div>
 
-          <div className="space-y-4 max-w-md">
+          <div className="space-y-4 max-w-md mx-auto">
             <FeatureItem
               icon={<ArrowRightLeft className="h-5 w-5" />}
               title="Quotation to Cash"
@@ -99,7 +99,7 @@ export default function LoginPage() {
         </div>
 
         {/* Bottom section */}
-        <div className="relative z-10">
+        <div className="absolute z-10 bottom-12 left-0 right-0 text-center">
           <p className="text-sm text-white/40">
             &copy; {new Date().getFullYear()} NPS Piping Solutions. All rights reserved.
           </p>
@@ -215,7 +215,7 @@ function FeatureItem({
   description: string;
 }) {
   return (
-    <div className="flex gap-4 items-start">
+    <div className="flex gap-4 items-start text-left">
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/10 border border-white/10">
         {icon}
       </div>
