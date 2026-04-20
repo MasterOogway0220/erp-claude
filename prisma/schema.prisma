@@ -1458,6 +1458,7 @@ model InventoryStock {
   @@index([sizeLabel])
   @@index([grnItemId])
   @@index([warehouseLocationId])
+  @@index([status, companyId])
 }
 
 model PipeMaterialDetail {
@@ -2195,6 +2196,8 @@ model Invoice {
   @@index([companyId])
   @@index([invoiceNo])
   @@index([customerId])
+  @@index([status])
+  @@index([status, companyId])
   @@index([originalInvoiceId])
   @@index([dispatchAddressId], map: "Invoice_dispatchAddressId_fkey")
   @@index([dispatchNoteId], map: "Invoice_dispatchNoteId_fkey")

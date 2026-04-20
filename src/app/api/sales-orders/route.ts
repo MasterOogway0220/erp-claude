@@ -146,28 +146,16 @@ export async function POST(request: NextRequest) {
           customerId,
           status: { in: ["SENT", "PARTIALLY_PAID"] },
         },
-        select: { id: true, totalAmount: true },
+        select: {
+          totalAmount: true,
+          paymentReceipts: { select: { amountReceived: true } },
+        },
       });
 
-      const totalInvoiceAmount = unpaidInvoices.reduce(
-        (sum, inv) => sum + Number(inv.totalAmount),
-        0
-      );
-
-      const invoiceIds = unpaidInvoices.map((inv) => inv.id);
-      const payments = invoiceIds.length > 0
-        ? await prisma.paymentReceipt.findMany({
-            where: { invoiceId: { in: invoiceIds } },
-            select: { amountReceived: true },
-          })
-        : [];
-
-      const totalPayments = payments.reduce(
-        (sum, p) => sum + Number(p.amountReceived),
-        0
-      );
-
-      const outstanding = totalInvoiceAmount - totalPayments;
+      const outstanding = unpaidInvoices.reduce((sum, inv) => {
+        const paid = inv.paymentReceipts.reduce((s, p) => s + Number(p.amountReceived), 0);
+        return sum + Number(inv.totalAmount) - paid;
+      }, 0);
 
       // Calculate new SO value from items
       const newSOValue = items.reduce(
