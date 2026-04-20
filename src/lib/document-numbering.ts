@@ -71,6 +71,17 @@ export function getCurrentFinancialYear(): string {
   return `${fyStartYear}-${(fyEndYear % 100).toString().padStart(2, "0")}`;
 }
 
+function getShortFinancialYear(): string {
+  const now = new Date();
+  const month = now.getMonth() + 1;
+  const year = now.getFullYear();
+  const fyStartYear = month >= 4 ? year : year - 1;
+  const fyEndYear = fyStartYear + 1;
+  return (fyEndYear % 100).toString().padStart(2, "0");
+}
+
+const QUOTATION_NUMBER_BASE = 15000;
+
 export async function generateDocumentNumber(
   documentType: DocumentType,
   companyId?: string | null
@@ -123,5 +134,8 @@ export async function generateDocumentNumber(
     });
   }
 
-  return `${prefix}/${currentFY}/${nextNumber.toString().padStart(5, "0")}`;
+  const isQuotation = documentType === "QUOTATION";
+  const fy = isQuotation ? getShortFinancialYear() : currentFY;
+  const displayNumber = isQuotation ? nextNumber + QUOTATION_NUMBER_BASE : nextNumber;
+  return `${prefix}/${fy}/${displayNumber.toString().padStart(5, "0")}`;
 }
