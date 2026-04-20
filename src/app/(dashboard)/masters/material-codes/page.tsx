@@ -291,12 +291,12 @@ export default function MaterialCodesPage() {
       header: "Item Code",
       sortable: true,
       cell: (row) => (
-        <div>
-          <span className="font-mono text-sm font-semibold text-primary">{row.code}</span>
+        <div className="flex flex-col justify-center gap-0.5">
+          <span className="font-mono text-sm font-semibold text-primary leading-tight">{row.code}</span>
           {row.clientItemCode && (
-            <div className="text-xs text-muted-foreground mt-0.5">
+            <span className="text-xs text-muted-foreground leading-tight">
               Client: {row.clientItemCode}
-            </div>
+            </span>
           )}
         </div>
       ),

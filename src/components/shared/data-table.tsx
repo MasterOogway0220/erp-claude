@@ -207,7 +207,7 @@ export function DataTable<T extends Record<string, any>>({
                     } hover:bg-accent/30`}
                   >
                     {columns.map((col) => (
-                      <TableCell key={col.key} className="py-3 px-4 text-sm">
+                      <TableCell key={col.key} className="py-3 px-4 text-sm align-middle">
                         {col.cell
                           ? col.cell(row)
                           : String(row[col.key] ?? "")}
