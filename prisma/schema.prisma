@@ -207,6 +207,7 @@ model ProductSpecMaster {
   specification         String?
   companyId             String?
   dimensionalStandard   DimensionalStandardMaster? @relation(fields: [dimensionalStandardId], references: [id])
+  deletedAt             DateTime?
 
   @@index([category])
   @@index([dimensionalStandardId])
@@ -238,6 +239,7 @@ model SizeMaster {
   updatedAt      DateTime        @updatedAt
   companyId      String?
   quotationItems QuotationItem[]
+  deletedAt      DateTime?
 
   @@index([pipeType])
   @@index([sizeLabel])
@@ -247,21 +249,23 @@ model SizeMaster {
 }
 
 model TestingMaster {
-  id            String   @id @default(cuid())
+  id            String    @id @default(cuid())
   testName      String
   applicableFor String?
-  isMandatory   Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  isMandatory   Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
   companyId     String?
+  deletedAt     DateTime?
 }
 
 model LengthMaster {
-  id        String   @id @default(cuid())
-  label     String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        String    @id @default(cuid())
+  label     String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   companyId String?
+  deletedAt DateTime?
 }
 
 model TaxMaster {
@@ -385,6 +389,7 @@ model DimensionalStandardMaster {
   updatedAt DateTime            @updatedAt
   companyId String?
   products  ProductSpecMaster[]
+  deletedAt DateTime?
 }
 
 model TransporterMaster {
@@ -474,6 +479,7 @@ model Quotation {
   items                QuotationItem[]
   terms                QuotationTerm[]
   salesOrders          SalesOrder[]
+  deletedAt            DateTime?
 
   @@unique([quotationNo, version])
   @@index([quotationNo])
@@ -621,6 +627,7 @@ model CompanyMaster {
   fyEndDate             DateTime?
   fyStartDate           DateTime?
   isoLogoUrl            String?
+  deletedAt             DateTime?
   alerts                Alert[]
   auditLogs             AuditLog[]
   clientPurchaseOrders  ClientPurchaseOrder[]
@@ -737,6 +744,7 @@ model CustomerDispatchAddress {
   dispatchNotes DispatchNote[]
   invoices      Invoice[]
   salesOrders   SalesOrder[]
+  deletedAt     DateTime?
 
   @@index([customerId])
 }
@@ -784,6 +792,7 @@ model MaterialCodeMaster {
   unit            String?
   companyId       String?
   quotationItems  QuotationItem[]
+  deletedAt       DateTime?
 
   @@index([clientItemCode])
   @@index([materialGrade])
@@ -987,6 +996,7 @@ model StockReservation {
   status           ReservationStatus @default(RESERVED)
   inventoryStock   InventoryStock    @relation(fields: [inventoryStockId], references: [id])
   salesOrderItem   SalesOrderItem    @relation(fields: [salesOrderItemId], references: [id])
+  deletedAt        DateTime?
 
   @@index([salesOrderItemId])
   @@index([inventoryStockId])
@@ -1476,6 +1486,7 @@ model PipeMaterialDetail {
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
   inventoryStock   InventoryStock @relation(fields: [inventoryStockId], references: [id], onDelete: Cascade)
+  deletedAt        DateTime?
 
   @@unique([inventoryStockId, pipeNo])
   @@index([inventoryStockId])
@@ -2064,6 +2075,7 @@ model LabReport {
   inventoryStock   InventoryStock?   @relation(fields: [inventoryStockId], references: [id])
   purchaseOrder    PurchaseOrder?    @relation(fields: [poId], references: [id])
   uploadedBy       User?             @relation("LabReportUploadedBy", fields: [uploadedById], references: [id])
+  deletedAt        DateTime?
 
   @@index([companyId])
   @@index([heatNo])
@@ -2531,6 +2543,7 @@ model WarehouseItemDetail {
   updatedAt                 DateTime                @updatedAt
   inventoryStock            InventoryStock?         @relation("DetailStock", fields: [inventoryStockId], references: [id])
   warehouseIntimationItem   WarehouseIntimationItem @relation(fields: [warehouseIntimationItemId], references: [id], onDelete: Cascade)
+  deletedAt                 DateTime?
 
   @@index([warehouseIntimationItemId])
   @@index([inventoryStockId])
@@ -2607,6 +2620,7 @@ model TenderDocument {
   uploadedById String?
   tender       Tender   @relation(fields: [tenderId], references: [id], onDelete: Cascade)
   uploadedBy   User?    @relation("TenderDocUploadedBy", fields: [uploadedById], references: [id])
+  deletedAt    DateTime?
 
   @@index([tenderId])
   @@index([uploadedById], map: "TenderDocument_uploadedById_fkey")
@@ -2696,6 +2710,7 @@ model SupplierQuotationDocument {
   uploadedById        String?
   supplierQuotation   SupplierQuotation @relation(fields: [supplierQuotationId], references: [id], onDelete: Cascade)
   uploadedBy          User?             @relation("SQDocUploadedBy", fields: [uploadedById], references: [id])
+  deletedAt           DateTime?
 
   @@index([supplierQuotationId])
   @@index([uploadedById], map: "SupplierQuotationDocument_uploadedById_fkey")
@@ -2757,6 +2772,7 @@ model HeatEntry {
   inspectionPrepItem   InspectionPrepItem        @relation(fields: [inspectionPrepItemId], references: [id], onDelete: Cascade)
   mtcDocuments         HeatMTCDocument[]
   offerItemHeats       InspectionOfferItemHeat[]
+  deletedAt            DateTime?
 
   @@unique([inspectionPrepItemId, heatNo])
   @@index([inspectionPrepItemId])
@@ -2774,6 +2790,7 @@ model HeatMTCDocument {
   updatedAt   DateTime  @updatedAt
   addedBy     User?     @relation("MTCAddedBy", fields: [addedById], references: [id])
   heatEntry   HeatEntry @relation(fields: [heatEntryId], references: [id], onDelete: Cascade)
+  deletedAt   DateTime?
 
   @@index([heatEntryId])
   @@index([addedById], map: "HeatMTCDocument_addedById_fkey")
