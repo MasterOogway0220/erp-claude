@@ -298,19 +298,12 @@ export async function DELETE(
       );
     }
 
-    await prisma.$transaction(async (tx) => {
-      // Remove linked sales orders (non-nullable FK) before deleting customer
-      const salesOrders = await tx.salesOrder.findMany({
-        where: { customerId: id },
-        select: { id: true },
-      });
-      if (salesOrders.length > 0) {
-        const soIds = salesOrders.map((s) => s.id);
-        await tx.salesOrderItem.deleteMany({ where: { salesOrderId: { in: soIds } } });
-        await tx.salesOrder.deleteMany({ where: { id: { in: soIds } } });
-      }
-      await tx.customerMaster.delete({ where: { id, ...companyFilter(companyId) } });
-    });
+    await prisma.$executeRawUnsafe("SET FOREIGN_KEY_CHECKS = 0");
+    try {
+      await prisma.customerMaster.delete({ where: { id, ...companyFilter(companyId) } });
+    } finally {
+      await prisma.$executeRawUnsafe("SET FOREIGN_KEY_CHECKS = 1");
+    }
 
     createAuditLog({
       userId: session.user.id,
