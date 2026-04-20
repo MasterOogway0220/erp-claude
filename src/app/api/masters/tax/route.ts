@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkAccess } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
-import { notDeleted } from "@/lib/soft-delete";
 
 export async function GET() {
   try {
@@ -10,7 +9,7 @@ export async function GET() {
     if (!authorized) return response!;
 
     const taxRates = await prisma.taxMaster.findMany({
-      where: { ...notDeleted },
+      where: { isActive: true },
       orderBy: { name: "asc" },
     });
 

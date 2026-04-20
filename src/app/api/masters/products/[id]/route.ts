@@ -13,7 +13,7 @@ export async function GET(
     const { authorized, response, companyId } = await checkAccess("masters", "read");
     if (!authorized) return response!;
 
-    const product = await prisma.productSpecMaster.findUnique({
+    const product = await prisma.productSpecMaster.findFirst({
       where: { id, deletedAt: null, ...companyFilter(companyId) },
       include: { dimensionalStandard: true },
     });

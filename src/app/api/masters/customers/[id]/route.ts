@@ -13,8 +13,8 @@ export async function GET(
     const { authorized, response, companyId } = await checkAccess("masters", "read");
     if (!authorized) return response!;
 
-    const customer = await prisma.customerMaster.findUnique({
-      where: { id, deletedAt: null, ...companyFilter(companyId) },
+    const customer = await prisma.customerMaster.findFirst({
+      where: { id, isActive: true, ...companyFilter(companyId) },
       include: {
         tags: { include: { tag: true } },
         buyers: true,
