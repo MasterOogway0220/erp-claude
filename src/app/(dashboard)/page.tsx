@@ -28,13 +28,11 @@ import {
   Truck,
   AlertTriangle,
   IndianRupee,
-  Plus,
   ArrowRight,
   CalendarDays,
   TrendingUp,
   ReceiptText,
   PackageCheck,
-  ScrollText,
 } from "lucide-react";
 
 export default function DashboardPage() {
@@ -182,23 +180,6 @@ export default function DashboardPage() {
     },
   ];
 
-  const quickActions = [
-    {
-      label: "Create Quotation",
-      href: "/quotations/create",
-      icon: <ScrollText className="h-4 w-4" />,
-    },
-    {
-      label: "New GRN",
-      href: "/inventory/grn/create",
-      icon: <Package className="h-4 w-4" />,
-    },
-    {
-      label: "New Inspection",
-      href: "/quality/inspections/create",
-      icon: <ClipboardCheck className="h-4 w-4" />,
-    },
-  ];
 
   // Quick stats for the summary bar
   const quickStats = [
@@ -287,25 +268,6 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         ))}
-      </div>
-
-      {/* Quick Actions */}
-      <div>
-        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Quick Actions
-        </h3>
-        <div className="flex flex-wrap gap-2">
-          {quickActions.map((action) => (
-            <Link
-              key={action.label}
-              href={action.href}
-              className="inline-flex items-center gap-2 rounded-md border border-border/60 bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-muted/60 transition-colors"
-            >
-              <Plus className="h-3.5 w-3.5 text-muted-foreground" />
-              {action.label}
-            </Link>
-          ))}
-        </div>
       </div>
 
       {/* Low Stock Alerts */}
