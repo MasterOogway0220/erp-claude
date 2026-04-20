@@ -37,7 +37,7 @@ export default function CreateLengthPage() {
       }
 
       toast.success("Length created successfully");
-      router.push("/masters/products");
+      router.push("/masters/products?tab=lengths");
     } catch {
       toast.error("Failed to create length");
     } finally {
@@ -48,7 +48,7 @@ export default function CreateLengthPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Add Length" description="Create a new pipe length option">
-        <Button variant="outline" onClick={() => router.push("/masters/products")}>
+        <Button variant="outline" onClick={() => router.push("/masters/products?tab=lengths")}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
         </Button>

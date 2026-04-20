@@ -156,7 +156,7 @@ export default function CreateFlangePage() {
         return;
       }
       toast.success("Flange created successfully");
-      router.push("/masters/products");
+      router.push("/masters/products?tab=flanges");
     } catch {
       toast.error("Failed to create flange");
     } finally {
@@ -172,7 +172,7 @@ export default function CreateFlangePage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Add Flange" description="Create a new flange specification">
-        <Button variant="outline" onClick={() => router.push("/masters/products")}>
+        <Button variant="outline" onClick={() => router.push("/masters/products?tab=flanges")}>
           <ArrowLeft className="h-4 w-4 mr-2" />Back
         </Button>
         <Button type="submit" form="flange-form" disabled={saving}>

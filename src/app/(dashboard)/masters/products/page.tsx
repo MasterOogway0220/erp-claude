@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback, Suspense } from "react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -41,8 +41,43 @@ import { toast } from "sonner";
 // ─── Top-level tabs ──────────────────────────────────────────────────────────
 type MainTab = "pipes" | "sizes" | "lengths" | "fittings" | "flanges" | "units" | "material-codes" | "additional-specs";
 
+const VALID_TABS: readonly MainTab[] = [
+  "pipes", "sizes", "lengths", "fittings", "flanges", "units", "material-codes", "additional-specs",
+];
+
 export default function ProductMasterPage() {
-  const [activeTab, setActiveTab] = useState<MainTab>("pipes");
+  return (
+    <Suspense fallback={<div className="p-6 text-muted-foreground">Loading...</div>}>
+      <ProductMasterContent />
+    </Suspense>
+  );
+}
+
+function ProductMasterContent() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const initialTab: MainTab = VALID_TABS.includes(tabParam as MainTab) ? (tabParam as MainTab) : "pipes";
+  const [activeTab, setActiveTab] = useState<MainTab>(initialTab);
+
+  useEffect(() => {
+    if (VALID_TABS.includes(tabParam as MainTab) && tabParam !== activeTab) {
+      setActiveTab(tabParam as MainTab);
+    }
+    // Only react to URL changes, not local state
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabParam]);
+
+  const handleTabChange = (v: string) => {
+    const next = v as MainTab;
+    setActiveTab(next);
+    const params = new URLSearchParams(searchParams.toString());
+    if (next === "pipes") params.delete("tab");
+    else params.set("tab", next);
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  };
 
   const tabLabel: Record<MainTab, string> = {
     pipes: "Product Specifications",
@@ -62,7 +97,7 @@ export default function ProductMasterPage() {
         description={tabLabel[activeTab]}
       />
 
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as MainTab)}>
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="pipes">Pipes</TabsTrigger>
           <TabsTrigger value="sizes">Sizes</TabsTrigger>

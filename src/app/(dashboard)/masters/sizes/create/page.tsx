@@ -91,7 +91,7 @@ export default function CreateSizePage() {
       }
 
       toast.success("Size created successfully");
-      router.push("/masters/products");
+      router.push("/masters/products?tab=sizes");
     } catch {
       toast.error("Failed to create size");
     } finally {
@@ -102,7 +102,7 @@ export default function CreateSizePage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Add Size" description="Create a new pipe size specification">
-        <Button variant="outline" onClick={() => router.push("/masters/products")}>
+        <Button variant="outline" onClick={() => router.push("/masters/products?tab=sizes")}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
         </Button>

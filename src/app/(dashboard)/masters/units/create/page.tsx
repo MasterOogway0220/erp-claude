@@ -56,7 +56,7 @@ export default function CreateUnitPage() {
       }
 
       toast.success("Unit created successfully");
-      router.push("/masters/products");
+      router.push("/masters/products?tab=units");
     } catch {
       toast.error("Failed to create unit");
     } finally {
@@ -67,7 +67,7 @@ export default function CreateUnitPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Add Unit" description="Create a new unit of measurement">
-        <Button variant="outline" onClick={() => router.push("/masters/products")}>
+        <Button variant="outline" onClick={() => router.push("/masters/products?tab=units")}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
         </Button>

@@ -83,7 +83,7 @@ export default function CreateFittingPage() {
       }
 
       toast.success("Fitting created successfully");
-      router.push("/masters/products");
+      router.push("/masters/products?tab=fittings");
     } catch {
       toast.error("Failed to create fitting");
     } finally {
@@ -94,7 +94,7 @@ export default function CreateFittingPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Add Fitting" description="Create a new fitting specification">
-        <Button variant="outline" onClick={() => router.push("/masters/products")}>
+        <Button variant="outline" onClick={() => router.push("/masters/products?tab=fittings")}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
         </Button>
