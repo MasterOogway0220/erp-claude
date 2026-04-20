@@ -76,8 +76,7 @@ function getShortFinancialYear(): string {
   const month = now.getMonth() + 1;
   const year = now.getFullYear();
   const fyStartYear = month >= 4 ? year : year - 1;
-  const fyEndYear = fyStartYear + 1;
-  return (fyEndYear % 100).toString().padStart(2, "0");
+  return (fyStartYear % 100).toString().padStart(2, "0");
 }
 
 const QUOTATION_NUMBER_BASE = 15000;
