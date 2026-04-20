@@ -49,6 +49,7 @@ interface NavItem {
   roles?: UserRole[];
   moduleKey?: string;
   moduleKeys?: string[];
+  productionHidden?: boolean;
   children?: { title: string; href: string; roles?: UserRole[] }[];
 }
 
@@ -76,6 +77,7 @@ const navSections: NavSection[] = [
         href: "/alerts",
         icon: <Bell className="h-5 w-5" />,
         iconColorClass: "text-amber-500",
+        productionHidden: true,
       },
       {
         title: "Masters",
@@ -117,6 +119,7 @@ const navSections: NavSection[] = [
         iconColorClass: "text-emerald-500",
         roles: ["SALES", "MANAGEMENT", "ADMIN", "SUPER_ADMIN"],
         moduleKey: "sales",
+        productionHidden: true,
         children: [
           { title: "Dashboard", href: "/sales/dashboard" },
           { title: "Client P.O. Register", href: "/client-purchase-orders" },
@@ -132,6 +135,7 @@ const navSections: NavSection[] = [
         iconColorClass: "text-orange-500",
         roles: ["PURCHASE", "MANAGEMENT", "ADMIN", "SUPER_ADMIN"],
         moduleKey: "purchase",
+        productionHidden: true,
         children: [
           { title: "Dashboard", href: "/purchase/dashboard" },
           { title: "Purchase Requisitions", href: "/purchase" },
@@ -148,6 +152,7 @@ const navSections: NavSection[] = [
         iconColorClass: "text-cyan-500",
         roles: ["STORES", "MANAGEMENT", "ADMIN", "SUPER_ADMIN"],
         moduleKey: "inventory",
+        productionHidden: true,
         children: [
           { title: "Stock View", href: "/inventory" },
           { title: "New GRN", href: "/inventory/grn/create" },
@@ -161,6 +166,7 @@ const navSections: NavSection[] = [
         iconColorClass: "text-violet-500",
         roles: ["QC", "MANAGEMENT", "ADMIN", "SUPER_ADMIN"],
         moduleKey: "quality",
+        productionHidden: true,
         children: [
           { title: "Inspections", href: "/quality" },
           { title: "New Inspection", href: "/quality/inspections/create" },
@@ -183,6 +189,7 @@ const navSections: NavSection[] = [
         iconColorClass: "text-rose-500",
         roles: ["STORES", "ACCOUNTS", "MANAGEMENT", "ADMIN", "SUPER_ADMIN"],
         moduleKeys: ["dispatch", "finance"],
+        productionHidden: true,
         children: [
           { title: "Packing Lists", href: "/dispatch" },
           { title: "Dispatch Notes", href: "/dispatch?tab=dispatch-notes" },
@@ -201,6 +208,8 @@ const navSections: NavSection[] = [
 // Helper: flatten all nav items for backward-compat role filtering
 // ---------------------------------------------------------------------------
 
+const isProductionMode = process.env.NEXT_PUBLIC_PRODUCTION_MODE === "true";
+
 function filterSections(
   sections: NavSection[],
   userRole: UserRole | undefined,
@@ -213,6 +222,8 @@ function filterSections(
     .map((section) => ({
       ...section,
       items: section.items.filter((item) => {
+        // Hide production-restricted items when in production mode
+        if (isProductionMode && item.productionHidden) return false;
         // Role check
         if (item.roles && !(userRole && item.roles.includes(userRole))) {
           return false;
