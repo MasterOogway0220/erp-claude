@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkAccess } from "@/lib/rbac";
+import { softDeleteData } from "@/lib/soft-delete";
 
 // GET /api/masters/customer-contacts/[id]
 export async function GET(
@@ -78,7 +79,7 @@ export async function DELETE(
   const { id } = await params;
 
   try {
-    await prisma.customerContact.delete({ where: { id } });
+    await prisma.customerContact.update({ where: { id }, data: softDeleteData(true) });
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Failed to delete contact:", error);

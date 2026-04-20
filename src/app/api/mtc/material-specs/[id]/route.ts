@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
 import { checkAccess, companyFilter } from "@/lib/rbac";
+import { softDeleteData } from "@/lib/soft-delete";
 
 export async function GET(
   request: NextRequest,
@@ -186,13 +187,7 @@ export async function DELETE(
       );
     }
 
-    // Delete nested data first, then the spec
-    await prisma.$transaction(async (tx) => {
-      await tx.mTCChemicalElement.deleteMany({ where: { materialSpecId: id } });
-      await tx.mTCMechanicalProperty.deleteMany({ where: { materialSpecId: id } });
-      await tx.mTCImpactProperty.deleteMany({ where: { materialSpecId: id } });
-      await tx.mTCMaterialSpec.delete({ where: { id } });
-    });
+    await prisma.mTCMaterialSpec.update({ where: { id }, data: softDeleteData(true) });
 
     await createAuditLog({
       tableName: "MTCMaterialSpec",

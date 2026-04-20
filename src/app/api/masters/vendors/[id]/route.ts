@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
+import { softDeleteData } from "@/lib/soft-delete";
 
 export async function GET(
   request: NextRequest,
@@ -235,9 +236,7 @@ export async function DELETE(
       );
     }
 
-    await prisma.vendorMaster.delete({
-      where: { id },
-    });
+    await prisma.vendorMaster.update({ where: { id }, data: softDeleteData(true) });
 
     createAuditLog({
       userId: session.user.id,

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkAccess } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
+import { softDeleteData } from "@/lib/soft-delete";
 
 const VALID_TEST_TYPES = ["HYDRO", "CHEMICAL", "MECHANICAL", "IGC", "IMPACT"];
 const VALID_LOCATIONS = ["WAREHOUSE", "LAB"];
@@ -137,7 +138,7 @@ export async function DELETE(
       );
     }
 
-    await prisma.qualityRequirement.delete({ where: { id } });
+    await prisma.qualityRequirement.update({ where: { id }, data: softDeleteData(true) });
 
     await createAuditLog({
       tableName: "QualityRequirement",
