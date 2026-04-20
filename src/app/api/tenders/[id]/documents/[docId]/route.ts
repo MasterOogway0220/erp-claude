@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { checkAccess } from "@/lib/rbac";
 import { unlink } from "fs/promises";
 import path from "path";
-import { softDeleteData } from "@/lib/soft-delete";
 
 export async function DELETE(
   request: NextRequest,
@@ -31,7 +30,7 @@ export async function DELETE(
       console.error("Failed to delete file from disk:", err);
     }
 
-    await prisma.tenderDocument.update({ where: { id: docId }, data: softDeleteData() });
+    await prisma.tenderDocument.delete({ where: { id: docId } });
 
     return NextResponse.json({ success: true });
   } catch (error) {

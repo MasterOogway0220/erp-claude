@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
-import { softDeleteData } from "@/lib/soft-delete";
 
 export async function PATCH(
   request: NextRequest,
@@ -44,7 +43,7 @@ export async function DELETE(
     if (!authorized) return response!;
     const { id } = await params;
 
-    await prisma.departmentMaster.update({ where: { id }, data: softDeleteData(true) });
+    await prisma.departmentMaster.delete({ where: { id } });
     await createAuditLog({ tableName: "DepartmentMaster", recordId: id, action: "DELETE", userId: session.user?.id, companyId });
     return NextResponse.json({ message: "Deleted" });
   } catch {

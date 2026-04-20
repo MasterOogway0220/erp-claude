@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkAccess, companyFilter } from "@/lib/rbac";
-import { softDeleteData } from "@/lib/soft-delete";
 
 export async function GET(
   request: NextRequest,
@@ -133,10 +132,7 @@ export async function PUT(
 
     // Replace all pipe details in a transaction
     await prisma.$transaction(async (tx) => {
-      await tx.pipeMaterialDetail.updateMany({
-        where: { inventoryStockId: id },
-        data: softDeleteData(),
-      });
+      await tx.pipeMaterialDetail.deleteMany({ where: { inventoryStockId: id } });
 
       if (pipes.length > 0) {
         await tx.pipeMaterialDetail.createMany({
@@ -190,15 +186,9 @@ export async function DELETE(
     const pipeDetailId = url.searchParams.get("pipeDetailId");
 
     if (pipeDetailId) {
-      await prisma.pipeMaterialDetail.update({
-        where: { id: pipeDetailId, inventoryStockId: id },
-        data: softDeleteData(),
-      });
+      await prisma.pipeMaterialDetail.delete({ where: { id: pipeDetailId, inventoryStockId: id } });
     } else {
-      await prisma.pipeMaterialDetail.updateMany({
-        where: { inventoryStockId: id },
-        data: softDeleteData(),
-      });
+      await prisma.pipeMaterialDetail.deleteMany({ where: { inventoryStockId: id } });
     }
 
     return NextResponse.json({ success: true });

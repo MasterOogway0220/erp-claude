@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
-import { softDeleteData } from "@/lib/soft-delete";
 
 export async function GET(
   request: NextRequest,
@@ -103,7 +102,7 @@ export async function DELETE(
       );
     }
 
-    await prisma.productSpecMaster.update({ where: { id, ...companyFilter(companyId) }, data: softDeleteData() });
+    await prisma.productSpecMaster.delete({ where: { id, ...companyFilter(companyId) } });
 
     createAuditLog({
       userId: session.user.id,

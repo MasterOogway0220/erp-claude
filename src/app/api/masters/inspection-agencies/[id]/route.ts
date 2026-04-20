@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
-import { softDeleteData } from "@/lib/soft-delete";
 
 export async function PATCH(
   request: NextRequest,
@@ -68,7 +67,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Inspection agency not found" }, { status: 404 });
     }
 
-    await prisma.inspectionAgencyMaster.update({ where: { id, ...companyFilter(companyId) }, data: softDeleteData(true) });
+    await prisma.inspectionAgencyMaster.delete({ where: { id, ...companyFilter(companyId) } });
 
     createAuditLog({ userId: session.user.id, action: "DELETE", tableName: "InspectionAgencyMaster", recordId: id, oldValue: existing.name, companyId }).catch(console.error);
 

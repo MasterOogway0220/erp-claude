@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
 import { checkAccess, companyFilter } from "@/lib/rbac";
-import { softDeleteData } from "@/lib/soft-delete";
 
 export async function GET(
   request: NextRequest,
@@ -187,7 +186,7 @@ export async function DELETE(
       );
     }
 
-    await prisma.mTCMaterialSpec.update({ where: { id }, data: softDeleteData(true) });
+    await prisma.mTCMaterialSpec.delete({ where: { id } });
 
     await createAuditLog({
       tableName: "MTCMaterialSpec",

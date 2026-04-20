@@ -3,7 +3,6 @@ import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-import { softDeleteData } from "@/lib/soft-delete";
 
 export async function GET(
   request: NextRequest,
@@ -141,7 +140,7 @@ export async function DELETE(
       );
     }
 
-    await prisma.employeeMaster.update({ where: { id, ...companyFilter(companyId) }, data: softDeleteData(true) });
+    await prisma.employeeMaster.delete({ where: { id, ...companyFilter(companyId) } });
 
     await createAuditLog({
       tableName: "EmployeeMaster",

@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkAccess } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
-import { softDeleteData } from "@/lib/soft-delete";
 
 export async function PATCH(
   request: NextRequest,
@@ -102,7 +101,7 @@ export async function DELETE(
       );
     }
 
-    await prisma.customerDispatchAddress.update({ where: { id: addressId }, data: softDeleteData() });
+    await prisma.customerDispatchAddress.delete({ where: { id: addressId } });
 
     await createAuditLog({
       tableName: "CustomerDispatchAddress",

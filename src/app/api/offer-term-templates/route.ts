@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
-import { softDeleteData } from "@/lib/soft-delete";
 
 export async function GET(request: NextRequest) {
   try {
@@ -96,7 +95,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    await prisma.offerTermTemplate.update({ where: { id, ...companyFilter(companyId) }, data: softDeleteData(true) });
+    await prisma.offerTermTemplate.delete({ where: { id, ...companyFilter(companyId) } });
 
     await createAuditLog({
       tableName: "OfferTermTemplate",

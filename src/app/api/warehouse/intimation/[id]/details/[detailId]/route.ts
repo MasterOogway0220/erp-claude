@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkAccess } from "@/lib/rbac";
 import { MPRItemStatus, MPRStatus } from "@prisma/client";
-import { softDeleteData } from "@/lib/soft-delete";
 
 export async function PATCH(
   request: NextRequest,
@@ -176,7 +175,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Can only delete PENDING details" }, { status: 400 });
     }
 
-    await prisma.warehouseItemDetail.update({ where: { id: detailId }, data: softDeleteData() });
+    await prisma.warehouseItemDetail.delete({ where: { id: detailId } });
 
     // Recalculate parent
     const parentItemId = detail.warehouseIntimationItem.id;
