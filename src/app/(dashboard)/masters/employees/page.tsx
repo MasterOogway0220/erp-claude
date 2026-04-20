@@ -8,7 +8,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { DataTable, Column } from "@/components/shared/data-table";
-import { Plus, Pencil } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface Employee {
@@ -31,6 +41,7 @@ export default function EmployeesPage() {
   const router = useRouter();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const fetchEmployees = useCallback(async () => {
     try {
@@ -66,6 +77,23 @@ export default function EmployeesPage() {
     } catch (error: any) {
       setEmployees((prev) => prev.map((e) => (e.id === id ? { ...e, isActive: !next } : e)));
       toast.error(error.message || "Failed to update status");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    try {
+      const res = await fetch(`/api/masters/employees/${deleteId}`, { method: "DELETE" });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to delete");
+      }
+      toast.success("Employee deleted");
+      fetchEmployees();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete employee");
+    } finally {
+      setDeleteId(null);
     }
   };
 
@@ -138,13 +166,18 @@ export default function EmployeesPage() {
       key: "actions",
       header: "Actions",
       cell: (row: Employee) => (
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => router.push(`/masters/employees/${row.id}/edit`)}
-        >
-          <Pencil className="h-4 w-4" />
-        </Button>
+        <div className="flex gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.push(`/masters/employees/${row.id}/edit`)}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => setDeleteId(row.id)}>
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </Button>
+        </div>
       ),
     },
   ];
@@ -195,6 +228,26 @@ export default function EmployeesPage() {
           />
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Employee?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. The employee and their linked user account will be permanently removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
