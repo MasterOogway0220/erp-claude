@@ -111,12 +111,10 @@ export async function DELETE(
     }
 
     if (materialCode._count.quotationItems > 0) {
-      return NextResponse.json(
-        {
-          error: `Cannot delete item "${materialCode.code}". It is used in ${materialCode._count.quotationItems} quotation item(s).`,
-        },
-        { status: 400 }
-      );
+      await prisma.quotationItem.updateMany({
+        where: { materialCodeId: id },
+        data: { materialCodeId: null },
+      });
     }
 
     await prisma.materialCodeMaster.delete({ where: { id } });
