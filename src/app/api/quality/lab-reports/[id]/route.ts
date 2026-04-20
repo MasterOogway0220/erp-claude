@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
+import { softDeleteData } from "@/lib/soft-delete";
 
 export async function GET(
   request: NextRequest,
@@ -130,7 +131,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Lab report not found" }, { status: 404 });
     }
 
-    await prisma.labReport.delete({ where: { id } });
+    await prisma.labReport.update({ where: { id }, data: softDeleteData() });
 
     createAuditLog({
       userId: session.user.id,

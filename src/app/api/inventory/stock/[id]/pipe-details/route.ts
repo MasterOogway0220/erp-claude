@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkAccess, companyFilter } from "@/lib/rbac";
+import { softDeleteData } from "@/lib/soft-delete";
 
 export async function GET(
   request: NextRequest,
@@ -186,12 +187,14 @@ export async function DELETE(
     const pipeDetailId = url.searchParams.get("pipeDetailId");
 
     if (pipeDetailId) {
-      await prisma.pipeMaterialDetail.delete({
+      await prisma.pipeMaterialDetail.update({
         where: { id: pipeDetailId, inventoryStockId: id },
+        data: softDeleteData(),
       });
     } else {
-      await prisma.pipeMaterialDetail.deleteMany({
+      await prisma.pipeMaterialDetail.updateMany({
         where: { inventoryStockId: id },
+        data: softDeleteData(),
       });
     }
 

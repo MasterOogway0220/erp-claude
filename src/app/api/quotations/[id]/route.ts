@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
 import { numberToWords } from "@/lib/amount-in-words";
 import { checkAccess, companyFilter } from "@/lib/rbac";
+import { softDeleteData } from "@/lib/soft-delete";
 
 // Valid quotation status transitions
 const VALID_QUOTATION_TRANSITIONS: Record<string, string[]> = {
@@ -262,7 +263,7 @@ export async function DELETE(
       await tx.quotationEmailLog.deleteMany({ where: { quotationId: id } });
       await tx.quotationItem.deleteMany({ where: { quotationId: id } });
       await tx.quotationTerm.deleteMany({ where: { quotationId: id } });
-      await tx.quotation.delete({ where: { id } });
+      await tx.quotation.update({ where: { id }, data: softDeleteData() });
     });
 
     createAuditLog({

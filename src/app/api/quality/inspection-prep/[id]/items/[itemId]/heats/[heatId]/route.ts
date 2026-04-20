@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkAccess } from "@/lib/rbac";
+import { softDeleteData } from "@/lib/soft-delete";
 
 export async function PATCH(
   request: NextRequest,
@@ -53,7 +54,7 @@ export async function DELETE(
 
     const { itemId, heatId } = await params;
 
-    await prisma.heatEntry.delete({ where: { id: heatId, inspectionPrepItemId: itemId } });
+    await prisma.heatEntry.update({ where: { id: heatId, inspectionPrepItemId: itemId }, data: softDeleteData() });
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

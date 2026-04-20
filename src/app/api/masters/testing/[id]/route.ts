@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
+import { softDeleteData } from "@/lib/soft-delete";
 
 export async function PATCH(
   request: NextRequest,
@@ -62,7 +63,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Testing type not found" }, { status: 404 });
     }
 
-    await prisma.testingMaster.delete({ where: { id } });
+    await prisma.testingMaster.update({ where: { id }, data: softDeleteData() });
 
     await createAuditLog({
       tableName: "TestingMaster",
