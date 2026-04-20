@@ -394,6 +394,7 @@ export default function CustomerCreatePage() {
       }
 
       toast.success("Customer created successfully");
+      router.refresh();
       router.push("/masters/customers");
     } catch (error: any) {
       toast.error(error.message || "Failed to create customer");

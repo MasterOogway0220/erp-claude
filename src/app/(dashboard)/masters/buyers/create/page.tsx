@@ -93,6 +93,7 @@ export default function CreateBuyerPage() {
       }
 
       toast.success("Buyer created successfully");
+      router.refresh();
       router.push("/masters/buyers");
     } catch {
       toast.error("Failed to create buyer");

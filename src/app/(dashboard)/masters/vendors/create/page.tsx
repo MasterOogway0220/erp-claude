@@ -130,6 +130,7 @@ export default function VendorCreatePage() {
         throw new Error(err.error || "Failed to save vendor");
       }
       toast.success("Vendor created successfully");
+      router.refresh();
       router.push("/masters/vendors");
     } catch (error: any) {
       toast.error(error.message || "Failed to create vendor");

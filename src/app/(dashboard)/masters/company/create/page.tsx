@@ -216,6 +216,7 @@ export default function CompanyCreatePage() {
         throw new Error(err.error || "Failed to save");
       }
       toast.success("Company created successfully");
+      router.refresh();
       router.push("/masters/company");
     } catch (error: any) {
       toast.error(error.message || "Failed to create company");

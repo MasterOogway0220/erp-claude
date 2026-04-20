@@ -123,6 +123,7 @@ export default function CreateEmployeePage() {
       }
 
       toast.success("Employee created successfully");
+      router.refresh();
       router.push("/masters/employees");
     } catch {
       toast.error("Failed to create employee");

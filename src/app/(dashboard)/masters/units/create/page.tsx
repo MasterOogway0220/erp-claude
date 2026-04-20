@@ -56,6 +56,7 @@ export default function CreateUnitPage() {
       }
 
       toast.success("Unit created successfully");
+      router.refresh();
       router.push("/masters/products?tab=units");
     } catch {
       toast.error("Failed to create unit");

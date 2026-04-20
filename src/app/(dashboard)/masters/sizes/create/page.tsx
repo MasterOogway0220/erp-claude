@@ -91,6 +91,7 @@ export default function CreateSizePage() {
       }
 
       toast.success("Size created successfully");
+      router.refresh();
       router.push("/masters/products?tab=sizes");
     } catch {
       toast.error("Failed to create size");

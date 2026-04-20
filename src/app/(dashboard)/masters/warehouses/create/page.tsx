@@ -142,6 +142,7 @@ export default function WarehouseCreatePage() {
         throw new Error(err.error || "Failed to create warehouse");
       }
       toast.success("Warehouse created successfully");
+      router.refresh();
       router.push("/masters/warehouses");
     } catch (error: any) {
       toast.error(error.message || "Failed to create warehouse");

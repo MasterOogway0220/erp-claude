@@ -37,6 +37,7 @@ export default function CreateLengthPage() {
       }
 
       toast.success("Length created successfully");
+      router.refresh();
       router.push("/masters/products?tab=lengths");
     } catch {
       toast.error("Failed to create length");

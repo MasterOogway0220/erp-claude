@@ -83,6 +83,7 @@ export default function CreateFittingPage() {
       }
 
       toast.success("Fitting created successfully");
+      router.refresh();
       router.push("/masters/products?tab=fittings");
     } catch {
       toast.error("Failed to create fitting");

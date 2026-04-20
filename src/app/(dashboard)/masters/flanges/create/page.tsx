@@ -156,6 +156,7 @@ export default function CreateFlangePage() {
         return;
       }
       toast.success("Flange created successfully");
+      router.refresh();
       router.push("/masters/products?tab=flanges");
     } catch {
       toast.error("Failed to create flange");
