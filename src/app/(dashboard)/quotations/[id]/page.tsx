@@ -542,11 +542,11 @@ export default function QuotationDetailPage() {
               <DropdownMenuContent>
                 <DropdownMenuItem onClick={() => handleDownloadPDF("quoted")}>
                   <FileText className="h-4 w-4 mr-2" />
-                  {quotation.quotationCategory === "NON_STANDARD" ? "Commercial PDF" : "Quoted PDF"}
+                  {quotation.quotationCategory === "NON_STANDARD" ? "Commercial PDF" : "Priced PDF"}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleDownloadPDF("unquoted")}>
                   <FileText className="h-4 w-4 mr-2" />
-                  {quotation.quotationCategory === "NON_STANDARD" ? "Technical PDF" : "Unquoted PDF"}
+                  {quotation.quotationCategory === "NON_STANDARD" ? "Technical PDF" : "Technical PDF (No Prices)"}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

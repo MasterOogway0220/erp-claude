@@ -55,9 +55,11 @@ export default function IndustrySegmentPage() {
       if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || "Failed"); }
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (saved) => {
       queryClient.invalidateQueries({ queryKey: ["industry-segments"] });
       toast.success(editingId ? "Updated" : "Segment added");
+      // Switch to the tab matching the saved segment's category so it's visible immediately
+      if (saved?.category && saved.category !== tab) setTab(saved.category);
       setDialogOpen(false);
     },
     onError: (e: Error) => toast.error(e.message),
@@ -166,16 +168,6 @@ export default function IndustrySegmentPage() {
         <DialogContent>
           <DialogHeader><DialogTitle>{editingId ? "Edit Segment" : "Add Segment"}</DialogTitle></DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label>Category</Label>
-              <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="CUSTOMER">Customer</SelectItem>
-                  <SelectItem value="VENDOR">Vendor</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
             <div className="grid gap-2">
               <Label>{form.category === "CUSTOMER" ? "Industry Segment" : "Vendor Type"} *</Label>
               <Input

@@ -277,11 +277,11 @@ export function generateStandardQuotationHtml(
   .fin-summary .val { text-align: right; font-weight: bold; }
 
   /* Terms - tight alignment, no gap */
-  table.terms { border-collapse: collapse; width: 100%; margin-top: 4px; }
-  table.terms td { border: none; padding: 0.5px 2px; font-size: 8.5pt; vertical-align: top; }
+  table.terms { border-collapse: collapse; width: 100%; margin-top: 4px; table-layout: fixed; }
+  table.terms td { border: none; padding: 0.5px 2px; font-size: 8.5pt; vertical-align: top; word-wrap: break-word; overflow-wrap: break-word; }
   .terms-title { font-weight: bold; font-size: 9pt; padding: 4px 0 2px 0 !important; text-decoration: underline; }
-  .term-no { width: 14px; text-align: right; padding-right: 2px !important; }
-  .term-name { font-weight: bold; white-space: nowrap; padding-right: 0px !important; }
+  .term-no { width: 18px; text-align: right; padding-right: 2px !important; }
+  .term-name { font-weight: bold; width: 28%; padding-right: 0px !important; }
   .term-val { font-weight: normal; padding-left: 2px !important; }
 
   /* Notes */
@@ -416,6 +416,7 @@ ${!isUnquoted ? (() => {
 
 <!-- OFFER TERMS -->
 <table class="terms">
+  <colgroup><col style="width:18px"><col style="width:28%"><col></colgroup>
   <tr><td colspan="3" class="terms-title">OFFER TERMS:</td></tr>
   ${termRows}
 </table>

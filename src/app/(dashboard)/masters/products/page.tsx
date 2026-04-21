@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, Suspense } from "react";
+import { useState, useEffect, useCallback, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/shared/page-header";
@@ -140,6 +140,17 @@ function ProductMasterContent() {
 
 // ─── PIPES (Product Specifications) ─────────────────────────────────────────
 
+// Maps product category to applicable dimensional standard code/name keywords.
+// Used to filter the dimensional standard combobox in the product spec dialog.
+const CATEGORY_STD_KEYWORDS: Partial<Record<string, string[]>> = {
+  PIPES:    ["B36", "API 5L", "IS 3589", "IS 4923", "IS 1239", "EN 10216", "DIN 2448"],
+  FITTINGS: ["B16.9", "B16.11", "B16.28", "SP-75", "SP-79", "SP-43", "MSS SP-75", "MSS SP-79", "MSS SP-43", "BS 1640"],
+  FLANGES:  ["B16.5", "B16.47", "SP-44", "EN 1092", "AWWA C207", "DIN 2573", "MSS SP-44"],
+  VALVES:   ["API 6D", "API 600", "BS 1414", "BS 5351", "API 607", "API 598"],
+  NUT_BOLT: ["B18", "A193", "A194", "F436", "F593"],
+  GASKETS:  ["B16.20", "B16.21"],
+};
+
 const PRODUCT_CATEGORIES = [
   { value: "PIPES", label: "Pipes" },
   { value: "FITTINGS", label: "Fittings" },
@@ -208,6 +219,17 @@ function PipesPanel() {
   });
 
   const dimensionalStandards = dimStdData?.dimensionalStandards || [];
+
+  const filteredDimStds = useMemo(() => {
+    const keywords = CATEGORY_STD_KEYWORDS[formData.category];
+    if (!keywords || !dimensionalStandards.length) return dimensionalStandards;
+    const filtered = dimensionalStandards.filter((s: { code: string; name: string }) => {
+      const haystack = (s.name + " " + s.code).toUpperCase();
+      return keywords.some((kw) => haystack.includes(kw.toUpperCase()));
+    });
+    // Fall back to all standards if the mapping produces no results (e.g. new standards not yet in mapping)
+    return filtered.length > 0 ? filtered : dimensionalStandards;
+  }, [formData.category, dimensionalStandards]);
 
   const createMutation = useMutation({
     mutationFn: async (data: ProductFormData) => {
@@ -427,7 +449,7 @@ function PipesPanel() {
               <div className="grid gap-2">
                 <Label>Dimensional Standard</Label>
                 <SmartCombobox<{ id: string; name: string; code: string }>
-                  options={dimensionalStandards}
+                  options={filteredDimStds}
                   value={dimStdSearch}
                   onSelect={(std) => { setFormData({ ...formData, dimensionalStandardId: std.id }); setDimStdSearch(std.name); }}
                   onChange={(text) => { setDimStdSearch(text); if (!text) setFormData({ ...formData, dimensionalStandardId: "" }); }}

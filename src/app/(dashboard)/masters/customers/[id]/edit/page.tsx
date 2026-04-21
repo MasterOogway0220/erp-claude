@@ -60,7 +60,7 @@ const INDIAN_STATES = [
   "Puducherry",
 ];
 
-const ALL_COUNTRIES = Country.getAllCountries().filter((c) => c.name !== "India");
+const ALL_COUNTRIES = Country.getAllCountries();
 
 interface DispatchAddress {
   id?: string;
