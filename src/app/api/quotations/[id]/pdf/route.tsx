@@ -74,7 +74,7 @@ export async function GET(
         quotation,
         company: resolvedCompany,
         variant: pdfVariant,
-      })
+      }) as any
     );
 
     // Build filename
