@@ -427,7 +427,7 @@ function NonStandardQuotationPage({
     : `FORMAT: ${quotation.quotationNo}, Dated: ${fmtDate(quotation.quotationDate)}`;
 
   return (
-    <Page size={[595.28, 907.09]} style={nsStyles.page}>
+    <Page size={[595.28, 1587]} style={nsStyles.page}>
 
       {/* ROW 1-2: Logo + Type Label */}
       <View style={[nsStyles.row, { marginBottom: 3, alignItems: "center" }]}>
