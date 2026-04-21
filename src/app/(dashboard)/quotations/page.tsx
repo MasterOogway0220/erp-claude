@@ -82,9 +82,8 @@ export default function QuotationsPage() {
 
   const handleDownloadPDF = (id: string, variant: "quoted" | "unquoted") => {
     const link = document.createElement("a");
-    link.href = `/api/quotations/${id}/pdf?format=html&variant=${variant}`;
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
+    link.href = `/api/quotations/${id}/pdf?variant=${variant}`;
+    link.download = "";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

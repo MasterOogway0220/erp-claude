@@ -361,8 +361,12 @@ export default function QuotationDetailPage() {
   };
 
   const handleDownloadPDF = (variant?: string) => {
-    const variantParam = variant ? `&variant=${variant}` : "";
-    window.open(`/api/quotations/${params.id}/pdf?format=html${variantParam}`, "_blank");
+    const link = document.createElement("a");
+    link.href = `/api/quotations/${params.id}/pdf${variant ? `?variant=${variant}` : ""}`;
+    link.download = "";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handleOpenEmailDialog = () => {
