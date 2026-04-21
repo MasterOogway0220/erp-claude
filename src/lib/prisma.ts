@@ -13,7 +13,9 @@ function createAdapter() {
     user: decodeURIComponent(url.username),
     password: decodeURIComponent(url.password),
     database: url.pathname.slice(1),
-    connectionLimit: 10,
+    connectionLimit: 5,
+    connectTimeout: 10000,
+    socketTimeout: 30000,
   });
 }
 
@@ -27,6 +29,6 @@ export const prisma =
         : ["error"],
   });
 
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
-}
+// Always cache on globalThis so the pool is reused across hot reloads (dev)
+// and across module re-evaluations on some Node.js hosts (prod)
+globalForPrisma.prisma = prisma;
