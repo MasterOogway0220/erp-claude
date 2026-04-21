@@ -341,14 +341,6 @@ export function Sidebar() {
       <nav className={cn("py-3", isCollapsed ? "px-2" : "px-3")}>
         {filteredSections.map((section, sectionIdx) => (
           <div key={section.label} className={cn(sectionIdx > 0 && "mt-2")}>
-            {/* Section label */}
-            {!isCollapsed && (
-              <div className={cn("mb-1 px-3", sectionIdx === 0 ? "pt-0" : "pt-3")}>
-                <span className="text-[10px] font-medium uppercase tracking-[0.1em] text-muted-foreground/50">
-                  {section.label}
-                </span>
-              </div>
-            )}
             {isCollapsed && sectionIdx > 0 && (
               <Separator className="my-3 mx-auto w-5 opacity-30" />
             )}
