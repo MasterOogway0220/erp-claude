@@ -166,7 +166,7 @@ function StandardQuotationPage({
     : `FORMAT: ${quotation.quotationNo}, Dated: ${fmtDate(quotation.quotationDate)}`;
 
   return (
-    <Page size={[841.89, 652]} style={stdStyles.page}>
+    <Page size={[841.89, 1587]} style={stdStyles.page}>
 
       {/* HEADER */}
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
