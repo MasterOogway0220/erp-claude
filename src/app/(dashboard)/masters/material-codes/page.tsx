@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { DataTable, Column } from "@/components/shared/data-table";
 import { Button } from "@/components/ui/button";
@@ -114,10 +115,11 @@ const SCHEDULES = [
 // ---------------------------------------------------------------------------
 
 export default function MaterialCodesPage() {
+  const router = useRouter();
   const [materialCodes, setMaterialCodes] = useState<MaterialCode[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MaterialCode | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState<FormData>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<MaterialCode | null>(null);
@@ -164,11 +166,7 @@ export default function MaterialCodesPage() {
     });
   };
 
-  const handleOpenCreate = () => {
-    setEditingItem(null);
-    setFormData(emptyForm);
-    setIsDialogOpen(true);
-  };
+  const handleOpenCreate = () => router.push("/masters/material-codes/create");
 
   const handleDuplicate = (item: MaterialCode) => {
     setEditingItem(null);
