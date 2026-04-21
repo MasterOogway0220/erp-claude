@@ -1,19 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
+import { renderToBuffer } from "@react-pdf/renderer";
+import React from "react";
 import { checkAccess } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
-import { renderHtmlToPdf } from "@/lib/pdf/render-pdf";
-import { wrapHtmlForPrint } from "@/lib/pdf/print-wrapper";
-import { generateStandardQuotationHtml } from "@/lib/pdf/quotation-standard-template";
-import { generateNonStandardQuotationHtml } from "@/lib/pdf/quotation-nonstandard-template";
+import { QuotationPDF } from "@/lib/pdf/quotation-pdf";
 
-// Vercel serverless: increase memory and timeout for Chromium PDF generation
 export const maxDuration = 30;
 export const dynamic = "force-dynamic";
 
 const DEFAULT_COMPANY = {
   companyName: "NPS Piping Solutions",
-  regAddressLine1:
-    "1210/1211, Prasad Chambers, Tata Road no. 2, Opera House, Charni Road (E)",
+  regAddressLine1: "1210/1211, Prasad Chambers, Tata Road no. 2, Opera House, Charni Road (E)",
   regCity: "Mumbai",
   regPincode: "400004",
   regState: "Maharashtra",
@@ -36,6 +33,8 @@ export async function GET(
 
     const { searchParams } = new URL(request.url);
     const variant = searchParams.get("variant") || "auto";
+    const isUnquoted = variant === "unquoted";
+    const pdfVariant: "QUOTED" | "UNQUOTED" = isUnquoted ? "UNQUOTED" : "QUOTED";
 
     const quotation = await prisma.quotation.findUnique({
       where: { id },
@@ -52,56 +51,39 @@ export async function GET(
     });
 
     if (!quotation) {
-      return NextResponse.json(
-        { error: "Quotation not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Quotation not found" }, { status: 404 });
     }
 
-    const company = await prisma.companyMaster.findFirst();
-    const companyInfo = company || DEFAULT_COMPANY;
+    const companyRow = await prisma.companyMaster.findFirst();
+    const company = companyRow || DEFAULT_COMPANY;
 
-    // Convert relative logo URLs to absolute for PDF rendering (Puppeteer needs full URLs)
+    // Convert relative logo URLs to absolute for react-pdf image fetching
     const origin = request.nextUrl.origin || "";
-    if (companyInfo.companyLogoUrl && companyInfo.companyLogoUrl.startsWith("/")) {
-      (companyInfo as any).companyLogoUrl = `${origin}${companyInfo.companyLogoUrl}`;
-    }
-    if ((companyInfo as any).isoLogoUrl && (companyInfo as any).isoLogoUrl.startsWith("/")) {
-      (companyInfo as any).isoLogoUrl = `${origin}${(companyInfo as any).isoLogoUrl}`;
-    }
+    const resolvedCompany = {
+      ...company,
+      companyLogoUrl: company.companyLogoUrl?.startsWith("/")
+        ? `${origin}${company.companyLogoUrl}`
+        : company.companyLogoUrl,
+      isoLogoUrl: (company as any).isoLogoUrl?.startsWith("/")
+        ? `${origin}${(company as any).isoLogoUrl}`
+        : (company as any).isoLogoUrl,
+    };
 
-    const isNonStandard = quotation.quotationCategory === "NON_STANDARD";
+    const pdfBuffer = await renderToBuffer(
+      React.createElement(QuotationPDF, {
+        quotation,
+        company: resolvedCompany,
+        variant: pdfVariant,
+      })
+    );
 
-    // Resolve variant: "quoted" or "unquoted" (default: "quoted")
-    const isUnquoted = variant === "unquoted";
-    const pdfVariant: "QUOTED" | "UNQUOTED" = isUnquoted ? "UNQUOTED" : "QUOTED";
-
-    let html: string;
-    let landscape: boolean;
-
-    if (isNonStandard) {
-      html = generateNonStandardQuotationHtml(quotation as any, companyInfo as any, pdfVariant);
-      landscape = false;
-    } else {
-      html = generateStandardQuotationHtml(quotation as any, companyInfo as any, pdfVariant);
-      landscape = true;
-    }
-
-    const format = searchParams.get("format");
-    if (format === "html") {
-      return new NextResponse(wrapHtmlForPrint(html, landscape), {
-        headers: { "Content-Type": "text/html" },
-      });
-    }
-
-    const pdfBuffer = await renderHtmlToPdf(html, landscape);
-
-    // Build filename: PRICED-QUT-NNNNN-CLIENT NAME-INQ.NO or TECHNICAL-QUT-...
-    // Extract just the sequential number (last segment after final /)
+    // Build filename
     const qtnParts = quotation.quotationNo.split("/");
     const qtnNum = qtnParts[qtnParts.length - 1] || quotation.quotationNo.replace(/\//g, "-");
     const clientName = (quotation.customer?.name || "").toUpperCase().replace(/[^A-Z0-9 ]/g, "").trim();
     const inqNo = (quotation.inquiryNo || "").trim();
+    const isNonStandard = quotation.quotationCategory === "NON_STANDARD";
+
     let filename: string;
     if (isNonStandard) {
       filename = isUnquoted
@@ -121,9 +103,6 @@ export async function GET(
     });
   } catch (error) {
     console.error("Error generating PDF:", error);
-    return NextResponse.json(
-      { error: "Failed to generate PDF" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to generate PDF" }, { status: 500 });
   }
 }
