@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Save, User, LayoutGrid, Eye, EyeOff, ChevronDown } from "lucide-react";
+import { ArrowLeft, Save, User, Eye, EyeOff, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
 
@@ -32,26 +32,20 @@ interface Employee {
   code: string;
   name: string;
   department: string | null;
-  designation: string | null;
   email: string | null;
   mobile: string | null;
   moduleAccess: string[];
-  role: string | null;
   isActive: boolean;
 }
 
 interface EmployeeFormData {
   name: string;
-  designation: string;
   email: string;
   password: string;
   mobile: string;
   department: string;
-  role: string;
   moduleAccess: string[];
 }
-
-const USER_ROLES = ["SUPER_ADMIN", "ADMIN", "SALES", "PURCHASE", "QC", "STORES", "ACCOUNTS", "MANAGEMENT"];
 
 const MODULE_GROUPS = [
   { group: "Masters", key: "masters", description: "Employees, vendors, customers" },
@@ -72,8 +66,7 @@ export default function EditEmployeePage() {
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [isActive, setIsActive] = useState(true);
   const [formData, setFormData] = useState<EmployeeFormData>({
-    name: "", designation: "", email: "", password: "", mobile: "",
-    department: "", role: "", moduleAccess: [],
+    name: "", email: "", password: "", mobile: "", department: "", moduleAccess: [],
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -105,12 +98,10 @@ export default function EditEmployeePage() {
         setIsActive(found.isActive !== false);
         setFormData({
           name: found.name,
-          designation: found.designation || "",
           email: found.email || "",
           password: "",
           mobile: found.mobile || "",
           department: found.department || "",
-          role: found.role || "",
           moduleAccess: Array.isArray(found.moduleAccess) ? found.moduleAccess : [],
         });
       } catch {
@@ -146,10 +137,8 @@ export default function EditEmployeePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) { toast.error("Employee name is required"); return; }
-    if (!formData.designation.trim()) { toast.error("Designation is required"); return; }
     if (!formData.email.trim()) { toast.error("Email is required"); return; }
     if (!formData.mobile.trim()) { toast.error("Mobile is required"); return; }
-    if (!formData.role) { toast.error("Role is required"); return; }
     if (formData.password && formData.password.length < 6) {
       toast.error("Password must be at least 6 characters"); return;
     }
@@ -158,17 +147,13 @@ export default function EditEmployeePage() {
     try {
       const payload: Record<string, unknown> = {
         name: formData.name,
-        designation: formData.designation,
         email: formData.email,
         mobile: formData.mobile,
         department: formData.department || null,
-        role: formData.role,
         moduleAccess: formData.moduleAccess,
         isActive,
       };
-      if (formData.password) {
-        payload.password = formData.password;
-      }
+      if (formData.password) payload.password = formData.password;
 
       const res = await fetch(`/api/masters/employees/${id}`, {
         method: "PATCH",
@@ -211,8 +196,7 @@ export default function EditEmployeePage() {
         </Button>
       </PageHeader>
 
-      <form id="employee-form" onSubmit={handleSubmit} className="space-y-6">
-        {/* Employee Code (read-only) */}
+      <form id="employee-form" onSubmit={handleSubmit} className="space-y-4">
         {employee && (
           <Card>
             <CardContent className="pt-4">
@@ -223,32 +207,25 @@ export default function EditEmployeePage() {
                 </div>
                 <div className="flex items-center gap-3">
                   <Label htmlFor="isActive" className="text-sm">Status</Label>
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      id="isActive"
-                      checked={isActive}
-                      onCheckedChange={setIsActive}
-                    />
-                    <span className={`text-sm font-medium ${isActive ? "text-green-600" : "text-red-600"}`}>
-                      {isActive ? "Active" : "Inactive"}
-                    </span>
-                  </div>
+                  <Switch id="isActive" checked={isActive} onCheckedChange={setIsActive} />
+                  <span className={`text-sm font-medium ${isActive ? "text-green-600" : "text-red-600"}`}>
+                    {isActive ? "Active" : "Inactive"}
+                  </span>
                 </div>
               </div>
             </CardContent>
           </Card>
         )}
 
-        {/* Employee Details - Single Row */}
-        <Card>
-          <CardHeader>
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-2 text-base">
-              <User className="w-4 h-4" />
+              <User className="w-4 h-4 text-primary" />
               Employee Details
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
               <div className="space-y-1.5">
                 <Label htmlFor="name">Name *</Label>
                 <Input
@@ -299,15 +276,6 @@ export default function EditEmployeePage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="designation">Designation *</Label>
-                <Input
-                  id="designation"
-                  value={formData.designation}
-                  onChange={(e) => update("designation", e.target.value)}
-                  placeholder="e.g. Manager"
-                />
-              </div>
-              <div className="space-y-1.5">
                 <Label htmlFor="department">Department</Label>
                 <Select
                   value={formData.department || "__none__"}
@@ -324,34 +292,6 @@ export default function EditEmployeePage() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Module Access & Role */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <LayoutGrid className="w-4 h-4" />
-              Module Access & Role
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="role">Role *</Label>
-                <Select value={formData.role || "__none__"} onValueChange={(v) => update("role", v === "__none__" ? "" : v)}>
-                  <SelectTrigger id="role">
-                    <SelectValue placeholder="Select role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none__">-- Select Role --</SelectItem>
-                    {USER_ROLES.map((role) => (
-                      <SelectItem key={role} value={role}>{role}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
               <div className="space-y-1.5">
                 <Label>Module Access</Label>
                 <DropdownMenu>
@@ -362,12 +302,12 @@ export default function EditEmployeePage() {
                           ? "Select modules"
                           : formData.moduleAccess.length === MODULE_GROUPS.length
                             ? "All modules"
-                            : `${formData.moduleAccess.length} module${formData.moduleAccess.length === 1 ? "" : "s"} selected`}
+                            : `${formData.moduleAccess.length} selected`}
                       </span>
                       <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]" align="start">
+                  <DropdownMenuContent className="w-56" align="end">
                     <DropdownMenuLabel className="flex items-center justify-between py-1.5">
                       <span>Modules</span>
                       <button

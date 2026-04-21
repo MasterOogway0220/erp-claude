@@ -22,21 +22,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ArrowLeft, Save, User, Shield, Eye, EyeOff, ChevronDown } from "lucide-react";
+import { ArrowLeft, Save, User, Eye, EyeOff, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 
 interface EmployeeFormData {
   name: string;
-  designation: string;
   email: string;
   password: string;
   mobile: string;
   department: string;
-  role: string;
   moduleAccess: string[];
 }
-
-const USER_ROLES = ["SUPER_ADMIN", "ADMIN", "SALES", "PURCHASE", "QC", "STORES", "ACCOUNTS", "MANAGEMENT"];
 
 const MODULE_GROUPS = [
   { group: "Masters", key: "masters", description: "Employees, vendors, customers" },
@@ -51,12 +47,10 @@ const MODULE_GROUPS = [
 
 const emptyForm: EmployeeFormData = {
   name: "",
-  designation: "",
   email: "",
   password: "",
   mobile: "",
   department: "",
-  role: "",
   moduleAccess: [],
 };
 
@@ -97,30 +91,24 @@ export default function CreateEmployeePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) { toast.error("Employee name is required"); return; }
-    if (!formData.designation.trim()) { toast.error("Designation is required"); return; }
     if (!formData.email.trim()) { toast.error("Email is required"); return; }
     if (!formData.password.trim()) { toast.error("Password is required"); return; }
     if (formData.password.length < 6) { toast.error("Password must be at least 6 characters"); return; }
     if (!formData.mobile.trim()) { toast.error("Mobile is required"); return; }
-    if (!formData.role) { toast.error("Role is required"); return; }
 
     setSaving(true);
     try {
-      const payload = {
-        name: formData.name,
-        designation: formData.designation,
-        email: formData.email,
-        password: formData.password,
-        mobile: formData.mobile,
-        department: formData.department || null,
-        role: formData.role,
-        moduleAccess: formData.moduleAccess,
-      };
-
       const res = await fetch("/api/masters/employees", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          mobile: formData.mobile,
+          department: formData.department || null,
+          moduleAccess: formData.moduleAccess,
+        }),
       });
 
       if (!res.ok) {
@@ -154,13 +142,12 @@ export default function CreateEmployeePage() {
         </Button>
       </PageHeader>
 
-      <form id="employee-form" onSubmit={handleSubmit} className="space-y-6">
-        {/* Personal Information — single row */}
+      <form id="employee-form" onSubmit={handleSubmit}>
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-2 text-base">
               <User className="w-4 h-4 text-primary" />
-              Personal Information
+              Employee Details
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -174,17 +161,6 @@ export default function CreateEmployeePage() {
                   value={formData.name}
                   onChange={(e) => update("name", e.target.value)}
                   placeholder="Employee name"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="designation" className="text-sm font-medium">
-                  Designation <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="designation"
-                  value={formData.designation}
-                  onChange={(e) => update("designation", e.target.value)}
-                  placeholder="e.g. Manager"
                 />
               </div>
               <div className="space-y-1.5">
@@ -250,36 +226,6 @@ export default function CreateEmployeePage() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Role & Access — Role select + Module Access multi-select dropdown */}
-        <Card className="border-border/50 shadow-sm">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Shield className="w-4 h-4 text-primary" />
-              Role & Access
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="role" className="text-sm font-medium">
-                  Role <span className="text-destructive">*</span>
-                </Label>
-                <Select value={formData.role || "__none__"} onValueChange={(v) => update("role", v === "__none__" ? "" : v)}>
-                  <SelectTrigger id="role">
-                    <SelectValue placeholder="Select role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none__">-- Select Role --</SelectItem>
-                    {USER_ROLES.map((role) => (
-                      <SelectItem key={role} value={role}>{role}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium">Module Access</Label>
                 <DropdownMenu>
@@ -290,12 +236,12 @@ export default function CreateEmployeePage() {
                           ? "Select modules"
                           : formData.moduleAccess.length === MODULE_GROUPS.length
                             ? "All modules"
-                            : `${formData.moduleAccess.length} module${formData.moduleAccess.length === 1 ? "" : "s"} selected`}
+                            : `${formData.moduleAccess.length} selected`}
                       </span>
                       <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]" align="start">
+                  <DropdownMenuContent className="w-56" align="end">
                     <DropdownMenuLabel className="flex items-center justify-between py-1.5">
                       <span>Modules</span>
                       <button

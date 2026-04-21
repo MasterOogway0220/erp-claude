@@ -72,9 +72,19 @@ export async function POST(request: NextRequest) {
     if (!body.password || body.password.length < 6) {
       return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
     }
-    if (!body.role) {
-      return NextResponse.json({ error: "Role is required" }, { status: 400 });
-    }
+    // Derive system role from department name; default to SALES
+    const DEPT_ROLE_MAP: Record<string, string> = {
+      purchase: "PURCHASE",
+      quality: "QC",
+      warehouse: "STORES",
+      stores: "STORES",
+      accounts: "ACCOUNTS",
+      finance: "ACCOUNTS",
+      management: "MANAGEMENT",
+      admin: "ADMIN",
+    };
+    const deptKey = (body.department || "").toLowerCase().trim();
+    const derivedRole = body.role || DEPT_ROLE_MAP[deptKey] || "SALES";
 
     // Check if email already exists as a user
     const existingUser = await prisma.user.findUnique({ where: { email: body.email } });
@@ -95,7 +105,7 @@ export async function POST(request: NextRequest) {
         email: body.email,
         name: body.name,
         passwordHash,
-        role: body.role,
+        role: derivedRole,
         phone: body.mobile || null,
         companyId: companyId || null,
       },
