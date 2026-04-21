@@ -13,6 +13,7 @@ interface SmartComboboxProps<T> {
   filterFn: (item: T, query: string) => boolean;
   placeholder?: string;
   className?: string;
+  inputClassName?: string;
   disabled?: boolean;
 }
 
@@ -25,6 +26,7 @@ export function SmartCombobox<T>({
   filterFn,
   placeholder,
   className,
+  inputClassName,
   disabled,
 }: SmartComboboxProps<T>) {
   const [open, setOpen] = useState(false);
@@ -118,7 +120,7 @@ export function SmartCombobox<T>({
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         disabled={disabled}
-        className="h-9"
+        className={cn("h-9", inputClassName)}
         autoComplete="off"
       />
       {open && filtered.length > 0 && (

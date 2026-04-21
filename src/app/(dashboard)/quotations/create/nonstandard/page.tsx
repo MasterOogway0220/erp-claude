@@ -168,6 +168,9 @@ function NonStandardQuotationPage() {
 
   // Track previous currency for conversion
   const prevCurrencyRef = useRef<string>(formData.currency);
+  // Keep a ref of currencies so the conversion effect always has latest rates
+  const currenciesRef = useRef<any[]>([]);
+  useEffect(() => { currenciesRef.current = currenciesData?.currencies || []; }, [currenciesData]);
 
   // Preview quotation number
   const { data: previewData, isLoading: previewLoading } = useQuery({
@@ -302,7 +305,7 @@ function NonStandardQuotationPage() {
     if (prev === next) return;
     prevCurrencyRef.current = next;
 
-    const currencies: any[] = currenciesData?.currencies || [];
+    const currencies: any[] = currenciesRef.current;
     const prevRate = parseFloat(currencies.find((c: any) => c.code === prev)?.exchangeRate ?? "1") || 1;
     const nextRate = parseFloat(currencies.find((c: any) => c.code === next)?.exchangeRate ?? "1") || 1;
     if (prevRate === nextRate) return;
@@ -1300,6 +1303,7 @@ function NonStandardQuotationPage() {
                                 (mc.description || "").toLowerCase().includes(query.toLowerCase())
                               }
                               placeholder="Search material code..."
+                              inputClassName="h-8"
                             />
                           ) : (
                             <Input
@@ -1563,6 +1567,7 @@ function NonStandardQuotationPage() {
                               (mc.description || "").toLowerCase().includes(query.toLowerCase())
                             }
                             placeholder="Search material code..."
+                            inputClassName="h-8"
                           />
                         ) : (
                           <Input
