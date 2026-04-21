@@ -168,9 +168,6 @@ function NonStandardQuotationPage() {
 
   // Track previous currency for conversion
   const prevCurrencyRef = useRef<string>(formData.currency);
-  // Keep live rates in a ref so the conversion effect always has the latest values
-  const currenciesRef = useRef<Record<string, number>>({});
-  useEffect(() => { currenciesRef.current = liveRatesData?.rates || {}; }, [liveRatesData]);
 
   // Preview quotation number
   const { data: previewData, isLoading: previewLoading } = useQuery({
@@ -196,6 +193,10 @@ function NonStandardQuotationPage() {
     staleTime: 1000 * 60 * 60,
     refetchOnWindowFocus: false,
   });
+
+  // Keep live rates in a ref so the conversion effect always has the latest values
+  const currenciesRef = useRef<Record<string, number>>({});
+  useEffect(() => { currenciesRef.current = liveRatesData?.rates || {}; }, [liveRatesData]);
 
   // Fetch customers
   const { data: customersData } = useQuery({
