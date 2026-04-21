@@ -27,9 +27,6 @@ export function PageHeader({
               </Badge>
             )}
           </div>
-          {description && (
-            <p className="text-sm text-muted-foreground">{description}</p>
-          )}
         </div>
         {children && (
           <div className="flex items-center gap-2 shrink-0 sm:min-w-fit">{children}</div>
