@@ -16,7 +16,7 @@ export function PageHeader({
   children,
 }: PageHeaderProps) {
   return (
-    <div className="mb-0 border-b border-border/40 pb-4">
+    <div className="mb-0 pb-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-0.5">
           <div className="flex items-center gap-2.5">
