@@ -95,7 +95,7 @@ const navSections: NavSection[] = [
           { title: "Testing Types", href: "/masters/testing" },
           { title: "Terms & Conditions", href: "/masters/terms-conditions" },
           { title: "Offer Terms", href: "/masters/offer-terms" },
-          { title: "Buyer Contact", href: "/masters/customer-contacts" },
+          { title: "Buyer Contact", href: "/masters/buyers" },
           { title: "Departments", href: "/masters/departments" },
           { title: "Industry Segments", href: "/masters/industry-segments" },
         ],

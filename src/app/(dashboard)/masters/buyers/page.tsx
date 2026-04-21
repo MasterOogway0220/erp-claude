@@ -140,7 +140,7 @@ export default function BuyersPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Buyer Master"
+        title="Buyer Contact"
         description="Manage buyer contacts for each customer"
       >
         <Button onClick={() => router.push("/masters/buyers/create")}>
