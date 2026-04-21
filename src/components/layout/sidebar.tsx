@@ -222,8 +222,8 @@ function filterSections(
     .map((section) => ({
       ...section,
       items: section.items.filter((item) => {
-        // Hide production-restricted items when in production mode
-        if (isProductionMode && item.productionHidden) return false;
+        // Hide production-restricted items when in production mode — SUPER_ADMIN always sees everything
+        if (isProductionMode && item.productionHidden && userRole !== "SUPER_ADMIN") return false;
         // Role check
         if (item.roles && !(userRole && item.roles.includes(userRole))) {
           return false;
