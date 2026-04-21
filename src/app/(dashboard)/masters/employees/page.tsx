@@ -26,12 +26,9 @@ interface Employee {
   code: string;
   name: string;
   department: string | null;
-  designation: string | null;
   email: string | null;
   mobile: string | null;
-  telephone: string | null;
-  userId: string | null;
-  user?: { id: string; name: string; email: string } | null;
+  moduleAccess: string[];
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -100,7 +97,7 @@ export default function EmployeesPage() {
   const columns: Column<Employee>[] = [
     {
       key: "code",
-      header: "Employee Code",
+      header: "Emp Code",
       sortable: true,
       cell: (row: Employee) => (
         <span className="font-mono text-sm">{row.code}</span>
@@ -118,32 +115,34 @@ export default function EmployeesPage() {
       key: "department",
       header: "Department",
       sortable: true,
-      cell: (row: Employee) => row.department || "\u2014",
-    },
-    {
-      key: "designation",
-      header: "Designation",
-      sortable: true,
-      cell: (row: Employee) => row.designation || "\u2014",
+      cell: (row: Employee) => row.department || "—",
     },
     {
       key: "email",
       header: "Email",
-      cell: (row: Employee) => row.email || "\u2014",
+      cell: (row: Employee) => row.email || "—",
     },
     {
       key: "mobile",
       header: "Mobile",
-      cell: (row: Employee) => row.mobile || "\u2014",
+      cell: (row: Employee) => row.mobile || "—",
     },
     {
-      key: "user",
-      header: "Linked User",
+      key: "moduleAccess",
+      header: "Module Access",
       cell: (row: Employee) =>
-        row.user ? (
-          <Badge variant="outline">{row.user.name}</Badge>
+        row.moduleAccess.length === 0 ? (
+          <span className="text-muted-foreground text-xs">—</span>
+        ) : row.moduleAccess.length === 8 ? (
+          <Badge variant="secondary">All modules</Badge>
         ) : (
-          <span className="text-muted-foreground">\u2014</span>
+          <div className="flex flex-wrap gap-1">
+            {row.moduleAccess.map((m) => (
+              <Badge key={m} variant="outline" className="text-xs capitalize">
+                {m}
+              </Badge>
+            ))}
+          </div>
         ),
     },
     {
