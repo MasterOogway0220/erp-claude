@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -24,7 +23,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface OfferTerm {
@@ -387,26 +387,15 @@ function TermTable({
                 {term.termDefaultValue || "--"}
               </td>
               <td className="px-4 py-3">
-                <Badge variant={term.isActive ? "default" : "secondary"}>
-                  {term.isActive ? "Active" : "Inactive"}
-                </Badge>
+                <Switch
+                  checked={term.isActive}
+                  onCheckedChange={() => onToggle(term)}
+                />
               </td>
               <td className="px-4 py-3">
                 <div className="flex justify-end gap-1">
                   <Button variant="ghost" size="icon" onClick={() => onEdit(term)} title="Edit">
                     <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onToggle(term)}
-                    title={term.isActive ? "Deactivate" : "Activate"}
-                  >
-                    {term.isActive ? (
-                      <ToggleRight className="h-4 w-4 text-green-600" />
-                    ) : (
-                      <ToggleLeft className="h-4 w-4 text-muted-foreground" />
-                    )}
                   </Button>
                   <Button
                     variant="ghost"
