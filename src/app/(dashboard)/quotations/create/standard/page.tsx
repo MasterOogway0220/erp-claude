@@ -190,7 +190,7 @@ function StandardQuotationPage() {
   const prevCurrencyRef = useRef<string>(formData.currency);
 
   // Preview quotation number
-  const { data: previewData } = useQuery({
+  const { data: previewData, isLoading: previewLoading } = useQuery({
     queryKey: ["quotation-preview-number"],
     queryFn: async () => {
       const res = await fetch("/api/quotations/preview-number");
@@ -198,6 +198,8 @@ function StandardQuotationPage() {
       return res.json();
     },
     enabled: !editId,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
   });
 
   // Fetch currencies with exchange rates
@@ -987,6 +989,7 @@ function StandardQuotationPage() {
                 <Label className="text-sm font-medium">Quotation No.</Label>
                 <Input
                   value={editId ? (editData?.quotation?.quotationNo || "") : (previewData?.previewNumber || "")}
+                  placeholder={!editId && previewLoading ? "Generating…" : ""}
                   readOnly
                   className="bg-muted"
                 />
