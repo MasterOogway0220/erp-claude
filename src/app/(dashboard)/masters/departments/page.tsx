@@ -6,13 +6,13 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
+import { Switch } from "@/components/ui/switch";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -50,6 +50,19 @@ export default function DepartmentMasterPage() {
       toast.success(editingId ? "Updated" : "Department added");
       setDialogOpen(false);
     },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
+      const res = await fetch(`/api/masters/departments/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive }),
+      });
+      if (!res.ok) throw new Error("Failed to update status");
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["departments"] }),
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -93,7 +106,12 @@ export default function DepartmentMasterPage() {
                 <TableRow key={d.id}>
                   <TableCell>{i + 1}</TableCell>
                   <TableCell className="font-medium">{d.name}</TableCell>
-                  <TableCell><Badge variant="default" className="bg-green-500">Active</Badge></TableCell>
+                  <TableCell>
+                    <Switch
+                      checked={d.isActive}
+                      onCheckedChange={(val) => toggleMutation.mutate({ id: d.id, isActive: val })}
+                    />
+                  </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
                       <Button variant="ghost" size="icon" onClick={() => { setEditingId(d.id); setName(d.name); setDialogOpen(true); }}>

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { DataTable, Column } from "@/components/shared/data-table";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -39,6 +39,19 @@ export default function BuyersPage() {
   };
 
   useEffect(() => { fetchBuyers(); }, []);
+
+  const handleToggle = async (row: Buyer, isActive: boolean) => {
+    const res = await fetch(`/api/masters/buyers/${row.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isActive }),
+    });
+    if (res.ok) {
+      setBuyers((prev) => prev.map((b) => b.id === row.id ? { ...b, isActive } : b));
+    } else {
+      toast.error("Failed to update status");
+    }
+  };
 
   const handleDelete = async (row: Buyer) => {
     if (!confirm(`Delete "${row.buyerName}"?`)) return;
@@ -83,9 +96,10 @@ export default function BuyersPage() {
       key: "isActive",
       header: "Status",
       cell: (row) => (
-        <Badge variant={row.isActive ? "default" : "secondary"}>
-          {row.isActive ? "Active" : "Inactive"}
-        </Badge>
+        <Switch
+          checked={row.isActive}
+          onCheckedChange={(val) => handleToggle(row, val)}
+        />
       ),
     },
     {
