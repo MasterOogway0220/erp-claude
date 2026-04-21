@@ -562,7 +562,7 @@ function NavGroup({
         )}
         <span className={cn(
           "shrink-0 [&>svg]:h-[18px] [&>svg]:w-[18px]",
-          isActive ? "text-primary" : item.iconColorClass
+          isActive ? "text-primary" : "text-sidebar-foreground/50"
         )}>
           {item.icon}
         </span>
@@ -604,7 +604,7 @@ function NavGroup({
             <span
               className={cn(
                 "shrink-0 [&>svg]:h-[18px] [&>svg]:w-[18px]",
-                isActive ? "text-primary" : item.iconColorClass
+                isActive ? "text-primary" : "text-sidebar-foreground/50"
               )}
             >
               {item.icon}
@@ -654,7 +654,7 @@ function NavGroup({
         )}
         <span className={cn(
           "shrink-0 [&>svg]:h-[18px] [&>svg]:w-[18px]",
-          isActive ? "text-primary" : item.iconColorClass
+          isActive ? "text-primary" : "text-sidebar-foreground/50"
         )}>
           {item.icon}
         </span>
