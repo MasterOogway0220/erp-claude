@@ -188,9 +188,9 @@ function StandardQuotationPage() {
 
   // Track previous currency for conversion
   const prevCurrencyRef = useRef<string>(formData.currency);
-  // Keep a ref of currencies so the conversion effect always has latest rates
-  const currenciesRef = useRef<any[]>([]);
-  useEffect(() => { currenciesRef.current = currenciesData?.currencies || []; }, [currenciesData]);
+  // Keep live rates in a ref so the conversion effect always has the latest values
+  const currenciesRef = useRef<Record<string, number>>({});
+  useEffect(() => { currenciesRef.current = liveRatesData?.rates || {}; }, [liveRatesData]);
 
   // Preview quotation number
   const { data: previewData, isLoading: previewLoading } = useQuery({
@@ -205,14 +205,16 @@ function StandardQuotationPage() {
     refetchOnWindowFocus: false,
   });
 
-  // Fetch currencies with exchange rates
-  const { data: currenciesData } = useQuery({
-    queryKey: ["currencies"],
+  // Fetch live exchange rates (USD-base, free, no API key)
+  const { data: liveRatesData } = useQuery({
+    queryKey: ["live-currency-rates"],
     queryFn: async () => {
-      const res = await fetch("/api/masters/currencies");
-      if (!res.ok) throw new Error("Failed to fetch currencies");
-      return res.json();
+      const res = await fetch("https://open.er-api.com/v6/latest/USD");
+      if (!res.ok) throw new Error("Failed to fetch live rates");
+      return res.json(); // { rates: { USD:1, INR:83.5, EUR:0.92, AED:3.67, ... } }
     },
+    staleTime: 1000 * 60 * 60,
+    refetchOnWindowFocus: false,
   });
 
   // Fetch customers
@@ -382,9 +384,11 @@ function StandardQuotationPage() {
     if (prev === next) return;
     prevCurrencyRef.current = next;
 
-    const currencies: any[] = currenciesRef.current;
-    const prevRate = parseFloat(currencies.find((c: any) => c.code === prev)?.exchangeRate ?? "1") || 1;
-    const nextRate = parseFloat(currencies.find((c: any) => c.code === next)?.exchangeRate ?? "1") || 1;
+    // USD-based rates: rates[code] = units of that currency per 1 USD
+    // To convert amount A from prev→next: A * rates[next] / rates[prev]
+    const rates = currenciesRef.current;
+    const prevRate = rates[prev] || 1;
+    const nextRate = rates[next] || 1;
     if (prevRate === nextRate) return;
 
     const hasRates = items.some((item) => parseFloat(item.unitRate) > 0);
@@ -394,7 +398,7 @@ function StandardQuotationPage() {
       prevItems.map((item) => {
         const oldRate = parseFloat(item.unitRate);
         if (!oldRate) return item;
-        const newRate = parseFloat(((oldRate * prevRate) / nextRate).toFixed(4));
+        const newRate = parseFloat(((oldRate * nextRate) / prevRate).toFixed(4));
         const qty = parseFloat(item.quantity) || 0;
         const newAmount = parseFloat((newRate * qty).toFixed(2));
         return { ...item, unitRate: String(newRate), amount: String(newAmount) };
