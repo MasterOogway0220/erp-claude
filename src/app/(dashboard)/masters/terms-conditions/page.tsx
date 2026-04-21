@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -121,6 +122,12 @@ function PaymentTermsTab() {
     finally { setSaving(false); }
   };
 
+  const handleToggle = async (item: PaymentTerm, isActive: boolean) => {
+    const res = await fetch(`/api/masters/payment-terms/${item.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isActive }) });
+    if (res.ok) setItems((prev) => prev.map((i) => i.id === item.id ? { ...i, isActive } : i));
+    else toast.error("Failed to update status");
+  };
+
   const handleDelete = async (item: PaymentTerm) => {
     if (!confirm(`Delete "${item.name}"?`)) return;
     try {
@@ -135,7 +142,7 @@ function PaymentTermsTab() {
     { key: "name", header: "Name", sortable: true },
     { key: "description", header: "Description", cell: (r) => r.description || "--" },
     { key: "days", header: "Credit Days", sortable: true, cell: (r) => <Badge variant="outline">{r.days} days</Badge> },
-    { key: "isActive", header: "Status", cell: (r) => <Badge variant={r.isActive ? "default" : "secondary"}>{r.isActive ? "Active" : "Inactive"}</Badge> },
+    { key: "isActive", header: "Status", cell: (r) => <Switch checked={r.isActive} onCheckedChange={(v) => handleToggle(r, v)} /> },
     { key: "actions" as any, header: "Actions", cell: (r) => (
       <div className="flex gap-1">
         <Button variant="ghost" size="icon" onClick={() => openEdit(r)}><Pencil className="h-4 w-4" /></Button>
@@ -239,6 +246,12 @@ function DeliveryTermsTab() {
     finally { setSaving(false); }
   };
 
+  const handleToggle = async (item: DeliveryTerm, isActive: boolean) => {
+    const res = await fetch(`/api/masters/delivery-terms/${item.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isActive }) });
+    if (res.ok) setItems((prev) => prev.map((i) => i.id === item.id ? { ...i, isActive } : i));
+    else toast.error("Failed to update status");
+  };
+
   const handleDelete = async (item: DeliveryTerm) => {
     if (!confirm(`Delete "${item.name}"?`)) return;
     try {
@@ -253,7 +266,7 @@ function DeliveryTermsTab() {
     { key: "name", header: "Name", sortable: true },
     { key: "description", header: "Description", cell: (r) => r.description || "--" },
     { key: "incoterms", header: "Incoterms", cell: (r) => r.incoterms ? <Badge variant="outline">{r.incoterms}</Badge> : "--" },
-    { key: "isActive", header: "Status", cell: (r) => <Badge variant={r.isActive ? "default" : "secondary"}>{r.isActive ? "Active" : "Inactive"}</Badge> },
+    { key: "isActive", header: "Status", cell: (r) => <Switch checked={r.isActive} onCheckedChange={(v) => handleToggle(r, v)} /> },
     { key: "actions" as any, header: "Actions", cell: (r) => (
       <div className="flex gap-1">
         <Button variant="ghost" size="icon" onClick={() => openEdit(r)}><Pencil className="h-4 w-4" /></Button>
@@ -355,6 +368,12 @@ function TaxRatesTab() {
     finally { setSaving(false); }
   };
 
+  const handleToggle = async (item: TaxRate, isActive: boolean) => {
+    const res = await fetch(`/api/masters/tax/${item.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isActive }) });
+    if (res.ok) setItems((prev) => prev.map((i) => i.id === item.id ? { ...i, isActive } : i));
+    else toast.error("Failed to update status");
+  };
+
   const handleDelete = async (item: TaxRate) => {
     if (!confirm(`Delete "${item.name}"?`)) return;
     try {
@@ -372,7 +391,7 @@ function TaxRatesTab() {
     { key: "percentage", header: "Rate (%)", sortable: true, cell: (r) => <span className="font-medium">{Number(r.percentage).toFixed(2)}%</span> },
     { key: "taxType", header: "Tax Type", cell: (r) => r.taxType ? <Badge className={taxBadgeColor(r.taxType)}>{r.taxType}</Badge> : "--" },
     { key: "hsnCode", header: "HSN Code", cell: (r) => r.hsnCode ? <span className="font-mono text-sm">{r.hsnCode}</span> : "--" },
-    { key: "isActive", header: "Status", cell: (r) => <Badge variant={r.isActive ? "default" : "secondary"}>{r.isActive ? "Active" : "Inactive"}</Badge> },
+    { key: "isActive", header: "Status", cell: (r) => <Switch checked={r.isActive} onCheckedChange={(v) => handleToggle(r, v)} /> },
     { key: "actions" as any, header: "Actions", cell: (r) => (
       <div className="flex gap-1">
         <Button variant="ghost" size="icon" onClick={() => openEdit(r)}><Pencil className="h-4 w-4" /></Button>
@@ -480,6 +499,12 @@ function InspectionAgenciesTab() {
     finally { setSaving(false); }
   };
 
+  const handleToggle = async (item: InspectionAgency, isActive: boolean) => {
+    const res = await fetch(`/api/masters/inspection-agencies/${item.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isActive }) });
+    if (res.ok) setItems((prev) => prev.map((i) => i.id === item.id ? { ...i, isActive } : i));
+    else toast.error("Failed to update status");
+  };
+
   const handleDelete = async (item: InspectionAgency) => {
     if (!confirm(`Delete "${item.name}"?`)) return;
     try {
@@ -495,7 +520,7 @@ function InspectionAgenciesTab() {
     { key: "contactPerson", header: "Contact Person", cell: (r) => r.contactPerson || "--" },
     { key: "phone", header: "Phone", cell: (r) => r.phone || "--" },
     { key: "approvedStatus", header: "Approved", cell: (r) => <Badge variant={r.approvedStatus ? "default" : "destructive"} className={r.approvedStatus ? "bg-green-500" : ""}>{r.approvedStatus ? "Approved" : "Not Approved"}</Badge> },
-    { key: "isActive", header: "Status", cell: (r) => <Badge variant={r.isActive ? "default" : "secondary"}>{r.isActive ? "Active" : "Inactive"}</Badge> },
+    { key: "isActive", header: "Status", cell: (r) => <Switch checked={r.isActive} onCheckedChange={(v) => handleToggle(r, v)} /> },
     { key: "actions" as any, header: "Actions", cell: (r) => (
       <div className="flex gap-1">
         <Button variant="ghost" size="icon" onClick={() => openEdit(r)}><Pencil className="h-4 w-4" /></Button>
