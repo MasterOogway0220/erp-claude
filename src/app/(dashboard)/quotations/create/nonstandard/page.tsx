@@ -237,12 +237,12 @@ function NonStandardQuotationPage() {
     },
   });
 
-  // Fetch material codes for autocomplete — scoped to selected customer (only codes used in their past quotations)
+  // Fetch material codes for autocomplete — scoped to customer + NON_STANDARD quotations only
   const { data: materialCodesData } = useQuery({
-    queryKey: ["material-codes", formData.customerId],
+    queryKey: ["material-codes", formData.customerId, "NON_STANDARD"],
     enabled: !!formData.customerId,
     queryFn: async () => {
-      const res = await fetch(`/api/masters/material-codes?customerId=${formData.customerId}`);
+      const res = await fetch(`/api/masters/material-codes?customerId=${formData.customerId}&quotationCategory=NON_STANDARD`);
       if (!res.ok) throw new Error("Failed to fetch material codes");
       return res.json();
     },

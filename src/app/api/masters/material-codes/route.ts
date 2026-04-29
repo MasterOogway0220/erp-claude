@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
     const customerId = searchParams.get("customerId") || "";
+    const quotationCategory = searchParams.get("quotationCategory") || "";
 
     const where: any = { ...companyFilter(companyId) };
     if (search) {
@@ -25,7 +26,12 @@ export async function GET(request: NextRequest) {
     }
     if (customerId) {
       where.quotationItems = {
-        some: { quotation: { customerId } },
+        some: {
+          quotation: {
+            customerId,
+            ...(quotationCategory ? { quotationCategory } : {}),
+          },
+        },
       };
     }
 
