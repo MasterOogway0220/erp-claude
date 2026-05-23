@@ -84,6 +84,8 @@ interface SelectedItem extends BalanceItem {
   itemDeliveryDate: string;
   negotiatedRate: number;
   rateRemark: string;
+  poSlNo: string;
+  poItemCode: string;
 }
 
 interface QuotationMeta {
@@ -231,6 +233,8 @@ function CreateClientPOPage() {
           itemDeliveryDate: "",
           negotiatedRate: item.unitRate,
           rateRemark: "",
+          poSlNo: "",
+          poItemCode: "",
         }));
 
         setBalanceItems(selectedItems);
@@ -523,6 +527,8 @@ function CreateClientPOPage() {
             amount: item.qtyOrdered * item.negotiatedRate,
             deliveryDate: item.itemDeliveryDate || null,
             remark: item.remark,
+            poSlNo: item.poSlNo || null,
+            poItemCode: item.poItemCode || null,
           })),
         }),
       });
@@ -833,15 +839,13 @@ function CreateClientPOPage() {
                       <TableRow>
                         <TableHead className="w-[50px]">Select</TableHead>
                         <TableHead className="w-[50px]">S.No</TableHead>
+                        <TableHead>Sl. No. (PO)</TableHead>
+                        <TableHead>Item Code (PO)</TableHead>
                         <TableHead>Product Description</TableHead>
                         <TableHead>Size</TableHead>
-                        <TableHead className="text-right">Qty Quoted</TableHead>
-                        <TableHead className="text-right">Already Ordered</TableHead>
-                        <TableHead className="text-right">Balance</TableHead>
                         <TableHead className="text-right w-[130px]">Qty Ordered</TableHead>
                         <TableHead>UOM</TableHead>
-                        <TableHead className="text-right">Quoted Rate</TableHead>
-                        <TableHead className="text-right w-[120px]">Order Rate</TableHead>
+                        <TableHead className="text-right w-[120px]">Negotiated Rate</TableHead>
                         <TableHead className="text-right">Diff</TableHead>
                         <TableHead className="w-[180px]">Rate Remark</TableHead>
                         <TableHead className="text-right">Amount</TableHead>
@@ -871,6 +875,30 @@ function CreateClientPOPage() {
                             </TableCell>
                             <TableCell>{item.sNo}</TableCell>
                             <TableCell>
+                              <Input
+                                value={item.poSlNo ?? ""}
+                                onChange={(e) => {
+                                  const updated = [...balanceItems];
+                                  updated[index] = { ...updated[index], poSlNo: e.target.value };
+                                  setBalanceItems(updated);
+                                }}
+                                className="h-8 w-[80px]"
+                                placeholder="—"
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Input
+                                value={item.poItemCode ?? ""}
+                                onChange={(e) => {
+                                  const updated = [...balanceItems];
+                                  updated[index] = { ...updated[index], poItemCode: e.target.value };
+                                  setBalanceItems(updated);
+                                }}
+                                className="h-8 w-[110px]"
+                                placeholder="—"
+                              />
+                            </TableCell>
+                            <TableCell>
                               <div className="space-y-0.5">
                                 <div className="font-medium text-sm">
                                   {item.product || "-"}
@@ -898,40 +926,6 @@ function CreateClientPOPage() {
                                 </div>
                               )}
                             </TableCell>
-                            <TableCell className="text-right font-medium">
-                              {item.qtyQuoted}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              {item.totalOrdered > 0 ? (
-                                <div>
-                                  <span className="text-orange-600 font-medium">
-                                    {item.totalOrdered}
-                                  </span>
-                                  {item.previousOrders.length > 0 && (
-                                    <div className="text-[10px] text-muted-foreground mt-0.5">
-                                      {item.previousOrders.map((o) => (
-                                        <div key={o.cpoNo}>
-                                          {o.cpoNo}: {o.qtyOrdered}
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              ) : (
-                                <span className="text-muted-foreground">0</span>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              {isFullyOrdered ? (
-                                <Badge variant="secondary" className="text-[10px]">
-                                  Fully Ordered
-                                </Badge>
-                              ) : (
-                                <span className="font-semibold text-green-600">
-                                  {item.balanceQty}
-                                </span>
-                              )}
-                            </TableCell>
                             <TableCell className="text-right">
                               {isFullyOrdered ? (
                                 <span className="text-muted-foreground">-</span>
@@ -957,10 +951,6 @@ function CreateClientPOPage() {
                               )}
                             </TableCell>
                             <TableCell>{item.uom || "Mtr"}</TableCell>
-                            {/* Quoted Rate (read-only) */}
-                            <TableCell className="text-right text-muted-foreground">
-                              {item.unitRate.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                            </TableCell>
 
                             {/* Negotiated Rate (editable when selected) */}
                             <TableCell className="text-right">
