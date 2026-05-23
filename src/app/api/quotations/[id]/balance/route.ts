@@ -60,6 +60,7 @@ export async function GET(
         ends: item.ends,
         uom: item.uom,
         hsnCode: item.hsnCode,
+        materialCodeId: item.materialCodeId ?? null,
         qtyQuoted,
         totalOrdered,
         balanceQty,

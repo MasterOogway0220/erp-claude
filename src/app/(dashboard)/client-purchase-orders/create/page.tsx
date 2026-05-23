@@ -68,6 +68,7 @@ interface BalanceItem {
   ends: string | null;
   uom: string | null;
   hsnCode: string | null;
+  materialCodeId: string | null;
   qtyQuoted: number;
   totalOrdered: number;
   balanceQty: number;
@@ -144,6 +145,9 @@ function CreateClientPOPage() {
   const [quotationMeta, setQuotationMeta] = useState<QuotationMeta | null>(null);
   const [balanceItems, setBalanceItems] = useState<SelectedItem[]>([]);
   const [loadingBalance, setLoadingBalance] = useState(false);
+  const [materialHistory, setMaterialHistory] = useState<
+    Record<string, { lastQuote: { rate: number; quoteNo: string; quotedAt: string } | null; lastPO: { rate: number; poNo: string; orderedAt: string; remark: string | null } | null }>
+  >({});
 
   const [formData, setFormData] = useState({
     customerId: "",
@@ -239,8 +243,29 @@ function CreateClientPOPage() {
 
         setBalanceItems(selectedItems);
 
-        // Auto-fill form fields from quotation
+        // Fetch material-code customer history for each item that has a materialCodeId.
+        // customerId comes from the quotation response (q.customer.id).
         const q = data.quotation;
+        const historyMap: Record<string, { lastQuote: { rate: number; quoteNo: string; quotedAt: string } | null; lastPO: { rate: number; poNo: string; orderedAt: string; remark: string | null } | null }> = {};
+        await Promise.allSettled(
+          selectedItems
+            .filter((item) => item.materialCodeId)
+            .map(async (item) => {
+              try {
+                const res = await fetch(
+                  `/api/masters/material-codes/${item.materialCodeId}/customer-history?customerId=${q.customer.id}`
+                );
+                if (!res.ok) return;
+                const hist = await res.json();
+                historyMap[item.id] = hist;
+              } catch {
+                // ignore per-item errors
+              }
+            })
+        );
+        setMaterialHistory(historyMap);
+
+        // Auto-fill form fields from quotation
         const derivedCurrency: string = q.currency || "INR";
         const derivedIntl = derivedCurrency !== "INR";
         setIsInternational(derivedIntl);
@@ -309,6 +334,7 @@ function CreateClientPOPage() {
     }));
     setBalanceItems([]);
     setQuotationMeta(null);
+    setMaterialHistory({});
 
     // Try to auto-fill client state from customer
     if (selectedCustomer?.state) {
@@ -856,6 +882,7 @@ function CreateClientPOPage() {
                       {balanceItems.map((item, index) => {
                         const isFullyOrdered = item.balanceQty <= 0;
                         return (
+                          <>
                           <TableRow
                             key={item.id}
                             className={
@@ -1025,6 +1052,21 @@ function CreateClientPOPage() {
                               )}
                             </TableCell>
                           </TableRow>
+                          {/* §2.9 — material-code customer history sub-row */}
+                          {materialHistory[item.id] && (
+                            <TableRow key={`hist-${item.id}`} className="border-0">
+                              <TableCell colSpan={13} className="bg-muted/30 text-xs text-muted-foreground py-1 px-3">
+                                {materialHistory[item.id].lastQuote
+                                  ? `Last Quote: ₹${materialHistory[item.id].lastQuote!.rate.toLocaleString("en-IN", { minimumFractionDigits: 2 })} (${materialHistory[item.id].lastQuote!.quoteNo})`
+                                  : "No past quote for this customer + material"}
+                                {"  •  "}
+                                {materialHistory[item.id].lastPO
+                                  ? `Last PO: ₹${materialHistory[item.id].lastPO!.rate.toLocaleString("en-IN", { minimumFractionDigits: 2 })} (${materialHistory[item.id].lastPO!.poNo})${materialHistory[item.id].lastPO!.remark ? ` — ${materialHistory[item.id].lastPO!.remark}` : ""}`
+                                  : "No past PO for this customer + material"}
+                              </TableCell>
+                            </TableRow>
+                          )}
+                          </>
                         );
                       })}
                     </TableBody>
