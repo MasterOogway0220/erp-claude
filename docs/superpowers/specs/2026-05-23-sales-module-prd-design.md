@@ -88,10 +88,13 @@ WarehouseIntimationItem → WarehouseIntimationItemPiece × N → auto Inspectio
 ### 3.1 Modified models
 
 ```prisma
-model Customer {
-  // ADD
-  isInternational    Boolean   @default(false)
-  defaultCurrency    Currency  @default(INR)
+// NOTE: Implemented field is CustomerMaster (existing model). Fields below
+// already exist in schema — no migration needed for customer-side wiring.
+model CustomerMaster {
+  // Existing — re-confirmed during Plan 01 Foundation
+  customerType       String   @default("DOMESTIC")   // "DOMESTIC" | "INTERNATIONAL"
+  defaultCurrency    String   @default("INR")        // "INR" | "USD"
+  currency           String   @default("INR")
 }
 
 model ClientPurchaseOrder {
@@ -181,7 +184,8 @@ model WarehouseIntimationItemPiece {                          // §5.2
 ### 3.3 New enums
 
 ```prisma
-enum Currency        { INR  USD }
+// Currency is NOT an enum — uses the existing CurrencyMaster table (data-driven).
+// USD is already seeded by prisma/seed.ts.
 enum AllotmentIntent { PENDING  STOCK_FULL  STOCK_PARTIAL  PROCURE }
 ```
 
@@ -439,3 +443,9 @@ This spec authorizes the work. The implementation order will be detailed in the 
 ---
 
 *End of design spec.*
+
+---
+
+## Spec Patch Log
+
+- **2026-05-23 (Plan 01)** — Removed proposed `Customer.isInternational` field and `Currency` enum. The existing `CustomerMaster.customerType` (`"DOMESTIC"` / `"INTERNATIONAL"`), `CustomerMaster.defaultCurrency`, and `CurrencyMaster` table already cover the requirement. Customer form UI at `src/app/(dashboard)/masters/customers/create/page.tsx:436-447` already auto-derives currency from customer type. No customer-side schema migration is needed.
