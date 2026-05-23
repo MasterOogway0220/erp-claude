@@ -1017,6 +1017,10 @@ model ClientPurchaseOrder {
   deliveryTerms             String?
   deliverySchedule          String?
   currency                  String            @default("INR")
+  committedDeliveryDate     DateTime?
+  isDomesticDelivery        Boolean           @default(false)
+  shipmentAddress           String?           @db.Text
+  exchangeRate              Decimal?          @db.Decimal(12, 6)
   subtotal                  Decimal?          @db.Decimal(14, 2)
   grandTotal                Decimal?          @db.Decimal(14, 2)
   remarks                   String?           @db.Text
@@ -1077,12 +1081,14 @@ model ClientPOItem {
   ends                  String?
   uom                   String?
   hsnCode               String?
-  qtyQuoted             Decimal             @db.Decimal(10, 3)
   qtyOrdered            Decimal             @db.Decimal(10, 3)
   unitRate              Decimal             @db.Decimal(12, 2)
   amount                Decimal             @db.Decimal(14, 2)
   deliveryDate          DateTime?
   remark                String?
+  poSlNo                String?
+  poItemCode            String?
+  rateRemark            String?             @db.Text
   clientPurchaseOrder   ClientPurchaseOrder @relation(fields: [clientPurchaseOrderId], references: [id], onDelete: Cascade)
   quotationItem         QuotationItem       @relation(fields: [quotationItemId], references: [id])
   rateRevisions         RateRevision[]
