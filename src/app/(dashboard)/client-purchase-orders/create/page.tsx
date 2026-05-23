@@ -69,7 +69,6 @@ interface BalanceItem {
   uom: string | null;
   hsnCode: string | null;
   materialCodeId: string | null;
-  qtyQuoted: number;
   totalOrdered: number;
   balanceQty: number;
   unitRate: number;
@@ -439,11 +438,14 @@ function CreateClientPOPage() {
 
     const isInterState = !!(supplierState && clientState && supplierState.toLowerCase() !== clientState.toLowerCase());
 
+    // GST applies only for INR orders, or USD orders with domestic delivery
+    const gstApplies = formData.currency === "INR" || formData.isDomesticDelivery;
+
     let cgst = 0;
     let sgst = 0;
     let igst = 0;
 
-    if (gstRate > 0 && taxableAmount > 0) {
+    if (gstApplies && gstRate > 0 && taxableAmount > 0) {
       if (isInterState) {
         igst = (taxableAmount * gstRate) / 100;
       } else {
@@ -461,13 +463,14 @@ function CreateClientPOPage() {
       additionalChargesTotal,
       taxableAmount,
       isInterState,
+      gstApplies,
       cgst,
       sgst,
       igst,
       roundOff,
       grandTotal,
     };
-  }, [balanceItems, charges, gstRate, supplierState, clientState]);
+  }, [balanceItems, charges, gstRate, supplierState, clientState, formData.currency, formData.isDomesticDelivery]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -545,10 +548,8 @@ function CreateClientPOPage() {
             ends: item.ends,
             uom: item.uom,
             hsnCode: item.hsnCode,
-            qtyQuoted: item.qtyQuoted,
             qtyOrdered: item.qtyOrdered,
             unitRate: item.negotiatedRate,
-            quotedRate: item.unitRate,
             rateRemark: item.rateRemark || null,
             amount: item.qtyOrdered * item.negotiatedRate,
             deliveryDate: item.itemDeliveryDate || null,
@@ -1081,7 +1082,12 @@ function CreateClientPOPage() {
                       selected
                     </div>
                     <div className="text-base font-semibold">
-                      Material Value: {currencySymbol} {fmtAmount(commercials.materialValue)}
+                      {formData.currency === "USD" ? "USD " : ""}Material Value: {currencySymbol} {fmtAmount(commercials.materialValue)}
+                      {formData.currency === "USD" && formData.exchangeRate ? (
+                        <span className="ml-2 text-xs font-normal text-muted-foreground">
+                          ≈ ₹{fmtAmount(commercials.materialValue * formData.exchangeRate)} INR
+                        </span>
+                      ) : null}
                     </div>
                   </div>
                 </div>
@@ -1330,61 +1336,80 @@ function CreateClientPOPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* State & GST Rate inputs */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label>Supplier State</Label>
-                  <Input
-                    value={supplierState}
-                    onChange={(e) => setSupplierState(e.target.value)}
-                    placeholder="e.g. Maharashtra"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Client State</Label>
-                  <Input
-                    value={clientState}
-                    onChange={(e) => setClientState(e.target.value)}
-                    placeholder="e.g. Gujarat"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>GST Rate (%)</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="28"
-                    value={gstRate || ""}
-                    onChange={(e) => setGstRate(parseFloat(e.target.value) || 0)}
-                    placeholder="e.g. 18"
-                  />
-                </div>
-              </div>
+              {/* State & GST Rate inputs — only shown when GST applies */}
+              {commercials.gstApplies && (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label>Supplier State</Label>
+                      <Input
+                        value={supplierState}
+                        onChange={(e) => setSupplierState(e.target.value)}
+                        placeholder="e.g. Maharashtra"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Client State</Label>
+                      <Input
+                        value={clientState}
+                        onChange={(e) => setClientState(e.target.value)}
+                        placeholder="e.g. Gujarat"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>GST Rate (%)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="28"
+                        value={gstRate || ""}
+                        onChange={(e) => setGstRate(parseFloat(e.target.value) || 0)}
+                        placeholder="e.g. 18"
+                      />
+                    </div>
+                  </div>
 
-              {supplierState && clientState && (
-                <div className="flex items-center gap-2">
-                  <Badge
-                    variant={commercials.isInterState ? "destructive" : "default"}
-                  >
-                    {commercials.isInterState ? "Inter-State (IGST)" : "Intra-State (CGST + SGST)"}
-                  </Badge>
-                  <span className="text-xs text-muted-foreground">
-                    {supplierState} → {clientState}
-                  </span>
-                </div>
+                  {supplierState && clientState && (
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant={commercials.isInterState ? "destructive" : "default"}
+                      >
+                        {commercials.isInterState ? "Inter-State (IGST)" : "Intra-State (CGST + SGST)"}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {supplierState} → {clientState}
+                      </span>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {!commercials.gstApplies && (
+                <p className="text-sm text-muted-foreground">
+                  GST not applicable — international delivery (USD order, delivery outside India).
+                </p>
               )}
 
               <Separator />
 
-              {/* GST Summary Table */}
+              {/* Summary Table */}
               <div className="max-w-md ml-auto">
                 <Table>
                   <TableBody>
                     <TableRow>
-                      <TableCell className="font-medium">Material Value</TableCell>
+                      <TableCell className="font-medium">
+                        {formData.currency === "USD" ? "USD Material Value" : "Material Value"}
+                      </TableCell>
                       <TableCell className="text-right">
-                        {currencySymbol} {fmtAmount(commercials.materialValue)}
+                        <div>
+                          {currencySymbol} {fmtAmount(commercials.materialValue)}
+                        </div>
+                        {formData.currency === "USD" && formData.exchangeRate ? (
+                          <div className="text-xs text-muted-foreground">
+                            ≈ ₹{fmtAmount(commercials.materialValue * formData.exchangeRate)} INR
+                          </div>
+                        ) : null}
                       </TableCell>
                     </TableRow>
                     {commercials.additionalChargesTotal > 0 && (
@@ -1396,12 +1421,21 @@ function CreateClientPOPage() {
                       </TableRow>
                     )}
                     <TableRow className="border-t-2">
-                      <TableCell className="font-semibold">Taxable Amount</TableCell>
+                      <TableCell className="font-semibold">
+                        {formData.currency === "USD" ? "USD Subtotal" : "Taxable Amount"}
+                      </TableCell>
                       <TableCell className="text-right font-semibold">
-                        {currencySymbol} {fmtAmount(commercials.taxableAmount)}
+                        <div>
+                          {currencySymbol} {fmtAmount(commercials.taxableAmount)}
+                        </div>
+                        {formData.currency === "USD" && formData.exchangeRate ? (
+                          <div className="text-xs text-muted-foreground font-normal">
+                            ≈ ₹{fmtAmount(commercials.taxableAmount * formData.exchangeRate)} INR
+                          </div>
+                        ) : null}
                       </TableCell>
                     </TableRow>
-                    {!commercials.isInterState && gstRate > 0 && (
+                    {commercials.gstApplies && !commercials.isInterState && gstRate > 0 && (
                       <>
                         <TableRow>
                           <TableCell className="text-muted-foreground">
@@ -1421,7 +1455,7 @@ function CreateClientPOPage() {
                         </TableRow>
                       </>
                     )}
-                    {commercials.isInterState && gstRate > 0 && (
+                    {commercials.gstApplies && commercials.isInterState && gstRate > 0 && (
                       <TableRow>
                         <TableCell className="text-muted-foreground">
                           IGST @ {gstRate}%
@@ -1443,7 +1477,14 @@ function CreateClientPOPage() {
                     <TableRow className="border-t-2 bg-muted/30">
                       <TableCell className="font-bold text-base">Grand Total</TableCell>
                       <TableCell className="text-right font-bold text-base">
-                        {currencySymbol} {fmtAmount(commercials.grandTotal)}
+                        <div>
+                          {currencySymbol} {fmtAmount(commercials.grandTotal)}
+                        </div>
+                        {formData.currency === "USD" && formData.exchangeRate ? (
+                          <div className="text-sm text-muted-foreground font-normal">
+                            ≈ ₹{fmtAmount(commercials.grandTotal * formData.exchangeRate)} INR
+                          </div>
+                        ) : null}
                       </TableCell>
                     </TableRow>
                   </TableBody>
