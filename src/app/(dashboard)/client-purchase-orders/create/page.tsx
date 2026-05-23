@@ -46,6 +46,7 @@ interface Customer {
   contactPerson?: string;
   currency?: string;
   state?: string;
+  customerType?: string;
 }
 
 interface Quotation {
@@ -154,7 +155,13 @@ function CreateClientPOPage() {
     deliveryDate: "",
     currency: "INR",
     remarks: "",
+    isDomesticDelivery: false,
+    shipmentAddress: "",
+    exchangeRate: null as number | null,
+    committedDeliveryDate: "",
   });
+
+  const [isInternational, setIsInternational] = useState(false);
 
   const [charges, setCharges] = useState<AdditionalCharge[]>(
     DEFAULT_CHARGES.map((c) => ({ ...c }))
@@ -230,6 +237,9 @@ function CreateClientPOPage() {
 
         // Auto-fill form fields from quotation
         const q = data.quotation;
+        const derivedCurrency: string = q.currency || "INR";
+        const derivedIntl = derivedCurrency !== "INR";
+        setIsInternational(derivedIntl);
         setFormData((prev) => ({
           ...prev,
           customerId: q.customer.id,
@@ -237,7 +247,8 @@ function CreateClientPOPage() {
           contactPerson: prev.contactPerson || q.customer.contactPerson || "",
           paymentTerms: prev.paymentTerms || q.paymentTerms || "",
           deliveryTerms: prev.deliveryTerms || q.deliveryTerms || "",
-          currency: q.currency || "INR",
+          currency: derivedCurrency,
+          exchangeRate: derivedIntl ? prev.exchangeRate : null,
         }));
 
         // Set state for GST
@@ -262,22 +273,40 @@ function CreateClientPOPage() {
     }
   }, [preselectedQuotationId, quotations, formData.quotationId, fetchQuotationBalance]);
 
+  // Auto-fill FX rate when currency becomes USD and rate is not yet set
+  useEffect(() => {
+    if (formData.currency === "USD" && formData.exchangeRate == null) {
+      fetch("/api/fx/rate?from=USD&to=INR")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (data?.rate) setFormData((prev) => ({ ...prev, exchangeRate: data.rate }));
+        })
+        .catch(() => {});
+    }
+  }, [formData.currency]);
+
   const handleQuotationChange = (quotationId: string) => {
     setFormData((prev) => ({ ...prev, quotationId }));
     fetchQuotationBalance(quotationId);
   };
 
   const handleCustomerChange = (customerId: string) => {
+    const selectedCustomer = customers.find((c) => c.id === customerId);
+    const intl = selectedCustomer?.customerType === "INTERNATIONAL";
+    setIsInternational(intl);
     setFormData((prev) => ({
       ...prev,
       customerId,
       quotationId: "",
+      currency: intl ? "USD" : "INR",
+      exchangeRate: null,
+      isDomesticDelivery: false,
+      shipmentAddress: "",
     }));
     setBalanceItems([]);
     setQuotationMeta(null);
 
     // Try to auto-fill client state from customer
-    const selectedCustomer = customers.find((c) => c.id === customerId);
     if (selectedCustomer?.state) {
       setClientState(selectedCustomer.state);
     }
@@ -467,6 +496,9 @@ function CreateClientPOPage() {
           ...formData,
           clientPoDate: formData.clientPoDate || null,
           deliveryDate: formData.deliveryDate || null,
+          committedDeliveryDate: formData.committedDeliveryDate || null,
+          isDomesticDelivery: formData.isDomesticDelivery,
+          shipmentAddress: formData.shipmentAddress || null,
           ...chargePayload,
           gstRate,
           supplierState,
@@ -652,7 +684,7 @@ function CreateClientPOPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label>Delivery Date (CDD)</Label>
+                <Label>Delivery Schedule</Label>
                 <Input
                   type="date"
                   value={formData.deliveryDate}
@@ -663,36 +695,84 @@ function CreateClientPOPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Currency</Label>
-                <Select
-                  value={formData.currency}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, currency: value })
+                <Label>Committed Delivery Date (CDD)</Label>
+                <Input
+                  type="date"
+                  value={formData.committedDeliveryDate}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, committedDeliveryDate: e.target.value }))
                   }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="INR">INR</SelectItem>
-                    <SelectItem value="USD">USD</SelectItem>
-                    <SelectItem value="EUR">EUR</SelectItem>
-                    <SelectItem value="GBP">GBP</SelectItem>
-                  </SelectContent>
-                </Select>
+                />
               </div>
 
               <div className="space-y-2">
-                <Label>Remarks</Label>
-                <Textarea
-                  value={formData.remarks}
-                  onChange={(e) =>
-                    setFormData({ ...formData, remarks: e.target.value })
-                  }
-                  placeholder="Any additional remarks"
-                  rows={1}
+                <Label>Currency</Label>
+                <Input
+                  value={formData.currency}
+                  readOnly
+                  disabled
+                  className="bg-muted cursor-not-allowed"
                 />
               </div>
+            </div>
+
+            {formData.currency === "USD" && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>Exchange Rate (1 USD = ? INR)</Label>
+                  <Input
+                    type="number"
+                    step="0.0001"
+                    value={formData.exchangeRate ?? ""}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        exchangeRate: e.target.value ? Number(e.target.value) : null,
+                      }))
+                    }
+                    placeholder="Auto-filled from live rate"
+                  />
+                </div>
+              </div>
+            )}
+
+            {isInternational && (
+              <div className="space-y-2">
+                <Label>Domestic Delivery</Label>
+                <div className="flex items-center gap-3">
+                  <Switch
+                    checked={formData.isDomesticDelivery}
+                    onCheckedChange={(checked) =>
+                      setFormData((prev) => ({ ...prev, isDomesticDelivery: checked }))
+                    }
+                  />
+                  <span className="text-sm text-muted-foreground">
+                    {formData.isDomesticDelivery ? "Yes — delivery within India" : "No — international delivery"}
+                  </span>
+                </div>
+                {formData.isDomesticDelivery && (
+                  <Textarea
+                    placeholder="Shipment address (India)"
+                    value={formData.shipmentAddress ?? ""}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, shipmentAddress: e.target.value }))
+                    }
+                    rows={2}
+                  />
+                )}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label>Remarks</Label>
+              <Textarea
+                value={formData.remarks}
+                onChange={(e) =>
+                  setFormData({ ...formData, remarks: e.target.value })
+                }
+                placeholder="Any additional remarks"
+                rows={1}
+              />
             </div>
           </CardContent>
         </Card>
