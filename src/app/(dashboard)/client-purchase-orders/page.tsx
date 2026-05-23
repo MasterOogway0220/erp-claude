@@ -83,7 +83,7 @@ export default function ClientPurchaseOrdersPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Client Purchase Orders"
+        title="Dashboard"
         description="Register and track client purchase orders against quotations"
       >
         <Button onClick={() => router.push("/client-purchase-orders/create")}>
