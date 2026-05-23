@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
 import { generateDocumentNumber } from "@/lib/document-numbering";
 import { checkAccess, companyFilter } from "@/lib/rbac";
+import { getRate } from "@/lib/fx/get-rate";
 
 export async function GET(request: NextRequest) {
   try {
@@ -176,6 +177,23 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Derive currency and exchange rate from customer type
+    const customer = await prisma.customerMaster.findUnique({
+      where: { id: customerId },
+      select: { customerType: true },
+    });
+    if (!customer) {
+      return NextResponse.json({ error: "Customer not found" }, { status: 400 });
+    }
+    const isInternational = customer.customerType === "INTERNATIONAL";
+    const resolvedCurrency = isInternational ? "USD" : "INR";
+
+    let exchangeRate: number | null = null;
+    if (resolvedCurrency === "USD") {
+      const fx = await getRate("USD", "INR");
+      exchangeRate = fx?.rate ?? null;
+    }
+
     // Generate CPO number
     const cpoNo = await generateDocumentNumber("CLIENT_PO", companyId);
 
@@ -260,7 +278,11 @@ export async function POST(request: NextRequest) {
         paymentTerms: paymentTerms || null,
         deliveryTerms: deliveryTerms || null,
         deliverySchedule: deliverySchedule || null,
-        currency: currency || "INR",
+        currency: resolvedCurrency,
+        exchangeRate,
+        committedDeliveryDate: body.committedDeliveryDate ? new Date(body.committedDeliveryDate) : null,
+        isDomesticDelivery: Boolean(body.isDomesticDelivery),
+        shipmentAddress: body.shipmentAddress ?? null,
         subtotal,
         // Additional charges
         freight: parsedCharges.freight || null,
@@ -302,7 +324,9 @@ export async function POST(request: NextRequest) {
             ends: item.ends || null,
             uom: item.uom || null,
             hsnCode: item.hsnCode || null,
-            qtyQuoted: parseFloat(item.qtyQuoted),
+            poSlNo: item.poSlNo ?? null,
+            poItemCode: item.poItemCode ?? null,
+            rateRemark: item.rateRemark ?? null,
             qtyOrdered: parseFloat(item.qtyOrdered),
             unitRate: parseFloat(item.unitRate),
             amount: parseFloat(item.qtyOrdered) * parseFloat(item.unitRate),

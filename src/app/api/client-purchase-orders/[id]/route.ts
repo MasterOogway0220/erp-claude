@@ -71,7 +71,7 @@ export async function GET(
         ...item,
         od: item.od ? Number(item.od) : null,
         wt: item.wt ? Number(item.wt) : null,
-        qtyQuoted: Number(item.qtyQuoted),
+        qtyQuoted,
         qtyOrdered: Number(item.qtyOrdered),
         unitRate: Number(item.unitRate),
         amount: Number(item.amount),
@@ -142,7 +142,7 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await request.json();
-    const { items, bulkOverallRemark } = body;
+    const { items, bulkOverallRemark, committedDeliveryDate, isDomesticDelivery, shipmentAddress } = body;
 
     const existingCPO = await prisma.clientPurchaseOrder.findUnique({
       where: { id },
@@ -157,6 +157,21 @@ export async function PATCH(
       return NextResponse.json({ error: "Cannot modify a cancelled or fulfilled order" }, { status: 400 });
     }
 
+    // Update delivery-side CPO-level fields (currency/exchangeRate are frozen at create)
+    const cpoTopLevelUpdate: Record<string, unknown> = {};
+    if (committedDeliveryDate !== undefined) {
+      cpoTopLevelUpdate.committedDeliveryDate = committedDeliveryDate ? new Date(committedDeliveryDate) : null;
+    }
+    if (isDomesticDelivery !== undefined) {
+      cpoTopLevelUpdate.isDomesticDelivery = Boolean(isDomesticDelivery);
+    }
+    if (shipmentAddress !== undefined) {
+      cpoTopLevelUpdate.shipmentAddress = shipmentAddress ?? null;
+    }
+    if (Object.keys(cpoTopLevelUpdate).length > 0) {
+      await prisma.clientPurchaseOrder.update({ where: { id }, data: cpoTopLevelUpdate });
+    }
+
     if (items && Array.isArray(items)) {
       const rateRevisions = [];
 
@@ -166,25 +181,35 @@ export async function PATCH(
 
         const oldRate = Number(existingItem.unitRate);
         const newRate = parseFloat(itemUpdate.unitRate);
+        const rateChanged = !isNaN(newRate) && newRate > 0 && oldRate !== newRate;
 
-        if (isNaN(newRate) || newRate <= 0) continue;
-        if (oldRate === newRate) continue;
+        const itemData: Record<string, unknown> = {
+          ...(itemUpdate.poSlNo !== undefined && { poSlNo: itemUpdate.poSlNo ?? null }),
+          ...(itemUpdate.poItemCode !== undefined && { poItemCode: itemUpdate.poItemCode ?? null }),
+          ...(itemUpdate.rateRemark !== undefined && { rateRemark: itemUpdate.rateRemark ?? null }),
+        };
 
-        const newAmount = Number(existingItem.qtyOrdered) * newRate;
-        await prisma.clientPOItem.update({
-          where: { id: itemUpdate.id },
-          data: { unitRate: newRate, amount: newAmount },
-        });
+        if (rateChanged) {
+          const newAmount = Number(existingItem.qtyOrdered) * newRate;
+          itemData.unitRate = newRate;
+          itemData.amount = newAmount;
+        }
 
-        rateRevisions.push({
-          clientPOItemId: itemUpdate.id,
-          oldRate: oldRate,
-          newRate: newRate,
-          remark: itemUpdate.rateRemark || "Rate updated",
-          overallRemark: bulkOverallRemark || null,
-          changedById: session.user.id,
-          companyId: companyId!,
-        });
+        if (Object.keys(itemData).length > 0) {
+          await prisma.clientPOItem.update({ where: { id: itemUpdate.id }, data: itemData });
+        }
+
+        if (rateChanged) {
+          rateRevisions.push({
+            clientPOItemId: itemUpdate.id,
+            oldRate: oldRate,
+            newRate: newRate,
+            remark: itemUpdate.rateRemark || "Rate updated",
+            overallRemark: bulkOverallRemark || null,
+            changedById: session.user.id,
+            companyId: companyId!,
+          });
+        }
       }
 
       if (rateRevisions.length > 0) {

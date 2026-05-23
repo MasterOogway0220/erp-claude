@@ -52,7 +52,6 @@ export async function GET(
           : null,
         items: acceptance.clientPurchaseOrder.items.map((item) => ({
           ...item,
-          qtyQuoted: Number(item.qtyQuoted),
           qtyOrdered: Number(item.qtyOrdered),
           unitRate: Number(item.unitRate),
           amount: Number(item.amount),
