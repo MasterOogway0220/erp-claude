@@ -209,21 +209,26 @@ const navSections: NavSection[] = [
 // ---------------------------------------------------------------------------
 
 const isProductionMode = process.env.NEXT_PUBLIC_PRODUCTION_MODE === "true";
+// In production, only this user sees modules flagged productionHidden. Everyone
+// else (including ADMIN / SUPER_ADMIN) is restricted to Masters + Quotations.
+const TEST_USER_EMAIL = "testuser@erp.com";
 
 function filterSections(
   sections: NavSection[],
   userRole: UserRole | undefined,
+  userEmail: string | undefined,
   moduleAccess: string[] | undefined
 ): NavSection[] {
   const isAdminOrAbove = userRole === "SUPER_ADMIN" || userRole === "ADMIN";
   const hasModuleFilter = moduleAccess && moduleAccess.length > 0;
+  const isTestUser = userEmail === TEST_USER_EMAIL;
 
   return sections
     .map((section) => ({
       ...section,
       items: section.items.filter((item) => {
-        // Hide production-restricted items when in production mode — SUPER_ADMIN and ADMIN always see everything
-        if (isProductionMode && item.productionHidden && userRole !== "SUPER_ADMIN" && userRole !== "ADMIN") return false;
+        // Production gate — only the test user bypasses productionHidden
+        if (isProductionMode && item.productionHidden && !isTestUser) return false;
         // Role check
         if (item.roles && !(userRole && item.roles.includes(userRole))) {
           return false;
@@ -256,7 +261,7 @@ export function Sidebar() {
 
   const userRole = user?.role;
   const moduleAccess = user?.moduleAccess;
-  const filteredSections = filterSections(navSections, userRole, moduleAccess);
+  const filteredSections = filterSections(navSections, userRole, user?.email, moduleAccess);
 
   const initials = user?.name
     ? user.name
