@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkAccess } from "@/lib/rbac";
+import { cpoStatusAfterIssue, isPoaIssueTransition } from "@/lib/po-acceptance/advance-cpo";
 
 // GET /api/po-acceptance/[id]
 export async function GET(
@@ -156,6 +157,19 @@ export async function PUT(
       });
     }
 
+    // Advance the parent Client P.O. when this acceptance is issued (any
+    // non-ISSUED -> ISSUED transition). Shared with finalize/PATCH so no
+    // issue path leaves the CPO behind.
+    if (isPoaIssueTransition(status, existing.status)) {
+      const next = cpoStatusAfterIssue(acceptance.clientPurchaseOrder.status);
+      if (next) {
+        await prisma.clientPurchaseOrder.update({
+          where: { id: acceptance.clientPurchaseOrderId },
+          data: { status: next },
+        });
+      }
+    }
+
     return NextResponse.json(acceptance);
   } catch (error) {
     console.error("Failed to update PO acceptance:", error);
@@ -266,6 +280,17 @@ export async function PATCH(
           userId: session.user.id,
         },
       });
+    }
+
+    // Advance the parent Client P.O. if this PATCH issues the acceptance.
+    if (isPoaIssueTransition(status, existing.status)) {
+      const next = cpoStatusAfterIssue(acceptance.clientPurchaseOrder.status);
+      if (next) {
+        await prisma.clientPurchaseOrder.update({
+          where: { id: acceptance.clientPurchaseOrderId },
+          data: { status: next },
+        });
+      }
     }
 
     return NextResponse.json(acceptance);

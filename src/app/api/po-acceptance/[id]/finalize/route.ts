@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkAccess } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 import { createAlert } from "@/lib/alerts";
+import { cpoStatusAfterIssue } from "@/lib/po-acceptance/advance-cpo";
 
 export async function POST(
   req: NextRequest,
@@ -29,14 +30,12 @@ export async function POST(
       },
     });
 
-    // Advance the parent CPO once its acceptance is issued. Only move it
-    // forward from the initial REGISTERED/DRAFT states so we never regress a
-    // CPO that has already progressed to (partial/full) fulfillment.
-    const cpo = acceptance.clientPurchaseOrder;
-    if (cpo && (cpo.status === "REGISTERED" || cpo.status === "DRAFT")) {
+    // Advance the parent CPO once its acceptance is issued (shared rule).
+    const nextCpoStatus = cpoStatusAfterIssue(acceptance.clientPurchaseOrder.status);
+    if (nextCpoStatus) {
       await prisma.clientPurchaseOrder.update({
-        where: { id: cpo.id },
-        data: { status: "ACCEPTED" },
+        where: { id: acceptance.clientPurchaseOrderId },
+        data: { status: nextCpoStatus },
       });
     }
 
