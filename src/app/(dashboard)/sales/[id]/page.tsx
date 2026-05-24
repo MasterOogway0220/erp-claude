@@ -14,10 +14,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, FileText, FileSearch, Package, AlertCircle, XCircle, Pencil, CheckCircle } from "lucide-react";
+import { ArrowLeft, XCircle } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
+import { OrderWizard, type WizardOrder } from "@/components/order-wizard/OrderWizard";
 
 interface SalesOrder {
   id: string;
@@ -92,31 +93,12 @@ export default function SalesOrderDetailPage() {
   const [salesOrder, setSalesOrder] = useState<SalesOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
-  const [processingItems, setProcessingItems] = useState<any[]>([]);
 
   useEffect(() => {
     if (params.id) {
       fetchSalesOrder(params.id as string);
     }
   }, [params.id]);
-
-  useEffect(() => {
-    if (salesOrder && salesOrder.processingStatus !== "UNPROCESSED") {
-      fetch(`/api/sales-orders/${salesOrder.id}/processing`)
-        .then((res) => res.json())
-        .then((data) => {
-          setProcessingItems(
-            data.items?.map((i: any) => ({
-              ...i.salesOrderItem,
-              allotmentSource: i.salesOrderItem?.allotmentSource || null,
-              allotmentStatus: i.salesOrderItem?.allotmentStatus || null,
-              orderProcessing: i.processing,
-            })) || []
-          );
-        })
-        .catch(console.error);
-    }
-  }, [salesOrder?.processingStatus, salesOrder?.id]);
 
   const fetchSalesOrder = async (id: string) => {
     try {
@@ -171,6 +153,7 @@ export default function SalesOrderDetailPage() {
 
   return (
     <div className="space-y-6">
+      {/* ── Page header ──────────────────────────────────────────────── */}
       <PageHeader
         title={`Order: ${salesOrder.soNo}`}
         description={`Created on ${format(new Date(salesOrder.soDate), "dd MMM yyyy")}`}
@@ -180,41 +163,6 @@ export default function SalesOrderDetailPage() {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
-          {salesOrder.status === "OPEN" && (
-            <Button
-              variant="outline"
-              onClick={() => router.push(`/sales/${salesOrder.id}/edit`)}
-            >
-              <Pencil className="w-4 h-4 mr-2" />
-              Edit
-            </Button>
-          )}
-          {salesOrder.status === "OPEN" && salesOrder.processingStatus !== "PROCESSED" && (
-            <Button onClick={() => router.push(`/sales/${salesOrder.id}/process`)}>
-              <CheckCircle className="w-4 h-4 mr-2" />
-              Process Order
-            </Button>
-          )}
-          {salesOrder.status === "OPEN" && (salesOrder.processingStatus === "PROCESSING" || salesOrder.processingStatus === "PROCESSED") && (
-            <Button variant="outline" onClick={() => router.push(`/sales/${salesOrder.id}/allotment`)}>
-              Stock Allotment
-            </Button>
-          )}
-          {salesOrder.poAcceptanceStatus === "PENDING" && (
-            <Button onClick={() => router.push(`/sales/${salesOrder.id}/review`)}>
-              <FileText className="w-4 h-4 mr-2" />
-              Review Customer PO
-            </Button>
-          )}
-          {salesOrder.status !== "CANCELLED" && salesOrder.status !== "CLOSED" && (
-            <Button
-              variant="outline"
-              onClick={() => router.push(`/sales/${salesOrder.id}/reserve-stock`)}
-            >
-              <Package className="w-4 h-4 mr-2" />
-              Reserve Stock
-            </Button>
-          )}
           {canCancel && (
             <Button
               variant="destructive"
@@ -228,6 +176,7 @@ export default function SalesOrderDetailPage() {
         </div>
       </PageHeader>
 
+      {/* ── Cancelled banner ─────────────────────────────────────────── */}
       {salesOrder.status === "CANCELLED" && (
         <Card className="border-red-300 bg-red-50">
           <CardContent className="pt-6">
@@ -244,29 +193,7 @@ export default function SalesOrderDetailPage() {
         </Card>
       )}
 
-      {salesOrder.poAcceptanceStatus === "PENDING" && salesOrder.status !== "CANCELLED" && (
-        <Card className="border-yellow-300 bg-yellow-50">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
-                <div>
-                  <h3 className="font-medium text-yellow-900">Customer PO Review Required</h3>
-                  <p className="text-sm text-yellow-700 mt-1">
-                    This Order requires Customer PO verification per ISO 9001:2018 Clause 8.2.3.
-                    Please review the customer PO against the reference quotation before proceeding.
-                  </p>
-                </div>
-              </div>
-              <Button onClick={() => router.push(`/sales/${salesOrder.id}/review`)}>
-                <FileSearch className="w-4 h-4 mr-2" />
-                Review PO
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
+      {/* ── Order header / summary (kept — feeds into Ready step later) ─ */}
       <div className="grid grid-cols-3 gap-6">
         <Card className="col-span-2">
           <CardHeader>
@@ -390,6 +317,7 @@ export default function SalesOrderDetailPage() {
         </Card>
       </div>
 
+      {/* ── Line items (preserved, will be surfaced in Ready step later) ─ */}
       <Card>
         <CardHeader>
           <CardTitle>Line Items</CardTitle>
@@ -464,75 +392,14 @@ export default function SalesOrderDetailPage() {
         </CardContent>
       </Card>
 
-      {salesOrder.processingStatus !== "UNPROCESSED" && processingItems.length > 0 && (
+      {/* ── Order Processing Wizard ───────────────────────────────────── */}
+      {salesOrder.status !== "CANCELLED" && (
         <Card>
           <CardHeader>
-            <CardTitle>Order Processing Summary</CardTitle>
+            <CardTitle>Order Processing Workspace</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              {processingItems.map((item: any) => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between p-3 rounded-md border cursor-pointer hover:bg-muted/50"
-                  onClick={() => router.push(`/sales/${salesOrder.id}/process`)}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-medium">#{item.sNo}</span>
-                    <span className="text-sm">{item.product} {item.sizeLabel || ""}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {item.orderProcessing?.tpiRequired && (
-                      <Badge variant="outline" className="text-xs">TPI</Badge>
-                    )}
-                    {item.orderProcessing?.coatingRequired && (
-                      <Badge variant="outline" className="text-xs">Coating</Badge>
-                    )}
-                    {item.orderProcessing?.ndtRequired && (
-                      <Badge variant="outline" className="text-xs">NDT</Badge>
-                    )}
-                    {item.orderProcessing?.pmiRequired && (
-                      <Badge variant="outline" className="text-xs">PMI</Badge>
-                    )}
-                    {item.allotmentSource && (
-                      <Badge variant="outline" className="text-xs">
-                        {item.allotmentSource === "STOCK" ? "Stock" :
-                         item.allotmentSource === "PROCUREMENT" ? "Procurement" : "Split"}
-                      </Badge>
-                    )}
-                    <Badge variant={item.orderProcessing?.status === "PROCESSED" ? "default" : "secondary"}>
-                      {item.orderProcessing?.status === "PROCESSED" ? "Processed" : "Pending"}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {salesOrder.status !== "CANCELLED" &&
-        salesOrder.items.some(
-          (item) =>
-            Number(item.quantity) -
-            (item.stockReservations?.reduce(
-              (sum, res) => sum + Number(res.reservedQtyMtr),
-              0
-            ) || 0) >
-            0
-        ) && (
-        <Card className="border-yellow-200 bg-yellow-50">
-          <CardContent className="pt-6">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
-              <div>
-                <h3 className="font-medium text-yellow-900">Stock Reservation Required</h3>
-                <p className="text-sm text-yellow-700 mt-1">
-                  Some items have shortfall in stock reservation. Click "Reserve Stock" to
-                  allocate inventory or generate Purchase Requisition for shortfall.
-                </p>
-              </div>
-            </div>
+            <OrderWizard order={salesOrder as unknown as WizardOrder} />
           </CardContent>
         </Card>
       )}
