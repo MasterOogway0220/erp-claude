@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Check } from "lucide-react";
 import { ReviewStep } from "./ReviewStep";
+import { AllotmentStep } from "./AllotmentStep";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -214,14 +215,19 @@ export function OrderWizard({ order }: OrderWizardProps) {
     order.poAcceptanceStatus === "ACCEPTED"
   );
 
+  const [allotmentComplete, setAllotmentComplete] = useState(
+    // Pre-gate: if allotment is already IN_PROGRESS or COMPLETED, step is done.
+    order.allotmentStatus === "IN_PROGRESS" || order.allotmentStatus === "COMPLETED"
+  );
+
   const isFirst = step === 0;
   const isLast = step === STEPS.length - 1;
 
-  // Map step id → its completion signal (Phase 4/5 will add allotmentComplete, processComplete).
+  // Map step id → its completion signal (Phase 5 will add processComplete).
   const stepComplete: Record<StepId, boolean> = {
     0: reviewComplete,
     1: true, // Phase 5 will gate this
-    2: true, // Phase 4 will gate this
+    2: allotmentComplete,
     3: true,
   };
 
@@ -251,9 +257,17 @@ export function OrderWizard({ order }: OrderWizardProps) {
         />
       );
     }
+    if (step === 2) {
+      return (
+        <AllotmentStep
+          order={order}
+          onComplete={setAllotmentComplete}
+        />
+      );
+    }
     // Back-navigation: if we're on a later step and click Back to step 0, we land
-    // here with step === 0, which is handled above. Steps 1-3 keep placeholders
-    // until Phases 4-5 extract them.
+    // here with step === 0, which is handled above. Steps 1, 3 keep placeholders
+    // until Phases 5 extracts them.
     const StepBody = STEP_BODIES[step];
     return <StepBody order={order} />;
   };
