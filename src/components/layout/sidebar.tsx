@@ -122,7 +122,6 @@ const navSections: NavSection[] = [
         moduleKey: "sales",
         productionHidden: true,
         children: [
-          { title: "Dashboard", href: "/sales/dashboard" },
           { title: "Client P.O. Register", href: "/client-purchase-orders" },
           { title: "P.O. Acceptance", href: "/po-acceptance" },
           { title: "Orders", href: "/sales" },

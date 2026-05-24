@@ -5,11 +5,29 @@ import { PageHeader } from "@/components/shared/page-header";
 import { DataTable, Column } from "@/components/shared/data-table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Eye, FileText, AlertCircle } from "lucide-react";
+import {
+  Plus,
+  Eye,
+  FileText,
+  AlertCircle,
+  ShoppingCart,
+  Clock,
+  IndianRupee,
+  AlertTriangle,
+  Package,
+  Warehouse,
+  TrendingUp,
+  Percent,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { toast } from "sonner";
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 
 interface SalesOrder {
   id: string;
@@ -29,6 +47,74 @@ interface SalesOrder {
   items: any[];
 }
 
+interface DashboardKpis {
+  totalCPOs: number;
+  cpoChangePercent: number;
+  pendingAcceptance: number;
+  pendingAcceptanceAging: { lt3: number; "3to7": number; gt7: number };
+  orderValueMonth: number;
+  orderValueChangePercent: number;
+  overdueDeliveries: number;
+  avgDaysOverdue: number;
+  pendingProcessing: number;
+  stockAllotment: { partial: number; pending: number };
+  quotationConversion: number;
+  quotationConversionChange: number;
+  rateNegotiationImpact: number;
+  avgDiscountPercent: number;
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function formatCurrency(value: number): string {
+  if (value >= 10000000) return `₹${(value / 10000000).toFixed(1)}Cr`;
+  if (value >= 100000) return `₹${(value / 100000).toFixed(1)}L`;
+  return `₹${(value / 1000).toFixed(1)}K`;
+}
+
+// ---------------------------------------------------------------------------
+// Compact KPI tile
+// ---------------------------------------------------------------------------
+
+interface KpiTileProps {
+  title: string;
+  value: string | number;
+  subtitle?: string;
+  icon: React.ReactNode;
+  borderColor: string;
+  valueClass?: string;
+  subtitleClass?: string;
+}
+
+function KpiTile({ title, value, subtitle, icon, borderColor, valueClass, subtitleClass }: KpiTileProps) {
+  return (
+    <Card className={`border-l-4 ${borderColor}`}>
+      <CardContent className="p-3">
+        <div className="flex items-start justify-between">
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide truncate">
+              {title}
+            </p>
+            <p className={`text-xl font-bold mt-0.5 ${valueClass || ""}`}>{value}</p>
+            {subtitle && (
+              <p className={`text-[10px] mt-0.5 ${subtitleClass || "text-muted-foreground"}`}>
+                {subtitle}
+              </p>
+            )}
+          </div>
+          <div className="text-muted-foreground/20 ml-2 shrink-0">{icon}</div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Status colours
+// ---------------------------------------------------------------------------
+
 const soStatusColors: Record<string, string> = {
   OPEN: "bg-blue-500",
   PARTIALLY_DISPATCHED: "bg-yellow-500",
@@ -44,13 +130,19 @@ const poAcceptanceColors: Record<string, string> = {
   HOLD: "bg-orange-500",
 };
 
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
+
 export default function SalesOrdersPage() {
   const router = useRouter();
   const [salesOrders, setSalesOrders] = useState<SalesOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const [kpis, setKpis] = useState<DashboardKpis | null>(null);
 
   useEffect(() => {
     fetchSalesOrders();
+    fetchDashboardKpis();
   }, []);
 
   const fetchSalesOrders = async () => {
@@ -63,6 +155,17 @@ export default function SalesOrdersPage() {
       toast.error("Failed to load sales orders");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchDashboardKpis = async () => {
+    try {
+      const res = await fetch("/api/sales/dashboard");
+      if (!res.ok) return; // silently skip if unavailable
+      const json = await res.json();
+      if (json?.kpis) setKpis(json.kpis);
+    } catch {
+      // non-fatal — stats row simply won't render
     }
   };
 
@@ -223,10 +326,83 @@ export default function SalesOrdersPage() {
       >
         <Button onClick={() => router.push("/sales/create")}>
           <Plus className="w-4 h-4 mr-2" />
-          New Order
+          Create Order Process
         </Button>
       </PageHeader>
 
+      {/* ------------------------------------------------------------------ */}
+      {/* Compact KPI stats row (sourced from /api/sales/dashboard)           */}
+      {/* ------------------------------------------------------------------ */}
+      {kpis && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+          <KpiTile
+            title="Total Client POs"
+            value={kpis.totalCPOs}
+            subtitle={`${kpis.cpoChangePercent >= 0 ? "+" : ""}${kpis.cpoChangePercent}% vs last mo`}
+            icon={<ShoppingCart className="h-8 w-8" />}
+            borderColor="border-l-blue-500"
+            subtitleClass={kpis.cpoChangePercent >= 0 ? "text-green-600" : "text-red-500"}
+          />
+          <KpiTile
+            title="Pending Acceptance"
+            value={kpis.pendingAcceptance}
+            subtitle={kpis.pendingAcceptanceAging.gt7 > 0 ? `${kpis.pendingAcceptanceAging.gt7} >7 days` : "All clear"}
+            icon={<Clock className="h-8 w-8" />}
+            borderColor="border-l-amber-500"
+            subtitleClass={kpis.pendingAcceptanceAging.gt7 > 0 ? "text-red-500" : "text-muted-foreground"}
+          />
+          <KpiTile
+            title="Order Value (Mo)"
+            value={formatCurrency(kpis.orderValueMonth)}
+            subtitle={`${kpis.orderValueChangePercent >= 0 ? "+" : ""}${kpis.orderValueChangePercent}% vs last mo`}
+            icon={<IndianRupee className="h-8 w-8" />}
+            borderColor="border-l-green-500"
+            subtitleClass={kpis.orderValueChangePercent >= 0 ? "text-green-600" : "text-red-500"}
+          />
+          <KpiTile
+            title="Overdue Deliveries"
+            value={kpis.overdueDeliveries}
+            subtitle={kpis.overdueDeliveries > 0 ? `Avg ${kpis.avgDaysOverdue}d overdue` : "None"}
+            icon={<AlertTriangle className="h-8 w-8" />}
+            borderColor="border-l-red-500"
+            valueClass={kpis.overdueDeliveries > 0 ? "text-red-600" : ""}
+            subtitleClass={kpis.overdueDeliveries > 0 ? "text-red-500" : "text-muted-foreground"}
+          />
+          <KpiTile
+            title="Pending Processing"
+            value={kpis.pendingProcessing}
+            subtitle="Awaiting action"
+            icon={<Package className="h-8 w-8" />}
+            borderColor="border-l-purple-500"
+          />
+          <KpiTile
+            title="Stock Allotment"
+            value={kpis.stockAllotment.partial + kpis.stockAllotment.pending}
+            subtitle={`${kpis.stockAllotment.pending} pending`}
+            icon={<Warehouse className="h-8 w-8" />}
+            borderColor="border-l-cyan-500"
+          />
+          <KpiTile
+            title="Quote Conversion"
+            value={`${kpis.quotationConversion}%`}
+            subtitle={`${kpis.quotationConversionChange >= 0 ? "+" : ""}${kpis.quotationConversionChange}% vs last mo`}
+            icon={<TrendingUp className="h-8 w-8" />}
+            borderColor="border-l-slate-500"
+            subtitleClass={kpis.quotationConversionChange >= 0 ? "text-green-600" : "text-red-500"}
+          />
+          <KpiTile
+            title="Rate Nego Impact"
+            value={formatCurrency(kpis.rateNegotiationImpact)}
+            subtitle={`Avg disc: ${kpis.avgDiscountPercent}%`}
+            icon={<Percent className="h-8 w-8" />}
+            borderColor="border-l-orange-500"
+          />
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Orders table (tabs)                                                 */}
+      {/* ------------------------------------------------------------------ */}
       <Tabs defaultValue="all" className="space-y-4">
         <TabsList>
           <TabsTrigger value="all">All Orders</TabsTrigger>
