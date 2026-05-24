@@ -201,6 +201,17 @@ const navSections: NavSection[] = [
           { title: "Bank Reconciliation", href: "/dispatch/bank-reconciliation" },
         ],
       },
+      {
+        title: "Reports",
+        icon: <FileText className="h-5 w-5" />,
+        iconColorClass: "text-teal-500",
+        roles: ["SALES", "MANAGEMENT", "ADMIN", "SUPER_ADMIN"],
+        moduleKey: "reports",
+        productionHidden: true,
+        children: [
+          { title: "Client Status Report", href: "/reports/client-status" },
+        ],
+      },
     ],
   },
 ];
