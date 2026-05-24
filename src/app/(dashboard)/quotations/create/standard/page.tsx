@@ -545,7 +545,7 @@ function StandardQuotationPage() {
   };
 
   // Fetch existing quotation for edit mode
-  const { data: editData } = useQuery({
+  const { data: editData, isLoading: editLoading } = useQuery({
     queryKey: ["quotation-edit", editId],
     enabled: !!editId,
     queryFn: async () => {
@@ -896,6 +896,12 @@ function StandardQuotationPage() {
   const fmt = (n: number) => n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const curr = formData.currency;
   const isINR = formData.currency === "INR";
+
+  // In edit mode, avoid rendering the form with empty header fields before the
+  // existing quotation data has loaded (prevents a blank flash).
+  if (editId && (editLoading || !editData?.quotation)) {
+    return <PageLoading />;
+  }
 
   return (
     <div className="space-y-6">
