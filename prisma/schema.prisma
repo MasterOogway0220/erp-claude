@@ -959,6 +959,7 @@ model SalesOrderItem {
   od                       Decimal?                  @db.Decimal(10, 3)
   wt                       Decimal?                  @db.Decimal(10, 3)
   ends                     String?
+  uom                      String?
   quantity                 Decimal                   @db.Decimal(10, 3)
   unitRate                 Decimal                   @db.Decimal(12, 2)
   amount                   Decimal                   @db.Decimal(14, 2)

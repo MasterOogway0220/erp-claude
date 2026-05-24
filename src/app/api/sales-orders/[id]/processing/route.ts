@@ -85,6 +85,7 @@ export async function GET(
           additionalSpec: item.additionalSpec,
           sizeLabel: item.sizeLabel,
           ends: item.ends,
+          uom: item.uom,
           quantity: Number(item.quantity),
           unitRate: Number(item.unitRate),
           amount: Number(item.amount),

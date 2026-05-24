@@ -1,0 +1,1 @@
+ALTER TABLE `SalesOrderItem` ADD COLUMN `uom` VARCHAR(191) NULL;

@@ -45,7 +45,8 @@ interface SalesOrderItem {
   product: string;
   material: string;
   sizeLabel: string;
-  qtyOrdered: number;
+  quantity: number;
+  uom: string | null;
   unitRate: number;
 }
 
@@ -632,7 +633,10 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
             <Separator orientation="vertical" className="h-4" />
             <span>{soItem.sizeLabel}</span>
             <Separator orientation="vertical" className="h-4" />
-            <span>Qty: {soItem.qtyOrdered}</span>
+            <span>
+              Qty: {soItem.quantity}
+              {soItem.uom ? ` ${soItem.uom}` : ""}
+            </span>
             <Separator orientation="vertical" className="h-4" />
             <span>Rate: {soItem.unitRate}</span>
             {isProcessed && (

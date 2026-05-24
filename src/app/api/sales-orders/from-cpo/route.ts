@@ -76,6 +76,7 @@ export async function POST(request: NextRequest) {
         od: cpoItem.od,
         wt: cpoItem.wt,
         ends: cpoItem.ends,
+        uom: cpoItem.uom,
         quantity: qtyOrdered,
         unitRate: unitRate,
         amount: qtyOrdered * unitRate,
