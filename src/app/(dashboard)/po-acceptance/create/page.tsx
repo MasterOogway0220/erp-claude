@@ -18,7 +18,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Save, FileCheck, Users, RefreshCw } from "lucide-react";
+import { ArrowLeft, Save, FileCheck, Users, RefreshCw, Mail, Send, X } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from "@/components/ui/sheet";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { PageLoading } from "@/components/shared/page-loading";
@@ -84,6 +92,15 @@ function CreatePOAcceptanceContent() {
 
   /** Wizard step (1-indexed) */
   const [step, setStep] = useState(1);
+
+  /** Preview / email drawer state (Step 3 submit) */
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewMeta, setPreviewMeta] = useState<{ pdfUrl: string } | null>(null);
+  const [emailTo, setEmailTo] = useState("");
+  const [emailCc, setEmailCc] = useState("");
+  const [emailSubject, setEmailSubject] = useState("");
+  const [sending, setSending] = useState(false);
+  const [createdId, setCreatedId] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     clientPurchaseOrderId: "",
@@ -291,27 +308,75 @@ function CreatePOAcceptanceContent() {
 
     setSaving(true);
     try {
+      // Step 1: Create the acceptance record
       const response = await fetch("/api/po-acceptance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          acceptanceDetails: form.acceptanceDetails,
-        }),
+        body: JSON.stringify({ ...form }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        toast.success(`PO Acceptance ${data.acceptanceNo} created`);
-        router.push(`/po-acceptance/${data.id}`);
-      } else {
+      if (!response.ok) {
         const data = await response.json();
         toast.error(data.error || "Failed to create acceptance");
+        return;
       }
+
+      const data = await response.json();
+      const newId: string = data.id;
+      toast.success(`PO Acceptance ${data.acceptanceNo} created`);
+
+      // Step 2: Finalize — auto-generate PDF and mark ISSUED
+      const finalizeRes = await fetch(`/api/po-acceptance/${newId}/finalize`, {
+        method: "POST",
+      });
+
+      if (!finalizeRes.ok) {
+        // Finalize failed — still navigate to the detail page
+        toast.error("PDF generation failed. You can retry from the acceptance page.");
+        router.push(`/po-acceptance/${newId}`);
+        return;
+      }
+
+      const finalizeData = await finalizeRes.json();
+
+      // Step 3: Open the preview/email drawer
+      setCreatedId(newId);
+      setPreviewMeta({ pdfUrl: finalizeData.pdfUrl });
+      setEmailTo(finalizeData.suggestedRecipient ?? "");
+      setEmailSubject(finalizeData.suggestedSubject ?? "");
+      setPreviewOpen(true);
     } catch (error) {
       toast.error("Failed to create acceptance");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSendEmail = async () => {
+    if (!createdId) return;
+    setSending(true);
+    try {
+      const res = await fetch(`/api/po-acceptance/${createdId}/email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: emailTo,
+          cc: emailCc || undefined,
+          subject: emailSubject || undefined,
+        }),
+      });
+      if (res.ok) {
+        toast.success("Email sent successfully");
+        setPreviewOpen(false);
+        router.push(`/po-acceptance/${createdId}`);
+      } else {
+        const data = await res.json();
+        toast.error(data.error || "Failed to send email");
+      }
+    } catch {
+      toast.error("Failed to send email");
+    } finally {
+      setSending(false);
     }
   };
 
@@ -1177,22 +1242,296 @@ function CreatePOAcceptanceContent() {
 
       {/* ══════════════════════════════════════
           STEP 3 — Review & Submit
-          (Task 7 placeholder + existing submit)
       ══════════════════════════════════════ */}
       {step === 3 && (
-        <div className="space-y-4">
-          {/* Task 7: Review & Submit + preview drawer */}
-          <p className="text-muted-foreground text-sm">Review &amp; Submit — coming in next step.</p>
-          <div className="flex justify-between">
-            <Button variant="outline" onClick={() => setStep(2)}>Back</Button>
-            {/* Submit button — gated to step 3; handler is the existing handleSubmit */}
+        <div className="space-y-6">
+
+          {/* ── Order Summary ── */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <FileCheck className="w-4 h-4" />
+                Order
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {selectedCPO ? (
+                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+                  <div>
+                    <dt className="text-muted-foreground">CPO No.</dt>
+                    <dd className="font-medium">{selectedCPO.cpoNo}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">Client P.O. No.</dt>
+                    <dd className="font-medium">{selectedCPO.clientPoNumber}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">Customer</dt>
+                    <dd className="font-medium">{selectedCPO.customer.name}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">Project</dt>
+                    <dd className="font-medium">{selectedCPO.projectName || "—"}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">Quotation No.</dt>
+                    <dd className="font-medium">{selectedCPO.quotation.quotationNo}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">Currency</dt>
+                    <dd className="font-medium">{selectedCPO.currency}</dd>
+                  </div>
+                </dl>
+              ) : (
+                <p className="text-sm text-muted-foreground">No CPO selected.</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* ── Acceptance Details ── */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Acceptance Details</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+                <div>
+                  <dt className="text-muted-foreground">Acceptance Date</dt>
+                  <dd className="font-medium">
+                    {form.acceptanceDate
+                      ? format(new Date(form.acceptanceDate), "dd/MM/yyyy")
+                      : "—"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Committed Delivery Date</dt>
+                  <dd className="font-medium">
+                    {form.committedDeliveryDate
+                      ? format(new Date(form.committedDeliveryDate), "dd/MM/yyyy")
+                      : "—"}
+                  </dd>
+                </div>
+                {form.acceptanceDetails && (
+                  <div className="sm:col-span-2">
+                    <dt className="text-muted-foreground">Acceptance Details</dt>
+                    <dd className="font-medium whitespace-pre-wrap">{form.acceptanceDetails}</dd>
+                  </div>
+                )}
+                {form.remarks && (
+                  <div className="sm:col-span-2">
+                    <dt className="text-muted-foreground">Remarks</dt>
+                    <dd className="font-medium whitespace-pre-wrap">{form.remarks}</dd>
+                  </div>
+                )}
+              </dl>
+            </CardContent>
+          </Card>
+
+          {/* ── Contacts ── */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                Contacts
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                {/* Follow-Up */}
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Follow-Up</p>
+                  <p className="font-medium">{form.followUpName || "—"}</p>
+                  {form.followUpEmail && <p className="text-muted-foreground">{form.followUpEmail}</p>}
+                  {form.followUpPhone && <p className="text-muted-foreground">{form.followUpPhone}</p>}
+                </div>
+                {/* Quality */}
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Quality Inspection</p>
+                  <p className="font-medium">{form.qualityName || "—"}</p>
+                  {form.qualityEmail && <p className="text-muted-foreground">{form.qualityEmail}</p>}
+                  {form.qualityPhone && <p className="text-muted-foreground">{form.qualityPhone}</p>}
+                </div>
+                {/* Accounts */}
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Accounts</p>
+                  <p className="font-medium">{form.accountsName || "—"}</p>
+                  {form.accountsEmail && <p className="text-muted-foreground">{form.accountsEmail}</p>}
+                  {form.accountsPhone && <p className="text-muted-foreground">{form.accountsPhone}</p>}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* ── Commercials ── */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Commercials</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border divide-y text-sm max-w-sm ml-auto">
+                <div className="flex justify-between px-4 py-2">
+                  <span className="text-muted-foreground">Subtotal</span>
+                  <span className="font-medium tabular-nums">
+                    {cpoCurrency === "INR" ? "₹" : cpoCurrency}{" "}
+                    {form.subtotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <div className="flex justify-between px-4 py-2">
+                  <span className="text-muted-foreground">Additional Charges</span>
+                  <span className="font-medium tabular-nums">
+                    {cpoCurrency === "INR" ? "₹" : cpoCurrency}{" "}
+                    {form.additionalChargesTotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <div className="flex justify-between px-4 py-2">
+                  <span className="text-muted-foreground">Taxable Amount</span>
+                  <span className="font-medium tabular-nums">
+                    {cpoCurrency === "INR" ? "₹" : cpoCurrency}{" "}
+                    {form.taxableAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+                {gstApplies && form.gstRate > 0 && (
+                  <>
+                    {!form.isInterState ? (
+                      <>
+                        <div className="flex justify-between px-4 py-2 text-muted-foreground">
+                          <span>CGST ({Number(form.gstRate) / 2}%)</span>
+                          <span className="tabular-nums">
+                            ₹ {form.cgst.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                        <div className="flex justify-between px-4 py-2 text-muted-foreground">
+                          <span>SGST ({Number(form.gstRate) / 2}%)</span>
+                          <span className="tabular-nums">
+                            ₹ {form.sgst.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex justify-between px-4 py-2 text-muted-foreground">
+                        <span>IGST ({form.gstRate}%)</span>
+                        <span className="tabular-nums">
+                          ₹ {form.igst.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                    )}
+                  </>
+                )}
+                <div className="flex justify-between px-4 py-2 text-muted-foreground">
+                  <span>Round Off</span>
+                  <span className="tabular-nums">
+                    {form.roundOff >= 0 ? "+" : ""}
+                    {Number(form.roundOff).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <div className="flex justify-between px-4 py-2 font-semibold bg-muted/30">
+                  <span>Grand Total</span>
+                  <span className="tabular-nums">
+                    {cpoCurrency === "INR" ? "₹" : cpoCurrency}{" "}
+                    {form.grandTotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Step 3 footer */}
+          <div className="flex justify-between gap-3">
+            <Button variant="outline" onClick={() => setStep(2)}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back
+            </Button>
             <Button onClick={handleSubmit} disabled={saving}>
-              <Save className="w-4 h-4 mr-2" />
+              <FileCheck className="w-4 h-4 mr-2" />
               {saving ? "Creating..." : "Create Acceptance"}
             </Button>
           </div>
         </div>
       )}
+
+      {/* ══════════════════════════════════════
+          Preview / Email Drawer (post-submit)
+      ══════════════════════════════════════ */}
+      <Sheet open={previewOpen} onOpenChange={setPreviewOpen}>
+        <SheetContent className="w-full sm:max-w-2xl flex flex-col gap-0 p-0">
+          <SheetHeader className="px-6 pt-6 pb-4 border-b">
+            <SheetTitle>P.O. Acceptance Letter</SheetTitle>
+            <SheetDescription>
+              Review the generated letter, then send it by email or skip to the acceptance record.
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
+            {/* PDF preview iframe */}
+            {previewMeta?.pdfUrl && (
+              <iframe
+                src={previewMeta.pdfUrl}
+                className="w-full h-[50vh] border rounded"
+                title="P.O. Acceptance Letter Preview"
+              />
+            )}
+
+            {/* Email fields */}
+            <div className="space-y-3">
+              <h4 className="text-sm font-semibold flex items-center gap-2">
+                <Mail className="w-4 h-4" />
+                Send Email
+              </h4>
+              <div className="space-y-1">
+                <Label htmlFor="email-to">To</Label>
+                <Input
+                  id="email-to"
+                  type="email"
+                  placeholder="recipient@example.com"
+                  value={emailTo}
+                  onChange={(e) => setEmailTo(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="email-cc">CC <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                <Input
+                  id="email-cc"
+                  type="email"
+                  placeholder="cc@example.com"
+                  value={emailCc}
+                  onChange={(e) => setEmailCc(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="email-subject">Subject</Label>
+                <Input
+                  id="email-subject"
+                  placeholder="P.O. Acceptance Letter"
+                  value={emailSubject}
+                  onChange={(e) => setEmailSubject(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          <SheetFooter className="px-6 py-4 border-t flex flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              className="w-full sm:w-auto"
+              onClick={() => {
+                setPreviewOpen(false);
+                if (createdId) router.push(`/po-acceptance/${createdId}`);
+              }}
+            >
+              <X className="w-4 h-4 mr-2" />
+              Skip &amp; Close
+            </Button>
+            <Button
+              className="w-full sm:w-auto"
+              disabled={sending || !emailTo}
+              onClick={handleSendEmail}
+            >
+              <Send className="w-4 h-4 mr-2" />
+              {sending ? "Sending..." : "Send Email"}
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
