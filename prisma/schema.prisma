@@ -2311,7 +2311,31 @@ model POAcceptance {
   acceptanceDate        DateTime
   committedDeliveryDate DateTime
   remarks               String?                @db.Text
-  attachmentUrl         String?
+  acceptanceDetails     String?                @db.Text
+  wizardStep            Int                    @default(1)
+  pdfGeneratedAt        DateTime?
+  gstRate               Decimal?               @db.Decimal(5, 2)
+  isInterState          Boolean                @default(false)
+  freight               Decimal?               @db.Decimal(14, 2)
+  freightTaxApplicable  Boolean                @default(false)
+  packingForwarding     Decimal?               @db.Decimal(14, 2)
+  packingTaxApplicable  Boolean                @default(false)
+  insurance             Decimal?               @db.Decimal(14, 2)
+  insuranceTaxApplicable Boolean               @default(false)
+  otherCharges          Decimal?               @db.Decimal(14, 2)
+  otherChargesTaxApplicable Boolean            @default(false)
+  testingCharges        Decimal?               @db.Decimal(14, 2)
+  testingTaxApplicable  Boolean                @default(false)
+  tpiCharges            Decimal?               @db.Decimal(14, 2)
+  tpiTaxApplicable      Boolean                @default(false)
+  additionalChargesTotal Decimal?              @db.Decimal(14, 2)
+  subtotal              Decimal?               @db.Decimal(14, 2)
+  taxableAmount         Decimal?               @db.Decimal(14, 2)
+  cgst                  Decimal?               @db.Decimal(14, 2)
+  sgst                  Decimal?               @db.Decimal(14, 2)
+  igst                  Decimal?               @db.Decimal(14, 2)
+  roundOff              Decimal?               @db.Decimal(10, 2)
+  grandTotal            Decimal?               @db.Decimal(14, 2)
   followUpName          String?
   followUpEmail         String?
   followUpPhone         String?
