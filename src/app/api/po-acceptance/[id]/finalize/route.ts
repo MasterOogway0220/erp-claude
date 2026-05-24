@@ -29,6 +29,17 @@ export async function POST(
       },
     });
 
+    // Advance the parent CPO once its acceptance is issued. Only move it
+    // forward from the initial REGISTERED/DRAFT states so we never regress a
+    // CPO that has already progressed to (partial/full) fulfillment.
+    const cpo = acceptance.clientPurchaseOrder;
+    if (cpo && (cpo.status === "REGISTERED" || cpo.status === "DRAFT")) {
+      await prisma.clientPurchaseOrder.update({
+        where: { id: cpo.id },
+        data: { status: "ACCEPTED" },
+      });
+    }
+
     // Order Execution trigger (PRD §6): notify QA + Warehouse that an accepted
     // PO is ready for quality definition + material preparation.
     await createAlert({

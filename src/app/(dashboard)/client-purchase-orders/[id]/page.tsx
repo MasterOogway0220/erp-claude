@@ -63,6 +63,7 @@ interface ClientPODetail {
   remarks: string | null;
   status: string;
   createdAt: string;
+  poAcceptance: { id: string; acceptanceNo: string; status: string } | null;
   customer: { name: string; city: string | null; contactPerson: string | null; state: string | null };
   quotation: {
     id: string;
@@ -214,7 +215,7 @@ export default function ClientPODetailPage({
           (STATUS_COLORS[clientPO.status] as any) || "secondary"
         }
       >
-        {clientPO.status === "REGISTERED" && (
+        {clientPO.status === "REGISTERED" && !clientPO.poAcceptance && (
           <Button
             onClick={() =>
               router.push(`/po-acceptance/create?cpoId=${clientPO.id}`)
@@ -222,6 +223,17 @@ export default function ClientPODetailPage({
           >
             <FileCheck className="w-4 h-4 mr-2" />
             Generate Acceptance
+          </Button>
+        )}
+        {clientPO.poAcceptance && (
+          <Button
+            variant="outline"
+            onClick={() =>
+              router.push(`/po-acceptance/${clientPO.poAcceptance!.id}`)
+            }
+          >
+            <FileCheck className="w-4 h-4 mr-2" />
+            Acceptance: {clientPO.poAcceptance.acceptanceNo} →
           </Button>
         )}
         {clientPO.status !== "CANCELLED" && !linkedSO && (
