@@ -682,7 +682,7 @@ export default function QuotationDetailPage() {
             <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-x-4 gap-y-2 mt-3 pt-3 border-t">
               {quotation.salesOrders?.length > 0 && (
                 <div>
-                  <div className="text-xs text-muted-foreground">OC Created</div>
+                  <div className="text-xs text-muted-foreground">Order Created</div>
                   <div className="text-sm font-medium text-green-600">
                     {quotation.salesOrders.map((so: any) => so.soNo).join(", ")}
                   </div>
