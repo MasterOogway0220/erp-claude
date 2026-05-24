@@ -95,6 +95,31 @@ function baseStyles(): string {
   `;
 }
 
+// ============================================================
+// DOSSIER READINESS GATE
+// ============================================================
+
+interface DossierData {
+  clientPO: any;
+  poAcceptance: any;
+  allMtcs: any[];
+  allInspections: any[];
+  invoice: any;
+}
+
+function computeDossierReadiness(d: DossierData): { missing: string[]; present: string[] } {
+  const present: string[] = [];
+  const missing: string[] = [];
+
+  if (d.clientPO) present.push("Client PO"); else missing.push("Client PO");
+  if (d.poAcceptance) present.push("PO Acceptance"); else missing.push("PO Acceptance");
+  if (d.allMtcs.length > 0) present.push("MTC"); else missing.push("MTC (at least one required)");
+  if (d.allInspections.length > 0) present.push("Inspection Report"); else missing.push("Inspection Report (at least one required)");
+  if (d.invoice) present.push("Invoice"); else missing.push("Invoice");
+
+  return { missing, present };
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -254,6 +279,25 @@ export async function GET(
 
     // TPI inspections are inspections that have a tpiAgency
     const tpiInspections = allInspections.filter((i) => i.tpiAgencyId);
+
+    // ============================================================
+    // READINESS / VALIDATION GATE
+    // ============================================================
+
+    const readiness = computeDossierReadiness({ clientPO, poAcceptance, allMtcs, allInspections, invoice });
+
+    // ?validate=true — return readiness JSON without generating the dossier
+    if (searchParams.get("validate") === "true") {
+      return NextResponse.json({ missing: readiness.missing, present: readiness.present });
+    }
+
+    // Block generation when mandatory docs are absent (unless ?force=true)
+    if (readiness.missing.length > 0 && searchParams.get("force") !== "true") {
+      return NextResponse.json(
+        { error: "Missing mandatory documents", missing: readiness.missing },
+        { status: 409 }
+      );
+    }
 
     // ============================================================
     // GENERATE HTML PAGES
