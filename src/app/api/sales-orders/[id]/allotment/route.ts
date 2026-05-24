@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { checkAccess } from "@/lib/rbac";
 import { generateDocumentNumber } from "@/lib/document-numbering";
 import { createAuditLog } from "@/lib/audit";
+import { deriveWarehouseStatuses } from "@/lib/quality/qap";
 
 export async function POST(
   request: NextRequest,
@@ -31,6 +32,27 @@ export async function POST(
     if (!salesOrder) {
       return NextResponse.json({ error: "Sales Order not found" }, { status: 404 });
     }
+
+    const qapMeta = await prisma.salesOrder.findUnique({
+      where: { id },
+      select: {
+        qapInspectionRequired: true,
+        items: {
+          select: {
+            id: true,
+            orderProcessing: {
+              select: {
+                labTestingRequired: true,
+                pmiRequired: true,
+                ndtRequired: true,
+                vdiRequired: true,
+                hydroTestRequired: true,
+              },
+            },
+          },
+        },
+      },
+    });
 
     const stockItems: any[] = [];
     const procurementItems: any[] = [];
@@ -119,15 +141,24 @@ export async function POST(
           remarks: `Auto-generated from stock allotment for ${salesOrder.soNo}`,
           createdById: session.user.id,
           items: {
-            create: stockItems.map((item, idx) => ({
-              sNo: idx + 1,
-              salesOrderItemId: item.salesOrderItemId,
-              product: item.product,
-              material: item.material,
-              sizeLabel: item.sizeLabel,
-              additionalSpec: item.additionalSpec,
-              requiredQty: item.requiredQty,
-            })),
+            create: stockItems.map((item, idx) => {
+              const proc = qapMeta?.items.find((i) => i.id === item.salesOrderItemId)?.orderProcessing ?? {};
+              const { inspectionStatus, testingStatus } = deriveWarehouseStatuses(
+                !!qapMeta?.qapInspectionRequired,
+                proc,
+              );
+              return {
+                sNo: idx + 1,
+                salesOrderItemId: item.salesOrderItemId,
+                product: item.product,
+                material: item.material,
+                sizeLabel: item.sizeLabel,
+                additionalSpec: item.additionalSpec,
+                requiredQty: item.requiredQty,
+                inspectionStatus,
+                testingStatus,
+              };
+            }),
           },
         },
       });
