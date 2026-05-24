@@ -25,7 +25,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Save, FileCheck, Users, RefreshCw, Upload, FileText, Trash2 } from "lucide-react";
+import { ArrowLeft, Save, FileCheck, Users, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { PageLoading } from "@/components/shared/page-loading";
@@ -56,37 +56,12 @@ interface CustomerContact {
   department: string;
 }
 
-function useFileUploader() {
-  const [uploading, setUploading] = useState(false);
-
-  const uploadFile = async (file: File): Promise<{ filePath: string; fileName: string } | null> => {
-    const maxSize = 10 * 1024 * 1024; // 10MB
-    if (file.size > maxSize) {
-      toast.error(`File "${file.name}" exceeds 10MB limit`);
-      return null;
-    }
-
-    setUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-      if (!res.ok) throw new Error("Upload failed");
-      const result = await res.json();
-      return { filePath: result.filePath, fileName: file.name };
-    } catch {
-      toast.error(`Failed to upload "${file.name}"`);
-      return null;
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  return { uploading, uploadFile };
-}
+/** Step labels for the 3-step wizard */
+const STEP_LABELS = [
+  "Details & Contacts",
+  "Charges & Commercials",
+  "Review & Submit",
+] as const;
 
 function CreatePOAcceptanceContent() {
   const router = useRouter();
@@ -98,13 +73,15 @@ function CreatePOAcceptanceContent() {
   const [clientPOs, setClientPOs] = useState<ClientPO[]>([]);
   const [selectedCPO, setSelectedCPO] = useState<ClientPO | null>(null);
   const [contacts, setContacts] = useState<CustomerContact[]>([]);
-  const [attachmentFile, setAttachmentFile] = useState<{ filePath: string; fileName: string } | null>(null);
-  const { uploading, uploadFile } = useFileUploader();
+
+  /** Wizard step (1-indexed) */
+  const [step, setStep] = useState(1);
 
   const [form, setForm] = useState({
     clientPurchaseOrderId: "",
     acceptanceDate: format(new Date(), "yyyy-MM-dd"),
     committedDeliveryDate: "",
+    acceptanceDetails: "",
     remarks: "",
     followUpName: "",
     followUpEmail: "",
@@ -242,7 +219,7 @@ function CreatePOAcceptanceContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
-          attachmentUrl: attachmentFile?.filePath || null,
+          acceptanceDetails: form.acceptanceDetails,
         }),
       });
 
@@ -264,6 +241,12 @@ function CreatePOAcceptanceContent() {
   const contactsByDept = (dept: string) =>
     contacts.filter((c) => c.department === dept);
 
+  /** Step 1 is valid when CPO + both required dates are filled */
+  const step1Valid =
+    !!form.clientPurchaseOrderId &&
+    !!form.acceptanceDate &&
+    !!form.committedDeliveryDate;
+
   if (loading) return <PageLoading />;
 
   return (
@@ -278,419 +261,461 @@ function CreatePOAcceptanceContent() {
         </Button>
       </PageHeader>
 
-      {/* Select Client PO */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Select Client Purchase Order</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Client Purchase Order *</Label>
-              <Select
-                value={form.clientPurchaseOrderId}
-                onValueChange={handleCPOSelect}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a registered Client P.O." />
-                </SelectTrigger>
-                <SelectContent>
-                  {clientPOs.map((cpo) => (
-                    <SelectItem key={cpo.id} value={cpo.id}>
-                      {cpo.cpoNo} — {cpo.customer.name} — {cpo.clientPoNumber}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {selectedCPO && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-muted/50 rounded-lg">
-                <div>
-                  <div className="text-xs text-muted-foreground">Client</div>
-                  <div className="text-sm font-medium">{selectedCPO.customer.name}</div>
-                </div>
-                <div>
-                  <div className="text-xs text-muted-foreground">Client PO</div>
-                  <div className="text-sm font-medium">{selectedCPO.clientPoNumber}</div>
-                </div>
-                <div>
-                  <div className="text-xs text-muted-foreground">Quotation Ref</div>
-                  <div className="text-sm font-medium">{selectedCPO.quotation.quotationNo}</div>
-                </div>
-                <div>
-                  <div className="text-xs text-muted-foreground">Order Value</div>
-                  <div className="text-sm font-medium">
-                    {selectedCPO.currency === "INR" ? "\u20B9" : selectedCPO.currency}{" "}
-                    {selectedCPO.grandTotal?.toLocaleString("en-IN", {
-                      minimumFractionDigits: 2,
-                    }) || "-"}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-xs text-muted-foreground">Project</div>
-                  <div className="text-sm">{selectedCPO.projectName || "-"}</div>
-                </div>
-                <div>
-                  <div className="text-xs text-muted-foreground">Payment Terms</div>
-                  <div className="text-sm">{selectedCPO.paymentTerms || "-"}</div>
-                </div>
-                <div>
-                  <div className="text-xs text-muted-foreground">Delivery Terms</div>
-                  <div className="text-sm">{selectedCPO.deliveryTerms || "-"}</div>
-                </div>
-                <div>
-                  <div className="text-xs text-muted-foreground">CPO Date</div>
-                  <div className="text-sm">
-                    {format(new Date(selectedCPO.cpoDate), "dd/MM/yyyy")}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Acceptance Details */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Acceptance Details</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label>Acceptance Date *</Label>
-              <Input
-                type="date"
-                value={form.acceptanceDate}
-                onChange={(e) =>
-                  setForm({ ...form, acceptanceDate: e.target.value })
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Committed Delivery Date *</Label>
-              <Input
-                type="date"
-                value={form.committedDeliveryDate}
-                onChange={(e) =>
-                  setForm({ ...form, committedDeliveryDate: e.target.value })
-                }
-              />
-            </div>
-            <div className="md:col-span-1" />
-          </div>
-          <div className="mt-4 space-y-2">
-            <Label>Remarks</Label>
-            <Textarea
-              value={form.remarks}
-              onChange={(e) => setForm({ ...form, remarks: e.target.value })}
-              placeholder="Any additional remarks or conditions..."
-              rows={3}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Attachment Upload */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Upload className="h-4 w-4" />
-            Signed PO Acceptance Copy
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              Upload a signed copy of the PO acceptance (PDF, DOC, or image).
-            </p>
-            {attachmentFile ? (
-              <div className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
-                <div className="flex items-center gap-2 min-w-0">
-                  <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  <span className="truncate">{attachmentFile.fileName}</span>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 shrink-0 text-destructive hover:text-destructive"
-                  onClick={() => setAttachmentFile(null)}
+      {/* ── Wizard Step Indicator ── */}
+      <div className="flex items-center gap-0">
+        {STEP_LABELS.map((label, idx) => {
+          const stepNum = idx + 1;
+          const isActive = step === stepNum;
+          const isDone = step > stepNum;
+          return (
+            <div key={stepNum} className="flex items-center flex-1 min-w-0">
+              <div className="flex flex-col items-center gap-1 min-w-[100px]">
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold border-2 transition-colors ${
+                    isActive
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : isDone
+                      ? "border-primary bg-primary/20 text-primary"
+                      : "border-muted-foreground/30 bg-muted text-muted-foreground"
+                  }`}
                 >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center gap-3 rounded-md border border-dashed p-6">
-                <div className="text-xs text-muted-foreground">
-                  No file uploaded yet
+                  {stepNum}
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={uploading}
-                  onClick={() => document.getElementById("upload-po-attachment")?.click()}
+                <span
+                  className={`text-xs font-medium text-center whitespace-nowrap ${
+                    isActive
+                      ? "text-primary"
+                      : isDone
+                      ? "text-primary/70"
+                      : "text-muted-foreground"
+                  }`}
                 >
-                  <Upload className="h-3.5 w-3.5 mr-1.5" />
-                  {uploading ? "Uploading..." : "Upload File"}
-                </Button>
+                  {label}
+                </span>
               </div>
-            )}
-            <input
-              id="upload-po-attachment"
-              type="file"
-              className="hidden"
-              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-              onChange={async (e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  const result = await uploadFile(file);
-                  if (result) {
-                    setAttachmentFile(result);
-                  }
-                }
-                e.target.value = "";
-              }}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Client Contact / Department Contact Details */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Client Contact / Department Contact Details
-            </CardTitle>
-            {selectedCPO && contacts.length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={autoFillAllContacts}
-              >
-                <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
-                Auto-fill from Directory
-              </Button>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Follow-up Contact */}
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <Badge>Follow-up</Badge>
-              {contactsByDept("FOLLOW_UP").length > 0 && (
-                <Select
-                  onValueChange={(v) => {
-                    const c = contacts.find((c) => c.id === v);
-                    if (c) fillContactFromDirectory("FOLLOW_UP", c);
-                  }}
-                >
-                  <SelectTrigger className="w-[250px] h-8 text-xs">
-                    <SelectValue placeholder="Pick from directory..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {contactsByDept("FOLLOW_UP").map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.contactName}
-                        {c.designation ? ` (${c.designation})` : ""}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              {stepNum < STEP_LABELS.length && (
+                <div
+                  className={`h-0.5 flex-1 mx-2 mt-[-12px] transition-colors ${
+                    step > stepNum ? "bg-primary" : "bg-muted-foreground/20"
+                  }`}
+                />
               )}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label>Mr. / Ms.</Label>
-                <Input
-                  value={form.followUpName}
-                  onChange={(e) =>
-                    setForm({ ...form, followUpName: e.target.value })
-                  }
-                  placeholder="Contact person name"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Email</Label>
-                <Input
-                  type="email"
-                  value={form.followUpEmail}
-                  onChange={(e) =>
-                    setForm({ ...form, followUpEmail: e.target.value })
-                  }
-                  placeholder="email@example.com"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Contact No</Label>
-                <Input
-                  value={form.followUpPhone}
-                  onChange={(e) =>
-                    setForm({ ...form, followUpPhone: e.target.value })
-                  }
-                  placeholder="+91-XXXXXXXXXX"
-                />
-              </div>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Quality / Inspection Contact */}
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <Badge variant="secondary">Quality / Inspection</Badge>
-              {contactsByDept("QUALITY_INSPECTION").length > 0 && (
-                <Select
-                  onValueChange={(v) => {
-                    const c = contacts.find((c) => c.id === v);
-                    if (c) fillContactFromDirectory("QUALITY_INSPECTION", c);
-                  }}
-                >
-                  <SelectTrigger className="w-[250px] h-8 text-xs">
-                    <SelectValue placeholder="Pick from directory..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {contactsByDept("QUALITY_INSPECTION").map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.contactName}
-                        {c.designation ? ` (${c.designation})` : ""}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label>Mr. / Ms.</Label>
-                <Input
-                  value={form.qualityName}
-                  onChange={(e) =>
-                    setForm({ ...form, qualityName: e.target.value })
-                  }
-                  placeholder="Contact person name"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Email</Label>
-                <Input
-                  type="email"
-                  value={form.qualityEmail}
-                  onChange={(e) =>
-                    setForm({ ...form, qualityEmail: e.target.value })
-                  }
-                  placeholder="email@example.com"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Contact No</Label>
-                <Input
-                  value={form.qualityPhone}
-                  onChange={(e) =>
-                    setForm({ ...form, qualityPhone: e.target.value })
-                  }
-                  placeholder="+91-XXXXXXXXXX"
-                />
-              </div>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Accounts Contact */}
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <Badge variant="outline">Accounts</Badge>
-              {contactsByDept("ACCOUNTS").length > 0 && (
-                <Select
-                  onValueChange={(v) => {
-                    const c = contacts.find((c) => c.id === v);
-                    if (c) fillContactFromDirectory("ACCOUNTS", c);
-                  }}
-                >
-                  <SelectTrigger className="w-[250px] h-8 text-xs">
-                    <SelectValue placeholder="Pick from directory..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {contactsByDept("ACCOUNTS").map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.contactName}
-                        {c.designation ? ` (${c.designation})` : ""}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label>Mr. / Ms.</Label>
-                <Input
-                  value={form.accountsName}
-                  onChange={(e) =>
-                    setForm({ ...form, accountsName: e.target.value })
-                  }
-                  placeholder="Contact person name"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Email</Label>
-                <Input
-                  type="email"
-                  value={form.accountsEmail}
-                  onChange={(e) =>
-                    setForm({ ...form, accountsEmail: e.target.value })
-                  }
-                  placeholder="email@example.com"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Contact No</Label>
-                <Input
-                  value={form.accountsPhone}
-                  onChange={(e) =>
-                    setForm({ ...form, accountsPhone: e.target.value })
-                  }
-                  placeholder="+91-XXXXXXXXXX"
-                />
-              </div>
-            </div>
-          </div>
-
-          {selectedCPO && contacts.length === 0 && (
-            <div className="text-center py-4 border border-dashed rounded-lg">
-              <p className="text-sm text-muted-foreground">
-                No contacts in directory for this customer.{" "}
-                <Button
-                  variant="link"
-                  className="p-0 h-auto text-sm"
-                  onClick={() => router.push("/masters/customer-contacts")}
-                >
-                  Add contacts to the directory
-                </Button>{" "}
-                to enable auto-fill.
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Submit */}
-      <div className="flex justify-end gap-3">
-        <Button variant="outline" onClick={() => router.back()}>
-          Cancel
-        </Button>
-        <Button onClick={handleSubmit} disabled={saving || uploading}>
-          <Save className="w-4 h-4 mr-2" />
-          {saving ? "Creating..." : "Create Acceptance"}
-        </Button>
+          );
+        })}
       </div>
+
+      <p className="text-sm text-muted-foreground">
+        Step {step} of {STEP_LABELS.length} — {STEP_LABELS[step - 1]}
+      </p>
+
+      {/* ══════════════════════════════════════
+          STEP 1 — Details & Contacts
+      ══════════════════════════════════════ */}
+      {step === 1 && (
+        <div className="space-y-6">
+          {/* Select Client PO */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Select Client Purchase Order</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Client Purchase Order *</Label>
+                  <Select
+                    value={form.clientPurchaseOrderId}
+                    onValueChange={handleCPOSelect}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a registered Client P.O." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clientPOs.map((cpo) => (
+                        <SelectItem key={cpo.id} value={cpo.id}>
+                          {cpo.cpoNo} — {cpo.customer.name} — {cpo.clientPoNumber}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {selectedCPO && (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-muted/50 rounded-lg">
+                    <div>
+                      <div className="text-xs text-muted-foreground">Client</div>
+                      <div className="text-sm font-medium">{selectedCPO.customer.name}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">Client PO</div>
+                      <div className="text-sm font-medium">{selectedCPO.clientPoNumber}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">Quotation Ref</div>
+                      <div className="text-sm font-medium">{selectedCPO.quotation.quotationNo}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">Order Value</div>
+                      <div className="text-sm font-medium">
+                        {selectedCPO.currency === "INR" ? "₹" : selectedCPO.currency}{" "}
+                        {selectedCPO.grandTotal?.toLocaleString("en-IN", {
+                          minimumFractionDigits: 2,
+                        }) || "-"}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">Project</div>
+                      <div className="text-sm">{selectedCPO.projectName || "-"}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">Payment Terms</div>
+                      <div className="text-sm">{selectedCPO.paymentTerms || "-"}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">Delivery Terms</div>
+                      <div className="text-sm">{selectedCPO.deliveryTerms || "-"}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">CPO Date</div>
+                      <div className="text-sm">
+                        {format(new Date(selectedCPO.cpoDate), "dd/MM/yyyy")}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Acceptance Details */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Acceptance Details</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>Acceptance Date *</Label>
+                  <Input
+                    type="date"
+                    value={form.acceptanceDate}
+                    onChange={(e) =>
+                      setForm({ ...form, acceptanceDate: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Committed Delivery Date *</Label>
+                  <Input
+                    type="date"
+                    value={form.committedDeliveryDate}
+                    onChange={(e) =>
+                      setForm({ ...form, committedDeliveryDate: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="md:col-span-1" />
+              </div>
+              {/* Acceptance Details textarea — PRD §3.1 */}
+              <div className="mt-4 space-y-2">
+                <Label>Acceptance Details</Label>
+                <Textarea
+                  value={form.acceptanceDetails}
+                  onChange={(e) =>
+                    setForm({ ...form, acceptanceDetails: e.target.value })
+                  }
+                  placeholder="Describe the terms and conditions of acceptance..."
+                  rows={3}
+                />
+              </div>
+              <div className="mt-4 space-y-2">
+                <Label>Remarks</Label>
+                <Textarea
+                  value={form.remarks}
+                  onChange={(e) => setForm({ ...form, remarks: e.target.value })}
+                  placeholder="Any additional remarks or conditions..."
+                  rows={3}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Client Contact / Department Contact Details */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Client Contact / Department Contact Details
+                </CardTitle>
+                {selectedCPO && contacts.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={autoFillAllContacts}
+                  >
+                    <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+                    Auto-fill from Directory
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Follow-up Contact */}
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Badge>Follow-up</Badge>
+                  {contactsByDept("FOLLOW_UP").length > 0 && (
+                    <Select
+                      onValueChange={(v) => {
+                        const c = contacts.find((c) => c.id === v);
+                        if (c) fillContactFromDirectory("FOLLOW_UP", c);
+                      }}
+                    >
+                      <SelectTrigger className="w-[250px] h-8 text-xs">
+                        <SelectValue placeholder="Pick from directory..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {contactsByDept("FOLLOW_UP").map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.contactName}
+                            {c.designation ? ` (${c.designation})` : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label>Mr. / Ms.</Label>
+                    <Input
+                      value={form.followUpName}
+                      onChange={(e) =>
+                        setForm({ ...form, followUpName: e.target.value })
+                      }
+                      placeholder="Contact person name"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Email</Label>
+                    <Input
+                      type="email"
+                      value={form.followUpEmail}
+                      onChange={(e) =>
+                        setForm({ ...form, followUpEmail: e.target.value })
+                      }
+                      placeholder="email@example.com"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Contact No</Label>
+                    <Input
+                      value={form.followUpPhone}
+                      onChange={(e) =>
+                        setForm({ ...form, followUpPhone: e.target.value })
+                      }
+                      placeholder="+91-XXXXXXXXXX"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Quality / Inspection Contact */}
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Badge variant="secondary">Quality / Inspection</Badge>
+                  {contactsByDept("QUALITY_INSPECTION").length > 0 && (
+                    <Select
+                      onValueChange={(v) => {
+                        const c = contacts.find((c) => c.id === v);
+                        if (c) fillContactFromDirectory("QUALITY_INSPECTION", c);
+                      }}
+                    >
+                      <SelectTrigger className="w-[250px] h-8 text-xs">
+                        <SelectValue placeholder="Pick from directory..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {contactsByDept("QUALITY_INSPECTION").map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.contactName}
+                            {c.designation ? ` (${c.designation})` : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label>Mr. / Ms.</Label>
+                    <Input
+                      value={form.qualityName}
+                      onChange={(e) =>
+                        setForm({ ...form, qualityName: e.target.value })
+                      }
+                      placeholder="Contact person name"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Email</Label>
+                    <Input
+                      type="email"
+                      value={form.qualityEmail}
+                      onChange={(e) =>
+                        setForm({ ...form, qualityEmail: e.target.value })
+                      }
+                      placeholder="email@example.com"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Contact No</Label>
+                    <Input
+                      value={form.qualityPhone}
+                      onChange={(e) =>
+                        setForm({ ...form, qualityPhone: e.target.value })
+                      }
+                      placeholder="+91-XXXXXXXXXX"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Accounts Contact */}
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Badge variant="outline">Accounts</Badge>
+                  {contactsByDept("ACCOUNTS").length > 0 && (
+                    <Select
+                      onValueChange={(v) => {
+                        const c = contacts.find((c) => c.id === v);
+                        if (c) fillContactFromDirectory("ACCOUNTS", c);
+                      }}
+                    >
+                      <SelectTrigger className="w-[250px] h-8 text-xs">
+                        <SelectValue placeholder="Pick from directory..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {contactsByDept("ACCOUNTS").map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.contactName}
+                            {c.designation ? ` (${c.designation})` : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label>Mr. / Ms.</Label>
+                    <Input
+                      value={form.accountsName}
+                      onChange={(e) =>
+                        setForm({ ...form, accountsName: e.target.value })
+                      }
+                      placeholder="Contact person name"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Email</Label>
+                    <Input
+                      type="email"
+                      value={form.accountsEmail}
+                      onChange={(e) =>
+                        setForm({ ...form, accountsEmail: e.target.value })
+                      }
+                      placeholder="email@example.com"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Contact No</Label>
+                    <Input
+                      value={form.accountsPhone}
+                      onChange={(e) =>
+                        setForm({ ...form, accountsPhone: e.target.value })
+                      }
+                      placeholder="+91-XXXXXXXXXX"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {selectedCPO && contacts.length === 0 && (
+                <div className="text-center py-4 border border-dashed rounded-lg">
+                  <p className="text-sm text-muted-foreground">
+                    No contacts in directory for this customer.{" "}
+                    <Button
+                      variant="link"
+                      className="p-0 h-auto text-sm"
+                      onClick={() => router.push("/masters/customer-contacts")}
+                    >
+                      Add contacts to the directory
+                    </Button>{" "}
+                    to enable auto-fill.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Step 1 footer — Next button */}
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => router.back()}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => setStep(2)}
+              disabled={!step1Valid}
+              title={
+                !step1Valid
+                  ? "Select a CPO and fill acceptance date + committed delivery date to continue"
+                  : undefined
+              }
+            >
+              Next: Charges &amp; Commercials
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════
+          STEP 2 — Charges & Commercials
+          (Task 6 placeholder)
+      ══════════════════════════════════════ */}
+      {step === 2 && (
+        <div className="space-y-4">
+          {/* Task 6: Charges & Commercials box */}
+          <p className="text-muted-foreground text-sm">Charges &amp; Commercials — coming in next step.</p>
+          <div className="flex justify-between">
+            <Button variant="outline" onClick={() => setStep(1)}>Back</Button>
+            <Button onClick={() => setStep(3)}>Next</Button>
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════
+          STEP 3 — Review & Submit
+          (Task 7 placeholder + existing submit)
+      ══════════════════════════════════════ */}
+      {step === 3 && (
+        <div className="space-y-4">
+          {/* Task 7: Review & Submit + preview drawer */}
+          <p className="text-muted-foreground text-sm">Review &amp; Submit — coming in next step.</p>
+          <div className="flex justify-between">
+            <Button variant="outline" onClick={() => setStep(2)}>Back</Button>
+            {/* Submit button — gated to step 3; handler is the existing handleSubmit */}
+            <Button onClick={handleSubmit} disabled={saving}>
+              <Save className="w-4 h-4 mr-2" />
+              {saving ? "Creating..." : "Create Acceptance"}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
