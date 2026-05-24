@@ -68,6 +68,7 @@ export default function CreateInspectionOfferPage() {
   const [tpiAgencies, setTpiAgencies] = useState<TpiAgency[]>([]);
 
   const [formData, setFormData] = useState({
+    salesOrderId: "",
     customerId: "",
     poNumber: "",
     projectName: "",
@@ -78,11 +79,14 @@ export default function CreateInspectionOfferPage() {
     remarks: "",
   });
 
+  const [salesOrders, setSalesOrders] = useState<{ id: string; soNo: string; customerName?: string }[]>([]);
+
   const [items, setItems] = useState<OfferItem[]>([{ ...EMPTY_ITEM }]);
 
   useEffect(() => {
     fetchCustomers();
     fetchTpiAgencies();
+    fetchSalesOrders();
   }, []);
 
   const fetchCustomers = async () => {
@@ -103,6 +107,19 @@ export default function CreateInspectionOfferPage() {
       if (res.ok) {
         const data = await res.json();
         setTpiAgencies(data.agencies || []);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchSalesOrders = async () => {
+    try {
+      const soRes = await fetch("/api/sales-orders");
+      if (soRes.ok) {
+        const d = await soRes.json();
+        const list = d.salesOrders ?? [];
+        setSalesOrders(list.map((s: any) => ({ id: s.id, soNo: s.soNo, customerName: s.customer?.name })));
       }
     } catch (err) {
       console.error(err);
@@ -139,7 +156,7 @@ export default function CreateInspectionOfferPage() {
       const res = await fetch("/api/quality/inspection-offers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...formData, items }),
+        body: JSON.stringify({ ...formData, salesOrderId: formData.salesOrderId || null, items }),
       });
 
       if (!res.ok) {
@@ -211,6 +228,41 @@ export default function CreateInspectionOfferPage() {
                   onChange={(e) => setFormData({ ...formData, projectName: e.target.value })}
                   placeholder="Project name"
                 />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>Link Sales Order (optional — prefills QAP)</Label>
+                <Select
+                  value={formData.salesOrderId}
+                  onValueChange={async (v) => {
+                    setFormData((f) => ({ ...f, salesOrderId: v }));
+                    const res = await fetch(`/api/sales-orders/${v}/qap`);
+                    if (res.ok) {
+                      const q = await res.json();
+                      setFormData((f) => ({
+                        ...f,
+                        inspectionLocation: q.qapInspectionLocation ?? f.inspectionLocation,
+                        tpiAgencyId: q.qapTpiAgencyId ?? f.tpiAgencyId,
+                        proposedInspectionDate: q.qapProposedInspectionDate
+                          ? String(q.qapProposedInspectionDate).slice(0, 10)
+                          : f.proposedInspectionDate,
+                      }));
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select order" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {salesOrders.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.soNo}{s.customerName ? ` — ${s.customerName}` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
