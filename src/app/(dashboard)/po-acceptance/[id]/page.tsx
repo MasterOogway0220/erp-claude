@@ -18,7 +18,7 @@ import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, FileText, CheckCircle, XCircle, Users, Download, Paperclip, Mail, Send } from "lucide-react";
+import { ArrowLeft, FileText, CheckCircle, XCircle, Users, Download, Mail, Send } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
@@ -30,7 +30,6 @@ interface POAcceptanceDetail {
   acceptanceDate: string;
   committedDeliveryDate: string;
   remarks: string | null;
-  attachmentUrl: string | null;
   status: string;
   followUpName: string | null;
   followUpEmail: string | null;
@@ -509,38 +508,6 @@ export default function POAcceptanceDetailPage({
           </div>
         </CardContent>
       </Card>
-
-      {/* Attachment */}
-      {acceptance.attachmentUrl && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Paperclip className="h-4 w-4" />
-              Signed PO Acceptance Copy
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between rounded-md border px-4 py-3">
-              <div className="flex items-center gap-2 min-w-0">
-                <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-                <span className="text-sm truncate">
-                  {acceptance.attachmentUrl.split("/").pop() || "Attachment"}
-                </span>
-              </div>
-              <a
-                href={acceptance.attachmentUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Button variant="outline" size="sm">
-                  <Download className="h-3.5 w-3.5 mr-1.5" />
-                  View / Download
-                </Button>
-              </a>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Remarks */}
       {acceptance.remarks && (
