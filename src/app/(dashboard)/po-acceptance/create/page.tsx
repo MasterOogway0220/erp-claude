@@ -1486,6 +1486,11 @@ function CreatePOAcceptanceContent() {
                   value={emailTo}
                   onChange={(e) => setEmailTo(e.target.value)}
                 />
+                {!emailTo && (
+                  <p className="text-xs text-muted-foreground">
+                    No recipient — add a contact
+                  </p>
+                )}
               </div>
               <div className="space-y-1">
                 <Label htmlFor="email-cc">CC <span className="text-muted-foreground font-normal">(optional)</span></Label>
