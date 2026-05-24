@@ -1,7 +1,7 @@
 import type { AlertType, AlertSeverity, UserRole } from "@prisma/client";
 
 export interface AlertInput {
-  companyId: string | null;
+  companyId: string | null | undefined;
   type: AlertType;
   title: string;
   message: string;
@@ -18,7 +18,7 @@ export interface AlertInput {
  */
 export function buildAlertData(input: AlertInput) {
   return {
-    companyId: input.companyId,
+    companyId: input.companyId ?? null,
     type: input.type,
     title: input.title,
     message: input.message,
