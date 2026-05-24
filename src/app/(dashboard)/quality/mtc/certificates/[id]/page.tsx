@@ -38,6 +38,7 @@ import {
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { PageLoading } from "@/components/shared/page-loading";
+import { downloadFile } from "@/lib/download-file";
 
 const statusConfig: Record<
   string,
@@ -338,9 +339,14 @@ export default function MTCCertificateDetailPage() {
           )}
           <Button
             variant="outline"
-            onClick={() =>
-              window.open(`/api/mtc/certificates/${id}/pdf?format=html`, "_blank")
-            }
+            onClick={async () => {
+              try {
+                await downloadFile(`/api/mtc/certificates/${id}/pdf`, `MTC-${id}.pdf`);
+                toast.success("PDF downloaded");
+              } catch (e) {
+                toast.error(e instanceof Error ? e.message : "Failed to download PDF");
+              }
+            }}
           >
             <Printer className="w-4 h-4 mr-2" /> PDF
           </Button>

@@ -43,6 +43,7 @@ import {
 import { format, differenceInDays } from "date-fns";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { downloadFile } from "@/lib/download-file";
 import { PageLoading } from "@/components/shared/page-loading";
 
 interface PO {
@@ -182,9 +183,14 @@ export default function PurchaseOrderDetailPage() {
     }
   };
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     if (!po) return;
-    window.open(`/api/purchase/orders/${po.id}/pdf?format=html`, "_blank");
+    try {
+      await downloadFile(`/api/purchase/orders/${po.id}/pdf`, `purchase-order-${po.poNo?.replace(/\//g, "-") || po.id}.pdf`);
+      toast.success("PDF downloaded");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to download PDF");
+    }
   };
 
   const handleAmendPO = async () => {

@@ -22,6 +22,7 @@ import { ArrowLeft, FileText, CheckCircle, XCircle, Users, Download, Mail, Send 
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
+import { downloadFile } from "@/lib/download-file";
 import { use } from "react";
 
 interface POAcceptanceDetail {
@@ -265,7 +266,14 @@ export default function POAcceptanceDetailPage({
             <>
               <Button
                 variant="outline"
-                onClick={() => window.open(`/api/po-acceptance/${id}/pdf`, "_blank")}
+                onClick={async () => {
+                  try {
+                    await downloadFile(`/api/po-acceptance/${id}/pdf`, `po-acceptance-${acceptance?.acceptanceNo?.replace(/\//g, "-") || id}.pdf`);
+                    toast.success("PDF downloaded");
+                  } catch (e) {
+                    toast.error(e instanceof Error ? e.message : "Failed to download PDF");
+                  }
+                }}
               >
                 <Download className="w-4 h-4 mr-2" />
                 Download PDF

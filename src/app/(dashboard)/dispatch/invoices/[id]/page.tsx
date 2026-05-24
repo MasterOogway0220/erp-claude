@@ -37,6 +37,7 @@ import {
 import { format } from "date-fns";
 import { toast } from "sonner";
 import Link from "next/link";
+import { downloadFile } from "@/lib/download-file";
 import { numberToWords } from "@/lib/amount-in-words";
 import { PageLoading } from "@/components/shared/page-loading";
 
@@ -124,9 +125,14 @@ export default function InvoiceDetailPage() {
     }
   };
 
-  const downloadPdf = () => {
+  const downloadPdf = async () => {
     if (!invoice) return;
-    window.open(`/api/dispatch/invoices/${invoice.id}/pdf?format=html`, "_blank");
+    try {
+      await downloadFile(`/api/dispatch/invoices/${invoice.id}/pdf`, `invoice-${invoice.invoiceNo?.replace(/\//g, "-") || invoice.id}.pdf`);
+      toast.success("PDF downloaded");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to download PDF");
+    }
   };
 
   const downloadEInvoice = async () => {

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import Link from "next/link";
+import { downloadFile } from "@/lib/download-file";
 import { Send, CheckCircle, XCircle, RotateCcw, Printer } from "lucide-react";
 
 const statusColors: Record<string, string> = {
@@ -64,8 +65,13 @@ export default function StockIssueDetailPage({ params }: { params: Promise<{ id:
     }
   };
 
-  const handlePrintSlip = () => {
-    window.open(`/api/inventory/stock-issue/${id}/pdf?format=html`, "_blank");
+  const handlePrintSlip = async () => {
+    try {
+      await downloadFile(`/api/inventory/stock-issue/${id}/pdf`, `stock-issue-${id}.pdf`);
+      toast.success("PDF downloaded");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to download PDF");
+    }
   };
 
   if (loading) {

@@ -19,6 +19,7 @@ import { ArrowLeft, Truck, Download } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import Link from "next/link";
+import { downloadFile } from "@/lib/download-file";
 import { PageLoading } from "@/components/shared/page-loading";
 
 export default function PackingListDetailPage() {
@@ -44,9 +45,14 @@ export default function PackingListDetailPage() {
     }
   };
 
-  const downloadPdf = () => {
+  const downloadPdf = async () => {
     if (!packingList) return;
-    window.open(`/api/dispatch/packing-lists/${packingList.id}/pdf?format=html`, "_blank");
+    try {
+      await downloadFile(`/api/dispatch/packing-lists/${packingList.id}/pdf`, `packing-list-${packingList.id}.pdf`);
+      toast.success("PDF downloaded");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to download PDF");
+    }
   };
 
   if (loading) {

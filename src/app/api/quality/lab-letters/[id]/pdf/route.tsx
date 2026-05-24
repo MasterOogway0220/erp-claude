@@ -220,7 +220,7 @@ export async function GET(
     return new NextResponse(pdfBuffer as unknown as BodyInit, {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `inline; filename="Lab-Letter-${labLetter.letterNo.replace(/\//g, "-")}.pdf"`,
+        "Content-Disposition": `attachment; filename="Lab-Letter-${labLetter.letterNo.replace(/\//g, "-")}.pdf"`,
       },
     });
   } catch (error) {

@@ -20,6 +20,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import Link from "next/link";
 import { PageLoading } from "@/components/shared/page-loading";
+import { downloadFile } from "@/lib/download-file";
 
 export default function DispatchNoteDetailPage() {
   const router = useRouter();
@@ -83,12 +84,14 @@ export default function DispatchNoteDetailPage() {
           </Button>
           <Button
             variant="outline"
-            onClick={() =>
-              window.open(
-                `/api/dispatch/dispatch-notes/${dn.id}/bundle-pdf?format=html`,
-                "_blank"
-              )
-            }
+            onClick={async () => {
+              try {
+                await downloadFile(`/api/dispatch/dispatch-notes/${dn.id}/bundle-pdf`, `dispatch-bundle-${dn.dnNo?.replace(/\//g, "-") || dn.id}.pdf`);
+                toast.success("PDF downloaded");
+              } catch (e) {
+                toast.error(e instanceof Error ? e.message : "Failed to download PDF");
+              }
+            }}
           >
             <Download className="w-4 h-4 mr-2" />
             Download Bundle PDF

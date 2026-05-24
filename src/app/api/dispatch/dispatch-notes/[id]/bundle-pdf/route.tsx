@@ -524,7 +524,7 @@ export async function GET(
     return new NextResponse(new Uint8Array(pdfBuffer), {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `inline; filename="dispatch-bundle-${dispatchNote.dnNo.replace(/\//g, "-")}.pdf"`,
+        "Content-Disposition": `attachment; filename="dispatch-bundle-${dispatchNote.dnNo.replace(/\//g, "-")}.pdf"`,
       },
     });
   } catch (error) {

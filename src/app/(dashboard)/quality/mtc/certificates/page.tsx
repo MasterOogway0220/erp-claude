@@ -10,6 +10,8 @@ import { DataTable, Column } from "@/components/shared/data-table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PageLoading } from "@/components/shared/page-loading";
+import { toast } from "sonner";
+import { downloadFile } from "@/lib/download-file";
 
 const statusColors: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; className?: string }> = {
   DRAFT: { variant: "secondary" },
@@ -132,7 +134,14 @@ export default function MTCCertificatesListPage() {
             variant="ghost"
             size="icon"
             className="h-8 w-8"
-            onClick={() => window.open(`/api/mtc/certificates/${row.id}/pdf`, "_blank")}
+            onClick={async () => {
+              try {
+                await downloadFile(`/api/mtc/certificates/${row.id}/pdf`, `MTC-${row.id}.pdf`);
+                toast.success("PDF downloaded");
+              } catch (e) {
+                toast.error(e instanceof Error ? e.message : "Failed to download PDF");
+              }
+            }}
             title="PDF"
           >
             <FileText className="h-4 w-4" />
