@@ -347,6 +347,7 @@ model InspectionAgencyMaster {
   inspectionOffers     InspectionOffer[]    @relation("IOTpiAgency")
   labLetters           LabLetter[]
   qualityRequirements  QualityRequirement[]
+  salesOrdersQap       SalesOrder[]         @relation("SOQapTpiAgency")
 }
 
 model QualityRequirement {
@@ -901,48 +902,56 @@ model TechnicalExchangeDetail {
 }
 
 model SalesOrder {
-  id                    String                   @id @default(cuid())
-  soNo                  String                   @unique
-  soDate                DateTime                 @default(now())
-  customerId            String
-  quotationId           String?
-  customerPoNo          String?
-  customerPoDate        DateTime?
-  customerPoDocument    String?
-  projectName           String?
-  deliverySchedule      String?
-  paymentTerms          String?
-  poAcceptanceStatus    POAcceptanceStatus       @default(PENDING)
-  poReviewRemarks       String?
-  status                SOStatus                 @default(OPEN)
-  createdAt             DateTime                 @default(now())
-  updatedAt             DateTime                 @updatedAt
-  companyId             String?
-  dispatchAddressId     String?
-  clientPurchaseOrderId String?
-  processingStatus      String                   @default("UNPROCESSED")
-  allotmentStatus       String                   @default("PENDING")
-  sourceTenderId        String?
-  dispatchNotes         DispatchNote[]
-  inspectionOffers      InspectionOffer[]
-  invoices              Invoice[]
-  packingLists          PackingList[]
-  purchaseOrders        PurchaseOrder[]          @relation("POSalesOrder")
-  purchaseRequisitions  PurchaseRequisition[]
-  clientPurchaseOrder   ClientPurchaseOrder?     @relation("SOFromCPO", fields: [clientPurchaseOrderId], references: [id])
-  company               CompanyMaster?           @relation(fields: [companyId], references: [id])
-  customer              CustomerMaster           @relation(fields: [customerId], references: [id])
-  dispatchAddress       CustomerDispatchAddress? @relation(fields: [dispatchAddressId], references: [id])
-  quotation             Quotation?               @relation(fields: [quotationId], references: [id])
-  sourceTender          Tender?                  @relation("TenderSalesOrders", fields: [sourceTenderId], references: [id])
-  items                 SalesOrderItem[]
-  stockIssues           StockIssue[]
-  warehouseIntimations  WarehouseIntimation[]
+  id                        String                   @id @default(cuid())
+  soNo                      String                   @unique
+  soDate                    DateTime                 @default(now())
+  customerId                String
+  quotationId               String?
+  customerPoNo              String?
+  customerPoDate            DateTime?
+  customerPoDocument        String?
+  projectName               String?
+  deliverySchedule          String?
+  paymentTerms              String?
+  poAcceptanceStatus        POAcceptanceStatus       @default(PENDING)
+  poReviewRemarks           String?
+  status                    SOStatus                 @default(OPEN)
+  createdAt                 DateTime                 @default(now())
+  updatedAt                 DateTime                 @updatedAt
+  companyId                 String?
+  dispatchAddressId         String?
+  clientPurchaseOrderId     String?
+  processingStatus          String                   @default("UNPROCESSED")
+  allotmentStatus           String                   @default("PENDING")
+  sourceTenderId            String?
+  qapInspectionRequired     Boolean                  @default(false)
+  qapInspectionLocation     String?
+  qapTpiAgencyId            String?
+  qapDocumentPath           String?
+  qapProposedInspectionDate DateTime?
+  qapRemarks                String?                  @db.Text
+  dispatchNotes             DispatchNote[]
+  inspectionOffers          InspectionOffer[]
+  invoices                  Invoice[]
+  packingLists              PackingList[]
+  purchaseOrders            PurchaseOrder[]          @relation("POSalesOrder")
+  purchaseRequisitions      PurchaseRequisition[]
+  clientPurchaseOrder       ClientPurchaseOrder?     @relation("SOFromCPO", fields: [clientPurchaseOrderId], references: [id])
+  company                   CompanyMaster?           @relation(fields: [companyId], references: [id])
+  customer                  CustomerMaster           @relation(fields: [customerId], references: [id])
+  dispatchAddress           CustomerDispatchAddress? @relation(fields: [dispatchAddressId], references: [id])
+  qapTpiAgency              InspectionAgencyMaster?  @relation("SOQapTpiAgency", fields: [qapTpiAgencyId], references: [id])
+  quotation                 Quotation?               @relation(fields: [quotationId], references: [id])
+  sourceTender              Tender?                  @relation("TenderSalesOrders", fields: [sourceTenderId], references: [id])
+  items                     SalesOrderItem[]
+  stockIssues               StockIssue[]
+  warehouseIntimations      WarehouseIntimation[]
 
   @@index([companyId])
   @@index([soNo])
   @@index([customerId])
   @@index([dispatchAddressId])
+  @@index([qapTpiAgencyId])
   @@index([clientPurchaseOrderId])
   @@index([quotationId], map: "SalesOrder_quotationId_fkey")
   @@index([sourceTenderId], map: "SalesOrder_sourceTenderId_fkey")
@@ -2305,56 +2314,56 @@ model CustomerContact {
 }
 
 model POAcceptance {
-  id                    String                 @id @default(cuid())
-  companyId             String?
-  acceptanceNo          String                 @unique
-  clientPurchaseOrderId String                 @unique
-  acceptanceDate        DateTime
-  committedDeliveryDate DateTime
-  remarks               String?                @db.Text
-  acceptanceDetails     String?                @db.Text
-  wizardStep            Int                    @default(1)
-  pdfGeneratedAt        DateTime?
-  gstRate               Decimal?               @db.Decimal(5, 2)
-  isInterState          Boolean                @default(false)
-  freight               Decimal?               @db.Decimal(14, 2)
-  freightTaxApplicable  Boolean                @default(false)
-  packingForwarding     Decimal?               @db.Decimal(14, 2)
-  packingTaxApplicable  Boolean                @default(false)
-  insurance             Decimal?               @db.Decimal(14, 2)
-  insuranceTaxApplicable Boolean               @default(false)
-  otherCharges          Decimal?               @db.Decimal(14, 2)
-  otherChargesTaxApplicable Boolean            @default(false)
-  testingCharges        Decimal?               @db.Decimal(14, 2)
-  testingTaxApplicable  Boolean                @default(false)
-  tpiCharges            Decimal?               @db.Decimal(14, 2)
-  tpiTaxApplicable      Boolean                @default(false)
-  additionalChargesTotal Decimal?              @db.Decimal(14, 2)
-  subtotal              Decimal?               @db.Decimal(14, 2)
-  taxableAmount         Decimal?               @db.Decimal(14, 2)
-  cgst                  Decimal?               @db.Decimal(14, 2)
-  sgst                  Decimal?               @db.Decimal(14, 2)
-  igst                  Decimal?               @db.Decimal(14, 2)
-  roundOff              Decimal?               @db.Decimal(10, 2)
-  grandTotal            Decimal?               @db.Decimal(14, 2)
-  followUpName          String?
-  followUpEmail         String?
-  followUpPhone         String?
-  qualityName           String?
-  qualityEmail          String?
-  qualityPhone          String?
-  accountsName          String?
-  accountsEmail         String?
-  accountsPhone         String?
-  status                String                 @default("DRAFT")
-  createdById           String
-  createdAt             DateTime               @default(now())
-  updatedAt             DateTime               @updatedAt
-  generatedPath         String?
-  clientPurchaseOrder   ClientPurchaseOrder    @relation(fields: [clientPurchaseOrderId], references: [id])
-  company               CompanyMaster?         @relation(fields: [companyId], references: [id])
-  createdBy             User                   @relation("POACreatedBy", fields: [createdById], references: [id])
-  emailLogs             POAcceptanceEmailLog[]
+  id                        String                 @id @default(cuid())
+  companyId                 String?
+  acceptanceNo              String                 @unique
+  clientPurchaseOrderId     String                 @unique
+  acceptanceDate            DateTime
+  committedDeliveryDate     DateTime
+  remarks                   String?                @db.Text
+  acceptanceDetails         String?                @db.Text
+  wizardStep                Int                    @default(1)
+  pdfGeneratedAt            DateTime?
+  gstRate                   Decimal?               @db.Decimal(5, 2)
+  isInterState              Boolean                @default(false)
+  freight                   Decimal?               @db.Decimal(14, 2)
+  freightTaxApplicable      Boolean                @default(false)
+  packingForwarding         Decimal?               @db.Decimal(14, 2)
+  packingTaxApplicable      Boolean                @default(false)
+  insurance                 Decimal?               @db.Decimal(14, 2)
+  insuranceTaxApplicable    Boolean                @default(false)
+  otherCharges              Decimal?               @db.Decimal(14, 2)
+  otherChargesTaxApplicable Boolean                @default(false)
+  testingCharges            Decimal?               @db.Decimal(14, 2)
+  testingTaxApplicable      Boolean                @default(false)
+  tpiCharges                Decimal?               @db.Decimal(14, 2)
+  tpiTaxApplicable          Boolean                @default(false)
+  additionalChargesTotal    Decimal?               @db.Decimal(14, 2)
+  subtotal                  Decimal?               @db.Decimal(14, 2)
+  taxableAmount             Decimal?               @db.Decimal(14, 2)
+  cgst                      Decimal?               @db.Decimal(14, 2)
+  sgst                      Decimal?               @db.Decimal(14, 2)
+  igst                      Decimal?               @db.Decimal(14, 2)
+  roundOff                  Decimal?               @db.Decimal(10, 2)
+  grandTotal                Decimal?               @db.Decimal(14, 2)
+  followUpName              String?
+  followUpEmail             String?
+  followUpPhone             String?
+  qualityName               String?
+  qualityEmail              String?
+  qualityPhone              String?
+  accountsName              String?
+  accountsEmail             String?
+  accountsPhone             String?
+  status                    String                 @default("DRAFT")
+  createdById               String
+  createdAt                 DateTime               @default(now())
+  updatedAt                 DateTime               @updatedAt
+  generatedPath             String?
+  clientPurchaseOrder       ClientPurchaseOrder    @relation(fields: [clientPurchaseOrderId], references: [id])
+  company                   CompanyMaster?         @relation(fields: [companyId], references: [id])
+  createdBy                 User                   @relation("POACreatedBy", fields: [createdById], references: [id])
+  emailLogs                 POAcceptanceEmailLog[]
 
   @@index([companyId])
   @@index([clientPurchaseOrderId])
