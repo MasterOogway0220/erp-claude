@@ -74,7 +74,17 @@ export async function POST(request: NextRequest) {
       followUpName, followUpEmail, followUpPhone,
       qualityName, qualityEmail, qualityPhone,
       accountsName, accountsEmail, accountsPhone,
-      attachmentUrl,
+      acceptanceDetails,
+      wizardStep,
+      gstRate, isInterState,
+      freight, freightTaxApplicable,
+      packingForwarding, packingTaxApplicable,
+      insurance, insuranceTaxApplicable,
+      otherCharges, otherChargesTaxApplicable,
+      testingCharges, testingTaxApplicable,
+      tpiCharges, tpiTaxApplicable,
+      additionalChargesTotal, subtotal, taxableAmount,
+      cgst, sgst, igst, roundOff, grandTotal,
     } = body;
 
     if (!clientPurchaseOrderId || !acceptanceDate || !committedDeliveryDate) {
@@ -84,9 +94,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify CPO exists and is REGISTERED
+    // Verify CPO exists and is REGISTERED; also load charge fields for seeding
     const cpo = await prisma.clientPurchaseOrder.findUnique({
       where: { id: clientPurchaseOrderId },
+      select: {
+        status: true,
+        gstRate: true, isInterState: true,
+        freight: true, freightTaxApplicable: true,
+        packingForwarding: true, packingTaxApplicable: true,
+        insurance: true, insuranceTaxApplicable: true,
+        otherCharges: true, otherChargesTaxApplicable: true,
+        testingCharges: true, testingTaxApplicable: true,
+        tpiCharges: true, tpiTaxApplicable: true,
+        additionalChargesTotal: true, subtotal: true, taxableAmount: true,
+        cgst: true, sgst: true, igst: true, roundOff: true, grandTotal: true,
+      },
     });
 
     if (!cpo) {
@@ -131,7 +153,30 @@ export async function POST(request: NextRequest) {
         accountsName: accountsName || null,
         accountsEmail: accountsEmail || null,
         accountsPhone: accountsPhone || null,
-        attachmentUrl: attachmentUrl || null,
+        acceptanceDetails: acceptanceDetails ?? null,
+        wizardStep: wizardStep ?? 1,
+        gstRate: gstRate ?? cpo?.gstRate ?? null,
+        isInterState: isInterState ?? cpo?.isInterState ?? false,
+        freight: freight ?? cpo?.freight ?? null,
+        freightTaxApplicable: freightTaxApplicable ?? cpo?.freightTaxApplicable ?? false,
+        packingForwarding: packingForwarding ?? cpo?.packingForwarding ?? null,
+        packingTaxApplicable: packingTaxApplicable ?? cpo?.packingTaxApplicable ?? false,
+        insurance: insurance ?? cpo?.insurance ?? null,
+        insuranceTaxApplicable: insuranceTaxApplicable ?? cpo?.insuranceTaxApplicable ?? false,
+        otherCharges: otherCharges ?? cpo?.otherCharges ?? null,
+        otherChargesTaxApplicable: otherChargesTaxApplicable ?? cpo?.otherChargesTaxApplicable ?? false,
+        testingCharges: testingCharges ?? cpo?.testingCharges ?? null,
+        testingTaxApplicable: testingTaxApplicable ?? cpo?.testingTaxApplicable ?? false,
+        tpiCharges: tpiCharges ?? cpo?.tpiCharges ?? null,
+        tpiTaxApplicable: tpiTaxApplicable ?? cpo?.tpiTaxApplicable ?? false,
+        additionalChargesTotal: additionalChargesTotal ?? cpo?.additionalChargesTotal ?? null,
+        subtotal: subtotal ?? cpo?.subtotal ?? null,
+        taxableAmount: taxableAmount ?? cpo?.taxableAmount ?? null,
+        cgst: cgst ?? cpo?.cgst ?? null,
+        sgst: sgst ?? cpo?.sgst ?? null,
+        igst: igst ?? cpo?.igst ?? null,
+        roundOff: roundOff ?? cpo?.roundOff ?? null,
+        grandTotal: grandTotal ?? cpo?.grandTotal ?? null,
         status: "DRAFT",
         createdById: session.user.id,
       },

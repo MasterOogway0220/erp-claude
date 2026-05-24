@@ -162,3 +162,115 @@ export async function PUT(
     return NextResponse.json({ error: "Failed to update PO acceptance" }, { status: 500 });
   }
 }
+
+// PATCH /api/po-acceptance/[id] - Partial update (wizard draft saves: new fields + charge/commercial fields)
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { authorized, session, response, companyId } = await checkAccess("poAcceptance", "write");
+  if (!authorized) return response!;
+
+  const { id } = await params;
+
+  try {
+    const body = await request.json();
+    const existing = await prisma.pOAcceptance.findUnique({ where: { id } });
+
+    if (!existing) {
+      return NextResponse.json({ error: "PO Acceptance not found" }, { status: 404 });
+    }
+
+    const {
+      acceptanceDate, committedDeliveryDate, remarks,
+      followUpName, followUpEmail, followUpPhone,
+      qualityName, qualityEmail, qualityPhone,
+      accountsName, accountsEmail, accountsPhone,
+      status,
+      acceptanceDetails,
+      wizardStep,
+      gstRate, isInterState,
+      freight, freightTaxApplicable,
+      packingForwarding, packingTaxApplicable,
+      insurance, insuranceTaxApplicable,
+      otherCharges, otherChargesTaxApplicable,
+      testingCharges, testingTaxApplicable,
+      tpiCharges, tpiTaxApplicable,
+      additionalChargesTotal, subtotal, taxableAmount,
+      cgst, sgst, igst, roundOff, grandTotal,
+    } = body;
+
+    const acceptance = await prisma.pOAcceptance.update({
+      where: { id },
+      data: {
+        ...(acceptanceDate && { acceptanceDate: new Date(acceptanceDate) }),
+        ...(committedDeliveryDate && { committedDeliveryDate: new Date(committedDeliveryDate) }),
+        ...(remarks !== undefined && { remarks: remarks || null }),
+        ...(followUpName !== undefined && { followUpName: followUpName || null }),
+        ...(followUpEmail !== undefined && { followUpEmail: followUpEmail || null }),
+        ...(followUpPhone !== undefined && { followUpPhone: followUpPhone || null }),
+        ...(qualityName !== undefined && { qualityName: qualityName || null }),
+        ...(qualityEmail !== undefined && { qualityEmail: qualityEmail || null }),
+        ...(qualityPhone !== undefined && { qualityPhone: qualityPhone || null }),
+        ...(accountsName !== undefined && { accountsName: accountsName || null }),
+        ...(accountsEmail !== undefined && { accountsEmail: accountsEmail || null }),
+        ...(accountsPhone !== undefined && { accountsPhone: accountsPhone || null }),
+        ...(status && { status }),
+        ...(acceptanceDetails !== undefined && { acceptanceDetails: acceptanceDetails ?? null }),
+        ...(wizardStep !== undefined && { wizardStep }),
+        ...(gstRate !== undefined && { gstRate: gstRate ?? null }),
+        ...(isInterState !== undefined && { isInterState }),
+        ...(freight !== undefined && { freight: freight ?? null }),
+        ...(freightTaxApplicable !== undefined && { freightTaxApplicable }),
+        ...(packingForwarding !== undefined && { packingForwarding: packingForwarding ?? null }),
+        ...(packingTaxApplicable !== undefined && { packingTaxApplicable }),
+        ...(insurance !== undefined && { insurance: insurance ?? null }),
+        ...(insuranceTaxApplicable !== undefined && { insuranceTaxApplicable }),
+        ...(otherCharges !== undefined && { otherCharges: otherCharges ?? null }),
+        ...(otherChargesTaxApplicable !== undefined && { otherChargesTaxApplicable }),
+        ...(testingCharges !== undefined && { testingCharges: testingCharges ?? null }),
+        ...(testingTaxApplicable !== undefined && { testingTaxApplicable }),
+        ...(tpiCharges !== undefined && { tpiCharges: tpiCharges ?? null }),
+        ...(tpiTaxApplicable !== undefined && { tpiTaxApplicable }),
+        ...(additionalChargesTotal !== undefined && { additionalChargesTotal: additionalChargesTotal ?? null }),
+        ...(subtotal !== undefined && { subtotal: subtotal ?? null }),
+        ...(taxableAmount !== undefined && { taxableAmount: taxableAmount ?? null }),
+        ...(cgst !== undefined && { cgst: cgst ?? null }),
+        ...(sgst !== undefined && { sgst: sgst ?? null }),
+        ...(igst !== undefined && { igst: igst ?? null }),
+        ...(roundOff !== undefined && { roundOff: roundOff ?? null }),
+        ...(grandTotal !== undefined && { grandTotal: grandTotal ?? null }),
+      },
+      include: {
+        clientPurchaseOrder: {
+          include: {
+            customer: { select: { id: true, name: true } },
+            quotation: { select: { id: true, quotationNo: true } },
+          },
+        },
+        createdBy: { select: { name: true } },
+      },
+    });
+
+    // Audit log for status changes
+    if (status && status !== existing.status) {
+      await prisma.auditLog.create({
+        data: {
+          companyId,
+          tableName: "POAcceptance",
+          recordId: id,
+          action: "STATUS_CHANGE",
+          fieldName: "status",
+          oldValue: existing.status,
+          newValue: status,
+          userId: session.user.id,
+        },
+      });
+    }
+
+    return NextResponse.json(acceptance);
+  } catch (error) {
+    console.error("Failed to patch PO acceptance:", error);
+    return NextResponse.json({ error: "Failed to update PO acceptance" }, { status: 500 });
+  }
+}
