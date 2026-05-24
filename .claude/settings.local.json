@@ -169,7 +169,8 @@
       "Bash(pkill -f \"next dev\")",
       "Bash(rm /tmp/v.ts)",
       "Bash(pkill -f \"next-server\")",
-      "Bash(rm -f /tmp/cj.txt /tmp/*.html)"
+      "Bash(rm -f /tmp/cj.txt /tmp/*.html)",
+      "Bash(mysql *)"
     ]
   }
 }
