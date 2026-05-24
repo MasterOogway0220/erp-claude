@@ -1512,7 +1512,13 @@ function StandardQuotationPage() {
                             filterFn={(s: any, query) =>
                               s.sizeLabel.toLowerCase().includes(query.toLowerCase())
                             }
-                            placeholder={hasPipeType ? "Search sizes..." : "Select product first"}
+                            placeholder={
+                              !hasPipeType
+                                ? "Select product first"
+                                : sizeOptions.length === 0
+                                  ? "No sizes in master — type manually"
+                                  : "Search sizes..."
+                            }
                             disabled={!hasPipeType}
                           />
                         </div>
