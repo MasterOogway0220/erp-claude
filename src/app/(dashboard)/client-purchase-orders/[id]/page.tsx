@@ -226,7 +226,7 @@ export default function ClientPODetailPage({
         )}
         {clientPO.status !== "CANCELLED" && !linkedSO && (
           <Button variant="outline" onClick={() => setShowCreateSODialog(true)}>
-            Create Sales Order
+            Start Order Processing
           </Button>
         )}
         {linkedSO && (
@@ -586,7 +586,7 @@ export default function ClientPODetailPage({
       {showCreateSODialog && clientPO && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowCreateSODialog(false)}>
           <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold mb-2">Create Sales Order from CPO</h3>
+            <h3 className="text-lg font-semibold mb-2">Start Order Processing</h3>
             <p className="text-sm text-muted-foreground mb-4">
               A Sales Order will be created with the following items from {clientPO.cpoNo}:
             </p>
@@ -617,7 +617,7 @@ export default function ClientPODetailPage({
             <div className="flex justify-end gap-2 mt-6">
               <Button variant="outline" onClick={() => setShowCreateSODialog(false)}>Cancel</Button>
               <Button onClick={createSOFromCPO} disabled={creatingSO}>
-                {creatingSO ? "Creating..." : "Create Sales Order"}
+                {creatingSO ? "Creating..." : "Start Order Processing"}
               </Button>
             </div>
           </div>
