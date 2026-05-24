@@ -199,6 +199,7 @@ export default function OrderProcessingPage({
   const [allotmentProcQty, setAllotmentProcQty] = useState<string>("");
   const [allottingItem, setAllottingItem] = useState(false);
   const [allotmentConfirmed, setAllotmentConfirmed] = useState(false);
+  const [generatingLetter, setGeneratingLetter] = useState(false);
 
   // -----------------------------------------------------------------------
   // Fetch data
@@ -490,6 +491,35 @@ export default function OrderProcessingPage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [currentIndex, items, saveDraft]
   );
+
+  // -----------------------------------------------------------------------
+  // Lab Letter
+  // -----------------------------------------------------------------------
+
+  const handleGenerateLabLetter = async (soItemId: string) => {
+    setGeneratingLetter(true);
+    try {
+      const res = await fetch(
+        `/api/sales-orders/${id}/processing/${soItemId}/lab-letter`,
+        { method: "POST" }
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error ?? "Failed to generate lab letter");
+        return;
+      }
+      toast.success(`Lab letter ${data.letterNo} created (draft)`, {
+        action: {
+          label: "Open",
+          onClick: () => router.push(`/quality/lab-letters/${data.id}`),
+        },
+      });
+    } catch {
+      toast.error("Failed to generate lab letter");
+    } finally {
+      setGeneratingLetter(false);
+    }
+  };
 
   // -----------------------------------------------------------------------
   // Derived state
@@ -1069,6 +1099,32 @@ export default function OrderProcessingPage({
                       ))}
                     </div>
                   </div>
+
+                  {/* Generate Lab Letter */}
+                  {formData.requiredLabTests.length > 0 && (
+                    <div className="pt-1">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={generatingLetter || !isProcessed}
+                        onClick={() =>
+                          handleGenerateLabLetter(
+                            items[currentIndex].salesOrderItem.id
+                          )
+                        }
+                      >
+                        {generatingLetter
+                          ? "Generating…"
+                          : "Generate Lab Letter"}
+                      </Button>
+                      {!isProcessed && (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Save and mark the item as processed first.
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </>
