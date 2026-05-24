@@ -126,7 +126,6 @@ const navSections: NavSection[] = [
           { title: "P.O. Acceptance", href: "/po-acceptance" },
           { title: "Orders", href: "/sales" },
           { title: "Order Tracking", href: "/po-tracking" },
-          { title: "Customer PO Review", href: "/sales" },
         ],
       },
       {
