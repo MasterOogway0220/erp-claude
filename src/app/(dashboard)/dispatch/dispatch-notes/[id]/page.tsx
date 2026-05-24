@@ -146,7 +146,7 @@ export default function DispatchNoteDetailPage() {
               </div>
               <div>
                 <div className="text-sm text-muted-foreground">
-                  Sales Order
+                  Order
                 </div>
                 <Link
                   href={`/sales/${dn.salesOrder?.id}`}

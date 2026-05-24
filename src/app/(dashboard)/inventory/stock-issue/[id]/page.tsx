@@ -168,7 +168,7 @@ export default function StockIssueDetailPage({ params }: { params: Promise<{ id:
 
         <Card>
           <CardHeader>
-            <CardTitle>Sales Order</CardTitle>
+            <CardTitle>Order</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex justify-between">

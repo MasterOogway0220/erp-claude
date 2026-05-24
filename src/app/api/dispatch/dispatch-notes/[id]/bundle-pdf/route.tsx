@@ -174,7 +174,7 @@ export async function GET(
             <span>${formatDate(dispatchNote.dispatchDate)}</span>
           </div>
           <div class="info-item">
-            <label>Sales Order</label>
+            <label>Order</label>
             <span class="mono">${dispatchNote.salesOrder?.soNo || "---"}</span>
           </div>
           <div class="info-item">

@@ -415,7 +415,7 @@ export default function TenderDetailPage({
             Create Quotation
           </Button>
           <Button variant="outline" onClick={() => router.push(`/sales/create?tenderId=${tender.id}`)}>
-            Create Sales Order
+            Create Order
           </Button>
         </div>
       )}
@@ -663,7 +663,7 @@ export default function TenderDetailPage({
             )}
             {tender.salesOrders && tender.salesOrders.length > 0 && (
               <div>
-                <p className="text-sm font-medium text-muted-foreground mb-2">Sales Orders</p>
+                <p className="text-sm font-medium text-muted-foreground mb-2">Orders</p>
                 <div className="space-y-2">
                   {tender.salesOrders.map((so) => (
                     <div

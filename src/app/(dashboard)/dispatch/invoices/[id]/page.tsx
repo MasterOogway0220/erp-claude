@@ -316,7 +316,7 @@ export default function InvoiceDetailPage() {
               {invoice.salesOrder && (
                 <div>
                   <div className="text-sm text-muted-foreground">
-                    Sales Order
+                    Order
                   </div>
                   <Link
                     href={`/sales/${invoice.salesOrder.id}`}

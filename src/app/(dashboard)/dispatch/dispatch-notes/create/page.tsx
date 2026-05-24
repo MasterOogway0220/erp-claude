@@ -235,7 +235,7 @@ function CreateDispatchNotePage() {
               </div>
               {selectedPL && (
                 <div className="space-y-2">
-                  <Label>Sales Order</Label>
+                  <Label>Order</Label>
                   <Input
                     value={`${selectedPL.salesOrder?.soNo} - ${selectedPL.salesOrder?.customer?.name}`}
                     disabled

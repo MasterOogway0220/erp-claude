@@ -341,7 +341,7 @@ export async function GET(
               <span>${customer?.name || "---"}</span>
             </div>
             <div class="info-item">
-              <label>Sales Order</label>
+              <label>Order</label>
               <span class="mono">${so?.soNo || "---"}</span>
             </div>
             ${clientPO ? `

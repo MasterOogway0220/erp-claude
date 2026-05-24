@@ -158,7 +158,7 @@ export default function WarehouseIntimationPage() {
     <div className="space-y-6">
       <PageHeader
         title="Warehouse Intimation"
-        description="Material Preparation Requests — prepare and track material against Sales Orders"
+        description="Material Preparation Requests — prepare and track material against Orders"
       >
         <Button onClick={() => router.push("/warehouse/intimation/create")}>
           <Plus className="w-4 h-4 mr-2" />

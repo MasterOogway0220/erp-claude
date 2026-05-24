@@ -99,7 +99,7 @@ export async function GET(request: NextRequest) {
         href: `/quotations/${q.id}`,
       })),
       ...salesOrders.map((so) => ({
-        type: "Sales Order",
+        type: "Order",
         id: so.id,
         label: so.soNo,
         description: so.customer?.name || so.status,

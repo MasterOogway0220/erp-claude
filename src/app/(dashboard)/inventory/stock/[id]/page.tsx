@@ -444,7 +444,7 @@ export default function StockDetailPage() {
         <TabsContent value="reservations">
           <Card><CardContent className="pt-6">
             {stock.stockReservations?.length > 0 ? (
-              <Table><TableHeader><TableRow><TableHead>Sales Order</TableHead><TableHead>Reserved Qty</TableHead><TableHead>Reserved Pcs</TableHead><TableHead>Date</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
+              <Table><TableHeader><TableRow><TableHead>Order</TableHead><TableHead>Reserved Qty</TableHead><TableHead>Reserved Pcs</TableHead><TableHead>Date</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
                 <TableBody>{stock.stockReservations.map((res: any) => (
                   <TableRow key={res.id}>
                     <TableCell><Link href={`/sales/${res.salesOrderItem?.salesOrder?.id}`} className="text-blue-600 hover:underline">{res.salesOrderItem?.salesOrder?.soNo}</Link></TableCell>

@@ -138,7 +138,7 @@ export default function DashboardPage() {
   // Compact metric cards (bottom rows - 8 smaller)
   const compactCards = [
     {
-      title: "Sales Orders",
+      title: "Orders",
       value: metrics?.salesMetrics?.orderCount ?? "0",
       icon: <ShoppingCart className="h-5 w-5 text-purple-500" />,
     },

@@ -176,7 +176,7 @@ export default function CreateWarehouseIntimationPage() {
 
   const handleSubmit = async () => {
     if (!selectedSO) {
-      toast.error("Please select a Sales Order");
+      toast.error("Please select an Order");
       return;
     }
     if (selectedItems.length === 0) {
@@ -230,13 +230,13 @@ export default function CreateWarehouseIntimationPage() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label>Sales Order *</Label>
+              <Label>Order *</Label>
               <Select value={selectedSO || "NONE"} onValueChange={(v) => setSelectedSO(v === "NONE" ? "" : v)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select Sales Order" />
+                  <SelectValue placeholder="Select Order" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="NONE" disabled>Select Sales Order</SelectItem>
+                  <SelectItem value="NONE" disabled>Select Order</SelectItem>
                   {salesOrders.map((so) => (
                     <SelectItem key={so.id} value={so.id}>
                       {so.soNo} - {so.customer?.name}

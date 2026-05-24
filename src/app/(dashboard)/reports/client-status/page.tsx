@@ -296,7 +296,7 @@ export default function ClientStatusReportPage() {
       {/* SO Selection */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Select Sales Order</CardTitle>
+          <CardTitle className="text-base">Select Order</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-3">
@@ -311,10 +311,10 @@ export default function ClientStatusReportPage() {
             </div>
             <Select value={selectedSOId || "NONE"} onValueChange={(v) => setSelectedSOId(v === "NONE" ? "" : v)}>
               <SelectTrigger className="w-full sm:w-[350px]">
-                <SelectValue placeholder="Select Sales Order" />
+                <SelectValue placeholder="Select Order" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="NONE" disabled>Select Sales Order</SelectItem>
+                <SelectItem value="NONE" disabled>Select Order</SelectItem>
                 {loadingSOs ? (
                   <SelectItem value="loading" disabled>
                     Loading...

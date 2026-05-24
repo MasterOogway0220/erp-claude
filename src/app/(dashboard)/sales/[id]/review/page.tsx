@@ -215,7 +215,7 @@ export default function CustomerPOReviewPage() {
                 <div className="text-sm text-muted-foreground">{salesOrder.customer.city || ""}</div>
               </div>
               <div>
-                <div className="text-sm text-muted-foreground">Sales Order</div>
+                <div className="text-sm text-muted-foreground">Order</div>
                 <div className="font-mono font-medium">{salesOrder.soNo}</div>
               </div>
               <div>

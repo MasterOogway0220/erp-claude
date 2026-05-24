@@ -10,7 +10,7 @@ const labelMap: Record<string, string> = {
   "client-purchase-orders": "Client P.O. Register",
   masters: "Masters",
   quotations: "Quotations",
-  sales: "Sales Orders",
+  sales: "Orders",
   purchase: "Purchase",
   inventory: "Inventory",
   quality: "Quality",

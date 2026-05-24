@@ -215,7 +215,7 @@ function CreatePRPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="salesOrderId">Sales Order Reference (Optional)</Label>
+                <Label htmlFor="salesOrderId">Order Reference (Optional)</Label>
                 <Select
                   value={formData.salesOrderId || "NONE"}
                   onValueChange={(value) =>

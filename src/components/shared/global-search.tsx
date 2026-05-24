@@ -41,7 +41,7 @@ interface GroupedResults {
 
 const entityIcons: Record<string, React.ReactNode> = {
   Quotation: <FileText className="h-4 w-4 text-green-500" />,
-  "Sales Order": <ShoppingCart className="h-4 w-4 text-purple-500" />,
+  "Order": <ShoppingCart className="h-4 w-4 text-purple-500" />,
   "Purchase Order": <Package className="h-4 w-4 text-orange-500" />,
   GRN: <Warehouse className="h-4 w-4 text-teal-500" />,
   Inspection: <ClipboardCheck className="h-4 w-4 text-yellow-600" />,

@@ -301,7 +301,7 @@ export default function WarehouseIntimationDetailPage({
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Sales Order Details</CardTitle>
+            <CardTitle className="text-base">Order Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             <div className="flex justify-between">

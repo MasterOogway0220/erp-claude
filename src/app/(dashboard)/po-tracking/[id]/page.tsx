@@ -351,7 +351,7 @@ export default function POTrackingDetailPage() {
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
-                <div className="text-xs text-muted-foreground">Sales Order</div>
+                <div className="text-xs text-muted-foreground">Order</div>
                 <div className="font-mono font-semibold">{order.soNo}</div>
               </div>
               <div>

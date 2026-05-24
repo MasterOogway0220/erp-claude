@@ -520,7 +520,7 @@ export default function AllotmentPage({
               {items.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
-                    No items found for this Sales Order.
+                    No items found for this Order.
                   </TableCell>
                 </TableRow>
               )}

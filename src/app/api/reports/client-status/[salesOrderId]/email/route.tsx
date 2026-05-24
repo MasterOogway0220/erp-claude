@@ -111,7 +111,7 @@ export async function POST(
             <h3 style="margin: 0 0 12px; font-size: 14px; color: #1e40af;">Order Summary</h3>
             <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
               <tr>
-                <td style="padding: 4px 0; color: #64748b;">Sales Order</td>
+                <td style="padding: 4px 0; color: #64748b;">Order</td>
                 <td style="padding: 4px 0; font-weight: 600; text-align: right;">${soNo}</td>
               </tr>
               ${reportData.salesOrder.customerPoNo ? `

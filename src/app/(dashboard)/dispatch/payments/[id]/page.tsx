@@ -149,7 +149,7 @@ export default function PaymentDetailPage({
               </div>
               {payment.invoice?.salesOrder && (
                 <div>
-                  <p className="text-sm text-muted-foreground">Sales Order</p>
+                  <p className="text-sm text-muted-foreground">Order</p>
                   <p className="font-medium">
                     <Link
                       href={`/sales/${payment.invoice.salesOrder.id}`}

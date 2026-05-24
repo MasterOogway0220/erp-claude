@@ -177,7 +177,7 @@ export default function EditSalesOrderPage() {
         throw new Error(data.error || "Failed to update");
       }
 
-      toast.success(`Sales Order ${soNo} updated`);
+      toast.success(`Order ${soNo} updated`);
       router.push(`/sales/${params.id}`);
     } catch (error: any) {
       toast.error(error.message);
@@ -193,7 +193,7 @@ export default function EditSalesOrderPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title={`Edit Sales Order: ${soNo}`}
+        title={`Edit Order: ${soNo}`}
         description="Modify sales order details and line items"
       >
         <Button variant="outline" onClick={() => router.back()}>

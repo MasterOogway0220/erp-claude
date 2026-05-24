@@ -219,7 +219,7 @@ export default function DossierPage() {
               </div>
             </div>
             <div>
-              <div className="text-xs text-muted-foreground">Sales Order</div>
+              <div className="text-xs text-muted-foreground">Order</div>
               <div className="text-sm font-medium font-mono">
                 {dn.salesOrder?.soNo || "---"}
               </div>

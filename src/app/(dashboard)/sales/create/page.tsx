@@ -271,7 +271,7 @@ function CreateSalesOrderPage() {
       }
 
       const data = await response.json();
-      toast.success(`Sales Order ${data.soNo} created successfully`);
+      toast.success(`Order ${data.soNo} created successfully`);
       router.push(`/sales/${data.id}`);
     } catch (error: any) {
       toast.error(error.message);
@@ -283,7 +283,7 @@ function CreateSalesOrderPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Create Sales Order"
+        title="Create Order"
         description="Create a new sales order from quotation or manually"
       >
         <Button variant="outline" onClick={() => router.back()}>
@@ -295,7 +295,7 @@ function CreateSalesOrderPage() {
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Sales Order Details</CardTitle>
+            <CardTitle>Order Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -532,7 +532,7 @@ function CreateSalesOrderPage() {
           </Button>
           <Button type="submit" disabled={loading}>
             <Save className="w-4 h-4 mr-2" />
-            {loading ? "Creating..." : "Create Sales Order"}
+            {loading ? "Creating..." : "Create Order"}
           </Button>
         </div>
       </form>

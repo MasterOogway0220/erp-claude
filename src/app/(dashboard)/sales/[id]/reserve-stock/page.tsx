@@ -354,7 +354,7 @@ export default function ReserveStockPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Sales Order Items & Reservation Status</CardTitle>
+          <CardTitle>Order Items & Reservation Status</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>

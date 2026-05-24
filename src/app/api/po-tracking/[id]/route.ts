@@ -130,7 +130,7 @@ export async function GET(
       status: "COMPLETED",
       details: `SO ${so.soNo} created for ${so.customer.name}`,
       items: [
-        { label: "Sales Order", value: so.soNo, href: `/sales/${so.id}` },
+        { label: "Order", value: so.soNo, href: `/sales/${so.id}` },
         { label: "Customer PO", value: so.customerPoNo || "—" },
         { label: "Customer", value: so.customer.name },
       ],

@@ -122,7 +122,7 @@ export default function PackingListDetailPage() {
               </div>
               <div>
                 <div className="text-sm text-muted-foreground">
-                  Sales Order
+                  Order
                 </div>
                 <Link
                   href={`/sales/${packingList.salesOrder?.id}`}

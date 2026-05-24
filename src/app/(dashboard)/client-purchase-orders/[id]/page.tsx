@@ -165,14 +165,14 @@ export default function ClientPODetailPage({
       });
       const data = await res.json();
       if (res.ok) {
-        toast.success(`Sales Order ${data.soNo} created successfully`);
+        toast.success(`Order ${data.soNo} created successfully`);
         setLinkedSO({ id: data.id, soNo: data.soNo });
         setShowCreateSODialog(false);
       } else {
-        toast.error(data.error || "Failed to create Sales Order");
+        toast.error(data.error || "Failed to create Order");
       }
     } catch (error) {
-      toast.error("Failed to create Sales Order");
+      toast.error("Failed to create Order");
     } finally {
       setCreatingSO(false);
     }
@@ -231,7 +231,7 @@ export default function ClientPODetailPage({
         )}
         {linkedSO && (
           <Button variant="outline" onClick={() => router.push(`/sales/${linkedSO.id}`)}>
-            Sales Order: {linkedSO.soNo} →
+            Order: {linkedSO.soNo} →
           </Button>
         )}
         <Button variant="outline" onClick={() => router.back()}>
@@ -582,13 +582,13 @@ export default function ClientPODetailPage({
         </Card>
       )}
 
-      {/* Create Sales Order Dialog */}
+      {/* Create Order Dialog */}
       {showCreateSODialog && clientPO && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowCreateSODialog(false)}>
           <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-semibold mb-2">Start Order Processing</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              A Sales Order will be created with the following items from {clientPO.cpoNo}:
+              An Order will be created with the following items from {clientPO.cpoNo}:
             </p>
             <Table>
               <TableHeader>

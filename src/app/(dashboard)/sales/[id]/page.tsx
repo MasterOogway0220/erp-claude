@@ -134,7 +134,7 @@ export default function SalesOrderDetailPage() {
 
   const handleCancelSO = async () => {
     if (!salesOrder) return;
-    if (!confirm(`Cancel Sales Order ${salesOrder.soNo}? This action cannot be undone.`)) return;
+    if (!confirm(`Cancel Order ${salesOrder.soNo}? This action cannot be undone.`)) return;
 
     setCancelling(true);
     try {
@@ -149,7 +149,7 @@ export default function SalesOrderDetailPage() {
         throw new Error(data.error || "Failed to cancel");
       }
 
-      toast.success(`Sales Order ${salesOrder.soNo} cancelled`);
+      toast.success(`Order ${salesOrder.soNo} cancelled`);
       fetchSalesOrder(salesOrder.id);
     } catch (error: any) {
       toast.error(error.message);
@@ -172,7 +172,7 @@ export default function SalesOrderDetailPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title={`Sales Order: ${salesOrder.soNo}`}
+        title={`Order: ${salesOrder.soNo}`}
         description={`Created on ${format(new Date(salesOrder.soDate), "dd MMM yyyy")}`}
       >
         <div className="flex gap-2">
@@ -234,7 +234,7 @@ export default function SalesOrderDetailPage() {
             <div className="flex items-start gap-3">
               <XCircle className="w-5 h-5 text-red-600 mt-0.5" />
               <div>
-                <h3 className="font-medium text-red-900">Sales Order Cancelled</h3>
+                <h3 className="font-medium text-red-900">Order Cancelled</h3>
                 <p className="text-sm text-red-700 mt-1">
                   This sales order has been cancelled and cannot be modified.
                 </p>
@@ -253,7 +253,7 @@ export default function SalesOrderDetailPage() {
                 <div>
                   <h3 className="font-medium text-yellow-900">Customer PO Review Required</h3>
                   <p className="text-sm text-yellow-700 mt-1">
-                    This Sales Order requires Customer PO verification per ISO 9001:2018 Clause 8.2.3.
+                    This Order requires Customer PO verification per ISO 9001:2018 Clause 8.2.3.
                     Please review the customer PO against the reference quotation before proceeding.
                   </p>
                 </div>

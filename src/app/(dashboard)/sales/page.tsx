@@ -223,13 +223,13 @@ export default function SalesOrdersPage() {
       >
         <Button onClick={() => router.push("/sales/create")}>
           <Plus className="w-4 h-4 mr-2" />
-          New Sales Order
+          New Order
         </Button>
       </PageHeader>
 
       <Tabs defaultValue="all" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="all">All Sales Orders</TabsTrigger>
+          <TabsTrigger value="all">All Orders</TabsTrigger>
           <TabsTrigger value="review">
             <div className="flex items-center gap-2">
               Customer PO Review

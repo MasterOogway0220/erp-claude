@@ -651,7 +651,7 @@ export default function TraceabilityPage() {
                 )}
                 {data.reservation?.salesOrder && (
                   <div>
-                    <p className="text-muted-foreground">Sales Order</p>
+                    <p className="text-muted-foreground">Order</p>
                     <p className="font-mono font-medium">
                       {data.reservation.salesOrder.soNo}
                     </p>
