@@ -2,6 +2,39 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkAccess } from "@/lib/rbac";
 
+/**
+ * The ndtTests / requiredLabTests columns are String? (@db.LongText) but the
+ * UI works with string[]. Serialize arrays to a JSON string for storage
+ * (empty array -> null) and parse them back to arrays on read.
+ */
+function serializeStringArray(value: unknown): string | null {
+  if (value == null) return null;
+  if (Array.isArray(value)) {
+    return value.length > 0 ? JSON.stringify(value) : null;
+  }
+  if (typeof value === "string") {
+    return value.trim() === "" ? null : value;
+  }
+  return null;
+}
+
+function parseStringArray(raw: unknown): string[] {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw.map(String);
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed.map(String);
+    } catch {
+      return raw
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+    }
+  }
+  return [];
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -63,6 +96,10 @@ export async function GET(
         processing: item.orderProcessing
           ? {
               ...item.orderProcessing,
+              ndtTests: parseStringArray(item.orderProcessing.ndtTests),
+              requiredLabTests: parseStringArray(
+                item.orderProcessing.requiredLabTests
+              ),
               processedBy: item.orderProcessing.processedBy?.name || null,
             }
           : null,
@@ -99,6 +136,13 @@ export async function POST(
       return NextResponse.json({ error: "Item does not belong to this Sales Order" }, { status: 400 });
     }
 
+    if (!companyId) {
+      return NextResponse.json(
+        { error: "No active company selected for this session" },
+        { status: 400 }
+      );
+    }
+
     // Upsert processing config
     const result = await prisma.orderProcessingItem.upsert({
       where: { salesOrderItemId },
@@ -121,12 +165,12 @@ export async function POST(
         pmiRequired: processingData.pmiRequired || false,
         pmiType: processingData.pmiType || null,
         ndtRequired: processingData.ndtRequired || false,
-        ndtTests: processingData.ndtTests || null,
+        ndtTests: serializeStringArray(processingData.ndtTests),
         vdiRequired: processingData.vdiRequired || false,
         vdiWitnessPercent: processingData.vdiWitnessPercent ?? null,
         hydroTestRequired: processingData.hydroTestRequired || false,
         hydroWitnessPercent: processingData.hydroWitnessPercent ?? null,
-        requiredLabTests: processingData.requiredLabTests || null,
+        requiredLabTests: serializeStringArray(processingData.requiredLabTests),
       },
       update: {
         poSlNo: processingData.poSlNo || null,
@@ -145,12 +189,12 @@ export async function POST(
         pmiRequired: processingData.pmiRequired || false,
         pmiType: processingData.pmiType || null,
         ndtRequired: processingData.ndtRequired || false,
-        ndtTests: processingData.ndtTests || null,
+        ndtTests: serializeStringArray(processingData.ndtTests),
         vdiRequired: processingData.vdiRequired || false,
         vdiWitnessPercent: processingData.vdiWitnessPercent ?? null,
         hydroTestRequired: processingData.hydroTestRequired || false,
         hydroWitnessPercent: processingData.hydroWitnessPercent ?? null,
-        requiredLabTests: processingData.requiredLabTests || null,
+        requiredLabTests: serializeStringArray(processingData.requiredLabTests),
       },
     });
 
@@ -178,7 +222,11 @@ export async function POST(
 
     return NextResponse.json(result);
   } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
     console.error("Error saving processing item:", error);
-    return NextResponse.json({ error: "Failed to save processing data" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to save processing data", detail },
+      { status: 500 }
+    );
   }
 }
