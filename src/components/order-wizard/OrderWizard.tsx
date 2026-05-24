@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Check } from "lucide-react";
 import { ReviewStep } from "./ReviewStep";
+import { ProcessStep } from "./ProcessStep";
 import { AllotmentStep } from "./AllotmentStep";
 
 // ---------------------------------------------------------------------------
@@ -215,6 +216,11 @@ export function OrderWizard({ order }: OrderWizardProps) {
     order.poAcceptanceStatus === "ACCEPTED"
   );
 
+  const [processComplete, setProcessComplete] = useState(
+    // Pre-gate: if the order is already fully processed, step is done.
+    order.processingStatus === "PROCESSED"
+  );
+
   const [allotmentComplete, setAllotmentComplete] = useState(
     // Pre-gate: if allotment is already IN_PROGRESS or COMPLETED, step is done.
     order.allotmentStatus === "IN_PROGRESS" || order.allotmentStatus === "COMPLETED"
@@ -223,10 +229,10 @@ export function OrderWizard({ order }: OrderWizardProps) {
   const isFirst = step === 0;
   const isLast = step === STEPS.length - 1;
 
-  // Map step id → its completion signal (Phase 5 will add processComplete).
+  // Map step id → its completion signal.
   const stepComplete: Record<StepId, boolean> = {
     0: reviewComplete,
-    1: true, // Phase 5 will gate this
+    1: processComplete,
     2: allotmentComplete,
     3: true,
   };
@@ -257,6 +263,14 @@ export function OrderWizard({ order }: OrderWizardProps) {
         />
       );
     }
+    if (step === 1) {
+      return (
+        <ProcessStep
+          order={order}
+          onComplete={setProcessComplete}
+        />
+      );
+    }
     if (step === 2) {
       return (
         <AllotmentStep
@@ -266,8 +280,7 @@ export function OrderWizard({ order }: OrderWizardProps) {
       );
     }
     // Back-navigation: if we're on a later step and click Back to step 0, we land
-    // here with step === 0, which is handled above. Steps 1, 3 keep placeholders
-    // until Phases 5 extracts them.
+    // here with step === 0, which is handled above. Step 3 keeps its placeholder.
     const StepBody = STEP_BODIES[step];
     return <StepBody order={order} />;
   };
