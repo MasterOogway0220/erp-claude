@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -21,6 +22,7 @@ import { ArrowLeft, Save, FileCheck, Users, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { PageLoading } from "@/components/shared/page-loading";
+import { computePOTotals } from "@/lib/calc/po-totals";
 
 interface ClientPO {
   id: string;
@@ -48,6 +50,15 @@ interface CustomerContact {
   department: string;
 }
 
+interface CpoItem {
+  id: string;
+  sNo: number;
+  description: string;
+  qtyOrdered: number;
+  unitRate: number;
+  amount: number;
+}
+
 /** Step labels for the 3-step wizard */
 const STEP_LABELS = [
   "Details & Contacts",
@@ -65,6 +76,11 @@ function CreatePOAcceptanceContent() {
   const [clientPOs, setClientPOs] = useState<ClientPO[]>([]);
   const [selectedCPO, setSelectedCPO] = useState<ClientPO | null>(null);
   const [contacts, setContacts] = useState<CustomerContact[]>([]);
+
+  /** CPO detail — seeded from the CPO when it is selected */
+  const [cpoItems, setCpoItems] = useState<CpoItem[]>([]);
+  const [cpoCurrency, setCpoCurrency] = useState<string>("INR");
+  const [cpoIsDomesticDelivery, setCpoIsDomesticDelivery] = useState<boolean>(false);
 
   /** Wizard step (1-indexed) */
   const [step, setStep] = useState(1);
@@ -84,6 +100,30 @@ function CreatePOAcceptanceContent() {
     accountsName: "",
     accountsEmail: "",
     accountsPhone: "",
+    // Charge fields (Step 2) — seeded from CPO on selection
+    gstRate: 18,
+    isInterState: false,
+    freight: 0,
+    freightTaxApplicable: false,
+    packingForwarding: 0,
+    packingTaxApplicable: false,
+    insurance: 0,
+    insuranceTaxApplicable: false,
+    otherCharges: 0,
+    otherChargesTaxApplicable: false,
+    testingCharges: 0,
+    testingTaxApplicable: false,
+    tpiCharges: 0,
+    tpiTaxApplicable: false,
+    // Computed totals (synced from useMemo)
+    subtotal: 0,
+    additionalChargesTotal: 0,
+    taxableAmount: 0,
+    cgst: 0,
+    sgst: 0,
+    igst: 0,
+    roundOff: 0,
+    grandTotal: 0,
   });
 
   useEffect(() => {
@@ -97,6 +137,7 @@ function CreatePOAcceptanceContent() {
         setSelectedCPO(cpo);
         setForm((prev) => ({ ...prev, clientPurchaseOrderId: cpo.id }));
         fetchContacts(cpo.customer.id);
+        fetchCpoDetail(cpo.id);
       }
     }
   }, [preselectedCpoId, clientPOs]);
@@ -132,12 +173,56 @@ function CreatePOAcceptanceContent() {
     }
   };
 
+  const fetchCpoDetail = async (cpoId: string) => {
+    try {
+      const res = await fetch(`/api/client-purchase-orders/${cpoId}`);
+      if (!res.ok) return;
+      const data = await res.json();
+
+      // Store CPO context for totals computation
+      setCpoItems(
+        (data.items ?? []).map((item: any) => ({
+          id: item.id,
+          sNo: item.sNo,
+          description: item.description ?? "",
+          qtyOrdered: Number(item.qtyOrdered ?? 0),
+          unitRate: Number(item.unitRate ?? 0),
+          amount: Number(item.amount ?? 0),
+        }))
+      );
+      setCpoCurrency(data.currency ?? "INR");
+      setCpoIsDomesticDelivery(Boolean(data.isDomesticDelivery));
+
+      // Seed charge fields from CPO values
+      setForm((prev) => ({
+        ...prev,
+        gstRate: data.gstRate !== null && data.gstRate !== undefined ? Number(data.gstRate) : prev.gstRate,
+        isInterState: Boolean(data.isInterState ?? prev.isInterState),
+        freight: data.freight !== null && data.freight !== undefined ? Number(data.freight) : prev.freight,
+        freightTaxApplicable: Boolean(data.freightTaxApplicable ?? prev.freightTaxApplicable),
+        packingForwarding: data.packingForwarding !== null && data.packingForwarding !== undefined ? Number(data.packingForwarding) : prev.packingForwarding,
+        packingTaxApplicable: Boolean(data.packingTaxApplicable ?? prev.packingTaxApplicable),
+        insurance: data.insurance !== null && data.insurance !== undefined ? Number(data.insurance) : prev.insurance,
+        insuranceTaxApplicable: Boolean(data.insuranceTaxApplicable ?? prev.insuranceTaxApplicable),
+        otherCharges: data.otherCharges !== null && data.otherCharges !== undefined ? Number(data.otherCharges) : prev.otherCharges,
+        otherChargesTaxApplicable: Boolean(data.otherChargesTaxApplicable ?? prev.otherChargesTaxApplicable),
+        testingCharges: data.testingCharges !== null && data.testingCharges !== undefined ? Number(data.testingCharges) : prev.testingCharges,
+        testingTaxApplicable: Boolean(data.testingTaxApplicable ?? prev.testingTaxApplicable),
+        tpiCharges: data.tpiCharges !== null && data.tpiCharges !== undefined ? Number(data.tpiCharges) : prev.tpiCharges,
+        tpiTaxApplicable: Boolean(data.tpiTaxApplicable ?? prev.tpiTaxApplicable),
+      }));
+    } catch (error) {
+      console.error("Failed to fetch CPO detail:", error);
+    }
+  };
+
   const handleCPOSelect = (cpoId: string) => {
     const cpo = clientPOs.find((c) => c.id === cpoId);
     if (cpo) {
       setSelectedCPO(cpo);
       setForm((prev) => ({ ...prev, clientPurchaseOrderId: cpo.id }));
       fetchContacts(cpo.customer.id);
+      fetchCpoDetail(cpo.id);
     }
   };
 
@@ -232,6 +317,63 @@ function CreatePOAcceptanceContent() {
 
   const contactsByDept = (dept: string) =>
     contacts.filter((c) => c.department === dept);
+
+  /** Compute PO totals from CPO items + current charge form fields */
+  const totals = useMemo(
+    () =>
+      computePOTotals({
+        items: cpoItems.map((i) => ({
+          qty: Number(i.qtyOrdered),
+          unitRate: Number(i.unitRate),
+        })),
+        currency: (cpoCurrency ?? "INR") as "INR" | "USD",
+        isInternational: cpoCurrency === "USD",
+        isDomesticDelivery: Boolean(cpoIsDomesticDelivery),
+        gstRate: Number(form.gstRate ?? 0),
+        isInterState: Boolean(form.isInterState),
+        charges: {
+          freight: Number(form.freight ?? 0),
+          packing: Number(form.packingForwarding ?? 0),
+          insurance: Number(form.insurance ?? 0),
+          other: Number(form.otherCharges ?? 0),
+          testing: Number(form.testingCharges ?? 0),
+          tpi: Number(form.tpiCharges ?? 0),
+        },
+      }),
+    [
+      cpoItems,
+      cpoCurrency,
+      cpoIsDomesticDelivery,
+      form.gstRate,
+      form.isInterState,
+      form.freight,
+      form.packingForwarding,
+      form.insurance,
+      form.otherCharges,
+      form.testingCharges,
+      form.tpiCharges,
+    ]
+  );
+
+  /** Sync computed totals into form so they're included in the submit payload */
+  useEffect(() => {
+    const grandTotalRaw = totals.taxableAmount + totals.cgst + totals.sgst + totals.igst;
+    const roundOff = +(Math.round(grandTotalRaw) - grandTotalRaw).toFixed(2);
+    setForm((prev) => ({
+      ...prev,
+      subtotal: totals.subtotal,
+      additionalChargesTotal: totals.additionalChargesTotal,
+      taxableAmount: totals.taxableAmount,
+      cgst: totals.cgst,
+      sgst: totals.sgst,
+      igst: totals.igst,
+      roundOff,
+      grandTotal: totals.grandTotal,
+    }));
+  }, [totals]);
+
+  /** GST applies when: INR currency, OR international but domestic delivery */
+  const gstApplies = cpoCurrency === "INR" || cpoIsDomesticDelivery;
 
   /** Step 1 is valid when CPO + both required dates are filled */
   const step1Valid =
@@ -677,15 +819,358 @@ function CreatePOAcceptanceContent() {
 
       {/* ══════════════════════════════════════
           STEP 2 — Charges & Commercials
-          (Task 6 placeholder)
       ══════════════════════════════════════ */}
       {step === 2 && (
-        <div className="space-y-4">
-          {/* Task 6: Charges & Commercials box */}
-          <p className="text-muted-foreground text-sm">Charges &amp; Commercials — coming in next step.</p>
-          <div className="flex justify-between">
-            <Button variant="outline" onClick={() => setStep(1)}>Back</Button>
-            <Button onClick={() => setStep(3)}>Next</Button>
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Charges &amp; Commercials</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+
+              {/* ── CPO Line Items summary ── */}
+              {cpoItems.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold mb-2">Line Items (from CPO)</h4>
+                  <div className="rounded-md border overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted/50">
+                        <tr>
+                          <th className="text-left px-3 py-2 font-medium text-muted-foreground w-8">#</th>
+                          <th className="text-left px-3 py-2 font-medium text-muted-foreground">Description</th>
+                          <th className="text-right px-3 py-2 font-medium text-muted-foreground">Qty</th>
+                          <th className="text-right px-3 py-2 font-medium text-muted-foreground">Rate</th>
+                          <th className="text-right px-3 py-2 font-medium text-muted-foreground">Amount</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {cpoItems.map((item) => (
+                          <tr key={item.id} className="border-t">
+                            <td className="px-3 py-2 text-muted-foreground">{item.sNo}</td>
+                            <td className="px-3 py-2">{item.description || "—"}</td>
+                            <td className="px-3 py-2 text-right">{item.qtyOrdered.toLocaleString("en-IN")}</td>
+                            <td className="px-3 py-2 text-right">
+                              {cpoCurrency === "INR" ? "₹" : cpoCurrency}{" "}
+                              {item.unitRate.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className="px-3 py-2 text-right">
+                              {cpoCurrency === "INR" ? "₹" : cpoCurrency}{" "}
+                              {item.amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot className="bg-muted/30 border-t font-semibold">
+                        <tr>
+                          <td colSpan={4} className="px-3 py-2 text-right">Subtotal</td>
+                          <td className="px-3 py-2 text-right">
+                            {cpoCurrency === "INR" ? "₹" : cpoCurrency}{" "}
+                            {totals.subtotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              <Separator />
+
+              {/* ── Additional Charges ── */}
+              <div>
+                <h4 className="text-sm font-semibold mb-3">Additional Charges</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                  {/* Freight */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <Label>Freight</Label>
+                      <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
+                        <Checkbox
+                          checked={Boolean(form.freightTaxApplicable)}
+                          onCheckedChange={(checked) =>
+                            setForm((prev) => ({ ...prev, freightTaxApplicable: Boolean(checked) }))
+                          }
+                        />
+                        Taxable
+                      </label>
+                    </div>
+                    <Input
+                      type="number"
+                      min={0}
+                      step={0.01}
+                      value={form.freight}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, freight: Number(e.target.value) || 0 }))
+                      }
+                      placeholder="0.00"
+                    />
+                  </div>
+
+                  {/* Packing & Forwarding */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <Label>Packing &amp; Forwarding</Label>
+                      <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
+                        <Checkbox
+                          checked={Boolean(form.packingTaxApplicable)}
+                          onCheckedChange={(checked) =>
+                            setForm((prev) => ({ ...prev, packingTaxApplicable: Boolean(checked) }))
+                          }
+                        />
+                        Taxable
+                      </label>
+                    </div>
+                    <Input
+                      type="number"
+                      min={0}
+                      step={0.01}
+                      value={form.packingForwarding}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, packingForwarding: Number(e.target.value) || 0 }))
+                      }
+                      placeholder="0.00"
+                    />
+                  </div>
+
+                  {/* Insurance */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <Label>Insurance</Label>
+                      <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
+                        <Checkbox
+                          checked={Boolean(form.insuranceTaxApplicable)}
+                          onCheckedChange={(checked) =>
+                            setForm((prev) => ({ ...prev, insuranceTaxApplicable: Boolean(checked) }))
+                          }
+                        />
+                        Taxable
+                      </label>
+                    </div>
+                    <Input
+                      type="number"
+                      min={0}
+                      step={0.01}
+                      value={form.insurance}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, insurance: Number(e.target.value) || 0 }))
+                      }
+                      placeholder="0.00"
+                    />
+                  </div>
+
+                  {/* Other Charges */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <Label>Other Charges</Label>
+                      <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
+                        <Checkbox
+                          checked={Boolean(form.otherChargesTaxApplicable)}
+                          onCheckedChange={(checked) =>
+                            setForm((prev) => ({ ...prev, otherChargesTaxApplicable: Boolean(checked) }))
+                          }
+                        />
+                        Taxable
+                      </label>
+                    </div>
+                    <Input
+                      type="number"
+                      min={0}
+                      step={0.01}
+                      value={form.otherCharges}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, otherCharges: Number(e.target.value) || 0 }))
+                      }
+                      placeholder="0.00"
+                    />
+                  </div>
+
+                  {/* Testing Charges */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <Label>Testing Charges</Label>
+                      <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
+                        <Checkbox
+                          checked={Boolean(form.testingTaxApplicable)}
+                          onCheckedChange={(checked) =>
+                            setForm((prev) => ({ ...prev, testingTaxApplicable: Boolean(checked) }))
+                          }
+                        />
+                        Taxable
+                      </label>
+                    </div>
+                    <Input
+                      type="number"
+                      min={0}
+                      step={0.01}
+                      value={form.testingCharges}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, testingCharges: Number(e.target.value) || 0 }))
+                      }
+                      placeholder="0.00"
+                    />
+                  </div>
+
+                  {/* TPI Charges */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <Label>TPI Charges</Label>
+                      <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
+                        <Checkbox
+                          checked={Boolean(form.tpiTaxApplicable)}
+                          onCheckedChange={(checked) =>
+                            setForm((prev) => ({ ...prev, tpiTaxApplicable: Boolean(checked) }))
+                          }
+                        />
+                        Taxable
+                      </label>
+                    </div>
+                    <Input
+                      type="number"
+                      min={0}
+                      step={0.01}
+                      value={form.tpiCharges}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, tpiCharges: Number(e.target.value) || 0 }))
+                      }
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* ── GST Context ── */}
+              <div>
+                <h4 className="text-sm font-semibold mb-3">GST Context</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                  <div className="space-y-1">
+                    <Label>GST Rate (%)</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={28}
+                      step={0.01}
+                      value={form.gstRate}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, gstRate: Number(e.target.value) || 0 }))
+                      }
+                      placeholder="18"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Supply Type</Label>
+                    <div className="flex items-center gap-3 h-10 px-3 rounded-md border bg-muted/30 text-sm">
+                      <span className={form.isInterState ? "text-muted-foreground" : "font-medium"}>
+                        Intra-State
+                      </span>
+                      <span className="text-muted-foreground">/</span>
+                      <span className={form.isInterState ? "font-medium" : "text-muted-foreground"}>
+                        Inter-State
+                      </span>
+                      <Badge variant={form.isInterState ? "default" : "secondary"} className="ml-auto text-xs">
+                        {form.isInterState ? "IGST" : "CGST + SGST"}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Currency / Delivery</Label>
+                    <div className="flex items-center gap-2 h-10 px-3 rounded-md border bg-muted/30 text-sm">
+                      <Badge variant="outline">{cpoCurrency}</Badge>
+                      {!gstApplies && (
+                        <span className="text-xs text-muted-foreground ml-1">(GST not applicable)</span>
+                      )}
+                      {gstApplies && cpoCurrency !== "INR" && (
+                        <span className="text-xs text-muted-foreground ml-1">(Domestic delivery)</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* ── Totals Panel ── */}
+              <div>
+                <h4 className="text-sm font-semibold mb-3">Commercial Summary</h4>
+                <div className="rounded-md border divide-y text-sm max-w-sm ml-auto">
+                  <div className="flex justify-between px-4 py-2">
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span className="font-medium tabular-nums">
+                      {cpoCurrency === "INR" ? "₹" : cpoCurrency}{" "}
+                      {totals.subtotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between px-4 py-2">
+                    <span className="text-muted-foreground">Additional Charges</span>
+                    <span className="font-medium tabular-nums">
+                      {cpoCurrency === "INR" ? "₹" : cpoCurrency}{" "}
+                      {totals.additionalChargesTotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between px-4 py-2">
+                    <span className="text-muted-foreground">Taxable Amount</span>
+                    <span className="font-medium tabular-nums">
+                      {cpoCurrency === "INR" ? "₹" : cpoCurrency}{" "}
+                      {totals.taxableAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  {gstApplies && form.gstRate > 0 && (
+                    <>
+                      {!form.isInterState ? (
+                        <>
+                          <div className="flex justify-between px-4 py-2 text-muted-foreground">
+                            <span>CGST ({Number(form.gstRate) / 2}%)</span>
+                            <span className="tabular-nums">
+                              ₹ {totals.cgst.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                          <div className="flex justify-between px-4 py-2 text-muted-foreground">
+                            <span>SGST ({Number(form.gstRate) / 2}%)</span>
+                            <span className="tabular-nums">
+                              ₹ {totals.sgst.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex justify-between px-4 py-2 text-muted-foreground">
+                          <span>IGST ({form.gstRate}%)</span>
+                          <span className="tabular-nums">
+                            ₹ {totals.igst.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      )}
+                    </>
+                  )}
+                  <div className="flex justify-between px-4 py-2 text-muted-foreground">
+                    <span>Round Off</span>
+                    <span className="tabular-nums">
+                      {form.roundOff >= 0 ? "+" : ""}
+                      {Number(form.roundOff).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between px-4 py-2 font-semibold bg-muted/30">
+                    <span>Grand Total</span>
+                    <span className="tabular-nums">
+                      {cpoCurrency === "INR" ? "₹" : cpoCurrency}{" "}
+                      {totals.grandTotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Step 2 footer */}
+          <div className="flex justify-between gap-3">
+            <Button variant="outline" onClick={() => setStep(1)}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back
+            </Button>
+            <Button onClick={() => setStep(3)}>
+              Next: Review &amp; Submit
+            </Button>
           </div>
         </div>
       )}
