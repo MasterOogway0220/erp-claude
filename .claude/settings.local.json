@@ -170,7 +170,9 @@
       "Bash(rm /tmp/v.ts)",
       "Bash(pkill -f \"next-server\")",
       "Bash(rm -f /tmp/cj.txt /tmp/*.html)",
-      "Bash(mysql *)"
+      "Bash(mysql *)",
+      "Bash(awk 'NR>=900 && /^  return \\\\\\(/{print NR\": \"$0}' /Users/adi0220/projects/erp-claude/src/app/\\\\\\(dashboard\\\\\\)/quotations/create/standard/page.tsx)",
+      "Bash(awk 'NR>900 && /use\\(State|Effect|Memo|Ref|Query|Callback|Mutation\\)\\\\\\(/{print NR\": \"$0}' /Users/adi0220/projects/erp-claude/src/app/\\\\\\(dashboard\\\\\\)/quotations/create/standard/page.tsx)"
     ]
   }
 }
