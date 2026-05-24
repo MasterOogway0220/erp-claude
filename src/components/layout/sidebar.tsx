@@ -115,7 +115,7 @@ const navSections: NavSection[] = [
         moduleKey: "quotation",
       },
       {
-        title: "Sales",
+        title: "Order Processing",
         icon: <ShoppingCart className="h-5 w-5" />,
         iconColorClass: "text-emerald-500",
         roles: ["SALES", "MANAGEMENT", "ADMIN", "SUPER_ADMIN"],
@@ -125,7 +125,7 @@ const navSections: NavSection[] = [
           { title: "Dashboard", href: "/sales/dashboard" },
           { title: "Client P.O. Register", href: "/client-purchase-orders" },
           { title: "P.O. Acceptance", href: "/po-acceptance" },
-          { title: "Sales Orders", href: "/sales" },
+          { title: "Orders", href: "/sales" },
           { title: "Order Tracking", href: "/po-tracking" },
           { title: "Customer PO Review", href: "/sales" },
         ],

@@ -218,7 +218,7 @@ export default function SalesOrdersPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Sales Orders"
+        title="Orders"
         description="Manage sales orders and customer PO verification"
       >
         <Button onClick={() => router.push("/sales/create")}>
