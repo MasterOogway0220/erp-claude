@@ -7,6 +7,7 @@ import { signOut } from "next-auth/react";
 import { UserRole } from "@prisma/client";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useSidebarStore } from "@/stores/sidebar-store";
+import { isNavItemVisible } from "@/lib/access/module-access";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -209,39 +210,23 @@ const navSections: NavSection[] = [
 // ---------------------------------------------------------------------------
 
 const isProductionMode = process.env.NEXT_PUBLIC_PRODUCTION_MODE === "true";
-// In production, only this user sees modules flagged productionHidden. Everyone
-// else (including ADMIN / SUPER_ADMIN) is restricted to Masters + Quotations.
-const TEST_USER_EMAIL = "testuser@erp.com";
 
+// Visibility rules live in a shared, unit-tested helper (src/lib/access/module-access.ts).
+// In production, only the test user sees productionHidden modules — but a user
+// explicitly GRANTED a module always sees it; ungranted logins stay limited to
+// the always-on + role-allowed items (Masters + Quotation).
 function filterSections(
   sections: NavSection[],
   userRole: UserRole | undefined,
   userEmail: string | undefined,
   moduleAccess: string[] | undefined
 ): NavSection[] {
-  const isAdminOrAbove = userRole === "SUPER_ADMIN" || userRole === "ADMIN";
-  const hasModuleFilter = moduleAccess && moduleAccess.length > 0;
-  const isTestUser = userEmail === TEST_USER_EMAIL;
-
   return sections
     .map((section) => ({
       ...section,
-      items: section.items.filter((item) => {
-        // Production gate — only the test user bypasses productionHidden
-        if (isProductionMode && item.productionHidden && !isTestUser) return false;
-        // Role check
-        if (item.roles && !(userRole && item.roles.includes(userRole))) {
-          return false;
-        }
-        // Module access check — SUPER_ADMIN and ADMIN see everything, items without moduleKey always show
-        if (!isAdminOrAbove && hasModuleFilter) {
-          const keys = item.moduleKeys || (item.moduleKey ? [item.moduleKey] : []);
-          if (keys.length > 0) {
-            return keys.some((k) => moduleAccess.includes(k));
-          }
-        }
-        return true;
-      }),
+      items: section.items.filter((item) =>
+        isNavItemVisible(item, { userRole, userEmail, moduleAccess, isProductionMode })
+      ),
     }))
     .filter((section) => section.items.length > 0);
 }

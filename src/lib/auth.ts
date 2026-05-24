@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
 import { UserRole } from "@prisma/client";
+import { parseModuleAccess } from "./access/module-access";
 
 declare module "next-auth" {
   interface Session {
@@ -72,9 +73,9 @@ export const authOptions: NextAuthOptions = {
           data: { lastLogin: new Date() },
         });
 
-        const moduleAccess = Array.isArray(user.employee?.moduleAccess)
-          ? (user.employee.moduleAccess as string[])
-          : [];
+        // moduleAccess is stored as a JSON string in EmployeeMaster.moduleAccess
+        // (LongText). Parse it — Array.isArray() on a string is always false.
+        const moduleAccess = parseModuleAccess(user.employee?.moduleAccess);
 
         return {
           id: user.id,
@@ -104,13 +105,20 @@ export const authOptions: NextAuthOptions = {
       if (token.id) {
         const current = await prisma.user.findUnique({
           where: { id: token.id },
-          select: { isActive: true, role: true, companyId: true },
+          select: {
+            isActive: true,
+            role: true,
+            companyId: true,
+            employee: { select: { moduleAccess: true } },
+          },
         });
         if (!current || !current.isActive) {
           return {} as typeof token;
         }
         token.role = current.role;
         token.companyId = current.companyId;
+        // Refresh grants so module-access changes take effect without re-login.
+        token.moduleAccess = parseModuleAccess(current.employee?.moduleAccess);
       }
       return token;
     },
