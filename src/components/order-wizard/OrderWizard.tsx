@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Check } from "lucide-react";
+import { ReviewStep } from "./ReviewStep";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -189,9 +190,11 @@ function ReadyStepBody({ order }: { order: WizardOrder }) {
   );
 }
 
+// Step 0 (Review) is handled by ReviewStep (Phase 3).
+// Steps 1-3 keep placeholder bodies until Phases 4-5.
 const STEP_BODIES: Record<StepId, React.ComponentType<{ order: WizardOrder }>> =
   {
-    0: ReviewStepBody,
+    0: ReviewStepBody, // fallback only — renderStepBody() handles step 0 with ReviewStep
     1: ProcessStepBody,
     2: AllotmentStepBody,
     3: ReadyStepBody,
@@ -204,19 +207,30 @@ const STEP_BODIES: Record<StepId, React.ComponentType<{ order: WizardOrder }>> =
 export function OrderWizard({ order }: OrderWizardProps) {
   const [step, setStep] = useState<StepId>(() => deriveInitialStep(order));
 
+  // Step completion signals — each step component calls onComplete(bool) when its
+  // required data is saved. Next is disabled until the active step is complete.
+  const [reviewComplete, setReviewComplete] = useState(
+    // Pre-gate: if the order already has an ACCEPTED PO status, review is done.
+    order.poAcceptanceStatus === "ACCEPTED"
+  );
+
   const isFirst = step === 0;
   const isLast = step === STEPS.length - 1;
+
+  // Map step id → its completion signal (Phase 4/5 will add allotmentComplete, processComplete).
+  const stepComplete: Record<StepId, boolean> = {
+    0: reviewComplete,
+    1: true, // Phase 5 will gate this
+    2: true, // Phase 4 will gate this
+    3: true,
+  };
 
   const goBack = () => {
     if (!isFirst) setStep((s) => (s - 1) as StepId);
   };
 
   const goNext = () => {
-    // TODO: gate on step completion before advancing.
-    // Phase 3 (Review), Phase 4 (Allotment), Phase 5 (Process) will each
-    // supply an `isComplete` signal here so Next is disabled until the step
-    // reports its required data is saved.
-    if (!isLast) setStep((s) => (s + 1) as StepId);
+    if (!isLast && stepComplete[step]) setStep((s) => (s + 1) as StepId);
   };
 
   const handleIndicatorClick = (targetStep: StepId) => {
@@ -225,7 +239,24 @@ export function OrderWizard({ order }: OrderWizardProps) {
     if (targetStep < step) setStep(targetStep);
   };
 
-  const StepBody = STEP_BODIES[step];
+  // Render the active step body.
+  // Step 0 (Review) uses the real ReviewStep; steps 1-3 keep Phase 4/5 placeholders.
+  const renderStepBody = () => {
+    if (step === 0) {
+      return (
+        <ReviewStep
+          order={order}
+          onComplete={setReviewComplete}
+          readOnly={false}
+        />
+      );
+    }
+    // Back-navigation: if we're on a later step and click Back to step 0, we land
+    // here with step === 0, which is handled above. Steps 1-3 keep placeholders
+    // until Phases 4-5 extract them.
+    const StepBody = STEP_BODIES[step];
+    return <StepBody order={order} />;
+  };
 
   return (
     <div className="space-y-6">
@@ -234,7 +265,7 @@ export function OrderWizard({ order }: OrderWizardProps) {
 
       {/* Step body */}
       <div className="min-h-[300px]">
-        <StepBody order={order} />
+        {renderStepBody()}
       </div>
 
       {/* Next / Back footer */}
@@ -248,8 +279,7 @@ export function OrderWizard({ order }: OrderWizardProps) {
         </Button>
 
         {!isLast && (
-          <Button onClick={goNext}>
-            {/* TODO: disable when active step is not yet complete (Phase 3/4/5 gate). */}
+          <Button onClick={goNext} disabled={!stepComplete[step]}>
             Next
           </Button>
         )}
