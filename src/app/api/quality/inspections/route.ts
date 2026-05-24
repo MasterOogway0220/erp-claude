@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
 import { generateDocumentNumber } from "@/lib/document-numbering";
 import { checkAccess, companyFilter } from "@/lib/rbac";
+import { createAlert } from "@/lib/alerts";
 
 export async function GET(request: NextRequest) {
   try {
@@ -197,6 +198,18 @@ export async function POST(request: NextRequest) {
           },
         });
       }
+
+      // Notify QC that an inspection failed (re-inspection required) — PRD §11
+      await createAlert({
+        companyId,
+        type: "FAILED_INSPECTION",
+        title: `Inspection FAILED: ${inspection.inspectionNo}`,
+        message: `Inspection ${inspection.inspectionNo} returned FAIL — NCR ${ncrNo} raised; re-inspection required.`,
+        severity: "HIGH",
+        assignedToRole: "QC",
+        relatedModule: "Inspection",
+        relatedId: inspection.id,
+      });
     }
 
     const fullInspection = await prisma.inspection.findUnique({

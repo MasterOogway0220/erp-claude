@@ -132,6 +132,14 @@ export default function CreateLabReportPage() {
       toast.error("Heat number is required");
       return;
     }
+    if (!formData.itemCode) {
+      toast.error("Item code is required");
+      return;
+    }
+    if (!formData.poId) {
+      toast.error("PO is required");
+      return;
+    }
 
     setSubmitting(true);
     try {

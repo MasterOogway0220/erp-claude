@@ -83,6 +83,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Heat number is required" }, { status: 400 });
     }
 
+    // PRD §13: tagging is mandatory — block upload without heat + item + PO links.
+    if (!itemCode) {
+      return NextResponse.json({ error: "Item code is required" }, { status: 400 });
+    }
+    if (!poId) {
+      return NextResponse.json({ error: "PO is required" }, { status: 400 });
+    }
+
     // Validate PO exists if provided
     if (poId) {
       const po = await prisma.purchaseOrder.findUnique({ where: { id: poId }, select: { id: true } });
