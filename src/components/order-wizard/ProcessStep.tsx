@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 import {
   ArrowLeft,
   ArrowRight,
@@ -201,6 +202,16 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
   const [allottingItem, setAllottingItem] = useState(false);
   const [allotmentConfirmed, setAllotmentConfirmed] = useState(false);
   const [generatingLetter, setGeneratingLetter] = useState(false);
+  const [agencies, setAgencies] = useState<{ id: string; name: string }[]>([]);
+  const [qap, setQap] = useState({
+    qapInspectionRequired: false,
+    qapInspectionLocation: "",
+    qapTpiAgencyId: "",
+    qapDocumentPath: "",
+    qapProposedInspectionDate: "",
+    qapRemarks: "",
+  });
+  const [savingQap, setSavingQap] = useState(false);
 
   // -----------------------------------------------------------------------
   // Completion signal helper
@@ -232,6 +243,24 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
       });
       setItems(data.items);
       signalCompletion(data.items);
+      const [agRes, qapRes] = await Promise.all([
+        fetch("/api/masters/inspection-agencies"),
+        fetch(`/api/sales-orders/${id}/qap`),
+      ]);
+      if (agRes.ok) setAgencies((await agRes.json()).agencies ?? []);
+      if (qapRes.ok) {
+        const q = await qapRes.json();
+        setQap({
+          qapInspectionRequired: !!q.qapInspectionRequired,
+          qapInspectionLocation: q.qapInspectionLocation ?? "",
+          qapTpiAgencyId: q.qapTpiAgencyId ?? "",
+          qapDocumentPath: q.qapDocumentPath ?? "",
+          qapProposedInspectionDate: q.qapProposedInspectionDate
+            ? String(q.qapProposedInspectionDate).slice(0, 10)
+            : "",
+          qapRemarks: q.qapRemarks ?? "",
+        });
+      }
       return data.items as ProcessingItem[];
     } catch {
       toast.error("Failed to load order processing data");
@@ -556,6 +585,30 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
   };
 
   // -----------------------------------------------------------------------
+  // QAP save
+  // -----------------------------------------------------------------------
+
+  const handleSaveQap = async () => {
+    setSavingQap(true);
+    try {
+      const res = await fetch(`/api/sales-orders/${id}/qap`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(qap),
+      });
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({}));
+        throw new Error(e.detail || e.error || "Failed");
+      }
+      toast.success("QAP saved");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to save QAP");
+    } finally {
+      setSavingQap(false);
+    }
+  };
+
+  // -----------------------------------------------------------------------
   // Derived state
   // -----------------------------------------------------------------------
 
@@ -592,6 +645,68 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
           {processedCount} of {totalCount} processed
         </span>
       </div>
+
+      {/* Quality / QAP — order-level, rendered once */}
+      <Card className="mb-4">
+        <CardHeader><CardTitle className="text-base">Quality / QAP (order-level — PRD §7)</CardTitle></CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="qapInspectionRequired"
+              checked={qap.qapInspectionRequired}
+              onCheckedChange={(c) => setQap({ ...qap, qapInspectionRequired: !!c })}
+            />
+            <Label htmlFor="qapInspectionRequired">Inspection Required</Label>
+          </div>
+          {qap.qapInspectionRequired && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Inspection Location</Label>
+                <Select value={qap.qapInspectionLocation} onValueChange={(v) => setQap({ ...qap, qapInspectionLocation: v })}>
+                  <SelectTrigger><SelectValue placeholder="Select location" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="WAREHOUSE">Warehouse</SelectItem>
+                    <SelectItem value="LAB">Lab</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>TPI Agency</Label>
+                <Select value={qap.qapTpiAgencyId} onValueChange={(v) => setQap({ ...qap, qapTpiAgencyId: v })}>
+                  <SelectTrigger><SelectValue placeholder="Select agency" /></SelectTrigger>
+                  <SelectContent>
+                    {agencies.map((a) => (<SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Proposed Inspection Date</Label>
+                <Input type="date" value={qap.qapProposedInspectionDate} onChange={(e) => setQap({ ...qap, qapProposedInspectionDate: e.target.value })} />
+              </div>
+              <div>
+                <Label>QAP Document</Label>
+                <Input type="file" onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const fd = new FormData();
+                  fd.append("file", file);
+                  const up = await fetch("/api/upload", { method: "POST", body: fd });
+                  if (up.ok) { const r = await up.json(); setQap((q) => ({ ...q, qapDocumentPath: r.filePath ?? "" })); toast.success("QAP uploaded"); }
+                  else toast.error("Upload failed");
+                }} />
+                {qap.qapDocumentPath && <p className="text-xs text-muted-foreground mt-1">Uploaded ✓</p>}
+              </div>
+            </div>
+          )}
+          <div>
+            <Label>QAP Remarks</Label>
+            <Textarea value={qap.qapRemarks} onChange={(e) => setQap({ ...qap, qapRemarks: e.target.value })} rows={2} />
+          </div>
+          <Button type="button" variant="outline" onClick={handleSaveQap} disabled={savingQap}>
+            {savingQap ? "Saving…" : "Save QAP"}
+          </Button>
+        </CardContent>
+      </Card>
 
       {/* Per-item step indicator */}
       <div className="flex items-center gap-2 flex-wrap">
