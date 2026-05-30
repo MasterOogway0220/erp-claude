@@ -189,7 +189,7 @@ async function seedProduction() {
     ];
     let empCreated = 0;
     for (const emp of employees) {
-      const existing = await prisma.employeeMaster.findUnique({ where: { employeeCode: emp.employeeCode } });
+      const existing = await prisma.employeeMaster.findFirst({ where: { employeeCode: emp.employeeCode, companyId: null } });
       if (!existing) {
         await prisma.employeeMaster.create({ data: emp });
         empCreated++;
