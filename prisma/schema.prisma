@@ -685,7 +685,7 @@ model FinancialYear {
 
 model EmployeeMaster {
   id                 String         @id @default(cuid())
-  employeeCode       String         @unique
+  employeeCode       String
   name               String
   department         String?
   designation        String?
@@ -701,6 +701,7 @@ model EmployeeMaster {
   linkedUser         User?          @relation(fields: [linkedUserId], references: [id])
   quotationsPrepared Quotation[]
 
+  @@unique([companyId, employeeCode])
   @@index([companyId])
 }
 

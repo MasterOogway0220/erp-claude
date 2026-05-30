@@ -172,7 +172,24 @@
       "Bash(rm -f /tmp/cj.txt /tmp/*.html)",
       "Bash(mysql *)",
       "Bash(awk 'NR>=900 && /^  return \\\\\\(/{print NR\": \"$0}' /Users/adi0220/projects/erp-claude/src/app/\\\\\\(dashboard\\\\\\)/quotations/create/standard/page.tsx)",
-      "Bash(awk 'NR>900 && /use\\(State|Effect|Memo|Ref|Query|Callback|Mutation\\)\\\\\\(/{print NR\": \"$0}' /Users/adi0220/projects/erp-claude/src/app/\\\\\\(dashboard\\\\\\)/quotations/create/standard/page.tsx)"
+      "Bash(awk 'NR>900 && /use\\(State|Effect|Memo|Ref|Query|Callback|Mutation\\)\\\\\\(/{print NR\": \"$0}' /Users/adi0220/projects/erp-claude/src/app/\\\\\\(dashboard\\\\\\)/quotations/create/standard/page.tsx)",
+      "Bash(ls -1 src/app/api/)",
+      "Bash(ls -1 \"src/app/\\(dashboard\\)/\")",
+      "Bash(ls -1 graphify-out/wiki/index.md)",
+      "Bash(awk '/^model QualityRequirement /{f=1} f{print NR\": \"$0} /^}/{if\\(f\\)exit}' prisma/schema.prisma)",
+      "Bash(awk 'NR>=890 && NR<=950 && /^model /{print NR\": \"$0}' prisma/schema.prisma)",
+      "Bash(awk 'NR>=2100 && NR<=2160 && /^model /{print NR\": \"$0}' prisma/schema.prisma)",
+      "Bash(awk '/^model QualityRequirement /{f=1} f{print NR\": \"$0} f&&/^}/{exit}' prisma/schema.prisma)",
+      "Bash(awk '/^model OrderProcessingItem /{f=1} f{print NR\": \"$0} f&&/^}/{exit}' prisma/schema.prisma)",
+      "Bash(awk '/^model SalesOrderItem /{f=1} f{print NR\": \"$0} f&&/^}/{exit}' prisma/schema.prisma)",
+      "Bash(awk '/^model InspectionOffer /{f=1} f{print NR\": \"$0} f&&/^}/{exit}' prisma/schema.prisma)",
+      "Bash(awk '/^model SalesOrder /{f=1} f{print NR\": \"$0} f&&/^}/{exit}' prisma/schema.prisma)",
+      "Bash(awk '/^model InspectionAgencyMaster /{f=1} f{print NR\": \"$0} f&&/^}/{exit}' prisma/schema.prisma)",
+      "Bash(npx vitest *)",
+      "Bash(awk '/^model POAcceptance /{f=1} f{print NR\": \"$0} f&&/^}/{exit}' prisma/schema.prisma)",
+      "Bash(awk '/^model CompanyMaster /{f=1} f{print $0} f&&/^}/{exit}' prisma/schema.prisma)",
+      "Bash(awk '/^model /{m=$2;c=0} m&&/companyId/{c=1} /^}/{if\\(m&&!c\\)print \"  \"m;m=\"\"}' prisma/schema.prisma)",
+      "Bash(awk '/^model /{m=$2;c=0} m&&/companyId/{c=1} /^}/{if\\(m&&c\\)n++;m=\"\"} END{print \"  \"n\" company-scoped models\"}' prisma/schema.prisma)"
     ]
   }
 }
