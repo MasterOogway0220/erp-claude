@@ -54,7 +54,8 @@ describe("parseModuleAccess", () => {
 });
 
 describe("isNavItemVisible", () => {
-  // The reported bug scenario: employee granted quotation+sales+purchase, role SALES, production ON
+  // Open-access policy (2026-07-16): role and grant gates removed — only the
+  // production lockdown still hides items.
   const grantedEmployee = {
     userRole: "SALES" as const,
     userEmail: "emp@erp.com",
@@ -62,22 +63,14 @@ describe("isNavItemVisible", () => {
     isProductionMode: true,
   };
 
-  it("granted employee sees their granted modules (sales + purchase) in production", () => {
+  it("any role sees every module regardless of role list or grants", () => {
     expect(isNavItemVisible(SALES, grantedEmployee)).toBe(true);
     expect(isNavItemVisible(PURCHASE, grantedEmployee)).toBe(true);
     expect(isNavItemVisible(QUOTATIONS, grantedEmployee)).toBe(true);
-  });
-
-  it("granted employee does NOT see ungranted Masters", () => {
-    expect(isNavItemVisible(MASTERS, grantedEmployee)).toBe(false);
-  });
-
-  it("granted employee still sees always-on Dashboard, never ungranted Alerts", () => {
+    expect(isNavItemVisible(MASTERS, grantedEmployee)).toBe(true);
     expect(isNavItemVisible(DASHBOARD, grantedEmployee)).toBe(true);
-    expect(isNavItemVisible(ALERTS, grantedEmployee)).toBe(false);
   });
 
-  // Ungranted login keeps the production lockdown (Masters + Quotation only)
   const ungrantedUser = {
     userRole: "SALES" as const,
     userEmail: "nobody@erp.com",
@@ -85,14 +78,18 @@ describe("isNavItemVisible", () => {
     isProductionMode: true,
   };
 
-  it("ungranted login in production sees Masters + Quotation but not Sales/Purchase", () => {
-    expect(isNavItemVisible(MASTERS, ungrantedUser)).toBe(true);
-    expect(isNavItemVisible(QUOTATIONS, ungrantedUser)).toBe(true);
+  it("production lockdown still hides productionHidden items from ungranted non-test users", () => {
+    expect(isNavItemVisible(ALERTS, grantedEmployee)).toBe(false); // hidden, no grantable key
     expect(isNavItemVisible(SALES, ungrantedUser)).toBe(false);
     expect(isNavItemVisible(PURCHASE, ungrantedUser)).toBe(false);
+    expect(isNavItemVisible(MASTERS, ungrantedUser)).toBe(true); // not productionHidden
+    expect(isNavItemVisible(QUOTATIONS, ungrantedUser)).toBe(true);
   });
 
-  // Test user sees everything in production
+  it("a grant still bypasses the production lockdown", () => {
+    expect(isNavItemVisible(SALES, grantedEmployee)).toBe(true);
+  });
+
   const testUser = {
     userRole: "ADMIN" as const,
     userEmail: TEST_USER_EMAIL,
@@ -107,9 +104,10 @@ describe("isNavItemVisible", () => {
     expect(isNavItemVisible(MASTERS, testUser)).toBe(true);
   });
 
-  it("outside production, a granted employee sees granted modules and not ungranted ones", () => {
+  it("outside production, everyone sees everything", () => {
     const dev = { ...grantedEmployee, isProductionMode: false };
     expect(isNavItemVisible(SALES, dev)).toBe(true);
-    expect(isNavItemVisible(MASTERS, dev)).toBe(false);
+    expect(isNavItemVisible(MASTERS, dev)).toBe(true);
+    expect(isNavItemVisible(ALERTS, dev)).toBe(true);
   });
 });

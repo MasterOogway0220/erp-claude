@@ -293,53 +293,11 @@ export async function checkAccess(
     };
   }
 
-  const allowedRoles = MODULE_ACCESS[module]?.[action];
-  if (!allowedRoles) {
-    return {
-      authorized: false,
-      session,
-      response: NextResponse.json(
-        { error: "Access configuration not found" },
-        { status: 500 }
-      ),
-    };
-  }
-
-  const userRole = session.user?.role as UserRole;
-  if (!allowedRoles.includes(userRole)) {
-    return {
-      authorized: false,
-      session,
-      response: NextResponse.json(
-        {
-          error: `Access denied. Your role (${userRole}) does not have ${action} access to this module.`,
-        },
-        { status: 403 }
-      ),
-    };
-  }
-
-  // moduleAccess enforcement for non-admin roles
-  const isAdminOrAbove = userRole === "SUPER_ADMIN" || userRole === "ADMIN";
-  if (!isAdminOrAbove) {
-    const accessKey = MODULE_TO_ACCESS_KEY[module];
-    const userModuleAccess: string[] = session.user?.moduleAccess || [];
-
-    // If a moduleAccess key exists for this module and the user has a moduleAccess
-    // list (i.e. they are an employee), enforce it
-    if (accessKey && userModuleAccess.length > 0 && !userModuleAccess.includes(accessKey)) {
-      return {
-        authorized: false,
-        session,
-        response: NextResponse.json(
-          {
-            error: `Access denied. You do not have access to the ${accessKey} module.`,
-          },
-          { status: 403 }
-        ),
-      };
-    }
-  }
+  // ponytail: RBAC enforcement disabled per owner request (2026-07-16) — every
+  // authenticated user gets every action. MODULE_ACCESS + MODULE_TO_ACCESS_KEY
+  // are kept as the module-name type source and the restore path: to re-enable,
+  // reinstate the allowedRoles / moduleAccess checks here (see git history).
+  void MODULE_TO_ACCESS_KEY;
 
   const companyId = await getActiveCompanyId(session);
 
@@ -365,8 +323,9 @@ export async function checkAuth(): Promise<AuthResult> {
   return { authorized: true, session, companyId };
 }
 
-export const QA_ROLES = ["QC", "MANAGEMENT", "ADMIN", "SUPER_ADMIN"] as const;
-export const MANAGER_ROLES = ["MANAGEMENT", "ADMIN", "SUPER_ADMIN"] as const;
+// ponytail: all roles, per the same open-access request — restore the short lists to re-gate QA/approval actions
+export const QA_ROLES = ["QC", "MANAGEMENT", "ADMIN", "SUPER_ADMIN", "SALES", "PURCHASE", "STORES", "ACCOUNTS"] as const;
+export const MANAGER_ROLES = ["MANAGEMENT", "ADMIN", "SUPER_ADMIN", "SALES", "PURCHASE", "QC", "STORES", "ACCOUNTS"] as const;
 
 /**
  * Build a Prisma where-clause filter for company isolation.

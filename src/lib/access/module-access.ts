@@ -64,15 +64,10 @@ export function isNavItemVisible(item: NavItemMeta, ctx: VisibilityContext): boo
     return false;
   }
 
-  // 2. Module grants are authoritative for non-admins who have grants.
-  if (!isAdminOrAbove && hasGrants && keys.length > 0) {
-    return isGranted;
-  }
-
-  // 3. Role gate fallback.
-  if (item.roles && !(userRole && item.roles.includes(userRole))) {
-    return false;
-  }
+  // ponytail: grant + role gates removed per owner request (2026-07-16) — every
+  // role sees every module. Restore rules 2 & 3 from git history to re-gate.
+  void isAdminOrAbove;
+  void hasGrants;
 
   return true;
 }
