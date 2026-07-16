@@ -120,7 +120,6 @@ const navSections: NavSection[] = [
         iconColorClass: "text-emerald-500",
         roles: ["SALES", "MANAGEMENT", "ADMIN", "SUPER_ADMIN"],
         moduleKey: "sales",
-        productionHidden: true,
         children: [
           { title: "Client P.O. Register", href: "/client-purchase-orders" },
           { title: "P.O. Acceptance", href: "/po-acceptance" },

@@ -31,7 +31,7 @@ export type DocumentType =
   | "INSPECTION_PREP";
 
 export const PREFIXES: Record<DocumentType, string> = {
-  QUOTATION: "NPS",
+  QUOTATION: "NPF",
   SALES_ORDER: "SO",
   PURCHASE_REQUISITION: "PR",
   PURCHASE_ORDER: "PO",

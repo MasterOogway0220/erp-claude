@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkAccess } from "@/lib/rbac";
-import { getCurrentFinancialYear } from "@/lib/document-numbering";
+import { getCurrentFinancialYear, PREFIXES } from "@/lib/document-numbering";
 
 const QUOTATION_NUMBER_BASE = 15000;
 
@@ -38,7 +38,7 @@ export async function GET() {
 
     const fy = getShortFinancialYear();
     const displayNumber = nextNumber + QUOTATION_NUMBER_BASE;
-    const previewNumber = `NPS/${fy}/${displayNumber.toString().padStart(5, "0")}`;
+    const previewNumber = `${PREFIXES.QUOTATION}/${fy}/${displayNumber.toString().padStart(5, "0")}`;
 
     return NextResponse.json({ previewNumber });
   } catch (error) {

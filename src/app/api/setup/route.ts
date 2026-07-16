@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
 
   // 4. Document sequences
   const sequences = [
-    { documentType: "QUOTATION", prefix: "NPS" },
+    { documentType: "QUOTATION", prefix: "NPF" },
     { documentType: "SALES_ORDER", prefix: "SO" },
     { documentType: "PURCHASE_REQUISITION", prefix: "PR" },
     { documentType: "PURCHASE_ORDER", prefix: "PO" },

@@ -123,6 +123,7 @@ export async function DELETE(
       where: { id, ...companyFilter(companyId) },
       select: {
         name: true,
+        linkedUserId: true,
         _count: { select: { quotationsPrepared: true } },
       },
     });
@@ -141,6 +142,19 @@ export async function DELETE(
     }
 
     await prisma.employeeMaster.delete({ where: { id, ...companyFilter(companyId) } });
+
+    // Also remove the linked login so it can't sign in anymore.
+    // Never delete the account performing the request.
+    if (employee.linkedUserId && employee.linkedUserId !== session.user?.id) {
+      try {
+        await prisma.user.delete({ where: { id: employee.linkedUserId } });
+      } catch {
+        // ponytail: login owns FK-protected records (documents, etc.) — deactivate instead
+        await prisma.user
+          .update({ where: { id: employee.linkedUserId }, data: { isActive: false } })
+          .catch(() => {});
+      }
+    }
 
     await createAuditLog({
       tableName: "EmployeeMaster",
