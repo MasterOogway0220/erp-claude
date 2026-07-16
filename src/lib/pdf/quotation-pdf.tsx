@@ -172,7 +172,7 @@ function StandardQuotationPage({
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
         <View>
           {company.isoLogoUrl
-            ? <Image src={company.isoLogoUrl} style={{ height: 40, objectFit: "contain" }} />
+            ? <Image src={company.isoLogoUrl} style={{ height: 60, objectFit: "contain" }} />
             : <T style={{ fontSize: 7, color: "#666" }}>ISO 9001:2015 | ISO 14001:2015 | ISO 45001:2018</T>
           }
         </View>
@@ -433,7 +433,7 @@ function NonStandardQuotationPage({
       <View style={[nsStyles.row, { marginBottom: 3, alignItems: "center" }]}>
         <View style={{ width: "25%", justifyContent: "center" }}>
           {company.isoLogoUrl
-            ? <Image src={company.isoLogoUrl} style={{ height: 40, objectFit: "contain" }} />
+            ? <Image src={company.isoLogoUrl} style={{ height: 60, objectFit: "contain" }} />
             : <T style={{ fontSize: 6.5, color: "#666" }}>ISO 9001:2015 | ISO 14001:2015 | ISO 45001:2018</T>
           }
         </View>

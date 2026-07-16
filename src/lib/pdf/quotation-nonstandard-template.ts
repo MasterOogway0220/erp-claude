@@ -448,7 +448,7 @@ export function generateNonStandardQuotationHtml(
   <tr>
     <td colspan="2" rowspan="2" style="vertical-align:middle;padding:4px;">
       ${(company as any).isoLogoUrl
-        ? `<img src="${(company as any).isoLogoUrl}" alt="ISO" style="max-height:45px;">`
+        ? `<img src="${(company as any).isoLogoUrl}" alt="ISO" style="max-height:70px;">`
         : `<span style="font-size:7pt;color:#666;">ISO 9001:2015 | ISO 14001:2015 | ISO 45001:2018</span>`
       }
     </td>

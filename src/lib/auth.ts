@@ -33,8 +33,13 @@ declare module "next-auth/jwt" {
     role: UserRole;
     companyId: string | null;
     moduleAccess: string[];
+    verifiedAt?: number;
   }
 }
+
+// How often to re-check the user row (isActive, role, grants) against the DB.
+// Every request paid a DB round trip before; 5 min bounds the staleness instead.
+const REVERIFY_INTERVAL_MS = 5 * 60 * 1000;
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -99,10 +104,12 @@ export const authOptions: NextAuthOptions = {
         token.role = user.role;
         token.companyId = user.companyId;
         token.moduleAccess = user.moduleAccess;
+        token.verifiedAt = Date.now();
         return token;
       }
-      // Re-verify on subsequent requests so deactivated users get booted mid-session
-      if (token.id) {
+      // Re-verify periodically so deactivated users get booted mid-session
+      // (throttled — this was a DB query on every single request).
+      if (token.id && Date.now() - (token.verifiedAt ?? 0) > REVERIFY_INTERVAL_MS) {
         const current = await prisma.user.findUnique({
           where: { id: token.id },
           select: {
@@ -119,6 +126,7 @@ export const authOptions: NextAuthOptions = {
         token.companyId = current.companyId;
         // Refresh grants so module-access changes take effect without re-login.
         token.moduleAccess = parseModuleAccess(current.employee?.moduleAccess);
+        token.verifiedAt = Date.now();
       }
       return token;
     },

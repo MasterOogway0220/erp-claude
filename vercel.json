@@ -1,4 +1,5 @@
 {
+  "regions": ["bom1"],
   "functions": {
     "src/app/api/quotations/[id]/pdf/route.tsx": {
       "maxDuration": 60,

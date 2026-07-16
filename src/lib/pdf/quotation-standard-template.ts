@@ -321,7 +321,7 @@ export function generateStandardQuotationHtml(
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
   <div style="font-size:10pt;">
     ${company.isoLogoUrl
-      ? `<img src="${company.isoLogoUrl}" alt="ISO" style="max-height:50px;">`
+      ? `<img src="${company.isoLogoUrl}" alt="ISO" style="max-height:75px;">`
       : `<span style="font-size:8pt;color:#666;">ISO 9001:2015 | ISO 14001:2015 | ISO 45001:2018</span>`
     }
   </div>

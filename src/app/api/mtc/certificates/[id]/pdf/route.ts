@@ -186,7 +186,7 @@ function generateHTML(
 <table style="border:none;margin-bottom:2px;">
 <tr>
   <td style="border:none;width:15%;vertical-align:middle;padding:2px;">
-    ${isoLogoUrl ? `<img src="${isoLogoUrl}" alt="ISO" style="max-height:45px;">` : `<span style="font-size:7pt;color:#666;">ISO 9001:2015<br>ISO 14001:2015<br>ISO 45001:2018</span>`}
+    ${isoLogoUrl ? `<img src="${isoLogoUrl}" alt="ISO" style="max-height:70px;">` : `<span style="font-size:7pt;color:#666;">ISO 9001:2015<br>ISO 14001:2015<br>ISO 45001:2018</span>`}
   </td>
   <td style="border:none;text-align:center;vertical-align:middle;">
     <div style="font-size:14pt;font-weight:bold;letter-spacing:3px;">M I L L &nbsp; T E S T &nbsp; C E R T I F I C A T E</div>
