@@ -1,9 +1,10 @@
 import { prisma } from "./prisma";
+import { AuditAction } from "@prisma/client";
 
 export async function createAuditLog(params: {
   tableName: string;
   recordId: string;
-  action: "CREATE" | "UPDATE" | "DELETE" | "APPROVE" | "REJECT" | "SUBMIT_FOR_APPROVAL" | "STATUS_CHANGE" | "EMAIL_SENT";
+  action: AuditAction;
   fieldName?: string;
   oldValue?: string;
   newValue?: string;

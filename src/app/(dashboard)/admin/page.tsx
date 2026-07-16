@@ -97,7 +97,49 @@ const actionColors: Record<string, string> = {
   CREATE: "bg-green-500",
   UPDATE: "bg-blue-500",
   DELETE: "bg-red-500",
+  APPROVE: "bg-emerald-600",
+  REJECT: "bg-orange-600",
+  SUBMIT_FOR_APPROVAL: "bg-indigo-500",
+  STATUS_CHANGE: "bg-purple-500",
+  EMAIL_SENT: "bg-cyan-600",
+  LOGIN: "bg-slate-500",
 };
+
+// "SalesOrder" / "purchase_order" → "sales order"
+const humanize = (s: string) =>
+  s.replace(/[_-]/g, " ").replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase();
+
+const truncate = (s: string, n = 40) => (s.length > n ? s.slice(0, n) + "…" : s);
+
+function describeLog(log: AuditLog): string {
+  const table = humanize(log.tableName);
+  const change =
+    log.fieldName && (log.oldValue || log.newValue)
+      ? ` — ${humanize(log.fieldName)}: "${truncate(log.oldValue || "—")}" → "${truncate(log.newValue || "—")}"`
+      : "";
+  switch (log.action) {
+    case "LOGIN":
+      return "Signed in";
+    case "CREATE":
+      return `Created a ${table} record${change}`;
+    case "UPDATE":
+      return `Updated a ${table} record${change}`;
+    case "DELETE":
+      return `Deleted a ${table} record${change}`;
+    case "APPROVE":
+      return `Approved a ${table}${change}`;
+    case "REJECT":
+      return `Rejected a ${table}${change}`;
+    case "SUBMIT_FOR_APPROVAL":
+      return `Submitted a ${table} for approval`;
+    case "STATUS_CHANGE":
+      return `Changed ${table} status${change}`;
+    case "EMAIL_SENT":
+      return `Sent an email for a ${table}${change}`;
+    default:
+      return `${log.action} on ${table}${change}`;
+  }
+}
 
 const ROLES = ["SUPER_ADMIN", "ADMIN", "SALES", "PURCHASE", "QC", "STORES", "ACCOUNTS", "MANAGEMENT"];
 
@@ -134,6 +176,7 @@ export default function AdminPage() {
   const [actionFilter, setActionFilter] = useState<string>("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
 
   // ==================== Data fetching ====================
 
@@ -474,6 +517,12 @@ export default function AdminPage() {
                       <SelectItem value="CREATE">Create</SelectItem>
                       <SelectItem value="UPDATE">Update</SelectItem>
                       <SelectItem value="DELETE">Delete</SelectItem>
+                      <SelectItem value="APPROVE">Approve</SelectItem>
+                      <SelectItem value="REJECT">Reject</SelectItem>
+                      <SelectItem value="SUBMIT_FOR_APPROVAL">Submit for Approval</SelectItem>
+                      <SelectItem value="STATUS_CHANGE">Status Change</SelectItem>
+                      <SelectItem value="EMAIL_SENT">Email Sent</SelectItem>
+                      <SelectItem value="LOGIN">Login</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -524,19 +573,15 @@ export default function AdminPage() {
                     <TableRow>
                       <TableHead>Timestamp</TableHead>
                       <TableHead>User</TableHead>
-                      <TableHead>Table</TableHead>
-                      <TableHead>Record ID</TableHead>
                       <TableHead>Action</TableHead>
-                      <TableHead>Field</TableHead>
-                      <TableHead>Old Value</TableHead>
-                      <TableHead>New Value</TableHead>
+                      <TableHead>Description</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {logsLoading ? (
                       <TableRow>
                         <TableCell
-                          colSpan={8}
+                          colSpan={4}
                           className="text-center py-8 text-muted-foreground"
                         >
                           Loading audit logs...
@@ -545,7 +590,7 @@ export default function AdminPage() {
                     ) : logs.length === 0 ? (
                       <TableRow>
                         <TableCell
-                          colSpan={8}
+                          colSpan={4}
                           className="text-center py-8 text-muted-foreground"
                         >
                           No audit logs found
@@ -553,7 +598,12 @@ export default function AdminPage() {
                       </TableRow>
                     ) : (
                       logs.map((log) => (
-                        <TableRow key={log.id}>
+                        <TableRow
+                          key={log.id}
+                          className="cursor-pointer"
+                          onClick={() => setSelectedLog(log)}
+                          title="Click for details"
+                        >
                           <TableCell className="text-sm whitespace-nowrap">
                             {format(
                               new Date(log.timestamp),
@@ -562,12 +612,6 @@ export default function AdminPage() {
                           </TableCell>
                           <TableCell>
                             {log.user?.name || "System"}
-                          </TableCell>
-                          <TableCell className="font-mono text-sm">
-                            {log.tableName}
-                          </TableCell>
-                          <TableCell className="font-mono text-xs max-w-[120px] truncate">
-                            {log.recordId}
                           </TableCell>
                           <TableCell>
                             <Badge
@@ -578,14 +622,8 @@ export default function AdminPage() {
                               {log.action}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-sm">
-                            {log.fieldName || "---"}
-                          </TableCell>
-                          <TableCell className="text-sm max-w-[150px] truncate">
-                            {log.oldValue || "---"}
-                          </TableCell>
-                          <TableCell className="text-sm max-w-[150px] truncate">
-                            {log.newValue || "---"}
+                          <TableCell className="text-sm max-w-[420px] truncate">
+                            {describeLog(log)}
                           </TableCell>
                         </TableRow>
                       ))
@@ -836,6 +874,57 @@ export default function AdminPage() {
               {submitting ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ==================== Audit Log Detail Dialog ==================== */}
+      <Dialog
+        open={!!selectedLog}
+        onOpenChange={(open) => !open && setSelectedLog(null)}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Audit Log Details</DialogTitle>
+            <DialogDescription>
+              {selectedLog ? describeLog(selectedLog) : ""}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedLog && (
+            <div className="grid grid-cols-[130px_1fr] gap-x-4 gap-y-2 text-sm">
+              <span className="text-muted-foreground">Timestamp</span>
+              <span>
+                {format(new Date(selectedLog.timestamp), "dd MMM yyyy HH:mm:ss")}
+              </span>
+              <span className="text-muted-foreground">User</span>
+              <span>
+                {selectedLog.user
+                  ? `${selectedLog.user.name} (${selectedLog.user.email})`
+                  : "System"}
+              </span>
+              <span className="text-muted-foreground">Action</span>
+              <span>
+                <Badge className={actionColors[selectedLog.action] || "bg-gray-500"}>
+                  {selectedLog.action}
+                </Badge>
+              </span>
+              <span className="text-muted-foreground">Table</span>
+              <span className="font-mono">{selectedLog.tableName}</span>
+              <span className="text-muted-foreground">Record ID</span>
+              <span className="font-mono break-all">{selectedLog.recordId}</span>
+              <span className="text-muted-foreground">Field</span>
+              <span>{selectedLog.fieldName || "—"}</span>
+              <span className="text-muted-foreground">Old Value</span>
+              <span className="whitespace-pre-wrap break-all max-h-40 overflow-y-auto rounded bg-muted px-2 py-1">
+                {selectedLog.oldValue || "—"}
+              </span>
+              <span className="text-muted-foreground">New Value</span>
+              <span className="whitespace-pre-wrap break-all max-h-40 overflow-y-auto rounded bg-muted px-2 py-1">
+                {selectedLog.newValue || "—"}
+              </span>
+              <span className="text-muted-foreground">IP Address</span>
+              <span>{selectedLog.ipAddress || "—"}</span>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 

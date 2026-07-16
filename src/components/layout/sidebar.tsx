@@ -36,6 +36,7 @@ import {
   ArrowLeftRight,
   X,
   LogOut,
+  ShieldCheck,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -208,6 +209,18 @@ const navSections: NavSection[] = [
         children: [
           { title: "Client Status Report", href: "/reports/client-status" },
         ],
+      },
+    ],
+  },
+  {
+    label: "ADMINISTRATION",
+    items: [
+      {
+        title: "Admin & Audit Log",
+        href: "/admin",
+        icon: <ShieldCheck className="h-5 w-5" />,
+        iconColorClass: "text-red-500",
+        roles: ["ADMIN", "SUPER_ADMIN"],
       },
     ],
   },

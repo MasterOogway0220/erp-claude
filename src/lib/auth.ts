@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
 import { UserRole } from "@prisma/client";
 import { parseModuleAccess } from "./access/module-access";
+import { createAuditLog } from "./audit";
 
 declare module "next-auth" {
   interface Session {
@@ -76,6 +77,15 @@ export const authOptions: NextAuthOptions = {
         await prisma.user.update({
           where: { id: user.id },
           data: { lastLogin: new Date() },
+        });
+
+        // createAuditLog swallows its own errors, so a logging failure can never block login
+        await createAuditLog({
+          tableName: "user",
+          recordId: user.id,
+          action: "LOGIN",
+          userId: user.id,
+          companyId: user.companyId,
         });
 
         // moduleAccess is stored as a JSON string in EmployeeMaster.moduleAccess
