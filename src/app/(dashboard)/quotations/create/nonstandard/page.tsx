@@ -160,7 +160,7 @@ function NonStandardQuotationPage() {
   // Add New Customer modal state
   const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
   const [newCustomerForm, setNewCustomerForm] = useState({
-    name: "", companyType: "BUYER", gstNo: "", addressLine1: "", city: "", state: "",
+    name: "", companyType: "BUYER", customerType: "DOMESTIC", gstNo: "", addressLine1: "", city: "", state: "",
   });
   const [addingCustomer, setAddingCustomer] = useState(false);
 
@@ -387,6 +387,10 @@ function NonStandardQuotationPage() {
         fetch(`/api/masters/customers/${formData.customerId}/terms?quotationType=${formData.quotationType}`)
           .then((res) => res.json())
           .then((data) => {
+            // Discard stale responses: quotationType flips DOMESTIC→EXPORT right after
+            // customer selection, so the DOMESTIC request can resolve after the EXPORT
+            // one and overwrite the correct terms
+            if (termsLoadedForKey.current !== termsKey) return;
             if (data.terms?.length > 0) {
               setTerms(data.terms.map((t: any) => ({
                 termName: t.termName,
@@ -408,6 +412,7 @@ function NonStandardQuotationPage() {
             }
           })
           .catch(() => {
+            if (termsLoadedForKey.current !== termsKey) return;
             setTerms(
               templatesData.templates.map((t: any) => ({
                 termName: t.termName,
@@ -2092,6 +2097,21 @@ function NonStandardQuotationPage() {
                   placeholder="e.g. Mumbai"
                 />
               </div>
+              <div className="grid gap-2">
+                <Label>Customer Type</Label>
+                <Select
+                  value={newCustomerForm.customerType}
+                  onValueChange={(value) => setNewCustomerForm({ ...newCustomerForm, customerType: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="DOMESTIC">Domestic</SelectItem>
+                    <SelectItem value="INTERNATIONAL">International (Export)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
@@ -2127,6 +2147,7 @@ function NonStandardQuotationPage() {
                     body: JSON.stringify({
                       name: newCustomerForm.name.trim(),
                       companyType: newCustomerForm.companyType,
+                      customerType: newCustomerForm.customerType,
                       gstNo: newCustomerForm.gstNo.trim() || undefined,
                       addressLine1: newCustomerForm.addressLine1.trim() || undefined,
                       city: newCustomerForm.city.trim() || undefined,
@@ -2140,7 +2161,7 @@ function NonStandardQuotationPage() {
                   const data = await res.json();
                   await queryClient.invalidateQueries({ queryKey: ["customers"] });
                   setFormData((prev) => ({ ...prev, customerId: data.id }));
-                  setNewCustomerForm({ name: "", companyType: "BUYER", gstNo: "", addressLine1: "", city: "", state: "" });
+                  setNewCustomerForm({ name: "", companyType: "BUYER", customerType: "DOMESTIC", gstNo: "", addressLine1: "", city: "", state: "" });
                   setShowAddCustomerModal(false);
                   toast.success("Customer created successfully");
                 } catch (err: any) {
