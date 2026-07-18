@@ -681,6 +681,11 @@ function StandardQuotationPage() {
         body: JSON.stringify(data),
       });
       if (!res.ok) {
+        if (res.status === 401) {
+          throw new Error(
+            "Your session expired, so the quotation was NOT saved. Your data is still on this page — log in again in a NEW tab, then come back here and press Save."
+          );
+        }
         const err = await res.json().catch(() => null);
         throw new Error(err?.error || "Failed to save quotation");
       }
@@ -705,7 +710,7 @@ function StandardQuotationPage() {
       }
       router.push(`/quotations/${data.id || editId}`);
     },
-    onError: (error: Error) => toast.error(error.message),
+    onError: (error: Error) => toast.error(error.message, { duration: 10000 }),
   });
 
   const addItem = () => setItems([...items, { ...emptyItem }]);

@@ -10,7 +10,14 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <SessionProvider>
+    <SessionProvider
+      // Keep the JWT cookie rolling during long form fills: only /api/auth/session
+      // hits re-issue the cookie (24h sliding), so without polling it expires 24h
+      // after the last page load / tab refocus and the next save silently 401s.
+      refetchInterval={4 * 60}
+      refetchOnWindowFocus
+      refetchWhenOffline={false}
+    >
       <TooltipProvider delayDuration={0}>
         <div className="flex min-h-screen">
           <Sidebar />

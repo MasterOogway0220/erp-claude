@@ -120,15 +120,24 @@ export const authOptions: NextAuthOptions = {
       // Re-verify periodically so deactivated users get booted mid-session
       // (throttled — this was a DB query on every single request).
       if (token.id && Date.now() - (token.verifiedAt ?? 0) > REVERIFY_INTERVAL_MS) {
-        const current = await prisma.user.findUnique({
-          where: { id: token.id },
-          select: {
-            isActive: true,
-            role: true,
-            companyId: true,
-            employee: { select: { moduleAccess: true } },
-          },
-        });
+        let current;
+        try {
+          current = await prisma.user.findUnique({
+            where: { id: token.id },
+            select: {
+              isActive: true,
+              role: true,
+              companyId: true,
+              employee: { select: { moduleAccess: true } },
+            },
+          });
+        } catch (err) {
+          // A transient DB failure (Hostinger connection caps) must not kill the
+          // session: throwing here makes next-auth report no session (401) and,
+          // when it happens on /api/auth/session, DELETE the session cookie.
+          console.error("[auth] re-verify skipped, DB error:", err);
+          return token;
+        }
         if (!current || !current.isActive) {
           return {} as typeof token;
         }
@@ -142,7 +151,9 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (!token?.id) {
-        return { ...session, user: undefined } as unknown as typeof session;
+        // Signed-out, not a half-session: `{ user: undefined }` is truthy, so it
+        // passes `!session` checks and crashes routes at session.user.id (500).
+        return null as unknown as typeof session;
       }
       if (session.user) {
         session.user.id = token.id;

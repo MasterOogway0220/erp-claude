@@ -285,7 +285,9 @@ export async function checkAccess(
 ): Promise<AuthResult> {
   const session = await getServerSession(authOptions);
 
-  if (!session) {
+  // A blanked JWT yields a truthy session with user undefined — must 401 here,
+  // not crash later at session.user.id.
+  if (!session?.user?.id) {
     return {
       authorized: false,
       session: null,
@@ -310,7 +312,7 @@ export async function checkAccess(
 export async function checkAuth(): Promise<AuthResult> {
   const session = await getServerSession(authOptions);
 
-  if (!session) {
+  if (!session?.user?.id) {
     return {
       authorized: false,
       session: null,
