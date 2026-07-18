@@ -54,6 +54,8 @@ export async function GET(request: NextRequest) {
         quotationCategory: true,
         customerId: true,
         items: {
+          // Unpriced draft items (rate 0) are useless as price history
+          where: { unitRate: { gt: 0 } },
           select: {
             id: true,
             product: true,
@@ -90,7 +92,8 @@ export async function GET(request: NextRequest) {
     });
 
     // Format: list of quotations with their items + customer info
-    const results = quotations.map((q) => {
+    // (skip quotations left with no priced items, e.g. fully unpriced drafts)
+    const results = quotations.filter((q) => q.items.length > 0).map((q) => {
       const cust = customerMap.get(q.customerId);
       return {
         id: q.id,

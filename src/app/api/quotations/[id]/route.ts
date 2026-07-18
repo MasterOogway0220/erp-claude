@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
 import { numberToWords } from "@/lib/amount-in-words";
 import { checkAccess, companyFilter } from "@/lib/rbac";
+import { unpricedItemsError } from "@/lib/quotations/pricing";
 
 // Valid quotation status transitions
 const VALID_QUOTATION_TRANSITIONS: Record<string, string[]> = {
@@ -109,7 +110,12 @@ export async function PATCH(
 
     const existing = await prisma.quotation.findFirst({
       where: { id, ...companyFilter(companyId) },
-      select: { status: true, quotationNo: true, version: true },
+      select: {
+        status: true,
+        quotationNo: true,
+        version: true,
+        items: { select: { sNo: true, unitRate: true } },
+      },
     });
 
     if (!existing) {
@@ -124,6 +130,20 @@ export async function PATCH(
           { error: `Invalid status transition from ${existing.status} to ${status}` },
           { status: 400 }
         );
+      }
+    }
+
+    // Price gate: drafts may be unpriced, but every item needs a unit rate
+    // before the quotation can enter the approval flow.
+    if (status === "PENDING_APPROVAL" || status === "APPROVED") {
+      const priceError = unpricedItemsError(
+        existing.items,
+        status === "APPROVED"
+          ? "Add prices to all items before approving."
+          : "Add prices to all items before submitting for approval."
+      );
+      if (priceError) {
+        return NextResponse.json({ error: priceError }, { status: 400 });
       }
     }
 
@@ -363,6 +383,43 @@ export async function PUT(
       );
     }
 
+    // Validate numeric fields (rate optional at draft stage, empty saves as 0)
+    for (let i = 0; i < items.length; i++) {
+      const qty = parseFloat(items[i].quantity);
+      const rawRate = items[i].unitRate;
+      const rate = rawRate == null || rawRate === "" ? 0 : parseFloat(rawRate);
+      if (isNaN(qty) || qty <= 0) {
+        return NextResponse.json(
+          { error: `Item ${i + 1}: quantity is required and must be a positive number` },
+          { status: 400 }
+        );
+      }
+      if (isNaN(rate) || rate < 0) {
+        return NextResponse.json(
+          { error: `Item ${i + 1}: unit rate must be a non-negative number` },
+          { status: 400 }
+        );
+      }
+      // Normalize amount: recompute qty × rate when the client value is
+      // missing/invalid, so a priced item can't slip through with amount 0.
+      const amt = parseFloat(items[i].amount);
+      if (!Number.isFinite(amt) || amt < 0) {
+        items[i].amount = (qty * rate).toFixed(2);
+      }
+    }
+
+    // Price gate: an edit must not leave a post-draft quotation unpriced —
+    // PENDING_APPROVAL/APPROVED/SENT/WON quotations keep every item priced.
+    if (existing.status !== "DRAFT") {
+      const priceError = unpricedItemsError(
+        items,
+        "Quotations beyond draft must have a price on every item."
+      );
+      if (priceError) {
+        return NextResponse.json({ error: priceError }, { status: 400 });
+      }
+    }
+
     // Resolve cc_ buyerId (from CustomerContact) to a real BuyerMaster entry
     let resolvedBuyerId = buyerId || null;
     if (buyerId && String(buyerId).startsWith("cc_")) {
@@ -460,8 +517,8 @@ export async function PUT(
               length: item.length || null,
               ends: item.ends || null,
               quantity: parseFloat(item.quantity),
-              unitRate: parseFloat(item.unitRate),
-              amount: parseFloat(item.amount),
+              unitRate: parseFloat(item.unitRate) || 0,
+              amount: parseFloat(item.amount) || 0,
               delivery: item.delivery || null,
               remark: item.remark || null,
               materialCodeId: item.materialCodeId || null,

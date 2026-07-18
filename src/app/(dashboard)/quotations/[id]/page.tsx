@@ -535,25 +535,6 @@ export default function QuotationDetailPage() {
               <Mail className="h-4 w-4 mr-2" />
               {quotation.status === "SENT" ? "Resend" : "Send to Customer"}
             </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                  <Download className="h-4 w-4 mr-2" />
-                  Download PDF
-                  <ChevronDown className="h-4 w-4 ml-2" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => handleDownloadPDF("quoted")}>
-                  <FileText className="h-4 w-4 mr-2" />
-                  {quotation.quotationCategory === "NON_STANDARD" ? "Commercial PDF" : "Priced PDF"}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleDownloadPDF("unquoted")}>
-                  <FileText className="h-4 w-4 mr-2" />
-                  {quotation.quotationCategory === "NON_STANDARD" ? "Technical PDF" : "Technical PDF (No Prices)"}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
             {quotation.status === "SENT" && (
               <Button
                 variant="default"
@@ -601,6 +582,27 @@ export default function QuotationDetailPage() {
             Revise
           </Button>
         )}
+        {/* Download PDF is available in every status; unapproved quotations
+            get a DRAFT watermark from the PDF API. */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline">
+              <Download className="h-4 w-4 mr-2" />
+              Download PDF
+              <ChevronDown className="h-4 w-4 ml-2" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem onClick={() => handleDownloadPDF("quoted")}>
+              <FileText className="h-4 w-4 mr-2" />
+              {quotation.quotationCategory === "NON_STANDARD" ? "Commercial PDF" : "Priced PDF"}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleDownloadPDF("unquoted")}>
+              <FileText className="h-4 w-4 mr-2" />
+              {quotation.quotationCategory === "NON_STANDARD" ? "Technical PDF" : "Technical PDF (No Prices)"}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Quotation Details */}

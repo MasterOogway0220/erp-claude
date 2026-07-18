@@ -1009,7 +1009,7 @@ function CreateClientPOPage() {
                                 <span className={item.negotiatedRate < item.unitRate ? "text-red-600" : "text-green-600"}>
                                   {item.negotiatedRate < item.unitRate ? "-" : "+"}
                                   {Math.abs(item.unitRate - item.negotiatedRate).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                                  {" "}({Math.abs(((item.unitRate - item.negotiatedRate) / item.unitRate) * 100).toFixed(1)}%)
+                                  {" "}({item.unitRate !== 0 ? Math.abs(((item.unitRate - item.negotiatedRate) / item.unitRate) * 100).toFixed(1) : "0.0"}%)
                                 </span>
                               ) : (
                                 <span className="text-muted-foreground">—</span>

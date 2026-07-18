@@ -605,7 +605,8 @@ function StandardQuotationPage() {
           length: item.length || "",
           ends: item.ends || "",
           quantity: String(item.quantity),
-          unitRate: String(item.unitRate),
+          // Unpriced items are stored as 0 — show them blank again on edit
+          unitRate: Number(item.unitRate) > 0 ? String(item.unitRate) : "",
           amount: String(item.amount),
           uom: item.uom || "Mtr",
           delivery: item.delivery || "",
@@ -872,8 +873,10 @@ function StandardQuotationPage() {
       toast.error("Please select a customer");
       return;
     }
-    if (items.some((item) => !item.quantity || !item.unitRate)) {
-      toast.error("Please fill quantity and unit rate for all items");
+    // Unit rate is optional at draft stage — prices become mandatory when the
+    // quotation is submitted for approval (enforced by the API price gate).
+    if (items.some((item) => !item.quantity)) {
+      toast.error("Please fill quantity for all items");
       return;
     }
     createMutation.mutate({
@@ -1617,7 +1620,6 @@ function StandardQuotationPage() {
                         step="0.01"
                         value={item.unitRate}
                         onChange={(e) => updateItem(index, "unitRate", e.target.value)}
-                        required
                         className="h-8"
                       />
                     </div>

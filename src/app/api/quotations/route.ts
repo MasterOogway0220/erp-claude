@@ -150,21 +150,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate numeric fields on items
+    // Validate numeric fields on items. Unit rate is optional at draft stage
+    // (empty saves as 0) — the price gate applies when the quotation moves to
+    // PENDING_APPROVAL/APPROVED, not here.
     for (let i = 0; i < items.length; i++) {
       const qty = parseFloat(items[i].quantity);
-      const rate = parseFloat(items[i].unitRate);
+      const rawRate = items[i].unitRate;
+      const rate = rawRate == null || rawRate === "" ? 0 : parseFloat(rawRate);
       if (isNaN(qty) || qty <= 0) {
         return NextResponse.json(
           { error: `Item ${i + 1}: quantity is required and must be a positive number` },
           { status: 400 }
         );
       }
-      if (isNaN(rate) || rate <= 0) {
+      if (isNaN(rate) || rate < 0) {
         return NextResponse.json(
-          { error: `Item ${i + 1}: unit rate is required and must be a positive number` },
+          { error: `Item ${i + 1}: unit rate must be a non-negative number` },
           { status: 400 }
         );
+      }
+      // Normalize amount: recompute qty × rate when the client value is
+      // missing/invalid, so a priced item can't slip through with amount 0.
+      const amt = parseFloat(items[i].amount);
+      if (!Number.isFinite(amt) || amt < 0) {
+        items[i].amount = (qty * rate).toFixed(2);
       }
     }
 
@@ -275,8 +284,8 @@ export async function POST(request: NextRequest) {
             length: item.length || null,
             ends: item.ends || null,
             quantity: parseFloat(item.quantity),
-            unitRate: parseFloat(item.unitRate),
-            amount: parseFloat(item.amount),
+            unitRate: parseFloat(item.unitRate) || 0,
+            amount: parseFloat(item.amount) || 0,
             delivery: item.delivery || null,
             remark: item.remark || null,
             materialCodeId: item.materialCodeId || null,

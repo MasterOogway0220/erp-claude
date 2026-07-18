@@ -30,7 +30,8 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const { authorized, session, response } = await checkAccess("quotation", "read");
+    // Sending transitions the quotation to SENT — that's a write, not a read
+    const { authorized, session, response } = await checkAccess("quotation", "write");
     if (!authorized) return response!;
 
     const body = await request.json();
@@ -62,6 +63,16 @@ export async function POST(
       return NextResponse.json(
         { error: "Quotation not found" },
         { status: 404 }
+      );
+    }
+
+    // Only approved quotations may be emailed to the customer (SENT = resend).
+    // Without this guard an unpriced/unapproved DRAFT could be mailed out and
+    // silently jump to SENT, bypassing the approval flow and the price gate.
+    if (quotation.status !== "APPROVED" && quotation.status !== "SENT") {
+      return NextResponse.json(
+        { error: "Only approved quotations can be emailed to the customer" },
+        { status: 400 }
       );
     }
 

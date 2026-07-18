@@ -54,6 +54,32 @@ function Cell({
   return <View style={[BORDER, { padding: "1pt 2pt" }, style]}>{children}</View>;
 }
 
+/**
+ * Diagonal DRAFT watermark for quotations that are not yet approved — rendered
+ * as the first child of the Page so all content paints on top of it.
+ */
+function DraftWatermark() {
+  return (
+    <View
+      fixed
+      style={{ position: "absolute", top: 600, left: 0, right: 0, alignItems: "center" }}
+    >
+      <Text
+        style={{
+          fontSize: 120,
+          fontFamily: "Helvetica",
+          fontWeight: "bold",
+          color: "#e31e24",
+          opacity: 0.08,
+          transform: "rotate(-30deg)",
+        }}
+      >
+        DRAFT
+      </Text>
+    </View>
+  );
+}
+
 function T({ style, children }: { style?: any; children?: React.ReactNode }) {
   return <Text style={[{ fontFamily: "Helvetica", fontSize: 8 }, style]}>{children}</Text>;
 }
@@ -124,10 +150,12 @@ function StandardQuotationPage({
   quotation,
   company,
   isUnquoted,
+  watermark,
 }: {
   quotation: any;
   company: any;
   isUnquoted: boolean;
+  watermark?: boolean;
 }) {
   const curr = quotation.currency || "INR";
   const defaultUom = quotation.items[0]?.uom || "Mtr";
@@ -167,6 +195,7 @@ function StandardQuotationPage({
 
   return (
     <Page size={[841.89, 1587]} style={stdStyles.page}>
+      {watermark ? <DraftWatermark /> : null}
 
       {/* HEADER */}
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
@@ -379,10 +408,12 @@ function NonStandardQuotationPage({
   quotation,
   company,
   isTechnical,
+  watermark,
 }: {
   quotation: any;
   company: any;
   isTechnical: boolean;
+  watermark?: boolean;
 }) {
   const curr = quotation.currency || "INR";
   const typeLabel = isTechnical ? "TECHNICAL" : "COMMERCIAL";
@@ -428,6 +459,7 @@ function NonStandardQuotationPage({
 
   return (
     <Page size={[595.28, 1587]} style={nsStyles.page}>
+      {watermark ? <DraftWatermark /> : null}
 
       {/* ROW 1-2: Logo + Type Label */}
       <View style={[nsStyles.row, { marginBottom: 3, alignItems: "center" }]}>
@@ -586,23 +618,25 @@ export interface QuotationPDFProps {
   quotation: any;
   company: any;
   variant?: "QUOTED" | "UNQUOTED";
+  /** Render a diagonal DRAFT watermark (quotation not yet approved). */
+  watermark?: boolean;
 }
 
-export function QuotationPDF({ quotation, company, variant = "QUOTED" }: QuotationPDFProps) {
+export function QuotationPDF({ quotation, company, variant = "QUOTED", watermark = false }: QuotationPDFProps) {
   const isNonStandard = quotation.quotationCategory === "NON_STANDARD";
   const isUnquoted = variant === "UNQUOTED";
 
   if (isNonStandard) {
     return (
       <Document>
-        <NonStandardQuotationPage quotation={quotation} company={company} isTechnical={isUnquoted} />
+        <NonStandardQuotationPage quotation={quotation} company={company} isTechnical={isUnquoted} watermark={watermark} />
       </Document>
     );
   }
 
   return (
     <Document>
-      <StandardQuotationPage quotation={quotation} company={company} isUnquoted={isUnquoted} />
+      <StandardQuotationPage quotation={quotation} company={company} isUnquoted={isUnquoted} watermark={watermark} />
     </Document>
   );
 }

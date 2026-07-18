@@ -42,6 +42,8 @@ export async function GET(request: NextRequest) {
     const latestQuoteItem = await prisma.quotationItem.findFirst({
       where: {
         materialCodeId,
+        // Unpriced draft items (rate 0) must not shadow real price history
+        unitRate: { gt: 0 },
         quotation: {
           customerId: { in: customerIds },
           ...companyFilter(companyId),

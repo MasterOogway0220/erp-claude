@@ -539,7 +539,8 @@ function NonStandardQuotationPage() {
           itemNo: item.product || "",
           certificateReq: item.certificateReq || "",
           quantity: String(item.quantity),
-          unitRate: String(item.unitRate),
+          // Unpriced items are stored as 0 — show them blank again on edit
+          unitRate: Number(item.unitRate) > 0 ? String(item.unitRate) : "",
           amount: String(item.amount),
           uom: item.uom || "Mtr",
           delivery: item.delivery || "",
@@ -748,8 +749,10 @@ function NonStandardQuotationPage() {
       toast.error("Please select a customer");
       return;
     }
-    if (items.some((item) => !item.quantity || !item.unitRate)) {
-      toast.error("Please fill quantity and unit rate for all items");
+    // Unit rate is optional at draft stage — prices become mandatory when the
+    // quotation is submitted for approval (enforced by the API price gate).
+    if (items.some((item) => !item.quantity)) {
+      toast.error("Please fill quantity for all items");
       return;
     }
 
@@ -1517,13 +1520,12 @@ function NonStandardQuotationPage() {
                         </Select>
                       </div>
                       <div className="grid gap-2">
-                        <Label className="text-sm">Unit Rate ({formData.currency}) *</Label>
+                        <Label className="text-sm">Unit Rate ({formData.currency})</Label>
                         <Input
                           type="number"
                           step="0.01"
                           value={item.unitRate}
                           onChange={(e) => updateItem(index, "unitRate", e.target.value)}
-                          required
                         />
                       </div>
                       <div className="grid gap-2">
@@ -1788,13 +1790,12 @@ function NonStandardQuotationPage() {
                         </Select>
                       </div>
                       <div className="grid gap-2">
-                        <Label className="text-sm">Unit Rate ({formData.currency}) *</Label>
+                        <Label className="text-sm">Unit Rate ({formData.currency})</Label>
                         <Input
                           type="number"
                           step="0.01"
                           value={item.unitRate}
                           onChange={(e) => updateItem(index, "unitRate", e.target.value)}
-                          required
                         />
                       </div>
                       <div className="grid gap-2">

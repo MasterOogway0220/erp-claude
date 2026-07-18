@@ -69,11 +69,16 @@ export async function GET(
         : (company as any).isoLogoUrl,
     };
 
+    // Anything not yet approved (or already invalidated) carries a DRAFT
+    // watermark so it can't be mistaken for a final quotation.
+    const isFinal = ["APPROVED", "SENT", "WON"].includes(quotation.status);
+
     const pdfBuffer = await renderToBuffer(
       React.createElement(QuotationPDF, {
         quotation,
         company: resolvedCompany,
         variant: pdfVariant,
+        watermark: !isFinal,
       }) as any
     );
 
@@ -93,6 +98,10 @@ export async function GET(
       filename = isUnquoted
         ? `TECHNICAL-QUT-${qtnNum}-${clientName}${inqNo ? `-${inqNo}` : ""}.pdf`
         : `PRICED-QUT-${qtnNum}-${clientName}${inqNo ? `-${inqNo}` : ""}.pdf`;
+    }
+
+    if (!isFinal) {
+      filename = `DRAFT-${filename}`;
     }
 
     return new NextResponse(new Uint8Array(pdfBuffer), {
