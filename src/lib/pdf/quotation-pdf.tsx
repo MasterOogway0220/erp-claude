@@ -62,7 +62,15 @@ function DraftWatermark() {
   return (
     <View
       fixed
-      style={{ position: "absolute", top: 600, left: 0, right: 0, alignItems: "center" }}
+      style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        alignItems: "center",
+        justifyContent: "center",
+      }}
     >
       <Text
         style={{
@@ -84,7 +92,7 @@ function T({ style, children }: { style?: any; children?: React.ReactNode }) {
   return <Text style={[{ fontFamily: "Helvetica", fontSize: 8 }, style]}>{children}</Text>;
 }
 
-// ─── STANDARD QUOTATION (Landscape 297×230mm) ─────────────────────────────────
+// ─── STANDARD QUOTATION (A4 landscape, paginated) ─────────────────────────────
 
 const NOTES = [
   "This quotation is subject to our final confirmation at the time of order placement.",
@@ -163,6 +171,7 @@ function StandardQuotationPage({
   const hasMixed = allUoms.size > 1;
 
   const totalAmount = quotation.items.reduce((s: number, i: any) => s + (parseFloat(i.amount) || 0), 0);
+  const totalQty = quotation.items.reduce((s: number, i: any) => s + (parseFloat(i.quantity) || 0), 0);
   const grandTotal = parseFloat(quotation.grandTotal) || totalAmount;
 
   const customerAddress = [
@@ -194,7 +203,7 @@ function StandardQuotationPage({
     : `FORMAT: ${quotation.quotationNo}, Dated: ${fmtDate(quotation.quotationDate)}`;
 
   return (
-    <Page size={[841.89, 1587]} style={stdStyles.page}>
+    <Page size="A4" orientation="landscape" style={stdStyles.page}>
       {watermark ? <DraftWatermark /> : null}
 
       {/* HEADER */}
@@ -273,7 +282,7 @@ function StandardQuotationPage({
         const amtDisplay = isUnquoted ? "QUOTED" : fmtIN(item.amount, 2);
         const matCode = item.materialCode?.code || item.materialCodeLabel || "";
         return (
-          <View key={item.id} style={stdStyles.row}>
+          <View key={item.id} style={stdStyles.row} wrap={false}>
             <StdTd w={STD_COLS[0]} align="center">{item.sNo}</StdTd>
             <StdTd w={STD_COLS[1]} align="left">{item.product}</StdTd>
             <StdTd w={STD_COLS[2]} align="left">{item.material}</StdTd>
@@ -291,6 +300,24 @@ function StandardQuotationPage({
           </View>
         );
       })}
+
+      {/* TOTAL ROW (per reference format) */}
+      <View style={stdStyles.row} wrap={false}>
+        <View style={[stdStyles.td, { width: "61%" }]}>
+          <T style={{ textAlign: "center", fontSize: 7.5, fontFamily: "Helvetica", fontWeight: "bold" }}>Total</T>
+        </View>
+        <View style={[stdStyles.td, { width: STD_COLS[9] }]}>
+          <T style={{ textAlign: "right", fontSize: 7.5, fontFamily: "Helvetica", fontWeight: "bold" }}>{fmt(totalQty, 2)}</T>
+        </View>
+        <View style={[stdStyles.td, { width: STD_COLS[10] }]} />
+        <View style={[stdStyles.td, { width: STD_COLS[11] }]}>
+          <T style={{ textAlign: "right", fontSize: 7.5, fontFamily: "Helvetica", fontWeight: "bold" }}>
+            {isUnquoted ? "QUOTED" : fmtIN(totalAmount, 2)}
+          </T>
+        </View>
+        <View style={[stdStyles.td, { width: STD_COLS[12] }]} />
+        <View style={[stdStyles.td, { width: STD_COLS[13] }]} />
+      </View>
 
       {/* AMOUNT IN WORDS */}
       {!isUnquoted && (
@@ -344,7 +371,7 @@ function StandardQuotationPage({
   );
 }
 
-// ─── NON-STANDARD QUOTATION (Portrait 210×320mm) ──────────────────────────────
+// ─── NON-STANDARD QUOTATION (A4 portrait, paginated) ──────────────────────────
 
 const nsStyles = StyleSheet.create({
   page: { padding: "8mm 8mm", fontFamily: "Helvetica", fontSize: 8.5 },
@@ -422,6 +449,7 @@ function NonStandardQuotationPage({
     : typeLabel;
 
   const totalAmount = quotation.items.reduce((s: number, i: any) => s + (parseFloat(i.amount) || 0), 0);
+  const totalQty = quotation.items.reduce((s: number, i: any) => s + (parseFloat(i.quantity) || 0), 0);
   const grandTotal = parseFloat(quotation.grandTotal) || totalAmount;
   const includedTerms = quotation.terms.filter((t: any) => t.isIncluded !== false);
 
@@ -458,7 +486,7 @@ function NonStandardQuotationPage({
     : `FORMAT: ${quotation.quotationNo}, Dated: ${fmtDate(quotation.quotationDate)}`;
 
   return (
-    <Page size={[595.28, 1587]} style={nsStyles.page}>
+    <Page size="A4" style={nsStyles.page}>
       {watermark ? <DraftWatermark /> : null}
 
       {/* ROW 1-2: Logo + Type Label */}
@@ -554,6 +582,23 @@ function NonStandardQuotationPage({
           </View>
         );
       })}
+
+      {/* GRAND TOTAL ROW (per reference format) */}
+      <View style={nsStyles.row} wrap={false}>
+        <View style={[nsStyles.td, { width: "58%" }]}>
+          <T style={{ fontFamily: "Helvetica", fontWeight: "bold", fontSize: 8.5 }}>Grand Total</T>
+        </View>
+        <View style={[nsStyles.td, { width: NS_COLS.qty }]}>
+          <T style={{ textAlign: "center", fontFamily: "Helvetica", fontWeight: "bold", fontSize: 8.5 }}>{fmt(totalQty, 0)}</T>
+        </View>
+        <View style={[nsStyles.td, { width: NS_COLS.rate }]} />
+        <View style={[nsStyles.td, { width: NS_COLS.total }]}>
+          <T style={{ textAlign: "right", fontFamily: "Helvetica", fontWeight: "bold", fontSize: 8.5 }}>
+            {isTechnical ? "QUOTED" : fmtIN(totalAmount, 0)}
+          </T>
+        </View>
+        <View style={[nsStyles.td, { width: NS_COLS.del }]} />
+      </View>
 
       {/* AMOUNT IN WORDS */}
       {!isTechnical && (
