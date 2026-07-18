@@ -136,6 +136,9 @@ export const authOptions: NextAuthOptions = {
           // session: throwing here makes next-auth report no session (401) and,
           // when it happens on /api/auth/session, DELETE the session cookie.
           console.error("[auth] re-verify skipped, DB error:", err);
+          // Back off ~1 min (persists via the session-endpoint cookie re-issue)
+          // so an outage isn't hammered with a failing query on every poll.
+          token.verifiedAt = Date.now() - REVERIFY_INTERVAL_MS + 60_000;
           return token;
         }
         if (!current || !current.isActive) {
@@ -153,7 +156,10 @@ export const authOptions: NextAuthOptions = {
       if (!token?.id) {
         // Signed-out, not a half-session: `{ user: undefined }` is truthy, so it
         // passes `!session` checks and crashes routes at session.user.id (500).
-        return null as unknown as typeof session;
+        // An empty object reads as "no session" both in getServerSession (empty
+        // body -> null) and in the next-auth client poller, and unlike a null
+        // body it doesn't trigger CLIENT_FETCH_ERROR noise in the browser.
+        return {} as unknown as typeof session;
       }
       if (session.user) {
         session.user.id = token.id;

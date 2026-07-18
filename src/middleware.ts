@@ -18,6 +18,11 @@ export default withAuth(
     return NextResponse.next();
   },
   {
+    callbacks: {
+      // A blanked token ({} re-encoded after the user was deleted/deactivated)
+      // still decodes truthy — require an id so those users get sent to /login.
+      authorized: ({ token }) => !!token?.id,
+    },
     pages: {
       signIn: "/login",
     },

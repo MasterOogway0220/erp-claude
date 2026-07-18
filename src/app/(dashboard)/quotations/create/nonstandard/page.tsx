@@ -617,6 +617,12 @@ function NonStandardQuotationPage() {
           );
         }
         const err = await res.json().catch(() => null);
+        if (res.status >= 500) {
+          console.error("Save failed:", err?.error);
+          throw new Error(
+            "The server could not save the quotation (temporary server/database problem). Your data is still on this page — wait a minute and press Save again."
+          );
+        }
         throw new Error(err?.error || "Failed to save quotation");
       }
       return res.json();
