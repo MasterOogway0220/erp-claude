@@ -220,7 +220,8 @@
       "Bash(Get-ChildItem -Path \"E:\\\\projects\\\\erp-claude\" -Force)",
       "Bash(Select-Object Name, PSIsContainer)",
       "Bash(Format-Table -AutoSize)",
-      "PowerShell(git pull *)"
+      "PowerShell(git pull *)",
+      "Bash(/private/tmp/claude-501/-Users-adi0220-projects-erp-claude/e9057858-3ad0-40c9-bd03-e2225668031f/scratchpad/venv/bin/pip install *)"
     ]
   }
 }
