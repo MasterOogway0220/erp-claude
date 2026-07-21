@@ -31,7 +31,7 @@ export type DocumentType =
   | "INSPECTION_PREP";
 
 export const PREFIXES: Record<DocumentType, string> = {
-  QUOTATION: "NPF",
+  QUOTATION: "NPS",
   SALES_ORDER: "SO",
   PURCHASE_REQUISITION: "PR",
   PURCHASE_ORDER: "PO",
@@ -56,7 +56,7 @@ export const PREFIXES: Record<DocumentType, string> = {
   RFQ: "RFQ",
   COMPARATIVE_STATEMENT: "CS",
   MTC_CERTIFICATE: "MTC",
-  TENDER: "TND",
+  TENDER: "TND", // unused: tenders draw from the quotation series (see QUOTATION_SERIES)
   SUPPLIER_QUOTATION: "SQ",
   INSPECTION_PREP: "IPR",
 };
@@ -81,22 +81,30 @@ function getShortFinancialYear(): string {
 
 const QUOTATION_NUMBER_BASE = 15000;
 
+// Document types that draw from the quotation series, so their numbers run
+// continuously with quotations instead of each keeping a separate counter.
+const QUOTATION_SERIES: DocumentType[] = ["QUOTATION", "TENDER"];
+
 export async function generateDocumentNumber(
   documentType: DocumentType,
   companyId?: string | null
 ): Promise<string> {
   const currentFY = getCurrentFinancialYear();
-  const prefix = PREFIXES[documentType];
+  const isQuotationSeries = QUOTATION_SERIES.includes(documentType);
+  const seriesType: DocumentType = isQuotationSeries ? "QUOTATION" : documentType;
+  const prefix = PREFIXES[seriesType];
 
-  // Find sequence for this company+documentType
+  // Find sequence for this company+documentType. `?? null` matters: passing
+  // `undefined` would drop the companyId filter entirely and let findFirst
+  // return an arbitrary company's counter.
   let sequence = await prisma.documentSequence.findFirst({
-    where: { documentType, companyId: companyId || undefined },
+    where: { documentType: seriesType, companyId: companyId ?? null },
   });
 
   if (!sequence) {
     // Try legacy sequence without companyId
     sequence = await prisma.documentSequence.findFirst({
-      where: { documentType, companyId: null },
+      where: { documentType: seriesType, companyId: null },
     });
   }
 
@@ -104,7 +112,7 @@ export async function generateDocumentNumber(
     // Auto-create sequence
     sequence = await prisma.documentSequence.create({
       data: {
-        documentType,
+        documentType: seriesType,
         prefix,
         currentNumber: 0,
         financialYear: currentFY,
@@ -126,15 +134,18 @@ export async function generateDocumentNumber(
       },
     });
   } else {
-    nextNumber = sequence.currentNumber + 1;
-    await prisma.documentSequence.update({
+    // Increment in the database rather than writing back a number we read
+    // earlier: two saves racing on the same counter would otherwise both be
+    // handed the same document number and one would fail the unique index.
+    const updated = await prisma.documentSequence.update({
       where: { id: sequence.id },
-      data: { currentNumber: nextNumber },
+      data: { currentNumber: { increment: 1 } },
+      select: { currentNumber: true },
     });
+    nextNumber = updated.currentNumber;
   }
 
-  const isQuotation = documentType === "QUOTATION";
-  const fy = isQuotation ? getShortFinancialYear() : currentFY;
-  const displayNumber = isQuotation ? nextNumber + QUOTATION_NUMBER_BASE : nextNumber;
+  const fy = isQuotationSeries ? getShortFinancialYear() : currentFY;
+  const displayNumber = isQuotationSeries ? nextNumber + QUOTATION_NUMBER_BASE : nextNumber;
   return `${prefix}/${fy}/${displayNumber.toString().padStart(5, "0")}`;
 }

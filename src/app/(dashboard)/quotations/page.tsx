@@ -168,6 +168,7 @@ export default function QuotationsPage() {
                 <SelectItem value="all">All Categories</SelectItem>
                 <SelectItem value="STANDARD">Standard</SelectItem>
                 <SelectItem value="NON_STANDARD">Non-Standard</SelectItem>
+                <SelectItem value="TENDER">Tender</SelectItem>
               </SelectContent>
             </Select>
 

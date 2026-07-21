@@ -43,16 +43,23 @@ const GREY = "#D9D9D9";
 const BORDER = { borderWidth: 0.5, borderColor: "#999", borderStyle: "solid" as const };
 const BOLD_BORDER = { borderWidth: 1, borderColor: "#000", borderStyle: "solid" as const };
 
-// A full-border cell: used for most table cells
-function Cell({
-  style,
-  children,
-}: {
-  style?: any;
-  children?: React.ReactNode;
-}) {
-  return <View style={[BORDER, { padding: "1pt 2pt" }, style]}>{children}</View>;
-}
+/**
+ * react-pdf has no `border-collapse`, so a cell bordered on all four sides
+ * paints its own edge right next to its neighbour's — every internal gridline
+ * came out as a double rule, which doubles the ink on a printed quotation.
+ *
+ * Cells therefore paint only their bottom and left edge. Bottom rather than top
+ * so that a table split across pages still closes at the page break: the last
+ * row before the break draws its own bottom. The first row of a table supplies
+ * the top edge and the last cell in a row closes the right edge.
+ */
+const CELL = { borderBottomWidth: 0.5, borderLeftWidth: 0.5, borderColor: "#999", borderStyle: "solid" as const };
+const CELL_END = { borderRightWidth: 0.5 };
+const CELL_TOP = { borderTopWidth: 0.5 };
+
+const CELL_BOLD = { borderBottomWidth: 1, borderLeftWidth: 1, borderColor: "#000", borderStyle: "solid" as const };
+const CELL_BOLD_END = { borderRightWidth: 1 };
+const CELL_BOLD_TOP = { borderTopWidth: 1 };
 
 /**
  * Diagonal DRAFT watermark for quotations that are not yet approved — rendered
@@ -114,11 +121,11 @@ const stdStyles = StyleSheet.create({
   page: { padding: "6mm 8mm", fontFamily: "Helvetica", fontSize: 8 },
   row: { flexDirection: "row" },
   // Info grid
-  infoCell: { ...BOLD_BORDER, padding: "2pt 4pt", flex: 1, fontSize: 8 },
-  // Table header
-  th: { ...BOLD_BORDER, backgroundColor: GREY, padding: "2pt 2pt", textAlign: "center", fontSize: 7.5, fontFamily: "Helvetica" },
+  infoCell: { ...CELL_BOLD, padding: "2pt 4pt", flex: 1, fontSize: 8 },
+  // Table header. Repeated on every page, so it carries the table's top edge.
+  th: { ...CELL_BOLD, ...CELL_BOLD_TOP, backgroundColor: GREY, padding: "2pt 2pt", textAlign: "center", fontSize: 7.5, fontFamily: "Helvetica" },
   // Table data
-  td: { ...BOLD_BORDER, padding: "1pt 2pt", fontSize: 7.5 },
+  td: { ...CELL_BOLD, padding: "1pt 2pt", fontSize: 7.5 },
   // Footer
   footerBar: { borderTopWidth: 1.5, borderTopColor: "#000", borderTopStyle: "solid", borderBottomWidth: 1.5, borderBottomColor: "#000", borderBottomStyle: "solid", marginTop: 3, flexDirection: "row", justifyContent: "space-between", paddingVertical: 2 },
   footerText: { fontSize: 7 },
@@ -126,11 +133,19 @@ const stdStyles = StyleSheet.create({
   footerAddr: { borderWidth: 1, borderColor: "#000", borderStyle: "solid", borderTopWidth: 0, textAlign: "center", padding: "2pt 0", fontSize: 7.5 },
 });
 
-function InfoRow({ cells }: { cells: { label: string; value: string; flex?: number }[] }) {
+function InfoRow({ cells, first }: { cells: { label: string; value: string; flex?: number }[]; first?: boolean }) {
   return (
     <View style={stdStyles.row}>
       {cells.map((c, i) => (
-        <View key={i} style={[stdStyles.infoCell, c.flex ? { flex: c.flex } : {}]}>
+        <View
+          key={i}
+          style={[
+            stdStyles.infoCell,
+            c.flex ? { flex: c.flex } : {},
+            i === cells.length - 1 ? CELL_BOLD_END : {},
+            first ? CELL_BOLD_TOP : {},
+          ]}
+        >
           <T>{c.label ? `${c.label}  :  ` : ""}<T style={{ fontFamily: "Helvetica" }}>{c.value}</T></T>
         </View>
       ))}
@@ -138,17 +153,17 @@ function InfoRow({ cells }: { cells: { label: string; value: string; flex?: numb
   );
 }
 
-function StdTh({ w, children }: { w: string; children: React.ReactNode }) {
+function StdTh({ w, last, children }: { w: string; last?: boolean; children: React.ReactNode }) {
   return (
-    <View style={[stdStyles.th, { width: w }]}>
+    <View style={[stdStyles.th, { width: w }, last ? CELL_BOLD_END : {}]}>
       <T style={{ fontSize: 7.5, textAlign: "center", fontFamily: "Helvetica", fontWeight: "bold" }}>{children}</T>
     </View>
   );
 }
 
-function StdTd({ w, align = "center", children }: { w: string; align?: "left" | "center" | "right"; children?: React.ReactNode }) {
+function StdTd({ w, align = "center", last, children }: { w: string; align?: "left" | "center" | "right"; last?: boolean; children?: React.ReactNode }) {
   return (
-    <View style={[stdStyles.td, { width: w }]}>
+    <View style={[stdStyles.td, { width: w }, last ? CELL_BOLD_END : {}]}>
       <T style={{ textAlign: align, fontSize: 7.5 }}>{children}</T>
     </View>
   );
@@ -223,7 +238,7 @@ function StandardQuotationPage({
       </View>
 
       {/* INFO GRID */}
-      <InfoRow cells={[
+      <InfoRow first cells={[
         { label: "Customer", value: quotation.customer.name, flex: 2.5 },
         { label: "Inquiry no.", value: quotation.inquiryNo || "", flex: 1.5 },
         { label: "Quotation No.", value: quotation.quotationNo, flex: 1.5 },
@@ -250,14 +265,16 @@ function StandardQuotationPage({
       ]} />
 
       {/* SHEET HEADING */}
-      <View style={{ borderWidth: 1, borderColor: "#000", borderStyle: "solid", borderTopWidth: 0, backgroundColor: "#f9f9f9", padding: "3pt 0" }}>
+      <View style={{ borderLeftWidth: 1, borderRightWidth: 1, borderColor: "#000", borderStyle: "solid", backgroundColor: "#f9f9f9", padding: "3pt 0" }}>
         <T style={{ textAlign: "center", fontSize: 9, fontFamily: "Helvetica", fontWeight: "bold" }}>
           {`Quotation Sheet${revLabel}`}
         </T>
       </View>
 
-      {/* ITEMS TABLE HEADER */}
-      <View style={stdStyles.row}>
+      {/* ITEMS TABLE — the header is fixed inside this wrapper so it repeats on
+          each page the table spans, and not on later pages that hold only terms. */}
+      <View>
+      <View style={stdStyles.row} fixed>
         <StdTh w={STD_COLS[0]}>S/N</StdTh>
         <StdTh w={STD_COLS[1]}>Product</StdTh>
         <StdTh w={STD_COLS[2]}>Material</StdTh>
@@ -271,7 +288,7 @@ function StandardQuotationPage({
         <StdTh w={STD_COLS[10]}>{`Unit Rate\n${curr}/${defaultUom}`}</StdTh>
         <StdTh w={STD_COLS[11]}>{`Amount\n(${curr}.)`}</StdTh>
         <StdTh w={STD_COLS[12]}>Delivery{"\n"}(Ex-works)</StdTh>
-        <StdTh w={STD_COLS[13]}>Material{"\n"}Code</StdTh>
+        <StdTh w={STD_COLS[13]} last>Material{"\n"}Code</StdTh>
       </View>
 
       {/* ITEM ROWS */}
@@ -296,7 +313,7 @@ function StandardQuotationPage({
             <StdTd w={STD_COLS[10]} align="right">{rateDisplay}</StdTd>
             <StdTd w={STD_COLS[11]} align="right">{amtDisplay}</StdTd>
             <StdTd w={STD_COLS[12]} align="center">{item.delivery}</StdTd>
-            <StdTd w={STD_COLS[13]} align="left">{matCode}</StdTd>
+            <StdTd w={STD_COLS[13]} align="left" last>{matCode}</StdTd>
           </View>
         );
       })}
@@ -316,7 +333,8 @@ function StandardQuotationPage({
           </T>
         </View>
         <View style={[stdStyles.td, { width: STD_COLS[12] }]} />
-        <View style={[stdStyles.td, { width: STD_COLS[13] }]} />
+        <View style={[stdStyles.td, CELL_BOLD_END, { width: STD_COLS[13] }]} />
+      </View>
       </View>
 
       {/* AMOUNT IN WORDS */}
@@ -376,9 +394,12 @@ function StandardQuotationPage({
 const nsStyles = StyleSheet.create({
   page: { padding: "8mm 8mm", fontFamily: "Helvetica", fontSize: 8.5 },
   row: { flexDirection: "row" },
-  infoCell: { ...BORDER, padding: "1pt 3pt", fontSize: 8.5 },
-  th: { ...BORDER, backgroundColor: GREY, padding: "1pt 2pt", textAlign: "center", fontSize: 8.5, fontFamily: "Helvetica" },
-  td: { ...BORDER, padding: "2pt 2pt", fontSize: 8.5 },
+  // Sits inside a fully-bordered wrapper, so the dividing lines come from the
+  // explicit right borders on the cells that precede one.
+  infoCell: { padding: "1pt 3pt", fontSize: 8.5 },
+  // Follows plain text, so the header supplies the table's top edge here.
+  th: { ...CELL, ...CELL_TOP, backgroundColor: GREY, padding: "1pt 2pt", textAlign: "center", fontSize: 8.5, fontFamily: "Helvetica" },
+  td: { ...CELL, padding: "2pt 2pt", fontSize: 8.5 },
   termRow: { flexDirection: "row", marginTop: 1 },
   noteRow: { flexDirection: "row", marginTop: 0.5 },
   footerBar: { flexDirection: "row", borderTopWidth: 1, borderTopColor: "#000", borderTopStyle: "solid", borderBottomWidth: 1, borderBottomColor: "#000", borderBottomStyle: "solid", marginTop: 4 },
@@ -389,17 +410,17 @@ const nsStyles = StyleSheet.create({
 // 9-column widths for non-standard
 const NS_COLS = { sn: "5%", desc: "53%", qty: "8%", rate: "11%", total: "11%", del: "12%" };
 
-function NsTh({ w, rowSpan, children }: { w: string | number; rowSpan?: number; children?: React.ReactNode }) {
+function NsTh({ w, last, children }: { w: string | number; last?: boolean; children?: React.ReactNode }) {
   return (
-    <View style={[nsStyles.th, { width: w as any, justifyContent: "center", alignItems: "center" }]}>
+    <View style={[nsStyles.th, { width: w as any, justifyContent: "center", alignItems: "center" }, last ? CELL_END : {}]}>
       <T style={{ textAlign: "center", fontSize: 8.5, fontFamily: "Helvetica" }}>{children}</T>
     </View>
   );
 }
 
-function NsTd({ w, align, top, children }: { w: string | number; align?: "left" | "center" | "right"; top?: boolean; children?: React.ReactNode }) {
+function NsTd({ w, align, top, last, children }: { w: string | number; align?: "left" | "center" | "right"; top?: boolean; last?: boolean; children?: React.ReactNode }) {
   return (
-    <View style={[nsStyles.td, { width: w as any, justifyContent: top ? "flex-start" : "center" }]}>
+    <View style={[nsStyles.td, { width: w as any, justifyContent: top ? "flex-start" : "center" }, last ? CELL_END : {}]}>
       <T style={{ textAlign: align || "left", fontSize: 8.5 }}>{children}</T>
     </View>
   );
@@ -550,14 +571,16 @@ function NonStandardQuotationPage({
         <T>In response to your inquiry, we are pleased to quote as follows:</T>
       </View>
 
-      {/* TABLE HEADER */}
-      <View style={nsStyles.row}>
+      {/* TABLE — the header is fixed inside this wrapper so it repeats on each
+          page the table spans, and not on later pages that hold only terms. */}
+      <View>
+      <View style={nsStyles.row} fixed>
         <NsTh w={NS_COLS.sn}>Sr.{"\n"}no.</NsTh>
         <NsTh w={NS_COLS.desc}>Item Description</NsTh>
         <NsTh w={NS_COLS.qty}>{`Qty\n${quotation.items[0]?.uom || "MTR"}`}</NsTh>
         <NsTh w={NS_COLS.rate}>{`Unit rate\n${curr}`}</NsTh>
         <NsTh w={NS_COLS.total}>{`Total\n${curr}`}</NsTh>
-        <NsTh w={NS_COLS.del}>Delivery{"\n"}Ex-Works</NsTh>
+        <NsTh w={NS_COLS.del} last>Delivery{"\n"}Ex-Works</NsTh>
       </View>
 
       {/* ITEM ROWS */}
@@ -578,7 +601,7 @@ function NonStandardQuotationPage({
             <NsTd w={NS_COLS.total} align="right" top>
               {isTechnical ? "QUOTED" : fmtIN(item.amount, 0)}
             </NsTd>
-            <NsTd w={NS_COLS.del} align="center" top>{item.delivery}</NsTd>
+            <NsTd w={NS_COLS.del} align="center" top last>{item.delivery}</NsTd>
           </View>
         );
       })}
@@ -597,7 +620,8 @@ function NonStandardQuotationPage({
             {isTechnical ? "QUOTED" : fmtIN(totalAmount, 0)}
           </T>
         </View>
-        <View style={[nsStyles.td, { width: NS_COLS.del }]} />
+        <View style={[nsStyles.td, CELL_END, { width: NS_COLS.del }]} />
+      </View>
       </View>
 
       {/* AMOUNT IN WORDS */}

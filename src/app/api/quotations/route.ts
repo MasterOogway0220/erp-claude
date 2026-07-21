@@ -17,11 +17,15 @@ export async function GET(request: NextRequest) {
     const showAll = searchParams.get("showAll") === "true";
     const revision = searchParams.get("revision") || "";
     const conversionStatus = searchParams.get("conversionStatus") || ""; // "pending" | "converted"
-    const category = searchParams.get("category") || ""; // "STANDARD" | "NON_STANDARD"
+    const category = searchParams.get("category") || ""; // "STANDARD" | "NON_STANDARD" | "TENDER"
 
     const where: any = { ...companyFilter(companyId) };
 
-    if (category) {
+    // TENDER is not a QuotationCategory — it means the quotation was raised
+    // against a tender, which either category can be.
+    if (category === "TENDER") {
+      where.sourceTenderId = { not: null };
+    } else if (category) {
       where.quotationCategory = category as QuotationCategory;
     }
 
