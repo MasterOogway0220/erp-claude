@@ -161,6 +161,9 @@ export function generateStandardQuotationHtml(
     .map((item: any) => {
       const materialCode = item.materialCode?.code || item.materialCodeLabel || "";
       const uom = item.uom || defaultUom;
+      // Single-UOM quotations show a bare number (unit lives in the header);
+      // with mixed UOMs the header can't state one unit, so each cell keeps
+      // its own.
       const qtyDisplay = hasMixedUnits
         ? `${fmtPlain(item.quantity, 2)} ${esc(uom)}`
         : fmtPlain(item.quantity, 2);
@@ -169,7 +172,7 @@ export function generateStandardQuotationHtml(
         : (hasMixedUnits ? `${fmtPlain(item.unitRate, 2)}/${esc(uom)}` : fmtPlain(item.unitRate, 2));
 
       return `<tr>
-        <td class="c" style="background-color:#d9d9d9;">${item.sNo}</td>
+        <td class="c" style="background-color:#d9d9d9;">${item.slNo ? esc(item.slNo) : item.sNo}</td>
         <td class="l">${esc(item.product)}</td>
         <td class="l">${esc(item.material)}</td>
         <td class="l">${esc(item.additionalSpec)}</td>
@@ -395,7 +398,7 @@ export function generateStandardQuotationHtml(
     <th>W.T.<br>(mm)</th>
     <th>Length<br>(Mtr.)</th>
     <th>Ends</th>
-    <th>Qty<br>(${esc(defaultUom)})</th>
+    <th>Qty${hasMixedUnits ? "" : `<br>(${esc(defaultUom)})`}</th>
     <th>Unit Rate<br>${esc(curr)}/${esc(defaultUom)}</th>
     <th>Amount<br>(${esc(curr)}.)</th>
     <th>Delivery<br>(Ex-works)</th>

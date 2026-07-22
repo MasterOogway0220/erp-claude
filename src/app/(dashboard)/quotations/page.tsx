@@ -50,6 +50,22 @@ interface Quotation {
   items: { amount: string }[];
   revisionTrigger: string | null;
   salesOrders: { id: string; soNo: string }[];
+  sourceTenderId: string | null;
+}
+
+// Tender records shown under the Tender category filter (they share the
+// quotation number series but live in the Tenders module).
+interface TenderRow {
+  id: string;
+  tenderNo: string;
+  tenderDate: string;
+  closingDate: string | null;
+  organization: string | null;
+  customer: { name: string } | null;
+  status: string;
+  currency: string;
+  estimatedValue: number | null;
+  itemCount: number;
 }
 
 const statusColors: Record<string, string> = {
@@ -218,14 +234,82 @@ export default function QuotationsPage() {
                   Loading quotations...
                 </TableCell>
               </TableRow>
-            ) : data?.quotations?.length === 0 ? (
+            ) : (data?.quotations?.length ?? 0) === 0 && (data?.tenders?.length ?? 0) === 0 ? (
               <TableRow>
                 <TableCell colSpan={13} className="text-center py-8 text-muted-foreground">
-                  No quotations found. Create your first quotation!
+                  {categoryFilter === "TENDER" && !search
+                    ? "No tenders or tender-linked quotations found. Register a tender via New Quotation → Tender Quotation, then raise quotations from its detail page."
+                    : search
+                      ? "No results match your search."
+                      : "No quotations found. Create your first quotation!"}
                 </TableCell>
               </TableRow>
             ) : (
-              data?.quotations?.map((quotation: Quotation) => (
+              <>
+              {data?.tenders?.map((tender: TenderRow) => (
+                <TableRow key={`tender-${tender.id}`}>
+                  <TableCell className="font-medium">{tender.tenderNo}</TableCell>
+                  <TableCell>
+                    {format(new Date(tender.tenderDate), "dd MMM yyyy")}
+                  </TableCell>
+                  <TableCell>
+                    {tender.customer?.name || tender.organization || (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-muted-foreground text-sm">—</span>
+                  </TableCell>
+                  <TableCell>
+                    <Badge>Tender</Badge>
+                  </TableCell>
+                  <TableCell>{tender.itemCount}</TableCell>
+                  <TableCell className="font-semibold">
+                    {tender.estimatedValue != null ? (
+                      <>
+                        {tender.currency}{" "}
+                        {tender.estimatedValue.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                      </>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    <span className="text-muted-foreground">—</span>
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {tender.closingDate ? (
+                      <div className={`flex items-center gap-1 ${isOverdue(tender.closingDate) ? "text-destructive" : ""}`}>
+                        <CalendarClock className="h-3.5 w-3.5" />
+                        {format(new Date(tender.closingDate), "dd MMM")}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-muted-foreground text-sm">—</span>
+                  </TableCell>
+                  <TableCell className="text-sm">—</TableCell>
+                  <TableCell>
+                    <Badge variant={(statusColors[tender.status] as any) || "outline"}>
+                      {tender.status.replace(/_/g, " ")}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => router.push(`/tenders/${tender.id}`)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {data?.quotations?.map((quotation: Quotation) => (
                 <TableRow key={quotation.id}>
                   <TableCell className="font-medium">
                     <div>
@@ -255,6 +339,9 @@ export default function QuotationsPage() {
                     <Badge variant={quotation.quotationCategory === "NON_STANDARD" ? "secondary" : "outline"}>
                       {quotation.quotationCategory === "NON_STANDARD" ? "Non-Std" : "Std"}
                     </Badge>
+                    {quotation.sourceTenderId && (
+                      <Badge className="ml-1">Tender</Badge>
+                    )}
                   </TableCell>
                   <TableCell>{quotation.items.length}</TableCell>
                   <TableCell className="font-semibold">
@@ -321,7 +408,8 @@ export default function QuotationsPage() {
                     </div>
                   </TableCell>
                 </TableRow>
-              ))
+              ))}
+              </>
             )}
           </TableBody>
         </Table>

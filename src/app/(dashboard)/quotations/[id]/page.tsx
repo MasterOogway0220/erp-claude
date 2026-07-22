@@ -881,7 +881,7 @@ export default function QuotationDetailPage() {
                         }}
                       />
                     </TableCell>
-                    <TableCell>{item.sNo}</TableCell>
+                    <TableCell>{item.slNo || item.sNo}</TableCell>
                     {quotation.quotationCategory === "NON_STANDARD" ? (
                       <>
                         <TableCell className="text-xs">{item.materialCode?.code || item.materialCodeLabel || "---"}</TableCell>
@@ -1198,7 +1198,7 @@ export default function QuotationDetailPage() {
                       const marginAmt = (unitRate - totalCost) * qty;
                       return (
                         <TableRow key={item.id}>
-                          <TableCell>{item.sNo}</TableCell>
+                          <TableCell>{item.slNo || item.sNo}</TableCell>
                           <TableCell className="font-medium">{item.product || "---"}</TableCell>
                           <TableCell>{item.sizeLabel || "---"}</TableCell>
                           <TableCell className="text-right">

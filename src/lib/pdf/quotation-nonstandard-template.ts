@@ -203,7 +203,7 @@ export function generateNonStandardQuotationHtml(
     .map((item: any) => {
       const desc = buildItemDescription(item);
       return `<tr class="data-row">
-        <td class="cell-center cell-top" style="background-color:#d9d9d9;">${item.sNo}</td>
+        <td class="cell-center cell-top" style="background-color:#d9d9d9;">${item.slNo ? escapeHtml(item.slNo) : item.sNo}</td>
         <td class="cell-left cell-top cell-wrap" colspan="4">${desc}</td>
         <td class="cell-center cell-top">${formatNumber(item.quantity, 0)}</td>
         <td class="cell-right cell-top">${isTechnical ? '<span class="quoted-bold">QUOTED</span>' : formatNumber(item.unitRate, 2)}</td>

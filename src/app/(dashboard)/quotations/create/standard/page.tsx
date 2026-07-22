@@ -44,6 +44,8 @@ type ItemCategory = "Pipe" | "Fitting" | "Flange";
 
 interface QuotationItem {
   itemCategory: ItemCategory;
+  // Printed serial as per the client's inquiry; blank = auto (position).
+  slNo: string;
   materialCodeId: string;
   materialCodeLabel: string;
   product: string;
@@ -79,6 +81,7 @@ interface QuotationItem {
 
 const emptyItem: QuotationItem = {
   itemCategory: "Pipe",
+  slNo: "",
   materialCodeId: "",
   materialCodeLabel: "",
   product: "",
@@ -453,11 +456,10 @@ function StandardQuotationPage() {
 
     const termsKey = `${formData.quotationType}|${formData.customerId || ""}`;
 
-    // In edit mode, skip only the first load (saved terms will be set by the editData effect)
-    if (editData?.quotation?.terms?.length > 0 && termsLoadedForKey.current === null) {
-      termsLoadedForKey.current = termsKey;
-      return;
-    }
+    // In edit mode, wait until the populate effect has applied the saved
+    // quotation (it records termsLoadedForKey when saved terms exist); if a
+    // template fetch resolved first it would overwrite the saved terms.
+    if (editId && !editLoadedRef.current) return;
 
     // Reload terms when quotationType or customer changes
     if (termsLoadedForKey.current !== termsKey || termsLoadedForKey.current === null) {
@@ -550,9 +552,14 @@ function StandardQuotationPage() {
   };
 
   // Fetch existing quotation for edit mode
-  const { data: editData, isLoading: editLoading } = useQuery({
+  const { data: editData, isLoading: editLoading, isError: editError } = useQuery({
     queryKey: ["quotation-edit", editId],
     enabled: !!editId,
+    // Always fetch fresh and drop the snapshot on unmount — a cached pre-edit
+    // copy would repopulate the form with original values and silently revert
+    // the user's saved changes on the next save.
+    staleTime: 0,
+    gcTime: 0,
     queryFn: async () => {
       const res = await fetch(`/api/quotations/${editId}`);
       if (!res.ok) throw new Error("Failed to fetch quotation");
@@ -560,9 +567,10 @@ function StandardQuotationPage() {
     },
   });
 
-  // Pre-populate form when editing
+  // Pre-populate form when editing — exactly once per page load, so a
+  // background refetch landing mid-edit can't overwrite what the user typed.
   useEffect(() => {
-    if (editData?.quotation) {
+    if (editData?.quotation && !editLoadedRef.current) {
       const q = editData.quotation;
       setFormData({
         customerId: q.customerId || "",
@@ -591,6 +599,7 @@ function StandardQuotationPage() {
       if (q.items?.length > 0) {
         setItems(q.items.map((item: any) => ({
           itemCategory: item.fittingId ? "Fitting" as ItemCategory : item.flangeId ? "Flange" as ItemCategory : "Pipe" as ItemCategory,
+          slNo: item.slNo || "",
           materialCodeId: item.materialCodeId || "",
           materialCodeLabel: item.materialCodeLabel || item.materialCode?.code || "",
           product: item.product || "",
@@ -633,6 +642,9 @@ function StandardQuotationPage() {
           isCustom: t.isCustom,
           isHeadingEditable: t.isHeadingEditable,
         })));
+        // Record the key so the terms-template effect doesn't reload over the
+        // quotation's saved terms.
+        termsLoadedForKey.current = `${q.quotationType || "DOMESTIC"}|${q.customerId || ""}`;
       }
       // Sync prevCurrencyRef so the currency conversion effect doesn't fire
       prevCurrencyRef.current = q.currency || "INR";
@@ -715,6 +727,10 @@ function StandardQuotationPage() {
           }),
         }).catch((err) => console.log("Failed to save terms to customer master:", err));
       }
+      // Refresh cached copies of this quotation so the detail/list pages never
+      // show a stale pre-save snapshot (the edit query itself has gcTime: 0).
+      queryClient.invalidateQueries({ queryKey: ["quotation", data.id || editId] });
+      queryClient.invalidateQueries({ queryKey: ["quotations"] });
       router.push(`/quotations/${data.id || editId}`);
     },
     onError: (error: Error) => toast.error(error.message, { duration: 10000 }),
@@ -915,6 +931,22 @@ function StandardQuotationPage() {
   const fmt = (n: number) => n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const curr = formData.currency;
   const isINR = formData.currency === "INR";
+
+  // In edit mode, surface a failed load instead of spinning forever (deleted
+  // quotation, expired session, server error).
+  if (editId && editError) {
+    return (
+      <div className="p-6 text-center space-y-4">
+        <p className="text-muted-foreground">
+          Could not load this quotation for editing. It may have been deleted,
+          or your session may have expired.
+        </p>
+        <Button variant="outline" onClick={() => router.push("/quotations")}>
+          Back to Quotations
+        </Button>
+      </div>
+    );
+  }
 
   // In edit mode, avoid rendering the form with empty header fields before the
   // existing quotation data has loaded (prevents a blank flash).
@@ -1207,8 +1239,19 @@ function StandardQuotationPage() {
               return (
                 <div key={index} className="grid gap-4 p-4 border border-border/50 rounded-lg relative bg-muted/20">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-wrap">
                       <span className="font-semibold text-sm">Item #{index + 1}</span>
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">Sl. No.</span>
+                        <Input
+                          value={item.slNo}
+                          onChange={(e) => updateItem(index, "slNo", e.target.value)}
+                          placeholder={String(index + 1)}
+                          maxLength={20}
+                          title="Serial number as per client inquiry (printed on the quotation)"
+                          className="h-7 w-16 text-xs"
+                        />
+                      </div>
                       <div className="flex rounded-md border overflow-hidden text-xs">
                         {(["Pipe", "Fitting", "Flange"] as ItemCategory[]).map((cat) => (
                           <button

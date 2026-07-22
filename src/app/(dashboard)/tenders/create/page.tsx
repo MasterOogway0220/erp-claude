@@ -71,6 +71,11 @@ export default function CreateTenderPage() {
 
   const [saving, setSaving] = useState(false);
 
+  // Tenders draw their number from the quotation series, so the quotation
+  // preview endpoint shows the number this tender will get. null = loading;
+  // "" = preview unavailable (the real number is still assigned on save).
+  const [previewNumber, setPreviewNumber] = useState<string | null>(null);
+
   useEffect(() => {
     fetch("/api/masters/customers")
       .then((r) => r.json())
@@ -78,6 +83,10 @@ export default function CreateTenderPage() {
         if (Array.isArray(data)) setCustomers(data);
       })
       .catch(() => {});
+    fetch("/api/quotations/preview-number")
+      .then((r) => r.json())
+      .then((data) => setPreviewNumber(data?.previewNumber || ""))
+      .catch(() => setPreviewNumber(""));
   }, []);
 
   function updateItem(index: number, field: keyof TenderItem, value: string) {
@@ -174,6 +183,16 @@ export default function CreateTenderPage() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <Label>Tender No.</Label>
+                <Input
+                  value={previewNumber ?? ""}
+                  placeholder={previewNumber === null ? "Generating…" : "Assigned on save"}
+                  readOnly
+                  className="bg-muted"
+                />
+              </div>
+
               <div className="flex flex-col gap-1.5">
                 <Label>Tender Source</Label>
                 <Select value={tenderSource} onValueChange={setTenderSource}>

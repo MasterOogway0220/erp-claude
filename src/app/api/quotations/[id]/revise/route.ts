@@ -308,6 +308,7 @@ export async function POST(
           placeOfSupplyCountry: sourceQuotation.placeOfSupplyCountry,
           rcmEnabled: sourceQuotation.rcmEnabled,
           roundOff: sourceQuotation.roundOff,
+          sourceTenderId: sourceQuotation.sourceTenderId, // keep the tender link across revisions
           // Revision-specific fields
           revisionTrigger,
           revisionSubReason: revisionSubReason || null,
@@ -318,6 +319,7 @@ export async function POST(
           items: {
             create: sourceQuotation.items.map((item) => ({
               sNo: item.sNo,
+              slNo: item.slNo,
               product: item.product,
               material: item.material,
               additionalSpec: item.additionalSpec,

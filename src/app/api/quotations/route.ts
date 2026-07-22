@@ -76,6 +76,46 @@ export async function GET(request: NextRequest) {
       orderBy: [{ quotationNo: "desc" }, { version: "desc" }],
     });
 
+    // For the Tender view, also return the tender records themselves —
+    // tenders share the quotation number series, so users expect to see them
+    // here alongside any quotations raised from them. Tenders have no
+    // quotation status/revision/conversion, so they only appear when none of
+    // those filters is active.
+    if (category === "TENDER" && !status && !revision && !conversionStatus) {
+      const tenderWhere: any = { ...companyFilter(companyId) };
+      if (search) {
+        tenderWhere.OR = [
+          { tenderNo: { contains: search } },
+          { organization: { contains: search } },
+          { projectName: { contains: search } },
+          { customer: { name: { contains: search } } },
+        ];
+      }
+      const tenders = await prisma.tender.findMany({
+        where: tenderWhere,
+        include: {
+          customer: { select: { name: true } },
+          _count: { select: { items: true } },
+        },
+        orderBy: { tenderNo: "desc" },
+      });
+      return NextResponse.json({
+        quotations,
+        tenders: tenders.map((t) => ({
+          id: t.id,
+          tenderNo: t.tenderNo,
+          tenderDate: t.tenderDate,
+          closingDate: t.closingDate,
+          organization: t.organization,
+          customer: t.customer,
+          status: t.status,
+          currency: t.currency,
+          estimatedValue: t.estimatedValue ? Number(t.estimatedValue) : null,
+          itemCount: t._count.items,
+        })),
+      });
+    }
+
     return NextResponse.json({ quotations });
   } catch (error) {
     console.error("Error fetching quotations:", error);
@@ -276,6 +316,7 @@ export async function POST(request: NextRequest) {
         items: {
           create: items.map((item: any, index: number) => ({
             sNo: index + 1,
+            slNo: String(item.slNo ?? "").trim().slice(0, 20) || null,
             product: item.product || null,
             material: item.material || null,
             additionalSpec: item.additionalSpec || null,

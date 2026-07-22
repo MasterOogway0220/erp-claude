@@ -525,6 +525,9 @@ model QuotationItem {
   id                String              @id @default(cuid())
   quotationId       String
   sNo               Int
+  // Printed serial as per the client's inquiry (e.g. "3", "1a"); sNo stays the
+  // internal positional key used for ordering, diffs, and PO matching.
+  slNo              String?
   product           String?
   material          String?
   additionalSpec    String?

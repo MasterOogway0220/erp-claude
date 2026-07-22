@@ -202,7 +202,7 @@ function ComparePageContent() {
                     <TableBody>
                       {itemsAdded.map((item: any) => (
                         <TableRow key={item.sNo}>
-                          <TableCell>{item.sNo}</TableCell>
+                          <TableCell>{item.slNo || item.sNo}</TableCell>
                           <TableCell className="font-medium">{item.product || "---"}</TableCell>
                           <TableCell>{item.material || "---"}</TableCell>
                           <TableCell>{item.sizeLabel || "---"}</TableCell>
@@ -239,7 +239,7 @@ function ComparePageContent() {
                     <TableBody>
                       {itemsRemoved.map((item: any) => (
                         <TableRow key={item.sNo} className="line-through opacity-60">
-                          <TableCell>{item.sNo}</TableCell>
+                          <TableCell>{item.slNo || item.sNo}</TableCell>
                           <TableCell>{item.product || "---"}</TableCell>
                           <TableCell>{item.material || "---"}</TableCell>
                           <TableCell>{item.sizeLabel || "---"}</TableCell>
@@ -279,7 +279,7 @@ function ComparePageContent() {
                             {idx === 0 && (
                               <>
                                 <TableCell rowSpan={Object.keys(item.changes).length}>
-                                  {item.sNo}
+                                  {item.slNo || item.sNo}
                                 </TableCell>
                                 <TableCell rowSpan={Object.keys(item.changes).length} className="font-medium">
                                   {item.product || "---"}

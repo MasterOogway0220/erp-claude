@@ -284,7 +284,7 @@ function StandardQuotationPage({
         <StdTh w={STD_COLS[6]}>W.T.{"\n"}(mm)</StdTh>
         <StdTh w={STD_COLS[7]}>Length{"\n"}(Mtr.)</StdTh>
         <StdTh w={STD_COLS[8]}>Ends</StdTh>
-        <StdTh w={STD_COLS[9]}>{`Qty\n(${defaultUom})`}</StdTh>
+        <StdTh w={STD_COLS[9]}>{hasMixed ? "Qty" : `Qty\n(${defaultUom})`}</StdTh>
         <StdTh w={STD_COLS[10]}>{`Unit Rate\n${curr}/${defaultUom}`}</StdTh>
         <StdTh w={STD_COLS[11]}>{`Amount\n(${curr}.)`}</StdTh>
         <StdTh w={STD_COLS[12]}>Delivery{"\n"}(Ex-works)</StdTh>
@@ -294,13 +294,16 @@ function StandardQuotationPage({
       {/* ITEM ROWS */}
       {quotation.items.map((item: any) => {
         const uom = item.uom || defaultUom;
+        // Single-UOM quotations show a bare number (unit lives in the header);
+        // with mixed UOMs the header can't state one unit, so each cell keeps
+        // its own.
         const qtyDisplay = hasMixed ? `${fmt(item.quantity, 2)} ${uom}` : fmt(item.quantity, 2);
         const rateDisplay = isUnquoted ? "QUOTED" : (hasMixed ? `${fmt(item.unitRate, 2)}/${uom}` : fmt(item.unitRate, 2));
         const amtDisplay = isUnquoted ? "QUOTED" : fmtIN(item.amount, 2);
         const matCode = item.materialCode?.code || item.materialCodeLabel || "";
         return (
           <View key={item.id} style={stdStyles.row} wrap={false}>
-            <StdTd w={STD_COLS[0]} align="center">{item.sNo}</StdTd>
+            <StdTd w={STD_COLS[0]} align="center">{item.slNo || item.sNo}</StdTd>
             <StdTd w={STD_COLS[1]} align="left">{item.product}</StdTd>
             <StdTd w={STD_COLS[2]} align="left">{item.material}</StdTd>
             <StdTd w={STD_COLS[3]} align="left">{item.additionalSpec}</StdTd>
@@ -588,7 +591,7 @@ function NonStandardQuotationPage({
         const lines = buildItemDescriptionLines(item);
         return (
           <View key={item.id} style={nsStyles.row}>
-            <NsTd w={NS_COLS.sn} align="center" top>{item.sNo}</NsTd>
+            <NsTd w={NS_COLS.sn} align="center" top>{item.slNo || item.sNo}</NsTd>
             <View style={[nsStyles.td, { width: NS_COLS.desc }]}>
               {lines.map((line, li) => (
                 <T key={li} style={{ fontSize: 8, lineHeight: 1.3 }}>{line}</T>

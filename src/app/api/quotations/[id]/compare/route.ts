@@ -129,7 +129,7 @@ export async function GET(
     const itemsUnchanged: any[] = [];
 
     const itemCompareFields = [
-      "product", "material", "additionalSpec", "sizeLabel", "od", "wt",
+      "slNo", "product", "material", "additionalSpec", "sizeLabel", "od", "wt",
       "length", "ends", "quantity", "unitRate", "amount",
       "materialCost", "logisticsCost", "inspectionCost", "otherCosts",
       "totalCostPerUnit", "marginPercentage", "delivery", "remark",
@@ -141,6 +141,7 @@ export async function GET(
       if (!leftItem) {
         itemsAdded.push({
           sNo,
+          slNo: rightItem.slNo,
           product: rightItem.product,
           material: rightItem.material,
           sizeLabel: rightItem.sizeLabel,
@@ -162,6 +163,7 @@ export async function GET(
         if (Object.keys(changes).length > 0) {
           itemsModified.push({
             sNo,
+            slNo: rightItem.slNo,
             product: rightItem.product,
             material: rightItem.material,
             sizeLabel: rightItem.sizeLabel,
@@ -178,6 +180,7 @@ export async function GET(
       if (!rightItemMap.has(sNo)) {
         itemsRemoved.push({
           sNo,
+          slNo: leftItem.slNo,
           product: leftItem.product,
           material: leftItem.material,
           sizeLabel: leftItem.sizeLabel,

@@ -20,8 +20,10 @@ export async function GET() {
 
     const currentFY = getCurrentFinancialYear();
 
+    // `?? null` matters: passing `undefined` would drop the companyId filter
+    // entirely and let findFirst return an arbitrary company's counter.
     let sequence = await prisma.documentSequence.findFirst({
-      where: { documentType: "QUOTATION", companyId: companyId || undefined },
+      where: { documentType: "QUOTATION", companyId: companyId ?? null },
     });
     if (!sequence) {
       sequence = await prisma.documentSequence.findFirst({

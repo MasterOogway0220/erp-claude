@@ -505,6 +505,7 @@ export async function PUT(
           items: {
             create: items.map((item: any, index: number) => ({
               sNo: index + 1,
+              slNo: String(item.slNo ?? "").trim().slice(0, 20) || null,
               product: item.product || null,
               material: item.material || null,
               additionalSpec: item.additionalSpec || null,
@@ -587,7 +588,7 @@ export async function PUT(
       const oldItem = oldItemMap.get(sNo);
       if (oldItem) {
         const diffs: Record<string, { old: any; new: any }> = {};
-        for (const field of ["product", "material", "sizeLabel", "quantity", "unitRate", "amount"]) {
+        for (const field of ["slNo", "product", "material", "sizeLabel", "quantity", "unitRate", "amount"]) {
           const oldVal = String(oldItem[field] ?? "");
           const newVal = String(newItem[field] ?? newItem[field === "sizeLabel" ? "sizeLabel" : field] ?? "");
           if (oldVal !== newVal) {
