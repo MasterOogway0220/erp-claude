@@ -108,6 +108,9 @@ export async function GET(
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="${filename}"`,
+        // The same URL serves every download of this quotation; a cached copy
+        // would keep printing pre-edit data.
+        "Cache-Control": "no-store",
       },
     });
   } catch (error) {

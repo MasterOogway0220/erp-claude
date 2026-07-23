@@ -1033,6 +1033,7 @@ export async function GET(
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="dossier-${dispatchNote.dnNo.replace(/\//g, "-")}.pdf"`,
+        "Cache-Control": "no-store",
       },
     });
   } catch (error) {

@@ -221,6 +221,7 @@ export async function GET(
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="Lab-Letter-${labLetter.letterNo.replace(/\//g, "-")}.pdf"`,
+        "Cache-Control": "no-store",
       },
     });
   } catch (error) {

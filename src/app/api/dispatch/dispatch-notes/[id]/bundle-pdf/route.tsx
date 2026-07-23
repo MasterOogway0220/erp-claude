@@ -525,6 +525,7 @@ export async function GET(
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="dispatch-bundle-${dispatchNote.dnNo.replace(/\//g, "-")}.pdf"`,
+        "Cache-Control": "no-store",
       },
     });
   } catch (error) {

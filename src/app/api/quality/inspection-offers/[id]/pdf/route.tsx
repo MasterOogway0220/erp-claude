@@ -156,6 +156,7 @@ export async function GET(
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="${filename}.pdf"`,
+        "Cache-Control": "no-store",
       },
     });
   } catch (error: any) {
