@@ -131,6 +131,24 @@ export default function QuotationsPage() {
     return new Date(dateStr) < new Date();
   };
 
+  // Tenders share the quotation number series, so merge both row types into a
+  // single list ordered by document number, newest first.
+  const rows: Array<
+    | { kind: "tender"; no: string; tender: TenderRow }
+    | { kind: "quotation"; no: string; quotation: Quotation }
+  > = [
+    ...(data?.tenders ?? []).map((tender: TenderRow) => ({
+      kind: "tender" as const,
+      no: tender.tenderNo,
+      tender,
+    })),
+    ...(data?.quotations ?? []).map((quotation: Quotation) => ({
+      kind: "quotation" as const,
+      no: quotation.quotationNo,
+      quotation,
+    })),
+  ].sort((a, b) => b.no.localeCompare(a.no));
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -245,8 +263,10 @@ export default function QuotationsPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              <>
-              {data?.tenders?.map((tender: TenderRow) => (
+              rows.map((row) => {
+                if (row.kind === "tender") {
+                  const tender = row.tender;
+                  return (
                 <TableRow key={`tender-${tender.id}`}>
                   <TableCell className="font-medium">{tender.tenderNo}</TableCell>
                   <TableCell>
@@ -308,8 +328,10 @@ export default function QuotationsPage() {
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
-              {data?.quotations?.map((quotation: Quotation) => (
+                  );
+                }
+                const quotation = row.quotation;
+                return (
                 <TableRow key={quotation.id}>
                   <TableCell className="font-medium">
                     <div>
@@ -408,8 +430,8 @@ export default function QuotationsPage() {
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
-              </>
+                );
+              })
             )}
           </TableBody>
         </Table>

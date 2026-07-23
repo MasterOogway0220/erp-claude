@@ -5,6 +5,7 @@ import { numberToWords } from "@/lib/amount-in-words";
 import { generateDocumentNumber } from "@/lib/document-numbering";
 import { QuotationStatus, QuotationType, QuotationCategory } from "@prisma/client";
 import { checkAccess, companyFilter } from "@/lib/rbac";
+import { shouldIncludeTenders } from "@/lib/quotations/listing";
 
 export async function GET(request: NextRequest) {
   try {
@@ -76,12 +77,10 @@ export async function GET(request: NextRequest) {
       orderBy: [{ quotationNo: "desc" }, { version: "desc" }],
     });
 
-    // For the Tender view, also return the tender records themselves —
-    // tenders share the quotation number series, so users expect to see them
-    // here alongside any quotations raised from them. Tenders have no
-    // quotation status/revision/conversion, so they only appear when none of
-    // those filters is active.
-    if (category === "TENDER" && !status && !revision && !conversionStatus) {
+    // Also return the tender records themselves — tenders share the quotation
+    // number series, so users expect to see them here alongside any quotations
+    // raised from them, both in the default view and under the Tender filter.
+    if (shouldIncludeTenders({ category, status, revision, conversionStatus })) {
       const tenderWhere: any = { ...companyFilter(companyId) };
       if (search) {
         tenderWhere.OR = [
