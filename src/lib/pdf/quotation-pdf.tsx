@@ -114,8 +114,16 @@ const NOTES = [
   "In case of Force Majeure events, we shall not be liable for any delay or failure in performance due to unforeseen events beyond our control, and delivery schedules shall be adjusted accordingly.",
 ];
 
-// 14-column widths as % strings (landscape content ~281mm wide)
-const STD_COLS = ["3%", "10%", "10%", "10%", "9%", "5%", "4.5%", "6%", "3.5%", "6.5%", "8%", "9%", "8%", "7.5%"];
+// 14-column widths as % strings (landscape content ~281mm wide).
+// Layout follows the client's standard format (QTN-Rev.2): S/N, Product,
+// Specification, Dim., Add. Spec., Size, Length, Ends, Qty, Unit, Unit Rate,
+// Amount, Delivery, Remark/Material Code.
+const STD_COLS = ["3%", "11%", "10%", "6.5%", "8%", "11%", "6%", "4%", "5%", "4%", "8%", "9%", "7%", "7.5%"];
+
+// UOM as printed in the Unit column of the standard format.
+function unitLabel(uom: string): string {
+  return uom === "Mtr" || uom === "Nos" ? `${uom}.` : uom;
+}
 
 const stdStyles = StyleSheet.create({
   page: { padding: "6mm 8mm", fontFamily: "Helvetica", fontSize: 8 },
@@ -182,18 +190,16 @@ function StandardQuotationPage({
 }) {
   const curr = quotation.currency || "INR";
   const defaultUom = quotation.items[0]?.uom || "Mtr";
-  const allUoms = new Set(quotation.items.map((i: any) => i.uom || defaultUom));
-  const hasMixed = allUoms.size > 1;
 
   const totalAmount = quotation.items.reduce((s: number, i: any) => s + (parseFloat(i.amount) || 0), 0);
   const totalQty = quotation.items.reduce((s: number, i: any) => s + (parseFloat(i.quantity) || 0), 0);
   const grandTotal = parseFloat(quotation.grandTotal) || totalAmount;
 
+  // Country prints on its own header row, so the address line excludes it.
   const customerAddress = [
     quotation.customer.addressLine1,
     quotation.customer.addressLine2,
     [quotation.customer.city, quotation.customer.state, quotation.customer.pincode].filter(Boolean).join(", "),
-    quotation.customer.country,
   ].filter(Boolean).join(", ");
 
   const footerAddress = [
@@ -249,6 +255,11 @@ function StandardQuotationPage({
         { label: "Date", value: fmtDate(quotation.quotationDate), flex: 1.5 },
       ]} />
       <InfoRow cells={[
+        { label: "Country", value: quotation.customer.country || "", flex: 2.5 },
+        { label: "", value: "", flex: 1.5 },
+        { label: "", value: "", flex: 1.5 },
+      ]} />
+      <InfoRow cells={[
         { label: "Attn.", value: quotation.buyer?.buyerName || quotation.customer.contactPerson || "", flex: 2.5 },
         { label: "Designation", value: quotation.buyer?.designation || "", flex: 1.5 },
         { label: "Contact", value: quotation.preparedBy?.name || "", flex: 1.5 },
@@ -257,11 +268,6 @@ function StandardQuotationPage({
         { label: "Email", value: quotation.buyer?.email || quotation.customer.email || "", flex: 2.5 },
         { label: "Contact no.", value: quotation.buyer?.mobile || quotation.buyer?.telephone || quotation.customer.phone || "", flex: 1.5 },
         { label: "Email", value: quotation.preparedBy?.email || "", flex: 1.5 },
-      ]} />
-      <InfoRow cells={[
-        { label: "Phone", value: quotation.customer.phone || "", flex: 2.5 },
-        { label: "", value: "", flex: 1.5 },
-        { label: "Phone", value: quotation.preparedBy?.phone || "", flex: 1.5 },
       ]} />
 
       {/* SHEET HEADING */}
@@ -277,58 +283,56 @@ function StandardQuotationPage({
       <View style={stdStyles.row} fixed>
         <StdTh w={STD_COLS[0]}>S/N</StdTh>
         <StdTh w={STD_COLS[1]}>Product</StdTh>
-        <StdTh w={STD_COLS[2]}>Material</StdTh>
-        <StdTh w={STD_COLS[3]}>Additional{"\n"}Spec.</StdTh>
-        <StdTh w={STD_COLS[4]}>Size</StdTh>
-        <StdTh w={STD_COLS[5]}>OD{"\n"}(mm)</StdTh>
-        <StdTh w={STD_COLS[6]}>W.T.{"\n"}(mm)</StdTh>
-        <StdTh w={STD_COLS[7]}>Length{"\n"}(Mtr.)</StdTh>
-        <StdTh w={STD_COLS[8]}>Ends</StdTh>
-        <StdTh w={STD_COLS[9]}>{hasMixed ? "Qty" : `Qty\n(${defaultUom})`}</StdTh>
-        <StdTh w={STD_COLS[10]}>{`Unit Rate\n${curr}/${defaultUom}`}</StdTh>
+        <StdTh w={STD_COLS[2]}>Specification</StdTh>
+        <StdTh w={STD_COLS[3]}>Dim.</StdTh>
+        <StdTh w={STD_COLS[4]}>Add. Spec.</StdTh>
+        <StdTh w={STD_COLS[5]}>Size</StdTh>
+        <StdTh w={STD_COLS[6]}>Length</StdTh>
+        <StdTh w={STD_COLS[7]}>Ends</StdTh>
+        <StdTh w={STD_COLS[8]}>Qty</StdTh>
+        <StdTh w={STD_COLS[9]}>Unit</StdTh>
+        <StdTh w={STD_COLS[10]}>{`Unit Rate\n${curr}/Unit`}</StdTh>
         <StdTh w={STD_COLS[11]}>{`Amount\n(${curr}.)`}</StdTh>
         <StdTh w={STD_COLS[12]}>Delivery{"\n"}(Ex-works)</StdTh>
-        <StdTh w={STD_COLS[13]} last>Material{"\n"}Code</StdTh>
+        <StdTh w={STD_COLS[13]} last>Remark/{"\n"}Material Code</StdTh>
       </View>
 
       {/* ITEM ROWS */}
       {quotation.items.map((item: any) => {
         const uom = item.uom || defaultUom;
-        // Single-UOM quotations show a bare number (unit lives in the header);
-        // with mixed UOMs the header can't state one unit, so each cell keeps
-        // its own.
-        const qtyDisplay = hasMixed ? `${fmt(item.quantity, 2)} ${uom}` : fmt(item.quantity, 2);
-        const rateDisplay = isUnquoted ? "QUOTED" : (hasMixed ? `${fmt(item.unitRate, 2)}/${uom}` : fmt(item.unitRate, 2));
+        const rateDisplay = isUnquoted ? "QUOTED" : fmt(item.unitRate, 2);
         const amtDisplay = isUnquoted ? "QUOTED" : fmtIN(item.amount, 2);
         const matCode = item.materialCode?.code || item.materialCodeLabel || "";
+        const remarkCode = [item.remark, matCode].filter(Boolean).join(" / ");
         return (
           <View key={item.id} style={stdStyles.row} wrap={false}>
             <StdTd w={STD_COLS[0]} align="center">{item.slNo || item.sNo}</StdTd>
             <StdTd w={STD_COLS[1]} align="left">{item.product}</StdTd>
             <StdTd w={STD_COLS[2]} align="left">{item.material}</StdTd>
-            <StdTd w={STD_COLS[3]} align="left">{item.additionalSpec}</StdTd>
-            <StdTd w={STD_COLS[4]} align="center">{item.sizeLabel}</StdTd>
-            <StdTd w={STD_COLS[5]} align="center">{item.od ? fmt(item.od, 1) : ""}</StdTd>
-            <StdTd w={STD_COLS[6]} align="center">{item.wt ? fmt(item.wt, 2) : ""}</StdTd>
-            <StdTd w={STD_COLS[7]} align="center">{item.length}</StdTd>
-            <StdTd w={STD_COLS[8]} align="center">{item.ends}</StdTd>
-            <StdTd w={STD_COLS[9]} align="right">{qtyDisplay}</StdTd>
+            <StdTd w={STD_COLS[3]} align="center">{item.dimStandard || "-"}</StdTd>
+            <StdTd w={STD_COLS[4]} align="left">{item.additionalSpec || "-"}</StdTd>
+            <StdTd w={STD_COLS[5]} align="center">{item.sizeLabel}</StdTd>
+            <StdTd w={STD_COLS[6]} align="center">{item.length || "-"}</StdTd>
+            <StdTd w={STD_COLS[7]} align="center">{item.ends || "-"}</StdTd>
+            <StdTd w={STD_COLS[8]} align="right">{fmt(item.quantity, 2)}</StdTd>
+            <StdTd w={STD_COLS[9]} align="center">{unitLabel(uom)}</StdTd>
             <StdTd w={STD_COLS[10]} align="right">{rateDisplay}</StdTd>
             <StdTd w={STD_COLS[11]} align="right">{amtDisplay}</StdTd>
             <StdTd w={STD_COLS[12]} align="center">{item.delivery}</StdTd>
-            <StdTd w={STD_COLS[13]} align="left" last>{matCode}</StdTd>
+            <StdTd w={STD_COLS[13]} align="left" last>{remarkCode}</StdTd>
           </View>
         );
       })}
 
       {/* TOTAL ROW (per reference format) */}
       <View style={stdStyles.row} wrap={false}>
-        <View style={[stdStyles.td, { width: "61%" }]}>
+        <View style={[stdStyles.td, { width: "59.5%" }]}>
           <T style={{ textAlign: "center", fontSize: 7.5, fontFamily: "Helvetica", fontWeight: "bold" }}>Total</T>
         </View>
-        <View style={[stdStyles.td, { width: STD_COLS[9] }]}>
+        <View style={[stdStyles.td, { width: STD_COLS[8] }]}>
           <T style={{ textAlign: "right", fontSize: 7.5, fontFamily: "Helvetica", fontWeight: "bold" }}>{fmt(totalQty, 2)}</T>
         </View>
+        <View style={[stdStyles.td, { width: STD_COLS[9] }]} />
         <View style={[stdStyles.td, { width: STD_COLS[10] }]} />
         <View style={[stdStyles.td, { width: STD_COLS[11] }]}>
           <T style={{ textAlign: "right", fontSize: 7.5, fontFamily: "Helvetica", fontWeight: "bold" }}>

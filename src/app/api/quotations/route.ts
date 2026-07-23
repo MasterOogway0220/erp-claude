@@ -318,6 +318,7 @@ export async function POST(request: NextRequest) {
             slNo: String(item.slNo ?? "").trim().slice(0, 20) || null,
             product: item.product || null,
             material: item.material || null,
+            dimStandard: item.dimStandard || null,
             additionalSpec: item.additionalSpec || null,
             sizeId: item.sizeId || null,
             sizeLabel: item.sizeLabel || null,

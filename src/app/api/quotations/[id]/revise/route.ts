@@ -322,6 +322,7 @@ export async function POST(
               slNo: item.slNo,
               product: item.product,
               material: item.material,
+              dimStandard: item.dimStandard,
               additionalSpec: item.additionalSpec,
               sizeId: item.sizeId,
               sizeLabel: item.sizeLabel,

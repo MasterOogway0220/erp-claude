@@ -530,6 +530,9 @@ model QuotationItem {
   slNo              String?
   product           String?
   material          String?
+  // Dimension standard printed in the quotation's "Dim." column
+  // (e.g. ASME B36.10, ASME B16.5, MSS-SP-95).
+  dimStandard       String?
   additionalSpec    String?
   sizeId            String?
   sizeLabel         String?

@@ -1,5 +1,6 @@
-// Standard Quotation PDF Template — Landscape A4, matches N-Pipe Solutions format
-// Separate columns: S/N, Product, Material, Additional Spec, Size, OD, WT, Length, Ends, Qty, Unit Rate, Amount, Delivery, Remark/Material Code
+// Standard Quotation PDF Template — Landscape A4, matches the client's standard
+// format (QTN-Rev.2): S/N, Product, Specification, Dim., Add. Spec., Size,
+// Length, Ends, Qty, Unit, Unit Rate, Amount, Delivery, Remark/Material Code
 
 import { numberToWords } from "../amount-in-words";
 
@@ -152,40 +153,32 @@ export function generateStandardQuotationHtml(
     company.website ? `Web: ${company.website}` : null,
   ].filter(Boolean).join(" ");
 
-  // Check if items have mixed units
-  const allUoms = new Set(quotation.items.map((item: any) => item.uom || defaultUom));
-  const hasMixedUnits = allUoms.size > 1;
+  // UOM as printed in the Unit column of the standard format.
+  const unitLabel = (uom: string) => (uom === "Mtr" || uom === "Nos" ? `${uom}.` : uom);
 
   // Build item rows with individual columns
   const itemRows = quotation.items
     .map((item: any) => {
       const materialCode = item.materialCode?.code || item.materialCodeLabel || "";
       const uom = item.uom || defaultUom;
-      // Single-UOM quotations show a bare number (unit lives in the header);
-      // with mixed UOMs the header can't state one unit, so each cell keeps
-      // its own.
-      const qtyDisplay = hasMixedUnits
-        ? `${fmtPlain(item.quantity, 2)} ${esc(uom)}`
-        : fmtPlain(item.quantity, 2);
-      const rateDisplay = isUnquoted
-        ? '<b>QUOTED</b>'
-        : (hasMixedUnits ? `${fmtPlain(item.unitRate, 2)}/${esc(uom)}` : fmtPlain(item.unitRate, 2));
+      const remarkCode = [item.remark, materialCode].filter(Boolean).join(" / ");
+      const rateDisplay = isUnquoted ? '<b>QUOTED</b>' : fmtPlain(item.unitRate, 2);
 
       return `<tr>
         <td class="c" style="background-color:#d9d9d9;">${item.slNo ? esc(item.slNo) : item.sNo}</td>
         <td class="l">${esc(item.product)}</td>
         <td class="l">${esc(item.material)}</td>
-        <td class="l">${esc(item.additionalSpec)}</td>
+        <td class="c">${esc(item.dimStandard) || "-"}</td>
+        <td class="l">${esc(item.additionalSpec) || "-"}</td>
         <td class="c">${esc(item.sizeLabel || "")}</td>
-        <td class="c">${item.od ? fmtPlain(item.od, 1) : ""}</td>
-        <td class="c">${item.wt ? fmtPlain(item.wt, 2) : ""}</td>
-        <td class="c">${esc(item.length)}</td>
-        <td class="c">${esc(item.ends)}</td>
-        <td class="r">${qtyDisplay}</td>
+        <td class="c">${esc(item.length) || "-"}</td>
+        <td class="c">${esc(item.ends) || "-"}</td>
+        <td class="r">${fmtPlain(item.quantity, 2)}</td>
+        <td class="c">${esc(unitLabel(uom))}</td>
         <td class="r">${rateDisplay}</td>
         <td class="r">${isUnquoted ? 'QUOTED' : fmt(item.amount, 2)}</td>
         <td class="c">${esc(item.delivery) || ""}</td>
-        <td class="l small">${esc(materialCode)}</td>
+        <td class="l small">${esc(remarkCode)}</td>
       </tr>`;
     })
     .join("\n");
@@ -344,9 +337,14 @@ export function generateStandardQuotationHtml(
     <td style="width:30%"><span class="info-label">Quotation No.</span>&nbsp;&nbsp;: <b>${esc(quotation.quotationNo)}</b></td>
   </tr>
   <tr>
-    <td><span class="info-label">Address</span>&nbsp;&nbsp;: ${esc(customerAddress)}${customerCountry ? `, ${esc(customerCountry)}` : ""}</td>
+    <td><span class="info-label">Address</span>&nbsp;&nbsp;: ${esc(customerAddress)}</td>
     <td><span class="info-label">Date</span>&nbsp;&nbsp;: ${formatDate(quotation.inquiryDate)}</td>
     <td><span class="info-label">Date</span>&nbsp;&nbsp;: ${formatDate(quotation.quotationDate)}</td>
+  </tr>
+  <tr>
+    <td><span class="info-label">Country</span>&nbsp;&nbsp;: ${esc(customerCountry)}</td>
+    <td></td>
+    <td></td>
   </tr>
   <tr>
     <td><span class="info-label">Attn.</span>&nbsp;&nbsp;: ${esc(quotation.buyer?.buyerName || quotation.customer.contactPerson)}</td>
@@ -357,11 +355,6 @@ export function generateStandardQuotationHtml(
     <td><span class="info-label">Email</span>&nbsp;&nbsp;: ${esc(quotation.buyer?.email || quotation.customer.email)}</td>
     <td><span class="info-label">Contact no.</span>&nbsp;&nbsp;: ${esc(quotation.buyer?.mobile || quotation.buyer?.telephone || quotation.customer.phone)}</td>
     <td><span class="info-label">Email</span>&nbsp;&nbsp;: ${esc(quotation.preparedBy?.email)}</td>
-  </tr>
-  <tr>
-    <td><span class="info-label">Phone</span>&nbsp;&nbsp;: ${esc(quotation.customer.phone)}</td>
-    <td></td>
-    <td><span class="info-label">Phone</span>&nbsp;&nbsp;: ${esc(quotation.preparedBy?.phone)}</td>
   </tr>
 </table>
 
@@ -374,39 +367,47 @@ export function generateStandardQuotationHtml(
 <table class="main">
   <colgroup>
     <col style="width:3%">
+    <col style="width:11%">
     <col style="width:10%">
-    <col style="width:10%">
-    <col style="width:10%">
-    <col style="width:9%">
-    <col style="width:5%">
-    <col style="width:4.5%">
-    <col style="width:6%">
-    <col style="width:3.5%">
     <col style="width:6.5%">
     <col style="width:8%">
-    <col style="width:9%">
+    <col style="width:11%">
+    <col style="width:6%">
+    <col style="width:4%">
+    <col style="width:5%">
+    <col style="width:4%">
     <col style="width:8%">
+    <col style="width:9%">
+    <col style="width:7%">
     <col style="width:7.5%">
   </colgroup>
   <tr class="hdr">
     <th>S/N</th>
     <th>Product</th>
-    <th>Material</th>
-    <th>Additional Spec.</th>
+    <th>Specification</th>
+    <th>Dim.</th>
+    <th>Add. Spec.</th>
     <th>Size</th>
-    <th>OD<br>(mm)</th>
-    <th>W.T.<br>(mm)</th>
-    <th>Length<br>(Mtr.)</th>
+    <th>Length</th>
     <th>Ends</th>
-    <th>Qty${hasMixedUnits ? "" : `<br>(${esc(defaultUom)})`}</th>
-    <th>Unit Rate<br>${esc(curr)}/${esc(defaultUom)}</th>
+    <th>Qty</th>
+    <th>Unit</th>
+    <th>Unit Rate<br>${esc(curr)}/Unit</th>
     <th>Amount<br>(${esc(curr)}.)</th>
     <th>Delivery<br>(Ex-works)</th>
-    <th>Material Code</th>
+    <th>Remark/<br>Material Code</th>
   </tr>
 
   ${itemRows}
 
+  <tr class="total-row">
+    <td class="c" colspan="8">Total</td>
+    <td class="r">${fmtPlain(totalQty, 2)}</td>
+    <td></td>
+    <td></td>
+    <td class="r">${isUnquoted ? 'QUOTED' : fmt(totalAmount, 2)}</td>
+    <td></td>
+    <td></td>
   </tr>
 </table>
 

@@ -50,6 +50,8 @@ interface QuotationItem {
   materialCodeLabel: string;
   product: string;
   material: string;
+  // Dimension standard printed in the "Dim." column (e.g. ASME B36.10).
+  dimStandard: string;
   additionalSpec: string;
   sizeId: string;
   sizeLabel: string;
@@ -86,6 +88,7 @@ const emptyItem: QuotationItem = {
   materialCodeLabel: "",
   product: "",
   material: "",
+  dimStandard: "",
   additionalSpec: "",
   sizeId: "",
   sizeLabel: "",
@@ -602,6 +605,7 @@ function StandardQuotationPage() {
           slNo: item.slNo || "",
           materialCodeId: item.materialCodeId || "",
           materialCodeLabel: item.materialCodeLabel || item.materialCode?.code || "",
+          dimStandard: item.dimStandard || "",
           product: item.product || "",
           material: item.material || "",
           additionalSpec: item.additionalSpec || "",
@@ -845,6 +849,13 @@ function StandardQuotationPage() {
       if (field === "sizeId" && value) {
         const pipeSize = findPipeSizeById(value);
         if (pipeSize) {
+          // Default the dimension standard for pipes: stainless dimensions are
+          // ASME B36.19, carbon/alloy B36.10. Editable, so odd cases can differ.
+          if (!newItems[index].dimStandard) {
+            newItems[index].dimStandard = /^S\.?S\b|STAINLESS/i.test(newItems[index].product || "")
+              ? "ASME B36.19"
+              : "ASME B36.10";
+          }
           newItems[index].sizeLabel = pipeSize.sizeLabel;
           newItems[index].nps = pipeSize.nps != null ? parseFloat(pipeSize.nps).toString() : "";
           newItems[index].schedule = pipeSize.schedule || "";
@@ -1505,7 +1516,9 @@ function StandardQuotationPage() {
                           onChange={(text) => {
                             setItems((prev) => {
                               const newItems = [...prev];
-                              newItems[index] = { ...newItems[index], fittingLabel: text, fittingId: "" };
+                              // Free-typed fittings still need a printed Size —
+                              // mirror the text so it isn't lost on save.
+                              newItems[index] = { ...newItems[index], fittingLabel: text, fittingId: "", sizeLabel: text };
                               return newItems;
                             });
                           }}
@@ -1518,8 +1531,9 @@ function StandardQuotationPage() {
                                 fittingLabel: `${f.type} ${f.size} ${f.schedule || ""} ${f.endType || ""} ${f.materialGrade}`.replace(/\s+/g, " ").trim(),
                                 product: f.type,
                                 material: f.materialGrade,
-                                sizeLabel: f.size,
-                                additionalSpec: [f.endType, f.rating, f.standard].filter(Boolean).join(", "),
+                                sizeLabel: f.rating ? `${f.size} X ${f.rating}#` : f.size,
+                                ends: f.endType || newItems[index].ends,
+                                dimStandard: f.standard || newItems[index].dimStandard,
                               };
                               return newItems;
                             });
@@ -1534,7 +1548,9 @@ function StandardQuotationPage() {
                           onChange={(text) => {
                             setItems((prev) => {
                               const newItems = [...prev];
-                              newItems[index] = { ...newItems[index], flangeLabel: text, flangeId: "" };
+                              // Free-typed flanges still need a printed Size —
+                              // mirror the text so it isn't lost on save.
+                              newItems[index] = { ...newItems[index], flangeLabel: text, flangeId: "", sizeLabel: text };
                               return newItems;
                             });
                           }}
@@ -1547,8 +1563,9 @@ function StandardQuotationPage() {
                                 flangeLabel: `${f.type} ${f.size} ${f.rating}# ${f.facing || ""} ${f.materialGrade}`.replace(/\s+/g, " ").trim(),
                                 product: f.type,
                                 material: f.materialGrade,
-                                sizeLabel: f.size,
-                                additionalSpec: [f.facing, f.rating + "#", f.standard].filter(Boolean).join(", "),
+                                sizeLabel: f.rating ? `${f.size} X ${f.rating}#` : f.size,
+                                ends: f.facing || newItems[index].ends,
+                                dimStandard: f.standard || newItems[index].dimStandard,
                               };
                               return newItems;
                             });
@@ -1677,8 +1694,18 @@ function StandardQuotationPage() {
                     </div>
                   </div>
 
-                  {/* Row 2 (xl:10 cols): OD | WT | Unit Wt | Total Wt | Past Quote# | Past Quote Price | Past PO# | Past PO Price | Remarks | Total */}
-                  <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-10 xl:grid-cols-10 gap-2">
+                  {/* Row 2 (xl:11 cols): Dim. | OD | WT | Unit Wt | Total Wt | Past Quote# | Past Quote Price | Past PO# | Past PO Price | Remarks | Total */}
+                  <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-11 xl:grid-cols-11 gap-2">
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Dim. Std</Label>
+                      <Input
+                        value={item.dimStandard}
+                        onChange={(e) => updateItem(index, "dimStandard", e.target.value)}
+                        placeholder="ASME B36.10"
+                        title="Dimension standard printed in the Dim. column (e.g. ASME B36.10, ASME B16.5)"
+                        className="h-8"
+                      />
+                    </div>
                     <div className="space-y-1">
                       <Label className="text-xs text-muted-foreground">OD (mm)</Label>
                       <Input
