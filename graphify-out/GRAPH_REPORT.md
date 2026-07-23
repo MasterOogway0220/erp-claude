@@ -1,11 +1,11 @@
 # Graph Report - .  (2026-07-23)
 
 ## Corpus Check
-- 492 files · ~467,966 words
+- 492 files · ~468,086 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 842 nodes · 1153 edges · 58 communities detected
+- 841 nodes · 1152 edges · 57 communities detected
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
 
@@ -45,7 +45,7 @@ Nodes (7): fetchAvailableStock(), handleOpenReservationDialog(), handleKeyDown()
 
 ### Community 2 - "Community 2"
 Cohesion: 0.05
-Nodes (36): buildAlertData(), createAlert(), findSystemBrowser(), renderHtmlToPdf(), baseStyles(), buildChemicalTable(), buildMechanicalTable(), companyHeaderHtml() (+28 more)
+Nodes (38): buildAlertData(), createAlert(), findUnpricedItems(), unpricedItemsError(), findSystemBrowser(), renderHtmlToPdf(), baseStyles(), buildChemicalTable() (+30 more)
 
 ### Community 3 - "Community 3"
 Cohesion: 0.05
@@ -124,24 +124,24 @@ Cohesion: 0.7
 Nodes (4): escapeHtml(), formatCurrency(), formatDate(), generatePOAcceptanceLetterHtml()
 
 ### Community 22 - "Community 22"
-Cohesion: 0.5
-Nodes (2): findUnpricedItems(), unpricedItemsError()
-
-### Community 23 - "Community 23"
 Cohesion: 0.83
 Nodes (3): main(), parseFraction(), parseSizeLabel()
 
-### Community 24 - "Community 24"
+### Community 23 - "Community 23"
 Cohesion: 0.5
 Nodes (4): fetchPO(), fetchVariance(), handleApprovalAction(), handleReject()
 
-### Community 25 - "Community 25"
+### Community 24 - "Community 24"
 Cohesion: 0.5
 Nodes (4): fetchEmailLogs(), fetchInvoice(), markAsSent(), sendEmail()
 
-### Community 26 - "Community 26"
+### Community 25 - "Community 25"
 Cohesion: 1.0
 Nodes (2): getOrCreateDimStd(), main()
+
+### Community 26 - "Community 26"
+Cohesion: 0.67
+Nodes (3): describeLog(), humanize(), truncate()
 
 ### Community 27 - "Community 27"
 Cohesion: 0.67
@@ -157,14 +157,14 @@ Nodes (3): fetchMTCs(), handleMtcSearch(), handleMtcVerificationUpdate()
 
 ### Community 30 - "Community 30"
 Cohesion: 0.67
-Nodes (3): describeLog(), humanize(), truncate()
+Nodes (0): 
 
 ### Community 31 - "Community 31"
 Cohesion: 0.67
 Nodes (0): 
 
 ### Community 32 - "Community 32"
-Cohesion: 0.67
+Cohesion: 1.0
 Nodes (0): 
 
 ### Community 33 - "Community 33"
@@ -193,39 +193,39 @@ Nodes (0):
 
 ### Community 39 - "Community 39"
 Cohesion: 1.0
-Nodes (0): 
+Nodes (2): rebuildItems(), toggleItemSelection()
 
 ### Community 40 - "Community 40"
 Cohesion: 1.0
-Nodes (2): fetchAcceptance(), updateStatus()
+Nodes (2): handleKeyDown(), handleSearch()
 
 ### Community 41 - "Community 41"
 Cohesion: 1.0
-Nodes (2): fetchOffer(), handleOfferAction()
+Nodes (2): calculateVendorPerformance(), fetchPOTracking()
 
 ### Community 42 - "Community 42"
 Cohesion: 1.0
-Nodes (2): handleKeyDown(), handleSearch()
+Nodes (2): formatCurrency(), handleExportCSV()
 
 ### Community 43 - "Community 43"
 Cohesion: 1.0
-Nodes (2): calculateVendorPerformance(), fetchPOTracking()
+Nodes (2): fetchReport(), handleUpdate()
 
 ### Community 44 - "Community 44"
 Cohesion: 1.0
-Nodes (2): formatCurrency(), handleExportCSV()
+Nodes (0): 
 
 ### Community 45 - "Community 45"
 Cohesion: 1.0
-Nodes (2): rebuildItems(), toggleItemSelection()
+Nodes (2): fetchOffer(), handleOfferAction()
 
 ### Community 46 - "Community 46"
 Cohesion: 1.0
-Nodes (2): fetchReport(), handleUpdate()
+Nodes (2): fetchSalesOrder(), handleCancelSO()
 
 ### Community 47 - "Community 47"
 Cohesion: 1.0
-Nodes (2): fetchSalesOrder(), handleCancelSO()
+Nodes (2): fetchAcceptance(), updateStatus()
 
 ### Community 48 - "Community 48"
 Cohesion: 1.0
@@ -263,60 +263,56 @@ Nodes (0):
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 57 - "Community 57"
-Cohesion: 1.0
-Nodes (0): 
-
 ## Knowledge Gaps
-- **Thin community `Community 33`** (2 nodes): `seed-test-company.ts`, `main()`
+- **Thin community `Community 32`** (2 nodes): `seed-test-company.ts`, `main()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 34`** (2 nodes): `seed-test-user.ts`, `main()`
+- **Thin community `Community 33`** (2 nodes): `seed-test-user.ts`, `main()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 35`** (2 nodes): `seed-production.ts`, `seedProduction()`
+- **Thin community `Community 34`** (2 nodes): `seed-production.ts`, `seedProduction()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 36`** (2 nodes): `seed-offer-terms.ts`, `main()`
+- **Thin community `Community 35`** (2 nodes): `seed-offer-terms.ts`, `main()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 37`** (2 nodes): `migrate-master-data-to-company.ts`, `main()`
+- **Thin community `Community 36`** (2 nodes): `migrate-master-data-to-company.ts`, `main()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 38`** (2 nodes): `migrate-warehouse-details-to-heats.ts`, `main()`
+- **Thin community `Community 37`** (2 nodes): `migrate-warehouse-details-to-heats.ts`, `main()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 39`** (2 nodes): `seed-flange-sizes.ts`, `main()`
+- **Thin community `Community 38`** (2 nodes): `seed-flange-sizes.ts`, `main()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 40`** (2 nodes): `fetchAcceptance()`, `updateStatus()`
+- **Thin community `Community 39`** (2 nodes): `rebuildItems()`, `toggleItemSelection()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 41`** (2 nodes): `fetchOffer()`, `handleOfferAction()`
+- **Thin community `Community 40`** (2 nodes): `handleKeyDown()`, `handleSearch()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 42`** (2 nodes): `handleKeyDown()`, `handleSearch()`
+- **Thin community `Community 41`** (2 nodes): `calculateVendorPerformance()`, `fetchPOTracking()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 43`** (2 nodes): `calculateVendorPerformance()`, `fetchPOTracking()`
+- **Thin community `Community 42`** (2 nodes): `formatCurrency()`, `handleExportCSV()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 44`** (2 nodes): `formatCurrency()`, `handleExportCSV()`
+- **Thin community `Community 43`** (2 nodes): `fetchReport()`, `handleUpdate()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 45`** (2 nodes): `rebuildItems()`, `toggleItemSelection()`
+- **Thin community `Community 44`** (2 nodes): `weight-calculation.ts`, `calculateWeightPerMeter()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 46`** (2 nodes): `fetchReport()`, `handleUpdate()`
+- **Thin community `Community 45`** (2 nodes): `fetchOffer()`, `handleOfferAction()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 47`** (2 nodes): `fetchSalesOrder()`, `handleCancelSO()`
+- **Thin community `Community 46`** (2 nodes): `fetchSalesOrder()`, `handleCancelSO()`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 47`** (2 nodes): `fetchAcceptance()`, `updateStatus()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 48`** (2 nodes): `breadcrumbs.tsx`, `isDynamicId()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 49`** (2 nodes): `download-file.ts`, `downloadFile()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 50`** (2 nodes): `weight-calculation.ts`, `calculateWeightPerMeter()`
+- **Thin community `Community 50`** (2 nodes): `soft-delete.ts`, `softDeleteData()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 51`** (2 nodes): `soft-delete.ts`, `softDeleteData()`
+- **Thin community `Community 51`** (1 nodes): `middleware.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 52`** (1 nodes): `middleware.ts`
+- **Thin community `Community 52`** (1 nodes): `prisma.config.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 53`** (1 nodes): `prisma.config.ts`
+- **Thin community `Community 53`** (1 nodes): `next-env.d.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 54`** (1 nodes): `next-env.d.ts`
+- **Thin community `Community 54`** (1 nodes): `vitest.config.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 55`** (1 nodes): `vitest.config.ts`
+- **Thin community `Community 55`** (1 nodes): `next.config.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 56`** (1 nodes): `next.config.ts`
-  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 57`** (1 nodes): `index.ts`
+- **Thin community `Community 56`** (1 nodes): `index.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 
 ## Suggested Questions
