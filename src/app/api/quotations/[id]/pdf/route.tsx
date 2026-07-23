@@ -4,6 +4,7 @@ import React from "react";
 import { checkAccess } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 import { QuotationPDF } from "@/lib/pdf/quotation-pdf";
+import { displayInquiryNo } from "@/lib/quotations/display";
 
 export const maxDuration = 30;
 export const dynamic = "force-dynamic";
@@ -86,7 +87,7 @@ export async function GET(
     const qtnParts = quotation.quotationNo.split("/");
     const qtnNum = qtnParts[qtnParts.length - 1] || quotation.quotationNo.replace(/\//g, "-");
     const clientName = (quotation.customer?.name || "").toUpperCase().replace(/[^A-Z0-9 ]/g, "").trim();
-    const inqNo = (quotation.inquiryNo || "").trim();
+    const inqNo = displayInquiryNo(quotation.inquiryNo);
     const isNonStandard = quotation.quotationCategory === "NON_STANDARD";
 
     let filename: string;

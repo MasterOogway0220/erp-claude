@@ -9,6 +9,7 @@ import {
   Font,
 } from "@react-pdf/renderer";
 import { numberToWords } from "../amount-in-words";
+import { displayInquiryNo, displaySizeLabel } from "../quotations/display";
 
 Font.register({
   family: "Helvetica",
@@ -246,7 +247,7 @@ function StandardQuotationPage({
       {/* INFO GRID */}
       <InfoRow first cells={[
         { label: "Customer", value: quotation.customer.name, flex: 2.5 },
-        { label: "Inquiry no.", value: quotation.inquiryNo || "", flex: 1.5 },
+        { label: "Inquiry no.", value: displayInquiryNo(quotation.inquiryNo), flex: 1.5 },
         { label: "Quotation No.", value: quotation.quotationNo, flex: 1.5 },
       ]} />
       <InfoRow cells={[
@@ -311,7 +312,7 @@ function StandardQuotationPage({
             <StdTd w={STD_COLS[2]} align="left">{item.material}</StdTd>
             <StdTd w={STD_COLS[3]} align="center">{item.dimStandard || "-"}</StdTd>
             <StdTd w={STD_COLS[4]} align="left">{item.additionalSpec || "-"}</StdTd>
-            <StdTd w={STD_COLS[5]} align="center">{item.sizeLabel}</StdTd>
+            <StdTd w={STD_COLS[5]} align="center">{displaySizeLabel(item)}</StdTd>
             <StdTd w={STD_COLS[6]} align="center">{item.length || "-"}</StdTd>
             <StdTd w={STD_COLS[7]} align="center">{item.ends || "-"}</StdTd>
             <StdTd w={STD_COLS[8]} align="right">{fmt(item.quantity, 2)}</StdTd>
@@ -508,7 +509,7 @@ function NonStandardQuotationPage({
   const prepName = quotation.preparedBy?.name || "";
   const prepEmail = quotation.preparedBy?.email || "";
   const prepPhone = quotation.preparedBy?.phone || "";
-  const enquiryRef = quotation.inquiryNo || "";
+  const enquiryRef = displayInquiryNo(quotation.inquiryNo);
   const formatText = quotation.version && quotation.version > 0
     ? `FORMAT: QTN-Rev.${quotation.version}, Dated: ${fmtDate(quotation.quotationDate)}`
     : `FORMAT: ${quotation.quotationNo}, Dated: ${fmtDate(quotation.quotationDate)}`;

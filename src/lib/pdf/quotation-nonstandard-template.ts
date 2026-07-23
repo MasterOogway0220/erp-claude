@@ -3,6 +3,7 @@
 // COMMERCIAL = with prices, TECHNICAL = prices shown as "QUOTED"
 
 import { numberToWords } from "../amount-in-words";
+import { displayInquiryNo } from "../quotations/display";
 
 interface CompanyInfo {
   companyName: string;
@@ -191,7 +192,7 @@ export function generateNonStandardQuotationHtml(
   const buyerContact = quotation.buyer?.mobile || quotation.buyer?.telephone || quotation.customer.phone || "";
 
   // Enquiry reference
-  const enquiryRef = quotation.inquiryNo || "";
+  const enquiryRef = displayInquiryNo(quotation.inquiryNo);
   const enquiryDate = quotation.inquiryDate;
 
   // Prepared by

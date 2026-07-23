@@ -3,6 +3,7 @@
 // Length, Ends, Qty, Unit, Unit Rate, Amount, Delivery, Remark/Material Code
 
 import { numberToWords } from "../amount-in-words";
+import { displayInquiryNo, displaySizeLabel } from "../quotations/display";
 
 interface CompanyInfo {
   companyName: string;
@@ -170,7 +171,7 @@ export function generateStandardQuotationHtml(
         <td class="l">${esc(item.material)}</td>
         <td class="c">${esc(item.dimStandard) || "-"}</td>
         <td class="l">${esc(item.additionalSpec) || "-"}</td>
-        <td class="c">${esc(item.sizeLabel || "")}</td>
+        <td class="c">${esc(displaySizeLabel(item))}</td>
         <td class="c">${esc(item.length) || "-"}</td>
         <td class="c">${esc(item.ends) || "-"}</td>
         <td class="r">${fmtPlain(item.quantity, 2)}</td>
@@ -333,7 +334,7 @@ export function generateStandardQuotationHtml(
 <table class="info">
   <tr>
     <td style="width:45%"><span class="info-label">Customer</span>&nbsp;&nbsp;: <b>${esc(quotation.customer.name)}</b></td>
-    <td style="width:25%"><span class="info-label">Inquiry no.</span>&nbsp;&nbsp;: ${esc(quotation.inquiryNo)}</td>
+    <td style="width:25%"><span class="info-label">Inquiry no.</span>&nbsp;&nbsp;: ${esc(displayInquiryNo(quotation.inquiryNo))}</td>
     <td style="width:30%"><span class="info-label">Quotation No.</span>&nbsp;&nbsp;: <b>${esc(quotation.quotationNo)}</b></td>
   </tr>
   <tr>
