@@ -142,7 +142,12 @@ const stdStyles = StyleSheet.create({
   footerAddr: { borderWidth: 1, borderColor: "#000", borderStyle: "solid", borderTopWidth: 0, textAlign: "center", padding: "2pt 0", fontSize: 7.5 },
 });
 
-function InfoRow({ cells, first }: { cells: { label: string; value: string; flex?: number }[]; first?: boolean }) {
+// Labels sit in their own sub-column with a rule after them, so the values
+// line up on one edge across the whole header (as in the client's format).
+const INFO_LABEL_W = 62;
+const BOLD_TEXT = { fontFamily: "Helvetica", fontWeight: "bold" as const };
+
+function InfoRow({ cells, first }: { cells: { label: string; value: string; flex?: number; bold?: boolean }[]; first?: boolean }) {
   return (
     <View style={stdStyles.row}>
       {cells.map((c, i) => (
@@ -150,12 +155,18 @@ function InfoRow({ cells, first }: { cells: { label: string; value: string; flex
           key={i}
           style={[
             stdStyles.infoCell,
+            { padding: 0, flexDirection: "row" },
             c.flex ? { flex: c.flex } : {},
             i === cells.length - 1 ? CELL_BOLD_END : {},
             first ? CELL_BOLD_TOP : {},
           ]}
         >
-          <T>{c.label ? `${c.label}  :  ` : ""}<T style={{ fontFamily: "Helvetica" }}>{c.value}</T></T>
+          <View style={{ width: INFO_LABEL_W, padding: "2pt 4pt", borderRightWidth: 1, borderRightColor: "#000", borderRightStyle: "solid" }}>
+            <T style={c.bold ? BOLD_TEXT : {}}>{c.label}</T>
+          </View>
+          <View style={{ flex: 1, padding: "2pt 4pt" }}>
+            <T style={c.bold ? BOLD_TEXT : {}}>{c.label ? `:  ${c.value}` : c.value}</T>
+          </View>
         </View>
       ))}
     </View>
@@ -246,9 +257,9 @@ function StandardQuotationPage({
 
       {/* INFO GRID */}
       <InfoRow first cells={[
-        { label: "Customer", value: quotation.customer.name, flex: 2.5 },
+        { label: "Customer", value: quotation.customer.name, flex: 2.5, bold: true },
         { label: "Inquiry no.", value: displayInquiryNo(quotation.inquiryNo), flex: 1.5 },
-        { label: "Quotation No.", value: quotation.quotationNo, flex: 1.5 },
+        { label: "Quotation No.", value: quotation.quotationNo, flex: 1.5, bold: true },
       ]} />
       <InfoRow cells={[
         { label: "Address", value: customerAddress, flex: 2.5 },
