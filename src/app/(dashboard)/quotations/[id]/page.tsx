@@ -60,9 +60,11 @@ import {
   Trash2,
   Activity,
   ListChecks,
+  Loader2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { downloadFile } from "@/lib/download";
 import { useCurrentUser } from "@/hooks/use-current-user";
 
 const statusColors: Record<string, string> = {
@@ -360,13 +362,19 @@ export default function QuotationDetailPage() {
     saveTermsMutation.mutate(editableTerms);
   };
 
-  const handleDownloadPDF = (variant?: string) => {
-    const link = document.createElement("a");
-    link.href = `/api/quotations/${params.id}/pdf${variant ? `?variant=${variant}` : ""}`;
-    link.download = "";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  // Single-flight download with a retry inside downloadFile: cold serverless
+  // renders take a few seconds and used to fail opaquely on the first click.
+  const [isDownloading, setIsDownloading] = useState(false);
+  const handleDownloadPDF = async (variant?: string) => {
+    if (isDownloading) return;
+    setIsDownloading(true);
+    try {
+      await downloadFile(`/api/quotations/${params.id}/pdf${variant ? `?variant=${variant}` : ""}`);
+    } catch {
+      toast.error("PDF download failed. Please try again.");
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const handleOpenEmailDialog = () => {
@@ -586,9 +594,11 @@ export default function QuotationDetailPage() {
             get a DRAFT watermark from the PDF API. */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline">
-              <Download className="h-4 w-4 mr-2" />
-              Download PDF
+            <Button variant="outline" disabled={isDownloading}>
+              {isDownloading
+                ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                : <Download className="h-4 w-4 mr-2" />}
+              {isDownloading ? "Downloading..." : "Download PDF"}
               <ChevronDown className="h-4 w-4 ml-2" />
             </Button>
           </DropdownMenuTrigger>

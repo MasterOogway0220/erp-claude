@@ -161,11 +161,12 @@ function InfoRow({ cells, first }: { cells: { label: string; value: string; flex
             first ? CELL_BOLD_TOP : {},
           ]}
         >
-          <View style={{ width: INFO_LABEL_W, padding: "2pt 4pt", borderRightWidth: 1, borderRightColor: "#000", borderRightStyle: "solid" }}>
+          <View style={{ width: INFO_LABEL_W, padding: "2pt 4pt", flexDirection: "row", justifyContent: "space-between", borderRightWidth: 1, borderRightColor: "#000", borderRightStyle: "solid" }}>
             <T style={c.bold ? BOLD_TEXT : {}}>{c.label}</T>
+            {c.label ? <T style={c.bold ? BOLD_TEXT : {}}>:</T> : null}
           </View>
           <View style={{ flex: 1, padding: "2pt 4pt" }}>
-            <T style={c.bold ? BOLD_TEXT : {}}>{c.label ? `:  ${c.value}` : c.value}</T>
+            <T style={c.bold ? BOLD_TEXT : {}}>{c.value}</T>
           </View>
         </View>
       ))}

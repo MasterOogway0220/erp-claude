@@ -6,7 +6,9 @@ import { prisma } from "@/lib/prisma";
 import { QuotationPDF } from "@/lib/pdf/quotation-pdf";
 import { displayInquiryNo } from "@/lib/quotations/display";
 
-export const maxDuration = 30;
+// Cold start + cross-region DB latency can push the first render well past
+// 30s; a killed function surfaces to the user as a failed download.
+export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
 const DEFAULT_COMPANY = {

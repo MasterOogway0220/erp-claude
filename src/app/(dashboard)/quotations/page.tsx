@@ -29,7 +29,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Search, Eye, Download, FileText, FileX, CalendarClock, CheckCircle2 } from "lucide-react";
+import { Plus, Search, Eye, Download, FileText, FileX, CalendarClock, CheckCircle2, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { downloadFile } from "@/lib/download";
 import { format } from "date-fns";
 
 
@@ -96,13 +98,20 @@ export default function QuotationsPage() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [revisionFilter, setRevisionFilter] = useState<"all" | "original" | "revised">("all");
 
-  const handleDownloadPDF = (id: string, variant: "quoted" | "unquoted") => {
-    const link = document.createElement("a");
-    link.href = `/api/quotations/${id}/pdf?variant=${variant}`;
-    link.download = "";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  // Single-flight download with visible progress: the PDF renders server-side
+  // for a few seconds, and extra clicks during that window used to stack
+  // parallel renders until downloads started failing.
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const handleDownloadPDF = async (id: string, variant: "quoted" | "unquoted") => {
+    if (downloadingId) return;
+    setDownloadingId(id);
+    try {
+      await downloadFile(`/api/quotations/${id}/pdf?variant=${variant}`);
+    } catch {
+      toast.error("PDF download failed. Please try again.");
+    } finally {
+      setDownloadingId(null);
+    }
   };
 
   const { data, isLoading } = useQuery({
@@ -412,8 +421,10 @@ export default function QuotationsPage() {
                       </Button>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" title="Download PDF">
-                            <Download className="h-4 w-4" />
+                          <Button variant="ghost" size="icon" title="Download PDF" disabled={downloadingId === quotation.id}>
+                            {downloadingId === quotation.id
+                              ? <Loader2 className="h-4 w-4 animate-spin" />
+                              : <Download className="h-4 w-4" />}
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">

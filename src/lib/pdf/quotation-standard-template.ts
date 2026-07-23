@@ -339,29 +339,29 @@ export function generateStandardQuotationHtml(
     <col style="width:11%"><col style="width:19%">
   </colgroup>
   <tr>
-    <td class="bold">Customer</td><td class="bold">: ${esc(quotation.customer.name)}</td>
-    <td>Inquiry no.</td><td>: ${esc(displayInquiryNo(quotation.inquiryNo))}</td>
-    <td>Quotation No.</td><td class="bold">: ${esc(quotation.quotationNo)}</td>
+    <td class="bold">Customer<span style="float:right">:</span></td><td class="bold">${esc(quotation.customer.name)}</td>
+    <td>Inquiry no.<span style="float:right">:</span></td><td>${esc(displayInquiryNo(quotation.inquiryNo))}</td>
+    <td>Quotation No.<span style="float:right">:</span></td><td class="bold">${esc(quotation.quotationNo)}</td>
   </tr>
   <tr>
-    <td>Address</td><td>: ${esc(customerAddress)}</td>
-    <td>Date</td><td>: ${formatDate(quotation.inquiryDate)}</td>
-    <td>Date</td><td>: ${formatDate(quotation.quotationDate)}</td>
+    <td>Address<span style="float:right">:</span></td><td>${esc(customerAddress)}</td>
+    <td>Date<span style="float:right">:</span></td><td>${formatDate(quotation.inquiryDate)}</td>
+    <td>Date<span style="float:right">:</span></td><td>${formatDate(quotation.quotationDate)}</td>
   </tr>
   <tr>
-    <td>Country</td><td>: ${esc(customerCountry)}</td>
+    <td>Country<span style="float:right">:</span></td><td>${esc(customerCountry)}</td>
     <td></td><td></td>
     <td></td><td></td>
   </tr>
   <tr>
-    <td>Attn.</td><td>: ${esc(quotation.buyer?.buyerName || quotation.customer.contactPerson)}</td>
-    <td>Designation</td><td>: ${esc(quotation.buyer?.designation)}</td>
-    <td>Contact</td><td>: ${esc(quotation.preparedBy?.name)}</td>
+    <td>Attn.<span style="float:right">:</span></td><td>${esc(quotation.buyer?.buyerName || quotation.customer.contactPerson)}</td>
+    <td>Designation<span style="float:right">:</span></td><td>${esc(quotation.buyer?.designation)}</td>
+    <td>Contact<span style="float:right">:</span></td><td>${esc(quotation.preparedBy?.name)}</td>
   </tr>
   <tr>
-    <td>Email</td><td>: ${esc(quotation.buyer?.email || quotation.customer.email)}</td>
-    <td>Contact no.</td><td>: ${esc(quotation.buyer?.mobile || quotation.buyer?.telephone || quotation.customer.phone)}</td>
-    <td>Email</td><td>: ${esc(quotation.preparedBy?.email)}</td>
+    <td>Email<span style="float:right">:</span></td><td>${esc(quotation.buyer?.email || quotation.customer.email)}</td>
+    <td>Contact no.<span style="float:right">:</span></td><td>${esc(quotation.buyer?.mobile || quotation.buyer?.telephone || quotation.customer.phone)}</td>
+    <td>Email<span style="float:right">:</span></td><td>${esc(quotation.preparedBy?.email)}</td>
   </tr>
 </table>
 
