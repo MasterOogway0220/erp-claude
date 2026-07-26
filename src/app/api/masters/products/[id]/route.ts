@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess, companyFilter } from "@/lib/rbac";
+import { checkAccess } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 
 export async function GET(
@@ -13,7 +13,7 @@ export async function GET(
     if (!authorized) return response!;
 
     const product = await prisma.productSpecMaster.findFirst({
-      where: { id, ...companyFilter(companyId) },
+      where: { id },
       include: { dimensionalStandard: true },
     });
 
@@ -41,7 +41,7 @@ export async function PATCH(
     const { product, category, specification, grade, material, additionalSpec, ends, size, length, dimensionalStandardId } = body;
 
     const updated = await prisma.productSpecMaster.update({
-      where: { id, ...companyFilter(companyId) },
+      where: { id },
       data: {
         product,
         category: category !== undefined ? (category || null) : undefined,
@@ -82,7 +82,7 @@ export async function DELETE(
     if (!authorized) return response!;
 
     const product = await prisma.productSpecMaster.findUnique({
-      where: { id, ...companyFilter(companyId) },
+      where: { id },
       select: { product: true, material: true },
     });
 
@@ -103,7 +103,7 @@ export async function DELETE(
       );
     }
 
-    await prisma.productSpecMaster.delete({ where: { id, ...companyFilter(companyId) } });
+    await prisma.productSpecMaster.delete({ where: { id } });
 
     createAuditLog({
       userId: session.user.id,

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess, companyFilter } from "@/lib/rbac";
+import { checkAccess } from "@/lib/rbac";
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,7 +10,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const product = searchParams.get("product") || "";
 
-    const where: any = { isActive: true, ...companyFilter(companyId) };
+    // Catalog data is global — shared across company entities.
+    const where: any = { isActive: true };
     if (product) where.product = product;
 
     const specs = await prisma.additionalSpecOption.findMany({

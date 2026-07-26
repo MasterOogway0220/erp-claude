@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess, companyFilter } from "@/lib/rbac";
+import { checkAccess } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 
 export async function GET(request: NextRequest) {
@@ -17,9 +17,8 @@ export async function GET(request: NextRequest) {
             { name: { contains: search } },
             { code: { contains: search } },
           ],
-          ...companyFilter(companyId),
         }
-      : { ...companyFilter(companyId) };
+      : {};
 
     const dimensionalStandards = await prisma.dimensionalStandardMaster.findMany({
       where,

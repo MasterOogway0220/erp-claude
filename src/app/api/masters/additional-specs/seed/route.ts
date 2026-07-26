@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess, companyFilter } from "@/lib/rbac";
+import { checkAccess } from "@/lib/rbac";
 
 // Additional specs mapped per product from PRODUCT SPEC MASTER - 1.xlsx
 const PRODUCT_ADDITIONAL_SPECS: Record<string, string[]> = {
@@ -62,7 +62,7 @@ export async function POST() {
     const { authorized, response, companyId } = await checkAccess("masters", "write");
     if (!authorized) return response!;
 
-    const existing = await prisma.additionalSpecOption.count({ where: { ...companyFilter(companyId) } });
+    const existing = await prisma.additionalSpecOption.count();
     if (existing > 0) {
       return NextResponse.json(
         { error: `Additional specs already has ${existing} records. Delete existing before re-seeding.` },

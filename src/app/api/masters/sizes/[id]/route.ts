@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkAccess, companyFilter } from "@/lib/rbac";
+import { checkAccess } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 
@@ -14,7 +14,7 @@ export async function GET(
     const { id } = await params;
 
     const size = await prisma.sizeMaster.findUnique({
-      where: { id, ...companyFilter(companyId) },
+      where: { id },
     });
 
     if (!size) {
@@ -46,7 +46,7 @@ export async function PATCH(
     const body = await request.json();
 
     const size = await prisma.sizeMaster.update({
-      where: { id, ...companyFilter(companyId) },
+      where: { id },
       data: {
         sizeLabel: body.sizeLabel ?? undefined,
         od: body.od != null ? parseFloat(body.od) : undefined,
@@ -87,7 +87,7 @@ export async function DELETE(
     const { id } = await params;
 
     const size = await prisma.sizeMaster.findUnique({
-      where: { id, ...companyFilter(companyId) },
+      where: { id },
       select: {
         sizeLabel: true,
         _count: { select: { quotationItems: true } },
@@ -107,7 +107,7 @@ export async function DELETE(
       );
     }
 
-    await prisma.sizeMaster.delete({ where: { id, ...companyFilter(companyId) } });
+    await prisma.sizeMaster.delete({ where: { id } });
 
     await createAuditLog({
       tableName: "SizeMaster",

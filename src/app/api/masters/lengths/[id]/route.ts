@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess, companyFilter } from "@/lib/rbac";
+import { checkAccess } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 
 export async function GET(
@@ -13,7 +13,7 @@ export async function GET(
     if (!authorized) return response!;
 
     const length = await prisma.lengthMaster.findUnique({
-      where: { id, ...companyFilter(companyId) },
+      where: { id },
     });
 
     if (!length) {
@@ -42,7 +42,7 @@ export async function PATCH(
     const body = await request.json();
 
     const updated = await prisma.lengthMaster.update({
-      where: { id, ...companyFilter(companyId) },
+      where: { id },
       data: {
         label: body.label ?? undefined,
       },
@@ -82,14 +82,14 @@ export async function DELETE(
     if (!authorized) return response!;
 
     const length = await prisma.lengthMaster.findUnique({
-      where: { id, ...companyFilter(companyId) },
+      where: { id },
     });
 
     if (!length) {
       return NextResponse.json({ error: "Length not found" }, { status: 404 });
     }
 
-    await prisma.lengthMaster.delete({ where: { id, ...companyFilter(companyId) } });
+    await prisma.lengthMaster.delete({ where: { id } });
 
     createAuditLog({
       userId: session.user.id,

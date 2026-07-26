@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { PipeType } from "@prisma/client";
 import { createAuditLog } from "@/lib/audit";
-import { checkAccess, companyFilter } from "@/lib/rbac";
+import { checkAccess } from "@/lib/rbac";
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,7 +13,8 @@ export async function GET(request: NextRequest) {
     const pipeType = searchParams.get("pipeType") as PipeType | null;
     const search = searchParams.get("search") || "";
 
-    const where: any = { ...companyFilter(companyId) };
+    // Catalog data is global — shared across company entities.
+    const where: any = {};
     if (pipeType) {
       where.pipeType = pipeType;
     }

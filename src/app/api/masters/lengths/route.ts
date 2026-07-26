@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess, companyFilter } from "@/lib/rbac";
+import { checkAccess } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 
 export async function GET(request: NextRequest) {
@@ -11,9 +11,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
 
-    const where = search
-      ? { label: { contains: search }, ...companyFilter(companyId) }
-      : { ...companyFilter(companyId) };
+    const where = search ? { label: { contains: search } } : {};
 
     const lengths = await prisma.lengthMaster.findMany({
       where,
