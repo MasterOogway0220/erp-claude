@@ -1,7 +1,7 @@
 # Graph Report - .  (2026-07-26)
 
 ## Corpus Check
-- 496 files · ~474,661 words
+- 496 files · ~474,839 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -109,15 +109,15 @@ Nodes (4): main(), parseNps(), parseSchedule(), readExcel()
 
 ### Community 18 - "Community 18"
 Cohesion: 0.4
-Nodes (5): fetchStock(), handlePartialAccept(), handleUpdateStock(), initPipeRows(), savePipeDetails()
+Nodes (5): closeDialog(), getSelectedItems(), handleCloseDialog(), handleSubmit(), submitOrder()
 
 ### Community 19 - "Community 19"
 Cohesion: 0.4
-Nodes (5): closeDialog(), getSelectedItems(), handleCloseDialog(), handleSubmit(), submitOrder()
+Nodes (5): fetchNCR(), handleCloseNCR(), handleMoveToCorrective(), handleMoveToInvestigation(), handleVerifyNCR()
 
 ### Community 20 - "Community 20"
 Cohesion: 0.4
-Nodes (5): fetchNCR(), handleCloseNCR(), handleMoveToCorrective(), handleMoveToInvestigation(), handleVerifyNCR()
+Nodes (5): fetchStock(), handlePartialAccept(), handleUpdateStock(), initPipeRows(), savePipeDetails()
 
 ### Community 21 - "Community 21"
 Cohesion: 0.7
@@ -149,7 +149,7 @@ Nodes (2): getOrCreateDimStd(), main()
 
 ### Community 28 - "Community 28"
 Cohesion: 0.67
-Nodes (3): loadPRItems(), loadSOItems(), mapToPOItems()
+Nodes (3): describeLog(), humanize(), truncate()
 
 ### Community 29 - "Community 29"
 Cohesion: 0.67
@@ -161,7 +161,7 @@ Nodes (3): fetchMTCs(), handleMtcSearch(), handleMtcVerificationUpdate()
 
 ### Community 31 - "Community 31"
 Cohesion: 0.67
-Nodes (3): describeLog(), humanize(), truncate()
+Nodes (3): loadPRItems(), loadSOItems(), mapToPOItems()
 
 ### Community 32 - "Community 32"
 Cohesion: 0.67
@@ -201,39 +201,39 @@ Nodes (0):
 
 ### Community 41 - "Community 41"
 Cohesion: 1.0
-Nodes (0): 
+Nodes (2): fetchSalesOrder(), handleCancelSO()
 
 ### Community 42 - "Community 42"
 Cohesion: 1.0
-Nodes (2): fetchSalesOrder(), handleCancelSO()
+Nodes (2): rebuildItems(), toggleItemSelection()
 
 ### Community 43 - "Community 43"
 Cohesion: 1.0
-Nodes (2): rebuildItems(), toggleItemSelection()
+Nodes (2): formatCurrency(), handleExportCSV()
 
 ### Community 44 - "Community 44"
 Cohesion: 1.0
-Nodes (2): fetchOffer(), handleOfferAction()
+Nodes (0): 
 
 ### Community 45 - "Community 45"
 Cohesion: 1.0
-Nodes (2): fetchAcceptance(), updateStatus()
+Nodes (0): 
 
 ### Community 46 - "Community 46"
 Cohesion: 1.0
-Nodes (2): fetchReport(), handleUpdate()
+Nodes (2): fetchAcceptance(), updateStatus()
 
 ### Community 47 - "Community 47"
 Cohesion: 1.0
-Nodes (2): handleKeyDown(), handleSearch()
+Nodes (2): fetchReport(), handleUpdate()
 
 ### Community 48 - "Community 48"
 Cohesion: 1.0
-Nodes (0): 
+Nodes (2): handleKeyDown(), handleSearch()
 
 ### Community 49 - "Community 49"
 Cohesion: 1.0
-Nodes (2): formatCurrency(), handleExportCSV()
+Nodes (2): fetchOffer(), handleOfferAction()
 
 ### Community 50 - "Community 50"
 Cohesion: 1.0
@@ -290,23 +290,23 @@ Nodes (0):
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 40`** (2 nodes): `seed-flange-sizes.ts`, `main()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 41`** (2 nodes): `download-file.ts`, `downloadFile()`
+- **Thin community `Community 41`** (2 nodes): `fetchSalesOrder()`, `handleCancelSO()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 42`** (2 nodes): `fetchSalesOrder()`, `handleCancelSO()`
+- **Thin community `Community 42`** (2 nodes): `rebuildItems()`, `toggleItemSelection()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 43`** (2 nodes): `rebuildItems()`, `toggleItemSelection()`
+- **Thin community `Community 43`** (2 nodes): `formatCurrency()`, `handleExportCSV()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 44`** (2 nodes): `fetchOffer()`, `handleOfferAction()`
+- **Thin community `Community 44`** (2 nodes): `download-file.ts`, `downloadFile()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 45`** (2 nodes): `fetchAcceptance()`, `updateStatus()`
+- **Thin community `Community 45`** (2 nodes): `download.ts`, `downloadFile()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 46`** (2 nodes): `fetchReport()`, `handleUpdate()`
+- **Thin community `Community 46`** (2 nodes): `fetchAcceptance()`, `updateStatus()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 47`** (2 nodes): `handleKeyDown()`, `handleSearch()`
+- **Thin community `Community 47`** (2 nodes): `fetchReport()`, `handleUpdate()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 48`** (2 nodes): `download.ts`, `downloadFile()`
+- **Thin community `Community 48`** (2 nodes): `handleKeyDown()`, `handleSearch()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 49`** (2 nodes): `formatCurrency()`, `handleExportCSV()`
+- **Thin community `Community 49`** (2 nodes): `fetchOffer()`, `handleOfferAction()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 50`** (2 nodes): `calculateVendorPerformance()`, `fetchPOTracking()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
