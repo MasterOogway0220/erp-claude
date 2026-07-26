@@ -1625,8 +1625,13 @@ export function getFittingEnds(product: string): "BW" | "SW" | "NPT" {
   return "BW";
 }
 
-export function getFittingSizeOptions(product: string): string[] {
-  const ends = getFittingEnds(product);
+// Prefer the item's actual ends value (autofilled from the master row) over
+// the name-suffix convention, so custom master products that don't follow
+// the ", SW"/", SCRD" naming still route to the right pool.
+export function getFittingSizeOptions(product: string, knownEnds?: string): string[] {
+  const ends = knownEnds === "SW" || knownEnds === "NPT" || knownEnds === "BW"
+    ? knownEnds
+    : getFittingEnds(product);
   if (ends === "SW") return FITTING_SIZES.SW;
   if (ends === "NPT") return FITTING_SIZES.THRD;
   return /^(S\.S\.|D\.S\.)/.test(product.trim())
@@ -1636,4 +1641,14 @@ export function getFittingSizeOptions(product: string): string[] {
 
 export function getFittingDimStandard(product: string): string {
   return getFittingEnds(product) === "BW" ? "ASME B16.9" : "ASME B16.11";
+}
+
+// Best-effort Pipe/Fitting/Flange classification from a product name — for
+// rows that arrive without a stored category (tender items, PO edit loads).
+export function inferItemCategory(product: string): "Pipe" | "Fitting" | "Flange" {
+  const p = (product || "").toUpperCase();
+  if (p.includes("FLANGE")) return "Flange";
+  if (/(ELBOW|TEE\b|END CAP|COUPLING|STUB\s?END|CROSS\b|BOSS\b|PLUG|NIPPLE|REDUCER|UNION|BEND)/.test(p))
+    return "Fitting";
+  return "Pipe";
 }

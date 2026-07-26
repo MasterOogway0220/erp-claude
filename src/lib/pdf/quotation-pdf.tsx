@@ -520,6 +520,12 @@ function NonStandardQuotationPage({
   // Literal form identity per the client's format sheet (not the quotation's rev/date)
   const formatText = "FORMAT: QTN-Rev.2, Dated: 19/12/2012";
 
+  // One unit in the Qty header only when every row shares it; otherwise the
+  // unit prints per cell and a cross-unit total is meaningless.
+  const nsUoms = new Set(quotation.items.map((i: any) => i.uom || "Mtr"));
+  const uniformUom = nsUoms.size === 1 ? Array.from(nsUoms)[0] : null;
+  const fmtQty = (v: any) => { const n = parseFloat(v); return isNaN(n) ? "" : String(n); };
+
   return (
     <Page size="A4" style={nsStyles.page}>
       {watermark ? <DraftWatermark /> : null}
@@ -591,7 +597,7 @@ function NonStandardQuotationPage({
       <View style={nsStyles.row} fixed>
         <NsTh w={NS_COLS.sn}>Sr.{"\n"}no.</NsTh>
         <NsTh w={NS_COLS.desc}>Item Description</NsTh>
-        <NsTh w={NS_COLS.qty}>{`Qty\n${quotation.items[0]?.uom || "MTR"}`}</NsTh>
+        <NsTh w={NS_COLS.qty}>{`Qty${uniformUom ? `\n${uniformUom}` : ""}`}</NsTh>
         <NsTh w={NS_COLS.rate}>{`Unit rate\n${curr}`}</NsTh>
         <NsTh w={NS_COLS.total}>{`Total\n${curr}`}</NsTh>
         <NsTh w={NS_COLS.del} last>Delivery{"\n"}Ex-Works</NsTh>
@@ -608,7 +614,7 @@ function NonStandardQuotationPage({
                 <T key={li} style={{ fontSize: 8, lineHeight: 1.3 }}>{line}</T>
               ))}
             </View>
-            <NsTd w={NS_COLS.qty} align="center" top>{fmt(item.quantity, 0)}</NsTd>
+            <NsTd w={NS_COLS.qty} align="center" top>{uniformUom ? fmtQty(item.quantity) : `${fmtQty(item.quantity)} ${item.uom || ""}`.trim()}</NsTd>
             <NsTd w={NS_COLS.rate} align="right" top>
               {isTechnical ? "QUOTED" : fmt(item.unitRate, 2)}
             </NsTd>
@@ -626,7 +632,7 @@ function NonStandardQuotationPage({
           <T style={{ fontFamily: "Helvetica", fontWeight: "bold", fontSize: 8.5 }}>Grand Total</T>
         </View>
         <View style={[nsStyles.td, { width: NS_COLS.qty }]}>
-          <T style={{ textAlign: "center", fontFamily: "Helvetica", fontWeight: "bold", fontSize: 8.5 }}>{fmt(totalQty, 0)}</T>
+          <T style={{ textAlign: "center", fontFamily: "Helvetica", fontWeight: "bold", fontSize: 8.5 }}>{uniformUom ? fmtQty(totalQty) : ""}</T>
         </View>
         <View style={[nsStyles.td, { width: NS_COLS.rate }]} />
         <View style={[nsStyles.td, { width: NS_COLS.total }]}>

@@ -130,9 +130,11 @@ function CreatePRPage() {
   };
 
   const updateItem = (index: number, field: keyof PRItem, value: any) => {
-    const updatedItems = [...items];
-    updatedItems[index] = { ...updatedItems[index], [field]: value };
-    setItems(updatedItems);
+    setItems((prev) => {
+      const updatedItems = [...prev];
+      updatedItems[index] = { ...updatedItems[index], [field]: value };
+      return updatedItems;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

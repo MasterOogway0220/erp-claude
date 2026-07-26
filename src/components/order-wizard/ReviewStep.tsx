@@ -236,20 +236,22 @@ export function ReviewStep({ order, onComplete, readOnly = false }: ReviewStepPr
   };
 
   const updateItem = (index: number, field: keyof SOItem, value: unknown) => {
-    const updated = [...editItems];
-    updated[index] = { ...updated[index], [field]: value };
-    if (field === "quantity" || field === "unitRate") {
-      const qty =
-        field === "quantity"
-          ? parseFloat(value as string) || 0
-          : updated[index].quantity;
-      const rate =
-        field === "unitRate"
-          ? parseFloat(value as string) || 0
-          : updated[index].unitRate;
-      updated[index].amount = Math.max(0, qty * rate);
-    }
-    setEditItems(updated);
+    setEditItems((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      if (field === "quantity" || field === "unitRate") {
+        const qty =
+          field === "quantity"
+            ? parseFloat(value as string) || 0
+            : updated[index].quantity;
+        const rate =
+          field === "unitRate"
+            ? parseFloat(value as string) || 0
+            : updated[index].unitRate;
+        updated[index].amount = Math.max(0, qty * rate);
+      }
+      return updated;
+    });
   };
 
   const handleSaveEdit = async (e: React.FormEvent) => {

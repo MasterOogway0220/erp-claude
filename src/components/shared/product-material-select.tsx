@@ -44,6 +44,16 @@ interface ProductMaterialSelectProps {
   disabled?: boolean;
 }
 
+// Drop the module caches so the next mount refetches — call after any
+// product/additional-spec master mutation, else edits don't appear until a
+// full page reload.
+export function invalidateProductCache() {
+  cachedProducts = null;
+  fetchPromise = null;
+  cachedAdditionalSpecs = null;
+  fetchAdditionalSpecsPromise = null;
+}
+
 // Extra sizes recorded on master rows for a product (beyond the standard
 // generated pools) — lets a size added via the Product Master surface in
 // quotation/PO size dropdowns. Reads the module cache; empty until fetched.
@@ -149,14 +159,20 @@ export function ProductMaterialSelect({
       const set = Array.from(new Set(vals.filter(Boolean))) as string[];
       return set.length === 1 ? set[0] : undefined;
     };
+    // "-" = the chosen material is explicitly dim-less in the master
+    // (IS-standard ERW pipes; the client's own Excel prints "-"). Only PIPES
+    // carry dim on the material row — flange dim comes from the SIZE pick,
+    // so a dim-less flange material must NOT clobber it.
+    const explicitlyDimless =
+      mat &&
+      matches.every((p) => !p.dimensionalStandard) &&
+      matches.every((p) => p.category === "PIPES");
     onAutoFill({
       additionalSpec: unique(matches.map((p) => p.additionalSpec)),
       ends: unique(matches.map((p) => p.ends)),
-      // "" = the chosen material is explicitly dim-less in the master
-      // (e.g. IS-standard ERW pipes) — callers should clear a stale value.
       dimStandard:
         unique(matches.map((p) => p.dimensionalStandard?.name)) ??
-        (mat && matches.every((p) => !p.dimensionalStandard) ? "" : undefined),
+        (explicitlyDimless ? "-" : undefined),
     });
   };
 

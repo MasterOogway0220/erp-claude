@@ -367,6 +367,16 @@ function NonStandardQuotationPage() {
       return;
     }
     setFormData((prev) => ({ ...prev, buyerId: "" }));
+    // Material codes and past quote/PO references are customer-scoped —
+    // keeping them would link the old customer's codes/history to the new
+    // customer's quotation (and leak into their scoped dropdown).
+    setItems((prev) =>
+      prev.map((it) => ({
+        ...it,
+        materialCodeId: "", materialCodeLabel: "", materialCode: "",
+        pastQuote: "", pastQuotePrice: "", pastPo: "", pastPoPrice: "",
+      }))
+    );
   }, [formData.customerId]);
 
   // Track the quotationType + customer combo that was last used to populate terms
@@ -533,19 +543,28 @@ function NonStandardQuotationPage() {
       setRoundOff(q.roundOff || false);
       setAdvanceToPay(q.advanceToPay ? String(q.advanceToPay) : "");
       if (q.items?.length > 0) {
-        setItems(q.items.map((item: any) => ({
-          itemCategory: item.fittingId ? "Fitting" as NonStdItemCategory : item.flangeId ? "Flange" as NonStdItemCategory : "Item" as NonStdItemCategory,
+        setItems(q.items.map((item: any) => {
+          // itemType is authoritative; fittingId/flangeId only exist on
+          // historical rows (the master-pool picker never sets them).
+          const cat = (["Fitting", "Flange"].includes(item.itemType)
+            ? item.itemType
+            : item.fittingId ? "Fitting" : item.flangeId ? "Flange" : "Item") as NonStdItemCategory;
+          return {
+          itemCategory: cat,
           slNo: item.slNo || "",
           materialCodeId: item.materialCodeId || "",
           materialCodeLabel: item.materialCodeLabel || item.materialCode?.code || "",
           itemDescription: item.itemDescription || "",
-          materialCode: item.material || "",
+          // the structured "Material Code" text is the CODE, not the grade
+          materialCode: item.materialCodeLabel || item.materialCode?.code || "",
           size: item.sizeLabel || "",
           endType: item.ends || "",
           material: item.material || "",
           tagNo: item.tagNo || "",
           drawingRef: item.drawingRef || "",
-          itemNo: item.product || "",
+          // itemNo only lives inside the composed description; product holds
+          // the picker's fitting/flange name (or "Non-Standard Item")
+          itemNo: "",
           certificateReq: item.certificateReq || "",
           quantity: String(item.quantity),
           // Unpriced items are stored as 0 — show them blank again on edit
@@ -559,10 +578,11 @@ function NonStandardQuotationPage() {
           pastPo: item.pastPo || "",
           pastPoPrice: item.pastPoPrice ? String(item.pastPoPrice) : "",
           fittingId: item.fittingId || "",
-          fittingLabel: "",
+          fittingLabel: cat === "Fitting" && item.product !== "Non-Standard Item" ? item.product || "" : "",
           flangeId: item.flangeId || "",
-          flangeLabel: "",
-        })));
+          flangeLabel: cat === "Flange" && item.product !== "Non-Standard Item" ? item.product || "" : "",
+          };
+        }));
       }
       if (q.terms?.length > 0) {
         setTerms(q.terms.map((t: any) => ({
@@ -782,7 +802,11 @@ function NonStandardQuotationPage() {
           material={item.material}
           category={isFitting ? "FITTINGS" : "FLANGES"}
           productLabel={isFitting ? "Fitting *" : "Flange *"}
-          onProductChange={(val) => patch({ [labelField]: val } as Partial<NonStdItem>)}
+          onProductChange={(val) =>
+            // size pools differ per product — a kept size may not exist in
+            // the new product's pool and would compose a wrong description
+            patch({ [labelField]: val, size: "" } as Partial<NonStdItem>)
+          }
           onMaterialChange={(val) => patch({ material: val })}
           onAutoFill={({ ends }) => patch(ends && isFitting ? { endType: ends } : {}, true)}
         />
@@ -790,7 +814,7 @@ function NonStandardQuotationPage() {
           <Label className="text-sm">Size</Label>
           {isFitting ? (
             <SmartCombobox
-              options={Array.from(new Set([...getFittingSizeOptions(item[labelField]), ...getMasterExtraSizes(item[labelField])]))}
+              options={Array.from(new Set([...getFittingSizeOptions(item[labelField], item.endType), ...getMasterExtraSizes(item[labelField])]))}
               value={item.size}
               onSelect={(label: string) => patch({ size: label }, true)}
               onChange={(text) => patch({ size: text })}
@@ -802,7 +826,14 @@ function NonStandardQuotationPage() {
             <SmartCombobox
               options={[...FLANGE_SIZES, ...getMasterExtraSizes(item[labelField]).filter((s) => !FLANGE_SIZES.some((z) => z.label === s)).map((s) => ({ label: s, dim: "" }))]}
               value={item.size}
-              onSelect={(z: { label: string; dim: string }) => patch({ size: z.label }, true)}
+              onSelect={(z: { label: string; dim: string }) =>
+                // keep the B16.47 Sr. A/B distinction — the same label exists
+                // under both series and the size string is all that persists
+                patch(
+                  { size: z.dim && z.dim !== "ASME B16.5" ? `${z.label} (${z.dim.replace("ASME ", "")})` : z.label },
+                  true
+                )
+              }
               onChange={(text) => patch({ size: text })}
               displayFn={(z: { label: string; dim: string }) =>
                 z.dim && z.dim !== "ASME B16.5" ? `${z.label} — ${z.dim.replace("ASME ", "")}` : z.label
@@ -839,7 +870,13 @@ function NonStandardQuotationPage() {
       return {
         slNo: item.slNo || "",
         materialCodeId: item.materialCodeId || undefined,
-        product: "Non-Standard Item",
+        materialCodeLabel: item.materialCodeLabel || "",
+        // persist the picker's product so category + picker restore on edit
+        itemType: item.itemCategory,
+        product:
+          item.itemCategory === "Fitting" ? item.fittingLabel || "Non-Standard Item"
+          : item.itemCategory === "Flange" ? item.flangeLabel || "Non-Standard Item"
+          : "Non-Standard Item",
         material: item.material || "",
         additionalSpec: "",
         sizeId: null,
@@ -1233,9 +1270,18 @@ function NonStandardQuotationPage() {
                               : "bg-muted hover:bg-accent"
                           }`}
                           onClick={() => {
+                            if (cat === item.itemCategory) return;
                             setItems((prev) => {
                               const newItems = [...prev];
-                              newItems[index] = { ...item, itemCategory: cat };
+                              // stale FK/labels must not resurrect the old
+                              // category on the next edit-load
+                              newItems[index] = {
+                                ...item,
+                                itemCategory: cat,
+                                fittingId: "", fittingLabel: "",
+                                flangeId: "", flangeLabel: "",
+                                size: "", endType: "",
+                              };
                               return newItems;
                             });
                           }}
@@ -1297,6 +1343,7 @@ function NonStandardQuotationPage() {
                                   const newItems = [...prev];
                                   newItems[index] = {
                                     ...newItems[index],
+                                    itemCategory: src.itemCategory,
                                     materialCodeId: src.materialCodeId,
                                     materialCodeLabel: src.materialCodeLabel,
                                     materialCode: src.materialCode,

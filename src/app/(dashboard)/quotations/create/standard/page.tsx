@@ -41,6 +41,7 @@ import {
   getFittingDimStandard,
   getFittingEnds,
   getFittingSizeOptions,
+  inferItemCategory,
 } from "@/lib/fitting-flange-sizes";
 import { calculateWeightPerMeter } from "@/lib/weight-calculation";
 
@@ -605,6 +606,10 @@ function StandardQuotationPage() {
       setAdvanceToPay(q.advanceToPay ? String(q.advanceToPay) : "");
       if (q.items?.length > 0) {
         setItems(q.items.map((item: any) => ({
+          // Spread the raw row first so legacy fields the form doesn't edit
+          // (costing, BOM/tag fields) survive the PUT's delete-and-recreate
+          // instead of being wiped on every edit.
+          ...item,
           itemCategory: (["Pipe", "Fitting", "Flange"].includes(item.itemType)
             ? item.itemType
             : item.fittingId ? "Fitting" : item.flangeId ? "Flange" : "Pipe") as ItemCategory,
@@ -679,15 +684,20 @@ function StandardQuotationPage() {
         }));
         if (tender.items?.length > 0) {
           setItems(
-            tender.items.map((ti: any) => ({
-              ...emptyItem,
-              product: ti.product || "",
-              material: ti.material || "",
-              additionalSpec: ti.additionalSpec || "",
-              sizeLabel: ti.size || ti.sizeLabel || "",
-              quantity: String(ti.quantity || ""),
-              uom: ti.uom || "Mtr",
-            }))
+            tender.items.map((ti: any) => {
+              const cat = inferItemCategory(ti.product || "");
+              return {
+                ...emptyItem,
+                itemCategory: cat as ItemCategory,
+                ends: cat === "Pipe" ? "BE" : "",
+                product: ti.product || "",
+                material: ti.material || "",
+                additionalSpec: ti.additionalSpec || "",
+                sizeLabel: ti.size || ti.sizeLabel || "",
+                quantity: String(ti.quantity || ""),
+                uom: ti.uom || (cat === "Pipe" ? "Mtr" : "Nos"),
+              };
+            })
           );
         }
       })
@@ -839,7 +849,8 @@ function StandardQuotationPage() {
       const newItems = prev.map((item, i) => (i === index ? { ...item } : item));
       (newItems[index] as any)[field] = value;
 
-      // When product changes, reset size-related fields
+      // When product changes, reset size-related fields — and dim/ends,
+      // which belong to the previous product (autofill repopulates them).
       if (field === "product") {
         newItems[index].sizeId = "";
         newItems[index].sizeLabel = "";
@@ -849,6 +860,8 @@ function StandardQuotationPage() {
         newItems[index].wt = "";
         newItems[index].unitWeight = "";
         newItems[index].totalWeightMT = "";
+        newItems[index].dimStandard = "";
+        if (newItems[index].itemCategory !== "Pipe") newItems[index].ends = "";
       }
 
       // When sizeId changes, auto-fill from pipe size master
@@ -1302,6 +1315,9 @@ function StandardQuotationPage() {
                                   od: "", wt: "", unitWeight: "", totalWeightMT: "",
                                   dimStandard: "", length: "",
                                   ends: cat === "Pipe" ? "BE" : "",
+                                  // historical FK + label no longer describe this line
+                                  fittingId: "", fittingLabel: "", flangeId: "", flangeLabel: "",
+                                  uom: cat === "Pipe" ? "Mtr" : "Nos",
                                 };
                                 return newItems;
                               });
@@ -1346,9 +1362,15 @@ function StandardQuotationPage() {
                                         wt: src.wt,
                                         length: src.length,
                                         ends: src.ends,
+                                        dimStandard: src.dimStandard,
                                         uom: src.uom,
                                         delivery: src.delivery,
                                         unitWeight: src.unitWeight,
+                                        // recompute against the target's qty
+                                        totalWeightMT:
+                                          parseFloat(newItems[index].quantity) > 0 && parseFloat(src.unitWeight) > 0
+                                            ? ((parseFloat(newItems[index].quantity) * parseFloat(src.unitWeight)) / 1000).toFixed(3)
+                                            : "",
                                         fittingId: src.fittingId,
                                         fittingLabel: src.fittingLabel,
                                         flangeId: src.flangeId,
@@ -1393,6 +1415,13 @@ function StandardQuotationPage() {
                                   ...(mc.materialGrade ? { material: mc.materialGrade } : {}),
                                   ...(mc.standard ? { additionalSpec: mc.standard } : {}),
                                   ...(mc.size ? { sizeLabel: mc.size } : {}),
+                                  // Autofill changed product/size — a prior
+                                  // sizeId (and its derived dims/weights) no
+                                  // longer describes this line; clear like
+                                  // updateItem's product reset does.
+                                  ...(mc.productType || mc.size
+                                    ? { sizeId: "", nps: "", schedule: "", od: "", wt: "", unitWeight: "", totalWeightMT: "" }
+                                    : {}),
                                 };
                                 return newItems;
                               });
@@ -1552,7 +1581,7 @@ function StandardQuotationPage() {
                       <div className="space-y-1 lg:col-span-2 xl:col-span-2">
                         <Label className="text-xs font-medium">Size <span className="text-destructive">*</span></Label>
                         <SmartCombobox
-                          options={Array.from(new Set([...getFittingSizeOptions(item.product), ...getMasterExtraSizes(item.product)]))}
+                          options={Array.from(new Set([...getFittingSizeOptions(item.product, item.ends), ...getMasterExtraSizes(item.product)]))}
                           value={item.sizeLabel || ""}
                           onSelect={(label: string) => {
                             setItems((prev) => {
@@ -1590,8 +1619,10 @@ function StandardQuotationPage() {
                               newItems[index] = {
                                 ...newItems[index],
                                 sizeLabel: z.label,
-                                // B16.5 vs B16.47 Sr. A/B depends on the size row
-                                dimStandard: z.dim,
+                                // B16.5 vs B16.47 Sr. A/B depends on the size
+                                // row; master-extra sizes carry no dim — keep
+                                // whatever is already set.
+                                dimStandard: z.dim || newItems[index].dimStandard,
                               };
                               return newItems;
                             });
@@ -1623,7 +1654,20 @@ function StandardQuotationPage() {
                             onChange={(text) => {
                               setItems((prev) => {
                                 const newItems = [...prev];
-                                newItems[index] = { ...newItems[index], sizeLabel: text, sizeId: "" };
+                                // Free-typed size: the previous selection's
+                                // derived fields no longer apply — clear them
+                                // (they are readOnly and would print stale).
+                                newItems[index] = {
+                                  ...newItems[index],
+                                  sizeLabel: text,
+                                  sizeId: "",
+                                  nps: "",
+                                  schedule: "",
+                                  od: "",
+                                  wt: "",
+                                  unitWeight: "",
+                                  totalWeightMT: "",
+                                };
                                 return newItems;
                               });
                             }}

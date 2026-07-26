@@ -145,6 +145,10 @@ export function generateNonStandardQuotationHtml(
   // Display label: COMMERCIAL for quoted (with prices), TECHNICAL for unquoted
   const typeLabel = isTechnical ? "TECHNICAL" : "COMMERCIAL";
 
+  // One unit in the Qty header only when uniform; cross-unit totals are blank.
+  const nsUoms = new Set(quotation.items.map((i: any) => i.uom || "Mtr"));
+  const uniformUom = nsUoms.size === 1 ? Array.from(nsUoms)[0] : null;
+  const trimQty = (v: any) => { const n = parseFloat(v); return isNaN(n) ? "" : String(n); };
   const totalQty = quotation.items.reduce(
     (sum, item) => sum + (parseFloat(item.quantity) || 0),
     0
@@ -207,7 +211,7 @@ export function generateNonStandardQuotationHtml(
       return `<tr class="data-row">
         <td class="cell-center cell-top" style="background-color:#d9d9d9;">${item.slNo ? escapeHtml(item.slNo) : item.sNo}</td>
         <td class="cell-left cell-top cell-wrap" colspan="4">${desc}</td>
-        <td class="cell-center cell-top">${formatNumber(item.quantity, 0)}</td>
+        <td class="cell-center cell-top">${uniformUom ? trimQty(item.quantity) : `${trimQty(item.quantity)} ${escapeHtml(item.uom || "")}`.trim()}</td>
         <td class="cell-right cell-top">${isTechnical ? '<span class="quoted-bold">QUOTED</span>' : formatNumber(item.unitRate, 2)}</td>
         <td class="cell-right cell-top">${isTechnical ? '<span class="quoted-normal">QUOTED</span>' : formatNumber(item.amount, 0)}</td>
         <td class="cell-center cell-top cell-wrap">${escapeHtml(item.delivery)}</td>
@@ -529,7 +533,7 @@ export function generateNonStandardQuotationHtml(
   <tr class="table-header-sub">
     <th>no.</th>
     <th colspan="4"></th>
-    <th>${escapeHtml(quotation.items[0]?.uom || "MTR")}</th>
+    <th>${uniformUom ? escapeHtml(uniformUom) : ""}</th>
     <th>${escapeHtml(quotation.currency)}</th>
     <th>${escapeHtml(quotation.currency)}</th>
     <th>Ex-Works</th>

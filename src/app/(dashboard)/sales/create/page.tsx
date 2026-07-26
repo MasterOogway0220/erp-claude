@@ -17,6 +17,8 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { ProductMaterialSelect } from "@/components/shared/product-material-select";
 import { SizeSelect } from "@/components/shared/size-select";
+import { SmartCombobox } from "@/components/shared/smart-combobox";
+import { FLANGE_SIZES, getFittingSizeOptions, inferItemCategory } from "@/lib/fitting-flange-sizes";
 import { Plus, Trash2, Save, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -191,18 +193,19 @@ function CreateSalesOrderPage() {
     setItems(items.filter((_, i) => i !== index));
   };
 
+  // Functional update — see quotations/create/standard updateItem; a stale
+  // [...items] clone drops sibling writes batched in one combobox selection.
   const updateItem = (index: number, field: keyof SOItem, value: any) => {
-    const updatedItems = [...items];
-    updatedItems[index] = { ...updatedItems[index], [field]: value };
-
-    // Auto-calculate amount
-    if (field === "quantity" || field === "unitRate") {
-      const qty = field === "quantity" ? (parseFloat(value) || 0) : updatedItems[index].quantity;
-      const rate = field === "unitRate" ? (parseFloat(value) || 0) : updatedItems[index].unitRate;
-      updatedItems[index].amount = Math.max(0, qty * rate);
-    }
-
-    setItems(updatedItems);
+    setItems((prev) => {
+      const updatedItems = [...prev];
+      updatedItems[index] = { ...updatedItems[index], [field]: value };
+      if (field === "quantity" || field === "unitRate") {
+        const qty = field === "quantity" ? (parseFloat(value) || 0) : updatedItems[index].quantity;
+        const rate = field === "unitRate" ? (parseFloat(value) || 0) : updatedItems[index].unitRate;
+        updatedItems[index].amount = Math.max(0, qty * rate);
+      }
+      return updatedItems;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -461,16 +464,42 @@ function CreateSalesOrderPage() {
                     </div>
                     <div className="md:col-span-2">
                       <Label className="text-xs">Size</Label>
-                      <SizeSelect
-                        value={item.sizeLabel}
-                        onChange={(text) => updateItem(index, "sizeLabel", text)}
-                        onSelect={(size) => {
-                          updateItem(index, "sizeLabel", size.sizeLabel);
-                          updateItem(index, "od", size.od);
-                          updateItem(index, "wt", size.wt);
-                        }}
-                        label="Size"
-                      />
+                      {inferItemCategory(item.product) === "Fitting" ? (
+                        <SmartCombobox
+                          options={getFittingSizeOptions(item.product)}
+                          value={item.sizeLabel}
+                          onSelect={(s: string) => updateItem(index, "sizeLabel", s)}
+                          onChange={(text) => updateItem(index, "sizeLabel", text)}
+                          displayFn={(s: string) => s}
+                          filterFn={(s: string, q) => s.toLowerCase().includes(q.toLowerCase())}
+                          placeholder="Search sizes..."
+                        />
+                      ) : inferItemCategory(item.product) === "Flange" ? (
+                        <SmartCombobox
+                          options={FLANGE_SIZES}
+                          value={item.sizeLabel}
+                          onSelect={(z: { label: string; dim: string }) => updateItem(index, "sizeLabel", z.label)}
+                          onChange={(text) => updateItem(index, "sizeLabel", text)}
+                          displayFn={(z: { label: string; dim: string }) =>
+                            z.dim && z.dim !== "ASME B16.5" ? `${z.label} — ${z.dim.replace("ASME ", "")}` : z.label
+                          }
+                          filterFn={(z: { label: string; dim: string }, q) =>
+                            `${z.label} ${z.dim}`.toLowerCase().includes(q.toLowerCase())
+                          }
+                          placeholder="Search sizes..."
+                        />
+                      ) : (
+                        <SizeSelect
+                          value={item.sizeLabel}
+                          onChange={(text) => updateItem(index, "sizeLabel", text)}
+                          onSelect={(size) => {
+                            updateItem(index, "sizeLabel", size.sizeLabel);
+                            updateItem(index, "od", size.od);
+                            updateItem(index, "wt", size.wt);
+                          }}
+                          label="Size"
+                        />
+                      )}
                     </div>
                     <div className="md:col-span-1">
                       <Label className="text-xs">Qty (Mtr)</Label>

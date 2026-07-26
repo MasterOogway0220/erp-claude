@@ -23,7 +23,11 @@ export function displaySizeLabel(item: SizeSource): string {
   const nps = item.sizeNPS != null ? parseFloat(String(item.sizeNPS)) : NaN;
   if (!isNaN(nps) && nps > 0) {
     const nb = String(nps);
-    return item.schedule ? `${nb}"NB X SCH ${item.schedule}` : `${nb}"NB`;
+    if (!item.schedule) return `${nb}"NB`;
+    // stored schedules already carry the prefix ("Sch 40", "SCH XS") —
+    // don't double it; bare values ("XS", "STD") get one added.
+    const sch = /^sch\b/i.test(item.schedule) ? item.schedule.toUpperCase() : `SCH ${item.schedule}`;
+    return `${nb}"NB X ${sch}`;
   }
   return "-";
 }

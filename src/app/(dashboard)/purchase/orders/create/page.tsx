@@ -23,7 +23,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { PageLoading } from "@/components/shared/page-loading";
 import { SmartCombobox } from "@/components/shared/smart-combobox";
-import { FLANGE_SIZES, getFittingSizeOptions } from "@/lib/fitting-flange-sizes";
+import { FLANGE_SIZES, getFittingSizeOptions, inferItemCategory } from "@/lib/fitting-flange-sizes";
 
 type POItemCategory = "Pipe" | "Fitting" | "Flange";
 
@@ -165,7 +165,11 @@ function CreatePOPage() {
 
   const mapToPOItems = (sourceItems: any[]): POItem[] => {
     return sourceItems.map((item: any) => ({
-      itemCategory: "Pipe" as POItemCategory,
+      itemCategory: (item.fittingId
+        ? "Fitting"
+        : item.flangeId
+          ? "Flange"
+          : inferItemCategory(item.product || "")) as POItemCategory,
       product: item.product || "",
       material: item.material || "",
       additionalSpec: item.additionalSpec || "",
@@ -233,18 +237,20 @@ function CreatePOPage() {
     setItems(items.filter((_, i) => i !== index));
   };
 
+  // Functional update — synchronous multi-field writes from a single combobox
+  // selection batch under React 19; a stale [...items] clone would keep only
+  // the last write.
   const updateItem = (index: number, field: keyof POItem, value: any) => {
-    const updatedItems = [...items];
-    updatedItems[index] = { ...updatedItems[index], [field]: value };
-
-    // Auto-calculate amount
-    if (field === "quantity" || field === "unitRate") {
-      const qty = field === "quantity" ? (parseFloat(value) || 0) : (updatedItems[index].quantity || 0);
-      const rate = field === "unitRate" ? (parseFloat(value) || 0) : (updatedItems[index].unitRate || 0);
-      updatedItems[index].amount = qty * rate;
-    }
-
-    setItems(updatedItems);
+    setItems((prev) => {
+      const updatedItems = [...prev];
+      updatedItems[index] = { ...updatedItems[index], [field]: value };
+      if (field === "quantity" || field === "unitRate") {
+        const qty = field === "quantity" ? (parseFloat(value) || 0) : (updatedItems[index].quantity || 0);
+        const rate = field === "unitRate" ? (parseFloat(value) || 0) : (updatedItems[index].unitRate || 0);
+        updatedItems[index].amount = qty * rate;
+      }
+      return updatedItems;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -507,10 +513,19 @@ function CreatePOPage() {
                         materialLabel="Material"
                         onAutoFill={({ ends, dimStandard }) => {
                           // Old FittingSelect composed end/standard into the
-                          // spec column; keep that for fitting items.
-                          if (item.itemCategory !== "Fitting" || item.additionalSpec) return;
+                          // spec column; keep that for fitting items. Guard
+                          // INSIDE the functional update — the render-scoped
+                          // item is stale mid-batch (material onSelect clears
+                          // additionalSpec in the same event).
                           const spec = [ends, dimStandard].filter(Boolean).join(", ");
-                          if (spec) updateItem(index, "additionalSpec", spec);
+                          if (!spec) return;
+                          setItems((prev) => {
+                            const cur = prev[index];
+                            if (!cur || cur.itemCategory !== "Fitting" || cur.additionalSpec) return prev;
+                            const next = [...prev];
+                            next[index] = { ...cur, additionalSpec: spec };
+                            return next;
+                          });
                         }}
                       />
                     </div>

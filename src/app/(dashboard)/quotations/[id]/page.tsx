@@ -970,7 +970,11 @@ export default function QuotationDetailPage() {
                     <>
                       <TableCell />
                       <TableCell className="text-right">
-                        {totalWeight.toFixed(4)} MT
+                        {/* fittings/flanges carry no weight — say so instead
+                            of presenting a pipe-only sum as the total */}
+                        {totalWeight > 0
+                          ? `${totalWeight.toFixed(4)} MT${quotation.items.some((it: any) => !parseFloat(it.totalWeightMT || 0)) ? " (pipe items)" : ""}`
+                          : "—"}
                       </TableCell>
                     </>
                   )}

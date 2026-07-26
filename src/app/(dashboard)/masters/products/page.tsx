@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DataTable, Column } from "@/components/shared/data-table";
 import { SmartCombobox } from "@/components/shared/smart-combobox";
+import { invalidateProductCache } from "@/components/shared/product-material-select";
 import {
   Table,
   TableBody,
@@ -236,7 +237,7 @@ function PipesPanel() {
       if (!res.ok) { const err = await res.json(); throw new Error(err.error || "Failed to create"); }
       return res.json();
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["products"] }); toast.success("Product specification created"); closeDialog(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["products"] }); invalidateProductCache(); toast.success("Product specification created"); closeDialog(); },
     onError: (err: Error) => toast.error(err.message),
   });
 
@@ -249,7 +250,7 @@ function PipesPanel() {
       if (!res.ok) { const err = await res.json(); throw new Error(err.error || "Failed to update"); }
       return res.json();
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["products"] }); toast.success("Product specification updated"); closeDialog(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["products"] }); invalidateProductCache(); toast.success("Product specification updated"); closeDialog(); },
     onError: (err: Error) => toast.error(err.message),
   });
 
@@ -259,7 +260,7 @@ function PipesPanel() {
       if (!res.ok) { const err = await res.json(); throw new Error(err.error || "Failed to delete"); }
       return res.json();
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["products"] }); toast.success("Product specification deleted"); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["products"] }); invalidateProductCache(); toast.success("Product specification deleted"); },
     onError: (err: Error) => toast.error(err.message),
   });
 
