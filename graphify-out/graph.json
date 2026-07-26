@@ -601,7 +601,7 @@
       "source_file": "src/middleware/audit-middleware.ts",
       "source_location": "L1",
       "id": "audit_middleware",
-      "community": 6
+      "community": 3
     },
     {
       "label": "withAudit()",
@@ -609,7 +609,7 @@
       "source_file": "src/middleware/audit-middleware.ts",
       "source_location": "L19",
       "id": "audit_middleware_withaudit",
-      "community": 6
+      "community": 3
     },
     {
       "label": "auditLog()",
@@ -617,7 +617,7 @@
       "source_file": "src/middleware/audit-middleware.ts",
       "source_location": "L53",
       "id": "audit_middleware_auditlog",
-      "community": 6
+      "community": 3
     },
     {
       "label": "index.ts",
@@ -1057,7 +1057,7 @@
       "source_file": "src/app/(dashboard)/reports/management-review/page.tsx",
       "source_location": "L86",
       "id": "page_formatcurrency",
-      "community": 43
+      "community": 49
     },
     {
       "label": "greeting()",
@@ -1169,7 +1169,7 @@
       "source_file": "src/app/(dashboard)/warehouse/intimation/create/page.tsx",
       "source_location": "L177",
       "id": "page_handlesubmit",
-      "community": 18
+      "community": 19
     },
     {
       "label": "fetchSalesOrders()",
@@ -1201,7 +1201,7 @@
       "source_file": "src/app/(dashboard)/sales/[id]/page.tsx",
       "source_location": "L103",
       "id": "page_fetchsalesorder",
-      "community": 48
+      "community": 42
     },
     {
       "label": "handleCancelSO()",
@@ -1209,7 +1209,7 @@
       "source_file": "src/app/(dashboard)/sales/[id]/page.tsx",
       "source_location": "L117",
       "id": "page_handlecancelso",
-      "community": 48
+      "community": 42
     },
     {
       "label": "ReserveStockPage()",
@@ -1273,7 +1273,7 @@
       "source_file": "src/app/(dashboard)/sales/create/page.tsx",
       "source_location": "L241",
       "id": "page_submitorder",
-      "community": 18
+      "community": 19
     },
     {
       "label": "fetchInspections()",
@@ -1297,7 +1297,7 @@
       "source_file": "src/app/(dashboard)/quality/mtc/page.tsx",
       "source_location": "L36",
       "id": "page_fetchmtcs",
-      "community": 29
+      "community": 30
     },
     {
       "label": "handleMtcSearch()",
@@ -1305,7 +1305,7 @@
       "source_file": "src/app/(dashboard)/quality/mtc/page.tsx",
       "source_location": "L53",
       "id": "page_handlemtcsearch",
-      "community": 29
+      "community": 30
     },
     {
       "label": "handleMtcVerificationUpdate()",
@@ -1313,7 +1313,7 @@
       "source_file": "src/app/(dashboard)/quality/mtc/page.tsx",
       "source_location": "L57",
       "id": "page_handlemtcverificationupdate",
-      "community": 29
+      "community": 30
     },
     {
       "label": "fetchLabLetters()",
@@ -1353,7 +1353,7 @@
       "source_file": "src/app/(dashboard)/quality/inspection-offers/[id]/page.tsx",
       "source_location": "L99",
       "id": "page_fetchoffer",
-      "community": 42
+      "community": 44
     },
     {
       "label": "downloadPdf()",
@@ -1369,7 +1369,7 @@
       "source_file": "src/app/(dashboard)/quality/inspection-offers/[id]/page.tsx",
       "source_location": "L130",
       "id": "page_handleofferaction",
-      "community": 42
+      "community": 44
     },
     {
       "label": "fetchTpiAgencies()",
@@ -1449,7 +1449,7 @@
       "source_file": "src/app/(dashboard)/client-purchase-orders/create/page.tsx",
       "source_location": "L344",
       "id": "page_toggleitemselection",
-      "community": 47
+      "community": 43
     },
     {
       "label": "toggleHeatSelection()",
@@ -1753,7 +1753,7 @@
       "source_file": "src/app/(dashboard)/inventory/heat-lifecycle/page.tsx",
       "source_location": "L79",
       "id": "page_handlesearch",
-      "community": 51
+      "community": 47
     },
     {
       "label": "handleClear()",
@@ -1769,7 +1769,7 @@
       "source_file": "src/app/(dashboard)/reports/client-status/page.tsx",
       "source_location": "L151",
       "id": "page_fetchreport",
-      "community": 44
+      "community": 46
     },
     {
       "label": "handleUpdate()",
@@ -1777,7 +1777,7 @@
       "source_file": "src/app/(dashboard)/quality/lab-reports/[id]/page.tsx",
       "source_location": "L113",
       "id": "page_handleupdate",
-      "community": 44
+      "community": 46
     },
     {
       "label": "fetchPurchaseOrders()",
@@ -1945,7 +1945,7 @@
       "source_file": "src/app/(dashboard)/quality/mtc/certificates/create/page.tsx",
       "source_location": "L325",
       "id": "page_rebuilditems",
-      "community": 47
+      "community": 43
     },
     {
       "label": "autoGenerateHeatNoForItem()",
@@ -2489,7 +2489,7 @@
       "source_file": "src/app/(dashboard)/admin/traceability/page.tsx",
       "source_location": "L236",
       "id": "page_handlekeydown",
-      "community": 51
+      "community": 47
     },
     {
       "label": "fetchClientPOs()",
@@ -2577,7 +2577,7 @@
       "source_file": "src/app/(dashboard)/client-purchase-orders/create/page.tsx",
       "source_location": "L395",
       "id": "page_getselecteditems",
-      "community": 18
+      "community": 19
     },
     {
       "label": "applyBulkDiscount()",
@@ -2641,7 +2641,7 @@
       "source_file": "src/app/(dashboard)/inventory/stock/[id]/page.tsx",
       "source_location": "L44",
       "id": "page_fetchstock",
-      "community": 19
+      "community": 18
     },
     {
       "label": "fetchStockIssues()",
@@ -2721,7 +2721,7 @@
       "source_file": "src/app/(dashboard)/inventory/stock/[id]/page.tsx",
       "source_location": "L57",
       "id": "page_handleupdatestock",
-      "community": 19
+      "community": 18
     },
     {
       "label": "handlePartialAccept()",
@@ -2729,7 +2729,7 @@
       "source_file": "src/app/(dashboard)/inventory/stock/[id]/page.tsx",
       "source_location": "L68",
       "id": "page_handlepartialaccept",
-      "community": 19
+      "community": 18
     },
     {
       "label": "handleAcceptedQtyChange()",
@@ -2745,7 +2745,7 @@
       "source_file": "src/app/(dashboard)/inventory/stock/[id]/page.tsx",
       "source_location": "L97",
       "id": "page_initpiperows",
-      "community": 19
+      "community": 18
     },
     {
       "label": "addPipeRow()",
@@ -2785,7 +2785,7 @@
       "source_file": "src/app/(dashboard)/inventory/stock/[id]/page.tsx",
       "source_location": "L145",
       "id": "page_savepipedetails",
-      "community": 19
+      "community": 18
     },
     {
       "label": "fetchPR()",
@@ -2801,7 +2801,7 @@
       "source_file": "src/app/(dashboard)/po-acceptance/[id]/page.tsx",
       "source_location": "L153",
       "id": "page_updatestatus",
-      "community": 50
+      "community": 45
     },
     {
       "label": "formatMonth()",
@@ -2849,7 +2849,7 @@
       "source_file": "src/app/(dashboard)/purchase/rfq/[id]/page.tsx",
       "source_location": "L109",
       "id": "page_fetchrfq",
-      "community": 30
+      "community": 29
     },
     {
       "label": "handleSendToVendors()",
@@ -2857,7 +2857,7 @@
       "source_file": "src/app/(dashboard)/purchase/rfq/[id]/page.tsx",
       "source_location": "L125",
       "id": "page_handlesendtovendors",
-      "community": 30
+      "community": 29
     },
     {
       "label": "handleGenerateCS()",
@@ -2889,7 +2889,7 @@
       "source_file": "src/app/(dashboard)/purchase/rfq/[id]/page.tsx",
       "source_location": "L217",
       "id": "page_handlesavequotation",
-      "community": 30
+      "community": 29
     },
     {
       "label": "CreateRFQContent()",
@@ -3113,7 +3113,7 @@
       "source_file": "src/app/(dashboard)/purchase/follow-up/page.tsx",
       "source_location": "L84",
       "id": "page_fetchpotracking",
-      "community": 49
+      "community": 50
     },
     {
       "label": "calculateVendorPerformance()",
@@ -3121,7 +3121,7 @@
       "source_file": "src/app/(dashboard)/purchase/follow-up/page.tsx",
       "source_location": "L121",
       "id": "page_calculatevendorperformance",
-      "community": 49
+      "community": 50
     },
     {
       "label": "getPerformanceBadge()",
@@ -3161,7 +3161,7 @@
       "source_file": "src/app/(dashboard)/po-acceptance/[id]/page.tsx",
       "source_location": "L129",
       "id": "page_fetchacceptance",
-      "community": 50
+      "community": 45
     },
     {
       "label": "fetchContacts()",
@@ -3289,7 +3289,7 @@
       "source_file": "src/app/(dashboard)/masters/payment-terms/page.tsx",
       "source_location": "L92",
       "id": "page_handleclosedialog",
-      "community": 18
+      "community": 19
     },
     {
       "label": "EditLengthPage()",
@@ -3415,7 +3415,7 @@
       "label": "handleTabChange()",
       "file_type": "code",
       "source_file": "src/app/(dashboard)/masters/products/page.tsx",
-      "source_location": "L72",
+      "source_location": "L71",
       "id": "page_handletabchange",
       "community": 0
     },
@@ -3423,7 +3423,7 @@
       "label": "openDialog()",
       "file_type": "code",
       "source_file": "src/app/(dashboard)/masters/products/page.tsx",
-      "source_location": "L255",
+      "source_location": "L266",
       "id": "page_opendialog",
       "community": 0
     },
@@ -3433,13 +3433,13 @@
       "source_file": "src/app/(dashboard)/masters/testing/page.tsx",
       "source_location": "L118",
       "id": "page_closedialog",
-      "community": 18
+      "community": 19
     },
     {
       "label": "getCategoryLabel()",
       "file_type": "code",
       "source_file": "src/app/(dashboard)/masters/products/page.tsx",
-      "source_location": "L286",
+      "source_location": "L297",
       "id": "page_getcategorylabel",
       "community": 0
     },
@@ -3447,7 +3447,7 @@
       "label": "handleAdd()",
       "file_type": "code",
       "source_file": "src/app/(dashboard)/masters/products/page.tsx",
-      "source_location": "L775",
+      "source_location": "L815",
       "id": "page_handleadd",
       "community": 0
     },
@@ -4073,7 +4073,7 @@
       "source_file": "src/app/(dashboard)/reports/management-review/page.tsx",
       "source_location": "L142",
       "id": "page_handleexportcsv",
-      "community": 43
+      "community": 49
     },
     {
       "label": "handlePrint()",
@@ -5001,7 +5001,7 @@
       "source_file": "src/components/layout/breadcrumbs.tsx",
       "source_location": "L1",
       "id": "breadcrumbs",
-      "community": 52
+      "community": 51
     },
     {
       "label": "isDynamicId()",
@@ -5009,7 +5009,7 @@
       "source_file": "src/components/layout/breadcrumbs.tsx",
       "source_location": "L95",
       "id": "breadcrumbs_isdynamicid",
-      "community": 52
+      "community": 51
     },
     {
       "label": "sidebar.tsx",
@@ -5140,10 +5140,18 @@
       "community": 1
     },
     {
+      "label": "getMasterExtraSizes()",
+      "file_type": "code",
+      "source_file": "src/components/shared/product-material-select.tsx",
+      "source_location": "L50",
+      "id": "product_material_select_getmasterextrasizes",
+      "community": 1
+    },
+    {
       "label": "fetchProducts()",
       "file_type": "code",
       "source_file": "src/components/shared/product-material-select.tsx",
-      "source_location": "L52",
+      "source_location": "L68",
       "id": "product_material_select_fetchproducts",
       "community": 1
     },
@@ -5151,7 +5159,7 @@
       "label": "fetchAdditionalSpecs()",
       "file_type": "code",
       "source_file": "src/components/shared/product-material-select.tsx",
-      "source_location": "L62",
+      "source_location": "L78",
       "id": "product_material_select_fetchadditionalspecs",
       "community": 1
     },
@@ -5159,7 +5167,7 @@
       "label": "tryAutoFill()",
       "file_type": "code",
       "source_file": "src/components/shared/product-material-select.tsx",
-      "source_location": "L124",
+      "source_location": "L140",
       "id": "product_material_select_tryautofill",
       "community": 1
     },
@@ -5241,7 +5249,7 @@
       "source_file": "src/lib/prisma.ts",
       "source_location": "L1",
       "id": "prisma",
-      "community": 4
+      "community": 3
     },
     {
       "label": "createAdapter()",
@@ -5249,7 +5257,7 @@
       "source_file": "src/lib/prisma.ts",
       "source_location": "L8",
       "id": "prisma_createadapter",
-      "community": 4
+      "community": 3
     },
     {
       "label": "location-tag.ts",
@@ -5401,7 +5409,7 @@
       "source_file": "src/lib/download-file.ts",
       "source_location": "L1",
       "id": "download_file",
-      "community": 45
+      "community": 41
     },
     {
       "label": "downloadFile()",
@@ -5409,7 +5417,7 @@
       "source_file": "src/lib/download-file.ts",
       "source_location": "L6",
       "id": "download_file_downloadfile",
-      "community": 45
+      "community": 41
     },
     {
       "label": "alerts.test.ts",
@@ -5425,7 +5433,7 @@
       "source_file": "src/lib/document-numbering.ts",
       "source_location": "L1",
       "id": "document_numbering",
-      "community": 4
+      "community": 3
     },
     {
       "label": "getCurrentFinancialYear()",
@@ -5433,7 +5441,7 @@
       "source_file": "src/lib/document-numbering.ts",
       "source_location": "L64",
       "id": "document_numbering_getcurrentfinancialyear",
-      "community": 4
+      "community": 3
     },
     {
       "label": "getShortFinancialYear()",
@@ -5441,7 +5449,7 @@
       "source_file": "src/lib/document-numbering.ts",
       "source_location": "L74",
       "id": "document_numbering_getshortfinancialyear",
-      "community": 4
+      "community": 3
     },
     {
       "label": "generateDocumentNumber()",
@@ -5449,7 +5457,7 @@
       "source_file": "src/lib/document-numbering.ts",
       "source_location": "L88",
       "id": "document_numbering_generatedocumentnumber",
-      "community": 4
+      "community": 3
     },
     {
       "label": "rbac.ts",
@@ -5457,7 +5465,7 @@
       "source_file": "src/lib/rbac.ts",
       "source_location": "L1",
       "id": "rbac",
-      "community": 4
+      "community": 3
     },
     {
       "label": "getActiveCompanyId()",
@@ -5465,7 +5473,7 @@
       "source_file": "src/lib/rbac.ts",
       "source_location": "L224",
       "id": "rbac_getactivecompanyid",
-      "community": 4
+      "community": 3
     },
     {
       "label": "checkAccess()",
@@ -5473,7 +5481,7 @@
       "source_file": "src/lib/rbac.ts",
       "source_location": "L282",
       "id": "rbac_checkaccess",
-      "community": 4
+      "community": 3
     },
     {
       "label": "checkAuth()",
@@ -5481,7 +5489,7 @@
       "source_file": "src/lib/rbac.ts",
       "source_location": "L312",
       "id": "rbac_checkauth",
-      "community": 4
+      "community": 3
     },
     {
       "label": "companyFilter()",
@@ -5489,7 +5497,7 @@
       "source_file": "src/lib/rbac.ts",
       "source_location": "L337",
       "id": "rbac_companyfilter",
-      "community": 4
+      "community": 3
     },
     {
       "label": "amount-in-words.ts",
@@ -5497,7 +5505,7 @@
       "source_file": "src/lib/amount-in-words.ts",
       "source_location": "L1",
       "id": "amount_in_words",
-      "community": 3
+      "community": 4
     },
     {
       "label": "convertBelowThousand()",
@@ -5505,7 +5513,7 @@
       "source_file": "src/lib/amount-in-words.ts",
       "source_location": "L11",
       "id": "amount_in_words_convertbelowthousand",
-      "community": 3
+      "community": 4
     },
     {
       "label": "convertToIndianWords()",
@@ -5513,7 +5521,7 @@
       "source_file": "src/lib/amount-in-words.ts",
       "source_location": "L33",
       "id": "amount_in_words_converttoindianwords",
-      "community": 3
+      "community": 4
     },
     {
       "label": "convertToWesternWords()",
@@ -5521,7 +5529,7 @@
       "source_file": "src/lib/amount-in-words.ts",
       "source_location": "L63",
       "id": "amount_in_words_converttowesternwords",
-      "community": 3
+      "community": 4
     },
     {
       "label": "numberToWords()",
@@ -5529,7 +5537,7 @@
       "source_file": "src/lib/amount-in-words.ts",
       "source_location": "L93",
       "id": "amount_in_words_numbertowords",
-      "community": 3
+      "community": 4
     },
     {
       "label": "download.ts",
@@ -5537,7 +5545,7 @@
       "source_file": "src/lib/download.ts",
       "source_location": "L1",
       "id": "download",
-      "community": 46
+      "community": 48
     },
     {
       "label": "downloadFile()",
@@ -5545,7 +5553,7 @@
       "source_file": "src/lib/download.ts",
       "source_location": "L6",
       "id": "download_downloadfile",
-      "community": 46
+      "community": 48
     },
     {
       "label": "weight-calculation.ts",
@@ -5553,7 +5561,7 @@
       "source_file": "src/lib/weight-calculation.ts",
       "source_location": "L1",
       "id": "weight_calculation",
-      "community": 41
+      "community": 52
     },
     {
       "label": "calculateWeightPerMeter()",
@@ -5561,7 +5569,7 @@
       "source_file": "src/lib/weight-calculation.ts",
       "source_location": "L15",
       "id": "weight_calculation_calculateweightpermeter",
-      "community": 41
+      "community": 52
     },
     {
       "label": "audit.ts",
@@ -5569,7 +5577,7 @@
       "source_file": "src/lib/audit.ts",
       "source_location": "L1",
       "id": "audit",
-      "community": 4
+      "community": 3
     },
     {
       "label": "createAuditLog()",
@@ -5577,7 +5585,7 @@
       "source_file": "src/lib/audit.ts",
       "source_location": "L4",
       "id": "audit_createauditlog",
-      "community": 4
+      "community": 3
     },
     {
       "label": "auth.ts",
@@ -5585,7 +5593,7 @@
       "source_file": "src/lib/validators/auth.ts",
       "source_location": "L1",
       "id": "auth",
-      "community": 4
+      "community": 3
     },
     {
       "label": "soft-delete.ts",
@@ -5633,7 +5641,7 @@
       "source_file": "src/lib/access/module-access.ts",
       "source_location": "L1",
       "id": "module_access",
-      "community": 1
+      "community": 3
     },
     {
       "label": "parseModuleAccess()",
@@ -5641,7 +5649,7 @@
       "source_file": "src/lib/access/module-access.ts",
       "source_location": "L15",
       "id": "module_access_parsemoduleaccess",
-      "community": 1
+      "community": 3
     },
     {
       "label": "isNavItemVisible()",
@@ -5649,7 +5657,7 @@
       "source_file": "src/lib/access/module-access.ts",
       "source_location": "L53",
       "id": "module_access_isnavitemvisible",
-      "community": 1
+      "community": 3
     },
     {
       "label": "module-access.test.ts",
@@ -5657,7 +5665,7 @@
       "source_file": "src/lib/access/module-access.test.ts",
       "source_location": "L1",
       "id": "module_access_test",
-      "community": 1
+      "community": 3
     },
     {
       "label": "qap.test.ts",
@@ -5801,7 +5809,7 @@
       "source_file": "src/lib/pdf/quotation-standard-template.ts",
       "source_location": "L1",
       "id": "quotation_standard_template",
-      "community": 3
+      "community": 4
     },
     {
       "label": "formatDate()",
@@ -5809,7 +5817,7 @@
       "source_file": "src/lib/pdf/quotation-standard-template.ts",
       "source_location": "L79",
       "id": "quotation_standard_template_formatdate",
-      "community": 3
+      "community": 4
     },
     {
       "label": "esc()",
@@ -5817,7 +5825,7 @@
       "source_file": "src/lib/pdf/quotation-standard-template.ts",
       "source_location": "L88",
       "id": "quotation_standard_template_esc",
-      "community": 3
+      "community": 4
     },
     {
       "label": "fmt()",
@@ -5825,7 +5833,7 @@
       "source_file": "src/lib/pdf/quotation-standard-template.ts",
       "source_location": "L97",
       "id": "quotation_standard_template_fmt",
-      "community": 3
+      "community": 4
     },
     {
       "label": "fmtPlain()",
@@ -5833,7 +5841,7 @@
       "source_file": "src/lib/pdf/quotation-standard-template.ts",
       "source_location": "L106",
       "id": "quotation_standard_template_fmtplain",
-      "community": 3
+      "community": 4
     },
     {
       "label": "generateStandardQuotationHtml()",
@@ -5841,7 +5849,7 @@
       "source_file": "src/lib/pdf/quotation-standard-template.ts",
       "source_location": "L112",
       "id": "quotation_standard_template_generatestandardquotationhtml",
-      "community": 3
+      "community": 4
     },
     {
       "label": "purchase-order-template.ts",
@@ -5849,7 +5857,7 @@
       "source_file": "src/lib/pdf/purchase-order-template.ts",
       "source_location": "L1",
       "id": "purchase_order_template",
-      "community": 3
+      "community": 4
     },
     {
       "label": "formatDate()",
@@ -5857,7 +5865,7 @@
       "source_file": "src/lib/pdf/purchase-order-template.ts",
       "source_location": "L50",
       "id": "purchase_order_template_formatdate",
-      "community": 3
+      "community": 4
     },
     {
       "label": "escapeHtml()",
@@ -5865,7 +5873,7 @@
       "source_file": "src/lib/pdf/purchase-order-template.ts",
       "source_location": "L59",
       "id": "purchase_order_template_escapehtml",
-      "community": 3
+      "community": 4
     },
     {
       "label": "formatNumber()",
@@ -5873,7 +5881,7 @@
       "source_file": "src/lib/pdf/purchase-order-template.ts",
       "source_location": "L68",
       "id": "purchase_order_template_formatnumber",
-      "community": 3
+      "community": 4
     },
     {
       "label": "generatePurchaseOrderHtml()",
@@ -5881,7 +5889,7 @@
       "source_file": "src/lib/pdf/purchase-order-template.ts",
       "source_location": "L74",
       "id": "purchase_order_template_generatepurchaseorderhtml",
-      "community": 3
+      "community": 4
     },
     {
       "label": "quotation-nonstandard-template.ts",
@@ -5889,7 +5897,7 @@
       "source_file": "src/lib/pdf/quotation-nonstandard-template.ts",
       "source_location": "L1",
       "id": "quotation_nonstandard_template",
-      "community": 3
+      "community": 4
     },
     {
       "label": "formatDate()",
@@ -5897,7 +5905,7 @@
       "source_file": "src/lib/pdf/quotation-nonstandard-template.ts",
       "source_location": "L68",
       "id": "quotation_nonstandard_template_formatdate",
-      "community": 3
+      "community": 4
     },
     {
       "label": "escapeHtml()",
@@ -5905,7 +5913,7 @@
       "source_file": "src/lib/pdf/quotation-nonstandard-template.ts",
       "source_location": "L77",
       "id": "quotation_nonstandard_template_escapehtml",
-      "community": 3
+      "community": 4
     },
     {
       "label": "formatNumber()",
@@ -5913,7 +5921,7 @@
       "source_file": "src/lib/pdf/quotation-nonstandard-template.ts",
       "source_location": "L86",
       "id": "quotation_nonstandard_template_formatnumber",
-      "community": 3
+      "community": 4
     },
     {
       "label": "nl2br()",
@@ -5921,7 +5929,7 @@
       "source_file": "src/lib/pdf/quotation-nonstandard-template.ts",
       "source_location": "L92",
       "id": "quotation_nonstandard_template_nl2br",
-      "community": 3
+      "community": 4
     },
     {
       "label": "buildItemDescription()",
@@ -5929,7 +5937,7 @@
       "source_file": "src/lib/pdf/quotation-nonstandard-template.ts",
       "source_location": "L101",
       "id": "quotation_nonstandard_template_builditemdescription",
-      "community": 3
+      "community": 4
     },
     {
       "label": "generateNonStandardQuotationHtml()",
@@ -5937,7 +5945,7 @@
       "source_file": "src/lib/pdf/quotation-nonstandard-template.ts",
       "source_location": "L138",
       "id": "quotation_nonstandard_template_generatenonstandardquotationhtml",
-      "community": 3
+      "community": 4
     },
     {
       "label": "render-pdf.ts",
@@ -5985,7 +5993,7 @@
       "source_file": "src/lib/pdf/quotation-pdf.tsx",
       "source_location": "L1",
       "id": "quotation_pdf",
-      "community": 3
+      "community": 4
     },
     {
       "label": "fmtDate()",
@@ -5993,7 +6001,7 @@
       "source_file": "src/lib/pdf/quotation-pdf.tsx",
       "source_location": "L24",
       "id": "quotation_pdf_fmtdate",
-      "community": 3
+      "community": 4
     },
     {
       "label": "fmt()",
@@ -6001,7 +6009,7 @@
       "source_file": "src/lib/pdf/quotation-pdf.tsx",
       "source_location": "L30",
       "id": "quotation_pdf_fmt",
-      "community": 3
+      "community": 4
     },
     {
       "label": "fmtIN()",
@@ -6009,7 +6017,7 @@
       "source_file": "src/lib/pdf/quotation-pdf.tsx",
       "source_location": "L35",
       "id": "quotation_pdf_fmtin",
-      "community": 3
+      "community": 4
     },
     {
       "label": "DraftWatermark()",
@@ -6017,7 +6025,7 @@
       "source_file": "src/lib/pdf/quotation-pdf.tsx",
       "source_location": "L69",
       "id": "quotation_pdf_draftwatermark",
-      "community": 3
+      "community": 4
     },
     {
       "label": "T()",
@@ -6025,7 +6033,7 @@
       "source_file": "src/lib/pdf/quotation-pdf.tsx",
       "source_location": "L99",
       "id": "quotation_pdf_t",
-      "community": 3
+      "community": 4
     },
     {
       "label": "unitLabel()",
@@ -6033,7 +6041,7 @@
       "source_file": "src/lib/pdf/quotation-pdf.tsx",
       "source_location": "L125",
       "id": "quotation_pdf_unitlabel",
-      "community": 3
+      "community": 4
     },
     {
       "label": "client-status-report-template.ts",
@@ -6097,7 +6105,7 @@
       "source_file": "src/lib/pdf/invoice-template.ts",
       "source_location": "L1",
       "id": "invoice_template",
-      "community": 3
+      "community": 4
     },
     {
       "label": "formatDate()",
@@ -6105,7 +6113,7 @@
       "source_file": "src/lib/pdf/invoice-template.ts",
       "source_location": "L67",
       "id": "invoice_template_formatdate",
-      "community": 3
+      "community": 4
     },
     {
       "label": "escapeHtml()",
@@ -6113,7 +6121,7 @@
       "source_file": "src/lib/pdf/invoice-template.ts",
       "source_location": "L76",
       "id": "invoice_template_escapehtml",
-      "community": 3
+      "community": 4
     },
     {
       "label": "formatNumber()",
@@ -6121,7 +6129,7 @@
       "source_file": "src/lib/pdf/invoice-template.ts",
       "source_location": "L85",
       "id": "invoice_template_formatnumber",
-      "community": 3
+      "community": 4
     },
     {
       "label": "generateInvoiceHtml()",
@@ -6129,7 +6137,7 @@
       "source_file": "src/lib/pdf/invoice-template.ts",
       "source_location": "L94",
       "id": "invoice_template_generateinvoicehtml",
-      "community": 3
+      "community": 4
     },
     {
       "label": "inspection-offer-template.ts",
@@ -6193,7 +6201,7 @@
       "source_file": "src/lib/pdf/packing-list-template.ts",
       "source_location": "L1",
       "id": "packing_list_template",
-      "community": 3
+      "community": 4
     },
     {
       "label": "formatDate()",
@@ -6201,7 +6209,7 @@
       "source_file": "src/lib/pdf/packing-list-template.ts",
       "source_location": "L48",
       "id": "packing_list_template_formatdate",
-      "community": 3
+      "community": 4
     },
     {
       "label": "escapeHtml()",
@@ -6209,7 +6217,7 @@
       "source_file": "src/lib/pdf/packing-list-template.ts",
       "source_location": "L57",
       "id": "packing_list_template_escapehtml",
-      "community": 3
+      "community": 4
     },
     {
       "label": "formatNumber()",
@@ -6217,7 +6225,7 @@
       "source_file": "src/lib/pdf/packing-list-template.ts",
       "source_location": "L66",
       "id": "packing_list_template_formatnumber",
-      "community": 3
+      "community": 4
     },
     {
       "label": "generatePackingListHtml()",
@@ -6225,7 +6233,7 @@
       "source_file": "src/lib/pdf/packing-list-template.ts",
       "source_location": "L72",
       "id": "packing_list_template_generatepackinglisthtml",
-      "community": 3
+      "community": 4
     },
     {
       "label": "issue-slip-template.ts",
@@ -6577,7 +6585,7 @@
       "source_file": "src/lib/quotations/display.ts",
       "source_location": "L1",
       "id": "display",
-      "community": 3
+      "community": 4
     },
     {
       "label": "displayInquiryNo()",
@@ -6585,7 +6593,7 @@
       "source_file": "src/lib/quotations/display.ts",
       "source_location": "L7",
       "id": "display_displayinquiryno",
-      "community": 3
+      "community": 4
     },
     {
       "label": "displaySizeLabel()",
@@ -6593,7 +6601,7 @@
       "source_file": "src/lib/quotations/display.ts",
       "source_location": "L21",
       "id": "display_displaysizelabel",
-      "community": 3
+      "community": 4
     },
     {
       "label": "listing.ts",
@@ -6609,6 +6617,14 @@
       "source_file": "src/lib/quotations/listing.ts",
       "source_location": "L13",
       "id": "listing_shouldincludetenders",
+      "community": 2
+    },
+    {
+      "label": "collapseRevisions()",
+      "file_type": "code",
+      "source_file": "src/lib/quotations/listing.ts",
+      "source_location": "L31",
+      "id": "listing_collapserevisions",
       "community": 2
     },
     {
@@ -6633,7 +6649,7 @@
       "source_file": "src/lib/quotations/display.test.ts",
       "source_location": "L1",
       "id": "display_test",
-      "community": 3
+      "community": 4
     },
     {
       "label": "business-rules.ts",
@@ -6641,7 +6657,7 @@
       "source_file": "src/lib/validators/business-rules.ts",
       "source_location": "L1",
       "id": "business_rules",
-      "community": 4
+      "community": 3
     },
     {
       "label": "validateMandatoryAttachments()",
@@ -6649,7 +6665,7 @@
       "source_file": "src/lib/validators/business-rules.ts",
       "source_location": "L22",
       "id": "business_rules_validatemandatoryattachments",
-      "community": 4
+      "community": 3
     },
     {
       "label": "canDeleteRecord()",
@@ -6657,7 +6673,7 @@
       "source_file": "src/lib/validators/business-rules.ts",
       "source_location": "L118",
       "id": "business_rules_candeleterecord",
-      "community": 4
+      "community": 3
     },
     {
       "label": "validateFIFOReservation()",
@@ -6665,7 +6681,7 @@
       "source_file": "src/lib/validators/business-rules.ts",
       "source_location": "L311",
       "id": "business_rules_validatefiforeservation",
-      "community": 4
+      "community": 3
     },
     {
       "label": "validateTraceability()",
@@ -6673,7 +6689,7 @@
       "source_file": "src/lib/validators/business-rules.ts",
       "source_location": "L383",
       "id": "business_rules_validatetraceability",
-      "community": 4
+      "community": 3
     },
     {
       "label": "requiresApproval()",
@@ -6681,7 +6697,7 @@
       "source_file": "src/lib/validators/business-rules.ts",
       "source_location": "L494",
       "id": "business_rules_requiresapproval",
-      "community": 4
+      "community": 3
     },
     {
       "label": "validateDataIntegrity()",
@@ -6689,7 +6705,7 @@
       "source_file": "src/lib/validators/business-rules.ts",
       "source_location": "L515",
       "id": "business_rules_validatedataintegrity",
-      "community": 4
+      "community": 3
     },
     {
       "label": "validatePassword()",
@@ -6697,7 +6713,7 @@
       "source_file": "src/lib/validators/auth.ts",
       "source_location": "L24",
       "id": "auth_validatepassword",
-      "community": 4
+      "community": 3
     },
     {
       "label": "validateEmail()",
@@ -6705,7 +6721,7 @@
       "source_file": "src/lib/validators/auth.ts",
       "source_location": "L59",
       "id": "auth_validateemail",
-      "community": 4
+      "community": 3
     },
     {
       "label": "validatePhone()",
@@ -6713,7 +6729,7 @@
       "source_file": "src/lib/validators/auth.ts",
       "source_location": "L65",
       "id": "auth_validatephone",
-      "community": 4
+      "community": 3
     },
     {
       "label": "validateGST()",
@@ -6721,7 +6737,7 @@
       "source_file": "src/lib/validators/auth.ts",
       "source_location": "L72",
       "id": "auth_validategst",
-      "community": 4
+      "community": 3
     },
     {
       "label": "validatePAN()",
@@ -6729,7 +6745,7 @@
       "source_file": "src/lib/validators/auth.ts",
       "source_location": "L79",
       "id": "auth_validatepan",
-      "community": 4
+      "community": 3
     },
     {
       "label": "auto-pr-generation.ts",
@@ -6793,7 +6809,7 @@
       "source_file": "src/lib/business-logic/po-variance-detection.ts",
       "source_location": "L1",
       "id": "po_variance_detection",
-      "community": 4
+      "community": 3
     },
     {
       "label": "detectPOVariances()",
@@ -6801,7 +6817,7 @@
       "source_file": "src/lib/business-logic/po-variance-detection.ts",
       "source_location": "L32",
       "id": "po_variance_detection_detectpovariances",
-      "community": 4
+      "community": 3
     },
     {
       "label": "determineApprovalRequired()",
@@ -6809,7 +6825,7 @@
       "source_file": "src/lib/business-logic/po-variance-detection.ts",
       "source_location": "L188",
       "id": "po_variance_detection_determineapprovalrequired",
-      "community": 4
+      "community": 3
     },
     {
       "label": "generateVarianceReportText()",
@@ -6817,7 +6833,7 @@
       "source_file": "src/lib/business-logic/po-variance-detection.ts",
       "source_location": "L220",
       "id": "po_variance_detection_generatevariancereporttext",
-      "community": 4
+      "community": 3
     },
     {
       "label": "formatValue()",
@@ -6825,7 +6841,7 @@
       "source_file": "src/lib/business-logic/po-variance-detection.ts",
       "source_location": "L266",
       "id": "po_variance_detection_formatvalue",
-      "community": 4
+      "community": 3
     },
     {
       "label": "logVarianceDetection()",
@@ -6833,7 +6849,7 @@
       "source_file": "src/lib/business-logic/po-variance-detection.ts",
       "source_location": "L276",
       "id": "po_variance_detection_logvariancedetection",
-      "community": 4
+      "community": 3
     },
     {
       "label": "e-invoice-generator.ts",
@@ -6841,7 +6857,7 @@
       "source_file": "src/lib/business-logic/e-invoice-generator.ts",
       "source_location": "L1",
       "id": "e_invoice_generator",
-      "community": 4
+      "community": 3
     },
     {
       "label": "generateEInvoiceJSON()",
@@ -6849,7 +6865,7 @@
       "source_file": "src/lib/business-logic/e-invoice-generator.ts",
       "source_location": "L153",
       "id": "e_invoice_generator_generateeinvoicejson",
-      "community": 4
+      "community": 3
     },
     {
       "label": "determineSupplyType()",
@@ -6857,7 +6873,7 @@
       "source_file": "src/lib/business-logic/e-invoice-generator.ts",
       "source_location": "L294",
       "id": "e_invoice_generator_determinesupplytype",
-      "community": 4
+      "community": 3
     },
     {
       "label": "extractStateCode()",
@@ -6865,7 +6881,7 @@
       "source_file": "src/lib/business-logic/e-invoice-generator.ts",
       "source_location": "L310",
       "id": "e_invoice_generator_extractstatecode",
-      "community": 4
+      "community": 3
     },
     {
       "label": "formatDate()",
@@ -6873,7 +6889,7 @@
       "source_file": "src/lib/business-logic/e-invoice-generator.ts",
       "source_location": "L320",
       "id": "e_invoice_generator_formatdate",
-      "community": 4
+      "community": 3
     },
     {
       "label": "calculateValueDetails()",
@@ -6881,7 +6897,7 @@
       "source_file": "src/lib/business-logic/e-invoice-generator.ts",
       "source_location": "L331",
       "id": "e_invoice_generator_calculatevaluedetails",
-      "community": 4
+      "community": 3
     },
     {
       "label": "validateEInvoiceJSON()",
@@ -6889,7 +6905,7 @@
       "source_file": "src/lib/business-logic/e-invoice-generator.ts",
       "source_location": "L363",
       "id": "e_invoice_generator_validateeinvoicejson",
-      "community": 4
+      "community": 3
     },
     {
       "label": "saveEInvoiceJSON()",
@@ -6897,7 +6913,7 @@
       "source_file": "src/lib/business-logic/e-invoice-generator.ts",
       "source_location": "L408",
       "id": "e_invoice_generator_saveeinvoicejson",
-      "community": 4
+      "community": 3
     },
     {
       "label": "updateInvoiceWithIRN()",
@@ -6905,7 +6921,7 @@
       "source_file": "src/lib/business-logic/e-invoice-generator.ts",
       "source_location": "L445",
       "id": "e_invoice_generator_updateinvoicewithirn",
-      "community": 4
+      "community": 3
     }
   ],
   "links": [
@@ -13597,7 +13613,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/app/(dashboard)/masters/products/page.tsx",
-      "source_location": "L72",
+      "source_location": "L71",
       "weight": 1.0,
       "_src": "page",
       "_tgt": "page_handletabchange",
@@ -13609,7 +13625,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/app/(dashboard)/masters/products/page.tsx",
-      "source_location": "L255",
+      "source_location": "L266",
       "weight": 1.0,
       "_src": "page",
       "_tgt": "page_opendialog",
@@ -13633,7 +13649,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/app/(dashboard)/masters/products/page.tsx",
-      "source_location": "L286",
+      "source_location": "L297",
       "weight": 1.0,
       "_src": "page",
       "_tgt": "page_getcategorylabel",
@@ -13645,7 +13661,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/app/(dashboard)/masters/products/page.tsx",
-      "source_location": "L775",
+      "source_location": "L815",
       "weight": 1.0,
       "_src": "page",
       "_tgt": "page_handleadd",
@@ -17881,7 +17897,19 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/components/shared/product-material-select.tsx",
-      "source_location": "L52",
+      "source_location": "L50",
+      "weight": 1.0,
+      "_src": "product_material_select",
+      "_tgt": "product_material_select_getmasterextrasizes",
+      "source": "product_material_select",
+      "target": "product_material_select_getmasterextrasizes",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/shared/product-material-select.tsx",
+      "source_location": "L68",
       "weight": 1.0,
       "_src": "product_material_select",
       "_tgt": "product_material_select_fetchproducts",
@@ -17893,7 +17921,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/components/shared/product-material-select.tsx",
-      "source_location": "L62",
+      "source_location": "L78",
       "weight": 1.0,
       "_src": "product_material_select",
       "_tgt": "product_material_select_fetchadditionalspecs",
@@ -17905,7 +17933,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/components/shared/product-material-select.tsx",
-      "source_location": "L124",
+      "source_location": "L140",
       "weight": 1.0,
       "_src": "product_material_select",
       "_tgt": "product_material_select_tryautofill",
@@ -20647,6 +20675,18 @@
       "_tgt": "listing_shouldincludetenders",
       "source": "listing",
       "target": "listing_shouldincludetenders",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/quotations/listing.ts",
+      "source_location": "L31",
+      "weight": 1.0,
+      "_src": "listing",
+      "_tgt": "listing_collapserevisions",
+      "source": "listing",
+      "target": "listing_collapserevisions",
       "confidence_score": 1.0
     },
     {
