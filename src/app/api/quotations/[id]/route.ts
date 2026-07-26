@@ -363,7 +363,6 @@ export async function PUT(
       inquiryDate,
       // New fields
       dealOwnerId,
-      preparedById: preparedByIdPatch,
       sourceTenderId: sourceTenderIdPatch,
       nextActionDate,
       kindAttention,
@@ -483,7 +482,10 @@ export async function PUT(
           deliveryPeriod: deliveryPeriod || null,
           // New fields
           dealOwnerId: dealOwnerId || null,
-          ...(preparedByIdPatch !== undefined ? { preparedById: preparedByIdPatch || null } : {}),
+          // preparedById is deliberately NOT updatable: it records who created
+          // the quotation and must survive every later edit by anyone else.
+          // Who edited what is kept in the audit log below. Reassigning the
+          // salesperson is what dealOwnerId is for.
           ...(sourceTenderIdPatch !== undefined ? { sourceTenderId: sourceTenderIdPatch || null } : {}),
           nextActionDate: nextActionDate ? new Date(nextActionDate) : null,
           kindAttention: kindAttention || null,

@@ -285,7 +285,10 @@ export async function POST(
           paymentTermsId: sourceQuotation.paymentTermsId,
           deliveryTermsId: sourceQuotation.deliveryTermsId,
           deliveryPeriod: sourceQuotation.deliveryPeriod,
-          preparedById: session.user.id,
+          // A revision is a new version of the same quotation, so it keeps the
+          // original creator — revising is not authoring. The reviser is
+          // recorded in the audit log below.
+          preparedById: sourceQuotation.preparedById ?? session.user.id,
           buyerId: sourceQuotation.buyerId,
           preparedByEmployeeId: sourceQuotation.preparedByEmployeeId,
           subtotal: sourceQuotation.subtotal,

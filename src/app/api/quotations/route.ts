@@ -5,7 +5,7 @@ import { numberToWords } from "@/lib/amount-in-words";
 import { generateDocumentNumber } from "@/lib/document-numbering";
 import { QuotationStatus, QuotationType, QuotationCategory } from "@prisma/client";
 import { checkAccess, companyFilter } from "@/lib/rbac";
-import { shouldIncludeTenders } from "@/lib/quotations/listing";
+import { shouldIncludeTenders, collapseRevisions } from "@/lib/quotations/listing";
 
 export async function GET(request: NextRequest) {
   try {
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
       where.salesOrders = { some: {} };
     }
 
-    const quotations = await prisma.quotation.findMany({
+    const allRevisions = await prisma.quotation.findMany({
       where,
       include: {
         customer: true,
@@ -76,6 +76,13 @@ export async function GET(request: NextRequest) {
       },
       orderBy: [{ quotationNo: "desc" }, { version: "desc" }],
     });
+
+    // One row per quotation number — the latest revision matching the filters.
+    // Superseding on WON/send alone was never enough: a plain Rev.1, Rev.2 …
+    // left every earlier revision sitting in the list as its own row.
+    // The Original / Revisions tabs and showAll deliberately show every row.
+    const quotations =
+      showAll || revision ? allRevisions : collapseRevisions(allRevisions);
 
     // Also return the tender records themselves — tenders share the quotation
     // number series, so users expect to see them here alongside any quotations

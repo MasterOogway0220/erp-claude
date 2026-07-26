@@ -622,7 +622,7 @@ export default function QuotationDetailPage() {
         </CardHeader>
         <CardContent>
           {/* Row 1 */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-x-4 gap-y-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-9 gap-x-4 gap-y-2">
             <div>
               <div className="text-xs text-muted-foreground">Customer</div>
               <div className="text-sm font-medium">{quotation.customer.name}</div>
@@ -654,6 +654,10 @@ export default function QuotationDetailPage() {
             <div>
               <div className="text-xs text-muted-foreground">Deal Owner</div>
               <div className="text-sm font-medium">{quotation.dealOwner?.name || quotation.preparedBy?.name || "---"}</div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground">Prepared By</div>
+              <div className="text-sm font-medium">{quotation.preparedBy?.name || "---"}</div>
             </div>
           </div>
 

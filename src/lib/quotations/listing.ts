@@ -18,3 +18,21 @@ export function shouldIncludeTenders(f: QuotationListFilters): boolean {
     !f.conversionStatus
   );
 }
+
+/**
+ * Collapse a revision chain to one row: a revision replaces its predecessor in
+ * the listing, so QTN/…/00012 never appears three times once it reaches Rev.2.
+ * Earlier revisions stay reachable in the Revision History on the detail page.
+ *
+ * Keeps the FIRST row seen per quotationNo, so the caller must order by
+ * version descending — the highest revision that matches the active filters
+ * is the one that survives.
+ */
+export function collapseRevisions<T extends { quotationNo: string }>(rows: T[]): T[] {
+  const seen = new Set<string>();
+  return rows.filter((row) => {
+    if (seen.has(row.quotationNo)) return false;
+    seen.add(row.quotationNo);
+    return true;
+  });
+}

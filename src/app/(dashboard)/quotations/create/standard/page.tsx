@@ -1209,6 +1209,15 @@ function StandardQuotationPage() {
 
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium">Prepared By</Label>
+                {editId ? (
+                  // Set once, by whoever created the quotation — editing it later
+                  // must not reassign authorship, so show it read-only.
+                  <div className="flex h-9 items-center rounded-md border bg-muted px-3 text-sm">
+                    {editData?.quotation?.preparedBy?.name ||
+                      usersData?.users?.find((u: any) => u.id === formData.preparedById)?.name ||
+                      "Unassigned"}
+                  </div>
+                ) : (
                 <Select
                   value={formData.preparedById || "NONE"}
                   onValueChange={(value) =>
@@ -1227,6 +1236,7 @@ function StandardQuotationPage() {
                     ))}
                   </SelectContent>
                 </Select>
+                )}
               </div>
             </div>
 
