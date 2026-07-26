@@ -1282,9 +1282,21 @@ function StandardQuotationPage() {
                                 : "bg-muted hover:bg-accent"
                             }`}
                             onClick={() => {
+                              if (cat === item.itemCategory) return;
                               setItems((prev) => {
                                 const newItems = [...prev];
-                                newItems[index] = { ...item, itemCategory: cat };
+                                // Product/material/size pools differ per
+                                // category — clear them so stale values can't
+                                // cross-map (e.g. a pipe product on a Fitting).
+                                newItems[index] = {
+                                  ...item,
+                                  itemCategory: cat,
+                                  product: "", material: "", additionalSpec: "",
+                                  sizeId: "", sizeLabel: "", nps: "", schedule: "",
+                                  od: "", wt: "", unitWeight: "", totalWeightMT: "",
+                                  dimStandard: "", length: "",
+                                  ends: cat === "Pipe" ? "BE" : "",
+                                };
                                 return newItems;
                               });
                             }}
@@ -1523,7 +1535,8 @@ function StandardQuotationPage() {
                           newItems[index] = {
                             ...newItems[index],
                             ends: ends || newItems[index].ends,
-                            dimStandard: dimStandard || newItems[index].dimStandard,
+                            // "" clears a stale dim for dim-less materials
+                            dimStandard: dimStandard ?? newItems[index].dimStandard,
                           };
                           return newItems;
                         });

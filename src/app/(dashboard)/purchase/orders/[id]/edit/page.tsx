@@ -401,6 +401,13 @@ function EditPOPage() {
                         showAdditionalSpec
                         productLabel="Product *"
                         materialLabel="Material"
+                        onAutoFill={({ ends, dimStandard }) => {
+                          // Old FittingSelect composed end/standard into the
+                          // spec column; keep that for fitting items.
+                          if (item.itemCategory !== "Fitting" || item.additionalSpec) return;
+                          const spec = [ends, dimStandard].filter(Boolean).join(", ");
+                          if (spec) updateItem(index, "additionalSpec", spec);
+                        }}
                       />
                     </div>
                     <div className="md:col-span-2">
@@ -419,7 +426,15 @@ function EditPOPage() {
                         <SmartCombobox
                           options={FLANGE_SIZES}
                           value={item.sizeLabel}
-                          onSelect={(z: { label: string; dim: string }) => updateItem(index, "sizeLabel", z.label)}
+                          onSelect={(z: { label: string; dim: string }) => {
+                            const newItems = [...items];
+                            newItems[index] = {
+                              ...newItems[index],
+                              sizeLabel: z.label,
+                              additionalSpec: newItems[index].additionalSpec || z.dim,
+                            };
+                            setItems(newItems);
+                          }}
                           onChange={(text) => updateItem(index, "sizeLabel", text)}
                           displayFn={(z: { label: string; dim: string }) =>
                             z.dim === "ASME B16.5" ? z.label : `${z.label} — ${z.dim.replace("ASME ", "")}`

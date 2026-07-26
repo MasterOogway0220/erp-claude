@@ -136,7 +136,11 @@ export function ProductMaterialSelect({
     onAutoFill({
       additionalSpec: unique(matches.map((p) => p.additionalSpec)),
       ends: unique(matches.map((p) => p.ends)),
-      dimStandard: unique(matches.map((p) => p.dimensionalStandard?.name)),
+      // "" = the chosen material is explicitly dim-less in the master
+      // (e.g. IS-standard ERW pipes) — callers should clear a stale value.
+      dimStandard:
+        unique(matches.map((p) => p.dimensionalStandard?.name)) ??
+        (mat && matches.every((p) => !p.dimensionalStandard) ? "" : undefined),
     });
   };
 
