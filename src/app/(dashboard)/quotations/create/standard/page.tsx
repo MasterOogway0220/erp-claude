@@ -36,8 +36,12 @@ import {
 import { Plus, Trash2, ArrowLeft, Building2, MapPin, ListChecks, FileText, Package, Copy, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
-import { FittingSelect } from "@/components/shared/fitting-select";
-import { FlangeSelect } from "@/components/shared/flange-select";
+import {
+  FLANGE_SIZES,
+  getFittingDimStandard,
+  getFittingEnds,
+  getFittingSizeOptions,
+} from "@/lib/fitting-flange-sizes";
 import { calculateWeightPerMeter } from "@/lib/weight-calculation";
 
 type ItemCategory = "Pipe" | "Fitting" | "Flange";
@@ -122,7 +126,7 @@ const GST_RATES = ["0", "5", "12", "18", "28"];
 
 function getPipeType(product: string): "CS_AS" | "SS_DS" | null {
   const p = product.toUpperCase();
-  if (p.startsWith("C.S.") || p.startsWith("A.S.")) return "CS_AS";
+  if (p.startsWith("C.S.") || p.startsWith("A.S.") || p.startsWith("L.T.C.S.")) return "CS_AS";
   if (p.startsWith("S.S.") || p.startsWith("D.S.")) return "SS_DS";
   return null;
 }
@@ -601,7 +605,9 @@ function StandardQuotationPage() {
       setAdvanceToPay(q.advanceToPay ? String(q.advanceToPay) : "");
       if (q.items?.length > 0) {
         setItems(q.items.map((item: any) => ({
-          itemCategory: item.fittingId ? "Fitting" as ItemCategory : item.flangeId ? "Flange" as ItemCategory : "Pipe" as ItemCategory,
+          itemCategory: (["Pipe", "Fitting", "Flange"].includes(item.itemType)
+            ? item.itemType
+            : item.fittingId ? "Fitting" : item.flangeId ? "Flange" : "Pipe") as ItemCategory,
           slNo: item.slNo || "",
           materialCodeId: item.materialCodeId || "",
           materialCodeLabel: item.materialCodeLabel || item.materialCode?.code || "",
@@ -922,7 +928,9 @@ function StandardQuotationPage() {
       rcmEnabled,
       roundOff,
       advanceToPay: advanceToPay || undefined,
-      items,
+      // itemType persists the Pipe/Fitting/Flange toggle so revise/edit
+      // reloads the right item UI (fittingId no longer implies category).
+      items: items.map((it) => ({ ...it, itemType: it.itemCategory })),
       terms,
     });
   };
@@ -1500,76 +1508,89 @@ function StandardQuotationPage() {
                       product={item.product}
                       material={item.material}
                       additionalSpec={item.additionalSpec}
+                      category={
+                        item.itemCategory === "Fitting" ? "FITTINGS"
+                        : item.itemCategory === "Flange" ? "FLANGES"
+                        : "PIPES"
+                      }
                       onProductChange={(val) => updateItem(index, "product", val)}
                       onMaterialChange={(val) => updateItem(index, "material", val)}
                       onAdditionalSpecChange={(val) => updateItem(index, "additionalSpec", val)}
                       showAdditionalSpec
-                      onAutoFill={() => {
-                        // Additional spec auto-fill handled by the component
+                      onAutoFill={({ ends, dimStandard }) => {
+                        setItems((prev) => {
+                          const newItems = [...prev];
+                          newItems[index] = {
+                            ...newItems[index],
+                            ends: ends || newItems[index].ends,
+                            dimStandard: dimStandard || newItems[index].dimStandard,
+                          };
+                          return newItems;
+                        });
                       }}
                     />
                     {item.itemCategory === "Fitting" ? (
                       <div className="space-y-1 lg:col-span-2 xl:col-span-2">
-                        <Label className="text-xs font-medium">Select Fitting <span className="text-destructive">*</span></Label>
-                        <FittingSelect
-                          value={item.fittingLabel}
-                          onChange={(text) => {
-                            setItems((prev) => {
-                              const newItems = [...prev];
-                              // Free-typed fittings still need a printed Size —
-                              // mirror the text so it isn't lost on save.
-                              newItems[index] = { ...newItems[index], fittingLabel: text, fittingId: "", sizeLabel: text };
-                              return newItems;
-                            });
-                          }}
-                          onSelect={(f) => {
+                        <Label className="text-xs font-medium">Size <span className="text-destructive">*</span></Label>
+                        <SmartCombobox
+                          options={getFittingSizeOptions(item.product)}
+                          value={item.sizeLabel || ""}
+                          onSelect={(label: string) => {
                             setItems((prev) => {
                               const newItems = [...prev];
                               newItems[index] = {
                                 ...newItems[index],
-                                fittingId: f.id,
-                                fittingLabel: `${f.type} ${f.size} ${f.schedule || ""} ${f.endType || ""} ${f.materialGrade}`.replace(/\s+/g, " ").trim(),
-                                product: f.type,
-                                material: f.materialGrade,
-                                sizeLabel: f.rating ? `${f.size} X ${f.rating}#` : f.size,
-                                ends: f.endType || newItems[index].ends,
-                                dimStandard: f.standard || newItems[index].dimStandard,
+                                sizeLabel: label,
+                                ends: newItems[index].ends || getFittingEnds(item.product),
+                                dimStandard: newItems[index].dimStandard || getFittingDimStandard(item.product),
                               };
                               return newItems;
                             });
                           }}
+                          onChange={(text) => {
+                            setItems((prev) => {
+                              const newItems = [...prev];
+                              newItems[index] = { ...newItems[index], sizeLabel: text };
+                              return newItems;
+                            });
+                          }}
+                          displayFn={(s: string) => s}
+                          filterFn={(s: string, query) => s.toLowerCase().includes(query.toLowerCase())}
+                          placeholder={item.product ? "Search sizes..." : "Select product first"}
                         />
                       </div>
                     ) : item.itemCategory === "Flange" ? (
                       <div className="space-y-1 lg:col-span-2 xl:col-span-2">
-                        <Label className="text-xs font-medium">Select Flange <span className="text-destructive">*</span></Label>
-                        <FlangeSelect
-                          value={item.flangeLabel}
-                          onChange={(text) => {
-                            setItems((prev) => {
-                              const newItems = [...prev];
-                              // Free-typed flanges still need a printed Size —
-                              // mirror the text so it isn't lost on save.
-                              newItems[index] = { ...newItems[index], flangeLabel: text, flangeId: "", sizeLabel: text };
-                              return newItems;
-                            });
-                          }}
-                          onSelect={(f) => {
+                        <Label className="text-xs font-medium">Size <span className="text-destructive">*</span></Label>
+                        <SmartCombobox
+                          options={FLANGE_SIZES}
+                          value={item.sizeLabel || ""}
+                          onSelect={(z: { label: string; dim: string }) => {
                             setItems((prev) => {
                               const newItems = [...prev];
                               newItems[index] = {
                                 ...newItems[index],
-                                flangeId: f.id,
-                                flangeLabel: `${f.type} ${f.size} ${f.rating}# ${f.facing || ""} ${f.materialGrade}`.replace(/\s+/g, " ").trim(),
-                                product: f.type,
-                                material: f.materialGrade,
-                                sizeLabel: f.rating ? `${f.size} X ${f.rating}#` : f.size,
-                                ends: f.facing || newItems[index].ends,
-                                dimStandard: f.standard || newItems[index].dimStandard,
+                                sizeLabel: z.label,
+                                // B16.5 vs B16.47 Sr. A/B depends on the size row
+                                dimStandard: z.dim,
                               };
                               return newItems;
                             });
                           }}
+                          onChange={(text) => {
+                            setItems((prev) => {
+                              const newItems = [...prev];
+                              newItems[index] = { ...newItems[index], sizeLabel: text };
+                              return newItems;
+                            });
+                          }}
+                          displayFn={(z: { label: string; dim: string }) =>
+                            z.dim === "ASME B16.5" ? z.label : `${z.label} — ${z.dim.replace("ASME ", "")}`
+                          }
+                          filterFn={(z: { label: string; dim: string }, query) =>
+                            `${z.label} ${z.dim}`.toLowerCase().includes(query.toLowerCase())
+                          }
+                          placeholder="Search sizes..."
                         />
                       </div>
                     ) : (
@@ -1635,10 +1656,14 @@ function StandardQuotationPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="BE">BE</SelectItem>
-                          <SelectItem value="PE">PE</SelectItem>
-                          <SelectItem value="NPTM">NPTM</SelectItem>
-                          <SelectItem value="BSPT">BSPT</SelectItem>
+                          {(item.itemCategory === "Fitting"
+                            ? ["BW", "SW", "NPT"]
+                            : item.itemCategory === "Flange"
+                              ? ["RF", "FF", "RTJ"]
+                              : ["BE", "PE", "NPTM", "BSPT"]
+                          ).map((e) => (
+                            <SelectItem key={e} value={e}>{e}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>

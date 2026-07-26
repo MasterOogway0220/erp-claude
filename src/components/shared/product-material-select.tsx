@@ -11,6 +11,8 @@ interface ProductSpec {
   additionalSpec: string | null;
   ends: string | null;
   length: string | null;
+  category: string | null;
+  dimensionalStandard: { name: string } | null;
 }
 
 interface AdditionalSpecOption {
@@ -28,31 +30,17 @@ interface ProductMaterialSelectProps {
   onAdditionalSpecChange?: (value: string) => void;
   onAutoFill?: (fields: {
     additionalSpec?: string;
+    ends?: string;
+    dimStandard?: string;
   }) => void;
+  // Restrict the product list to one master category (PIPES/FITTINGS/FLANGES)
+  category?: string;
   productLabel?: string;
   materialLabel?: string;
   additionalSpecLabel?: string;
   showAdditionalSpec?: boolean;
   className?: string;
   disabled?: boolean;
-}
-
-// Products that share the same material/spec pool.
-const PRODUCT_GROUPS: string[][] = [
-  ["A.S. EFSW PIPE", "A.S. LSAW PIPE"],
-  ["C.S. EFSW PIPE", "C.S. LSAW PIPE"],
-  ["S.S. EFSW PIPE", "S.S. LSAW PIPE"],
-  ["D.S. EFSW PIPE", "D.S. LSAW PIPE"],
-];
-
-function getProductGroup(product: string): string[] {
-  const p = product.toUpperCase();
-  for (const group of PRODUCT_GROUPS) {
-    if (group.some((g) => g.toUpperCase() === p)) {
-      return group;
-    }
-  }
-  return [product];
 }
 
 // Module-level caches
@@ -64,7 +52,7 @@ let fetchAdditionalSpecsPromise: Promise<AdditionalSpecOption[]> | null = null;
 function fetchProducts(): Promise<ProductSpec[]> {
   if (cachedProducts) return Promise.resolve(cachedProducts);
   if (fetchPromise) return fetchPromise;
-  fetchPromise = fetch("/api/masters/products?limit=500")
+  fetchPromise = fetch("/api/masters/products?limit=5000")
     .then((res) => { if (!res.ok) throw new Error("Failed"); return res.json(); })
     .then((data) => { cachedProducts = data.products || []; return cachedProducts!; })
     .catch(() => { fetchPromise = null; return [] as ProductSpec[]; });
@@ -93,24 +81,24 @@ export function ProductMaterialSelect({
   materialLabel = "Material",
   additionalSpecLabel = "Additional Spec",
   showAdditionalSpec = false,
+  category,
   className,
   disabled,
 }: ProductMaterialSelectProps) {
-  const [allProducts, setAllProducts] = useState<ProductSpec[]>(cachedProducts || []);
+  const [fetched, setFetched] = useState<ProductSpec[]>(cachedProducts || []);
   const [allAdditionalSpecs, setAllAdditionalSpecs] = useState<AdditionalSpecOption[]>(cachedAdditionalSpecs || []);
 
   useEffect(() => {
-    fetchProducts().then(setAllProducts);
+    fetchProducts().then(setFetched);
     fetchAdditionalSpecs().then(setAllAdditionalSpecs);
   }, []);
 
+  const allProducts = category ? fetched.filter((p) => p.category === category) : fetched;
+
   const uniqueProducts = Array.from(new Set(allProducts.map((p) => p.product))).sort();
 
-  const productGroup = product ? getProductGroup(product) : [];
   const productMatches = product
-    ? allProducts.filter((p) =>
-        productGroup.some((g) => g.toLowerCase() === p.product.toLowerCase())
-      )
+    ? allProducts.filter((p) => p.product.toLowerCase() === product.toLowerCase())
     : [];
 
   const matchingMaterials = Array.from(
@@ -135,18 +123,20 @@ export function ProductMaterialSelect({
 
   const tryAutoFill = (prod: string, mat: string) => {
     if (!onAutoFill || !prod) return;
-    const group = getProductGroup(prod);
     const matches = allProducts.filter(
       (p) =>
-        group.some((g) => g.toLowerCase() === p.product.toLowerCase()) &&
+        p.product.toLowerCase() === prod.toLowerCase() &&
         (!mat || p.material?.toLowerCase() === mat.toLowerCase())
     );
     if (!matches.length) return;
-    const uniqueSpecs = Array.from(
-      new Set(matches.map((p) => p.additionalSpec).filter(Boolean))
-    );
+    const unique = (vals: (string | null | undefined)[]) => {
+      const set = Array.from(new Set(vals.filter(Boolean))) as string[];
+      return set.length === 1 ? set[0] : undefined;
+    };
     onAutoFill({
-      additionalSpec: uniqueSpecs.length === 1 ? (uniqueSpecs[0] as string) : undefined,
+      additionalSpec: unique(matches.map((p) => p.additionalSpec)),
+      ends: unique(matches.map((p) => p.ends)),
+      dimStandard: unique(matches.map((p) => p.dimensionalStandard?.name)),
     });
   };
 

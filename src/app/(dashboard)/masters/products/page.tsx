@@ -39,10 +39,10 @@ import { Plus, Pencil, Trash2, Search, Download } from "lucide-react";
 import { toast } from "sonner";
 
 // ─── Top-level tabs ──────────────────────────────────────────────────────────
-type MainTab = "pipes" | "sizes" | "lengths" | "fittings" | "flanges" | "units" | "additional-specs";
+type MainTab = "pipes" | "sizes" | "lengths" | "units" | "additional-specs";
 
 const VALID_TABS: readonly MainTab[] = [
-  "pipes", "sizes", "lengths", "fittings", "flanges", "units", "additional-specs",
+  "pipes", "sizes", "lengths", "units", "additional-specs",
 ];
 
 export default function ProductMasterPage() {
@@ -83,8 +83,6 @@ function ProductMasterContent() {
     pipes: "Product Specifications",
     sizes: "Size Master",
     lengths: "Length Master",
-    fittings: "Fitting Master",
-    flanges: "Flange Master",
     units: "Unit Master (UOM)",
     "additional-specs": "Additional Specifications",
   };
@@ -101,8 +99,6 @@ function ProductMasterContent() {
           <TabsTrigger value="pipes">Pipes</TabsTrigger>
           <TabsTrigger value="sizes">Sizes</TabsTrigger>
           <TabsTrigger value="lengths">Lengths</TabsTrigger>
-          <TabsTrigger value="fittings">Fittings</TabsTrigger>
-          <TabsTrigger value="flanges">Flanges</TabsTrigger>
           <TabsTrigger value="units">Units (UOM)</TabsTrigger>
           <TabsTrigger value="additional-specs">Additional Specs</TabsTrigger>
         </TabsList>
@@ -115,12 +111,6 @@ function ProductMasterContent() {
         </TabsContent>
         <TabsContent value="lengths" className="mt-4">
           <LengthsPanel />
-        </TabsContent>
-        <TabsContent value="fittings" className="mt-4">
-          <FittingsPanel />
-        </TabsContent>
-        <TabsContent value="flanges" className="mt-4">
-          <FlangesPanel />
         </TabsContent>
         <TabsContent value="units" className="mt-4">
           <UnitsPanel />
@@ -668,254 +658,6 @@ function LengthsPanel() {
 }
 
 // ─── FITTINGS ────────────────────────────────────────────────────────────────
-
-const FITTING_TABS = ["All", "Elbow", "Tee", "Reducer", "Cap", "Others"] as const;
-
-interface Fitting {
-  id: string;
-  type: string;
-  size: string;
-  schedule: string | null;
-  materialGrade: string;
-  standard: string | null;
-  endType: string | null;
-  rating: string | null;
-}
-
-function FittingsPanel() {
-  const router = useRouter();
-  const queryClient = useQueryClient();
-  const [fittingTab, setFittingTab] = useState("All");
-  const [search, setSearch] = useState("");
-
-  const typeFilter = fittingTab === "All" || fittingTab === "Others" ? undefined : fittingTab;
-
-  const { data, isLoading } = useQuery({
-    queryKey: ["fittings", fittingTab, search],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (typeFilter) params.set("type", typeFilter);
-      if (search) params.set("search", search);
-      const res = await fetch(`/api/masters/fittings?${params}`);
-      if (!res.ok) throw new Error("Failed to fetch fittings");
-      return res.json();
-    },
-  });
-
-  const fittings: Fitting[] = (data?.fittings || []).filter((f: Fitting) =>
-    fittingTab === "Others" ? !["Elbow", "Tee", "Reducer", "Cap"].includes(f.type) : true
-  );
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const res = await fetch(`/api/masters/fittings/${id}`, { method: "DELETE" });
-      if (!res.ok) { const err = await res.json(); throw new Error(err.error || "Failed to delete fitting"); }
-      return res.json();
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["fittings"] }); toast.success("Fitting deleted"); },
-    onError: (err: Error) => toast.error(err.message),
-  });
-
-  return (
-    <div className="space-y-4">
-      <Tabs value={fittingTab} onValueChange={setFittingTab}>
-        <div className="flex items-center justify-between">
-          <TabsList>
-            {FITTING_TABS.map((t) => <TabsTrigger key={t} value={t}>{t}</TabsTrigger>)}
-          </TabsList>
-          <Button onClick={() => router.push("/masters/fittings/create")}>
-            <Plus className="h-4 w-4 mr-2" />Add Fitting
-          </Button>
-        </div>
-
-        <div className="my-4 relative max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Search by type, size, material, standard..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
-        </div>
-
-        {FITTING_TABS.map((tab) => (
-          <TabsContent key={tab} value={tab}>
-            <div className="rounded-lg border bg-card">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Size</TableHead>
-                    <TableHead>Sch</TableHead>
-                    <TableHead>End Type</TableHead>
-                    <TableHead>Rating</TableHead>
-                    <TableHead>Material Grade</TableHead>
-                    <TableHead>Standard</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {isLoading ? (
-                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Loading fittings...</TableCell></TableRow>
-                  ) : fittings.length === 0 ? (
-                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No fittings found</TableCell></TableRow>
-                  ) : (
-                    fittings.map((f) => (
-                      <TableRow key={f.id}>
-                        <TableCell className="font-medium">{f.type}</TableCell>
-                        <TableCell>{f.size}</TableCell>
-                        <TableCell>{f.schedule || "-"}</TableCell>
-                        <TableCell>{f.endType || "-"}</TableCell>
-                        <TableCell>{f.rating || "-"}</TableCell>
-                        <TableCell>{f.materialGrade}</TableCell>
-                        <TableCell>{f.standard || "-"}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button variant="ghost" size="icon" onClick={() => router.push(`/masters/fittings/${f.id}/edit`)}><Pencil className="h-4 w-4" /></Button>
-                            <Button variant="ghost" size="icon" onClick={() => { if (confirm("Delete this fitting?")) deleteMutation.mutate(f.id); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </TabsContent>
-        ))}
-      </Tabs>
-    </div>
-  );
-}
-
-// ─── FLANGES ─────────────────────────────────────────────────────────────────
-
-const FLANGE_TABS = ["All", "Weld Neck", "Slip On", "Socket Weld", "Blind", "Lap Joint", "Threaded"] as const;
-
-interface Flange {
-  id: string;
-  type: string;
-  size: string;
-  rating: string;
-  materialGrade: string;
-  standard: string | null;
-  facing: string | null;
-}
-
-function FlangesPanel() {
-  const router = useRouter();
-  const queryClient = useQueryClient();
-  const [flangeTab, setFlangeTab] = useState("All");
-  const [search, setSearch] = useState("");
-
-  const typeFilter = flangeTab === "All" || flangeTab === "Others" ? undefined : flangeTab;
-
-  const { data, isLoading } = useQuery({
-    queryKey: ["flanges", flangeTab, search],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (typeFilter) params.set("type", typeFilter);
-      if (search) params.set("search", search);
-      const res = await fetch(`/api/masters/flanges?${params}`);
-      if (!res.ok) throw new Error("Failed to fetch flanges");
-      return res.json();
-    },
-  });
-
-  const flanges: Flange[] = data?.flanges || [];
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const res = await fetch(`/api/masters/flanges/${id}`, { method: "DELETE" });
-      if (!res.ok) { const err = await res.json(); throw new Error(err.error || "Failed to delete flange"); }
-      return res.json();
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["flanges"] }); toast.success("Flange deleted"); },
-    onError: (err: Error) => toast.error(err.message),
-  });
-
-  return (
-    <div className="space-y-4">
-      <Tabs value={flangeTab} onValueChange={setFlangeTab}>
-        <div className="flex items-center justify-between">
-          <TabsList>
-            {FLANGE_TABS.map((t) => <TabsTrigger key={t} value={t}>{t}</TabsTrigger>)}
-          </TabsList>
-          <div className="flex gap-2">
-            {flanges.length === 0 && (
-              <Button
-                variant="outline"
-                onClick={async () => {
-                  if (!confirm("Seed all standard flange sizes (6 types x 20 sizes x 7 classes = 840 records)?")) return;
-                  try {
-                    const res = await fetch("/api/masters/flanges/seed", { method: "POST" });
-                    if (!res.ok) { const err = await res.json(); throw new Error(err.error || "Failed"); }
-                    const data = await res.json();
-                    toast.success(data.message);
-                    queryClient.invalidateQueries({ queryKey: ["flanges"] });
-                  } catch (err: any) {
-                    toast.error(err.message || "Failed to seed flanges");
-                  }
-                }}
-              >
-                Seed Standard Flanges
-              </Button>
-            )}
-            <Button onClick={() => router.push("/masters/flanges/create")}>
-              <Plus className="h-4 w-4 mr-2" />Add Flange
-            </Button>
-          </div>
-        </div>
-
-        <div className="my-4 relative max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Search by type, size, rating, material..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
-        </div>
-
-        {FLANGE_TABS.map((tab) => (
-          <TabsContent key={tab} value={tab}>
-            <div className="rounded-lg border bg-card">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Size</TableHead>
-                    <TableHead>Rating</TableHead>
-                    <TableHead>Facing</TableHead>
-                    <TableHead>Material Grade</TableHead>
-                    <TableHead>Standard</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {isLoading ? (
-                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Loading flanges...</TableCell></TableRow>
-                  ) : flanges.length === 0 ? (
-                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No flanges found</TableCell></TableRow>
-                  ) : (
-                    flanges.map((f) => (
-                      <TableRow key={f.id}>
-                        <TableCell className="font-medium">{f.type}</TableCell>
-                        <TableCell>{f.size}</TableCell>
-                        <TableCell>{f.rating}#</TableCell>
-                        <TableCell>{f.facing || "-"}</TableCell>
-                        <TableCell>{f.materialGrade}</TableCell>
-                        <TableCell>{f.standard || "-"}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button variant="ghost" size="icon" onClick={() => router.push(`/masters/flanges/${f.id}/edit`)}><Pencil className="h-4 w-4" /></Button>
-                            <Button variant="ghost" size="icon" onClick={() => { if (confirm("Delete this flange?")) deleteMutation.mutate(f.id); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </TabsContent>
-        ))}
-      </Tabs>
-    </div>
-  );
-}
-
-// ─── UNITS ───────────────────────────────────────────────────────────────────
 
 interface Unit {
   id: string;

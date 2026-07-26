@@ -22,8 +22,8 @@ import { Plus, Trash2, Save, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { PageLoading } from "@/components/shared/page-loading";
-import { FittingSelect } from "@/components/shared/fitting-select";
-import { FlangeSelect } from "@/components/shared/flange-select";
+import { SmartCombobox } from "@/components/shared/smart-combobox";
+import { FLANGE_SIZES, getFittingSizeOptions } from "@/lib/fitting-flange-sizes";
 
 type POItemCategory = "Pipe" | "Fitting" | "Flange";
 
@@ -489,60 +489,13 @@ function CreatePOPage() {
                         ))}
                       </div>
                     </div>
-                    {item.itemCategory === "Fitting" && (
-                      <div className="md:col-span-6">
-                        <Label className="text-xs">Select Fitting *</Label>
-                        <FittingSelect
-                          value={item.fittingLabel}
-                          onChange={(text) => {
-                            const newItems = [...items];
-                            newItems[index] = { ...newItems[index], fittingLabel: text, fittingId: "" };
-                            setItems(newItems);
-                          }}
-                          onSelect={(f) => {
-                            const newItems = [...items];
-                            newItems[index] = {
-                              ...newItems[index],
-                              fittingId: f.id,
-                              fittingLabel: `${f.type} ${f.size} ${f.schedule || ""} ${f.endType || ""} ${f.materialGrade}`.replace(/\s+/g, " ").trim(),
-                              product: f.type,
-                              material: f.materialGrade,
-                              sizeLabel: f.size,
-                              additionalSpec: [f.endType, f.rating, f.standard].filter(Boolean).join(", "),
-                            };
-                            setItems(newItems);
-                          }}
-                        />
-                      </div>
-                    )}
-                    {item.itemCategory === "Flange" && (
-                      <div className="md:col-span-6">
-                        <Label className="text-xs">Select Flange *</Label>
-                        <FlangeSelect
-                          value={item.flangeLabel}
-                          onChange={(text) => {
-                            const newItems = [...items];
-                            newItems[index] = { ...newItems[index], flangeLabel: text, flangeId: "" };
-                            setItems(newItems);
-                          }}
-                          onSelect={(f) => {
-                            const newItems = [...items];
-                            newItems[index] = {
-                              ...newItems[index],
-                              flangeId: f.id,
-                              flangeLabel: `${f.type} ${f.size} ${f.rating}# ${f.facing || ""} ${f.materialGrade}`.replace(/\s+/g, " ").trim(),
-                              product: f.type,
-                              material: f.materialGrade,
-                              sizeLabel: f.size,
-                              additionalSpec: [f.facing, f.rating + "#", f.standard].filter(Boolean).join(", "),
-                            };
-                            setItems(newItems);
-                          }}
-                        />
-                      </div>
-                    )}
                     <div className="md:col-span-4">
                       <ProductMaterialSelect
+                        category={
+                          item.itemCategory === "Fitting" ? "FITTINGS"
+                          : item.itemCategory === "Flange" ? "FLANGES"
+                          : "PIPES"
+                        }
                         product={item.product}
                         material={item.material}
                         additionalSpec={item.additionalSpec}
@@ -556,14 +509,40 @@ function CreatePOPage() {
                     </div>
                     <div className="md:col-span-2">
                       <Label className="text-xs">Size</Label>
-                      <SizeSelect
-                        value={item.sizeLabel}
-                        onChange={(text) => updateItem(index, "sizeLabel", text)}
-                        onSelect={(size) => {
-                          updateItem(index, "sizeLabel", size.sizeLabel);
-                        }}
-                        label="Size"
-                      />
+                      {item.itemCategory === "Fitting" ? (
+                        <SmartCombobox
+                          options={getFittingSizeOptions(item.product)}
+                          value={item.sizeLabel}
+                          onSelect={(s: string) => updateItem(index, "sizeLabel", s)}
+                          onChange={(text) => updateItem(index, "sizeLabel", text)}
+                          displayFn={(s: string) => s}
+                          filterFn={(s: string, q) => s.toLowerCase().includes(q.toLowerCase())}
+                          placeholder={item.product ? "Search sizes..." : "Select product first"}
+                        />
+                      ) : item.itemCategory === "Flange" ? (
+                        <SmartCombobox
+                          options={FLANGE_SIZES}
+                          value={item.sizeLabel}
+                          onSelect={(z: { label: string; dim: string }) => updateItem(index, "sizeLabel", z.label)}
+                          onChange={(text) => updateItem(index, "sizeLabel", text)}
+                          displayFn={(z: { label: string; dim: string }) =>
+                            z.dim === "ASME B16.5" ? z.label : `${z.label} — ${z.dim.replace("ASME ", "")}`
+                          }
+                          filterFn={(z: { label: string; dim: string }, q) =>
+                            `${z.label} ${z.dim}`.toLowerCase().includes(q.toLowerCase())
+                          }
+                          placeholder="Search sizes..."
+                        />
+                      ) : (
+                        <SizeSelect
+                          value={item.sizeLabel}
+                          onChange={(text) => updateItem(index, "sizeLabel", text)}
+                          onSelect={(size) => {
+                            updateItem(index, "sizeLabel", size.sizeLabel);
+                          }}
+                          label="Size"
+                        />
+                      )}
                     </div>
                     <div className="md:col-span-1">
                       <Label className="text-xs">Qty *</Label>

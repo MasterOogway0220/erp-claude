@@ -36,8 +36,8 @@ import {
 import { Plus, Trash2, ArrowLeft, Building2, MapPin, ListChecks, Copy, ChevronDown, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
-import { FittingSelect } from "@/components/shared/fitting-select";
-import { FlangeSelect } from "@/components/shared/flange-select";
+import { ProductMaterialSelect } from "@/components/shared/product-material-select";
+import { FLANGE_SIZES, getFittingSizeOptions } from "@/lib/fitting-flange-sizes";
 
 type NonStdItemCategory = "Item" | "Fitting" | "Flange";
 
@@ -759,6 +759,65 @@ function NonStandardQuotationPage() {
     });
   };
 
+  // Fitting/Flange picker backed by the product spec master pools. The
+  // product name lives in fittingLabel/flangeLabel; the one-line description
+  // is recomposed only on actual selections so hand-edits survive typing.
+  const renderFittingFlangePicker = (item: NonStdItem, index: number) => {
+    const isFitting = item.itemCategory === "Fitting";
+    const labelField = isFitting ? "fittingLabel" : "flangeLabel";
+    const compose = (it: NonStdItem) =>
+      [it[labelField], it.size, it.material].filter(Boolean).join(" ");
+    const patch = (p: Partial<NonStdItem>, recompose = false) =>
+      setItems((prev) => {
+        const newItems = [...prev];
+        const merged = { ...newItems[index], ...p };
+        newItems[index] = recompose ? { ...merged, itemDescription: compose(merged) } : merged;
+        return newItems;
+      });
+    return (
+      <div className="grid md:grid-cols-3 gap-4 items-end">
+        <ProductMaterialSelect
+          className="md:col-span-2"
+          product={item[labelField]}
+          material={item.material}
+          category={isFitting ? "FITTINGS" : "FLANGES"}
+          productLabel={isFitting ? "Fitting *" : "Flange *"}
+          onProductChange={(val) => patch({ [labelField]: val } as Partial<NonStdItem>)}
+          onMaterialChange={(val) => patch({ material: val })}
+          onAutoFill={({ ends }) => patch(ends && isFitting ? { endType: ends } : {}, true)}
+        />
+        <div className="grid gap-2">
+          <Label className="text-sm">Size</Label>
+          {isFitting ? (
+            <SmartCombobox
+              options={getFittingSizeOptions(item[labelField])}
+              value={item.size}
+              onSelect={(label: string) => patch({ size: label }, true)}
+              onChange={(text) => patch({ size: text })}
+              displayFn={(s: string) => s}
+              filterFn={(s: string, q) => s.toLowerCase().includes(q.toLowerCase())}
+              placeholder={item[labelField] ? "Search sizes..." : "Select fitting first"}
+            />
+          ) : (
+            <SmartCombobox
+              options={FLANGE_SIZES}
+              value={item.size}
+              onSelect={(z: { label: string; dim: string }) => patch({ size: z.label }, true)}
+              onChange={(text) => patch({ size: text })}
+              displayFn={(z: { label: string; dim: string }) =>
+                z.dim === "ASME B16.5" ? z.label : `${z.label} — ${z.dim.replace("ASME ", "")}`
+              }
+              filterFn={(z: { label: string; dim: string }, q) =>
+                `${z.label} ${z.dim}`.toLowerCase().includes(q.toLowerCase())
+              }
+              placeholder="Search sizes..."
+            />
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.customerId) {
@@ -1275,68 +1334,8 @@ function NonStandardQuotationPage() {
                 {useStructuredInput[index] ? (
                   <>
                     {/* Fitting/Flange selector for non-Item categories */}
-                    {item.itemCategory === "Fitting" && (
-                      <div className="grid gap-2">
-                        <Label className="text-sm">Select Fitting *</Label>
-                        <FittingSelect
-                          value={item.fittingLabel}
-                          onChange={(text) => {
-                            setItems((prev) => {
-                              const newItems = [...prev];
-                              newItems[index] = { ...newItems[index], fittingLabel: text, fittingId: "" };
-                              return newItems;
-                            });
-                          }}
-                          onSelect={(f) => {
-                            setItems((prev) => {
-                              const newItems = [...prev];
-                              const desc = `${f.type} ${f.size} ${f.schedule || ""} ${f.endType || ""} ${f.materialGrade} ${f.standard || ""}`.replace(/\s+/g, " ").trim();
-                              newItems[index] = {
-                                ...newItems[index],
-                                fittingId: f.id,
-                                fittingLabel: desc,
-                                itemDescription: desc,
-                                material: f.materialGrade,
-                                size: f.size,
-                                endType: f.endType || "",
-                              };
-                              return newItems;
-                            });
-                          }}
-                        />
-                      </div>
-                    )}
-                    {item.itemCategory === "Flange" && (
-                      <div className="grid gap-2">
-                        <Label className="text-sm">Select Flange *</Label>
-                        <FlangeSelect
-                          value={item.flangeLabel}
-                          onChange={(text) => {
-                            setItems((prev) => {
-                              const newItems = [...prev];
-                              newItems[index] = { ...newItems[index], flangeLabel: text, flangeId: "" };
-                              return newItems;
-                            });
-                          }}
-                          onSelect={(f) => {
-                            setItems((prev) => {
-                              const newItems = [...prev];
-                              const desc = `${f.type} ${f.size} ${f.rating}# ${f.facing || ""} ${f.materialGrade} ${f.standard || ""}`.replace(/\s+/g, " ").trim();
-                              newItems[index] = {
-                                ...newItems[index],
-                                flangeId: f.id,
-                                flangeLabel: desc,
-                                itemDescription: desc,
-                                material: f.materialGrade,
-                                size: f.size,
-                                endType: f.facing || "",
-                              };
-                              return newItems;
-                            });
-                          }}
-                        />
-                      </div>
-                    )}
+                    {(item.itemCategory === "Fitting" || item.itemCategory === "Flange") &&
+                      renderFittingFlangePicker(item, index)}
 
                     {/* Row 1: Material Code | Short Description | Size | End Type | Material | Tag Number */}
                     <div className="grid grid-cols-6 gap-4">
@@ -1738,68 +1737,8 @@ function NonStandardQuotationPage() {
                     </div>
 
                     {/* Fitting/Flange selector for non-Item categories */}
-                    {item.itemCategory === "Fitting" && (
-                      <div className="grid gap-2">
-                        <Label className="text-sm">Select Fitting *</Label>
-                        <FittingSelect
-                          value={item.fittingLabel}
-                          onChange={(text) => {
-                            setItems((prev) => {
-                              const newItems = [...prev];
-                              newItems[index] = { ...newItems[index], fittingLabel: text, fittingId: "" };
-                              return newItems;
-                            });
-                          }}
-                          onSelect={(f) => {
-                            setItems((prev) => {
-                              const newItems = [...prev];
-                              const desc = `${f.type} ${f.size} ${f.schedule || ""} ${f.endType || ""} ${f.materialGrade} ${f.standard || ""}`.replace(/\s+/g, " ").trim();
-                              newItems[index] = {
-                                ...newItems[index],
-                                fittingId: f.id,
-                                fittingLabel: desc,
-                                itemDescription: desc,
-                                material: f.materialGrade,
-                                size: f.size,
-                                endType: f.endType || "",
-                              };
-                              return newItems;
-                            });
-                          }}
-                        />
-                      </div>
-                    )}
-                    {item.itemCategory === "Flange" && (
-                      <div className="grid gap-2">
-                        <Label className="text-sm">Select Flange *</Label>
-                        <FlangeSelect
-                          value={item.flangeLabel}
-                          onChange={(text) => {
-                            setItems((prev) => {
-                              const newItems = [...prev];
-                              newItems[index] = { ...newItems[index], flangeLabel: text, flangeId: "" };
-                              return newItems;
-                            });
-                          }}
-                          onSelect={(f) => {
-                            setItems((prev) => {
-                              const newItems = [...prev];
-                              const desc = `${f.type} ${f.size} ${f.rating}# ${f.facing || ""} ${f.materialGrade} ${f.standard || ""}`.replace(/\s+/g, " ").trim();
-                              newItems[index] = {
-                                ...newItems[index],
-                                flangeId: f.id,
-                                flangeLabel: desc,
-                                itemDescription: desc,
-                                material: f.materialGrade,
-                                size: f.size,
-                                endType: f.facing || "",
-                              };
-                              return newItems;
-                            });
-                          }}
-                        />
-                      </div>
-                    )}
+                    {(item.itemCategory === "Fitting" || item.itemCategory === "Flange") &&
+                      renderFittingFlangePicker(item, index)}
 
                     <div className="grid gap-1">
                       <Label className="text-xs">Full Item Description</Label>
