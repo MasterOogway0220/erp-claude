@@ -1194,10 +1194,6 @@ function NonStandardQuotationPage() {
                 Use structured fields or paste full description
               </p>
             </div>
-            <Button type="button" variant="outline" size="sm" onClick={addItem}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Item
-            </Button>
           </CardHeader>
           <CardContent className="space-y-6">
             {items.map((item, index) => (
@@ -1862,6 +1858,17 @@ function NonStandardQuotationPage() {
                 )}
               </div>
             ))}
+
+            {/* Add at the bottom — no scroll-back-up after finishing an item */}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={addItem}
+              className="w-full border-dashed"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Item
+            </Button>
 
             {/* Totals */}
             <div className="flex justify-end gap-8 pt-4 border-t">

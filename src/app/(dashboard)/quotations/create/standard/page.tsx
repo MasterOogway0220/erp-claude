@@ -1245,10 +1245,6 @@ function StandardQuotationPage() {
                 Select product then pick Size (NPS x Schedule) to auto-fill OD, WT, Weight
               </p>
             </div>
-            <Button type="button" variant="outline" size="sm" onClick={addItem}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Item
-            </Button>
           </CardHeader>
           <CardContent className="space-y-6">
             {items.map((item, index) => {
@@ -1851,6 +1847,17 @@ function StandardQuotationPage() {
                 </div>
               );
             })}
+
+            {/* Add at the bottom — no scroll-back-up after finishing an item */}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={addItem}
+              className="w-full border-dashed"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Item
+            </Button>
 
             {/* Grand Total */}
             <Separator className="mt-4" />
