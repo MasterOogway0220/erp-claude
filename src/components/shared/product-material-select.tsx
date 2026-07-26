@@ -10,6 +10,7 @@ interface ProductSpec {
   material: string | null;
   additionalSpec: string | null;
   ends: string | null;
+  size: string | null;
   length: string | null;
   category: string | null;
   dimensionalStandard: { name: string } | null;
@@ -41,6 +42,21 @@ interface ProductMaterialSelectProps {
   showAdditionalSpec?: boolean;
   className?: string;
   disabled?: boolean;
+}
+
+// Extra sizes recorded on master rows for a product (beyond the standard
+// generated pools) — lets a size added via the Product Master surface in
+// quotation/PO size dropdowns. Reads the module cache; empty until fetched.
+export function getMasterExtraSizes(product: string): string[] {
+  if (!cachedProducts || !product) return [];
+  return Array.from(
+    new Set(
+      cachedProducts
+        .filter((p) => p.product.toLowerCase() === product.toLowerCase())
+        .map((p) => p.size)
+        .filter(Boolean) as string[]
+    )
+  );
 }
 
 // Module-level caches

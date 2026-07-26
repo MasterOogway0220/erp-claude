@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DataTable, Column } from "@/components/shared/data-table";
 import { SmartCombobox } from "@/components/shared/smart-combobox";
@@ -154,23 +153,35 @@ interface ProductSpec {
   material: string | null;
   additionalSpec: string | null;
   ends: string | null;
+  size: string | null;
   length: string | null;
   dimensionalStandardId: string | null;
   dimensionalStandard: { id: string; name: string; code: string } | null;
 }
 
+// Mirrors the master Excel structure:
+// Category | Product | Specification | Dimension | Size | Ends
+// ("material" is the DB column that stores the specification string;
+//  "ends" is the end-connection type — BW/SW/NPT, BE/PE…)
 interface ProductFormData {
   product: string;
   category: string;
-  specification: string;
-  grade: string;
   material: string;
   dimensionalStandardId: string;
+  size: string;
+  ends: string;
 }
 
 const emptyProductForm: ProductFormData = {
-  product: "", category: "", specification: "", grade: "",
-  material: "", dimensionalStandardId: "",
+  product: "", category: "", material: "",
+  dimensionalStandardId: "", size: "", ends: "",
+};
+
+// End-connection options per category
+const END_OPTIONS: Record<string, string[]> = {
+  PIPES: ["BE", "PE", "NPTM", "BSPT"],
+  FITTINGS: ["BW", "SW", "NPT"],
+  FLANGES: ["RF", "FF", "RTJ"],
 };
 
 function PipesPanel() {
@@ -257,9 +268,9 @@ function PipesPanel() {
       setEditingProduct(product);
       setFormData({
         product: product.product, category: product.category || "",
-        specification: product.specification || "", grade: product.grade || "",
         material: product.material || "",
         dimensionalStandardId: product.dimensionalStandardId || "",
+        size: product.size || "", ends: product.ends || "",
       });
       setDimStdSearch(product.dimensionalStandard?.name || "");
     } else {
@@ -292,7 +303,7 @@ function PipesPanel() {
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search by product, material, spec, grade..."
+            placeholder="Search by product or specification..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             className="pl-10"
@@ -315,10 +326,10 @@ function PipesPanel() {
             onClick={() => {
               const products: ProductSpec[] = data?.products || [];
               if (!products.length) { toast.error("No products to export"); return; }
-              const headers = ["Category", "Product", "Specification", "Grade", "Material", "Dim. Standard"];
+              const headers = ["Category", "Product", "Specification", "Dimension", "Size", "Ends"];
               const rows = products.map((p) => [
-                p.category || "", p.product, p.specification || "", p.grade || "",
-                p.material || "", p.dimensionalStandard?.name || "",
+                p.category || "", p.product, p.material || "",
+                p.dimensionalStandard?.name || "", p.size || "", p.ends || "",
               ]);
               const csv = [headers.join(","), ...rows.map((r) => r.map((c) => `"${c.replace(/"/g, '""')}"`).join(","))].join("\n");
               const blob = new Blob([csv], { type: "text/csv" });
@@ -347,9 +358,9 @@ function PipesPanel() {
               <TableHead>Category</TableHead>
               <TableHead>Product</TableHead>
               <TableHead>Specification</TableHead>
-              <TableHead>Grade</TableHead>
-              <TableHead>Material</TableHead>
-              <TableHead>Dim. Standard</TableHead>
+              <TableHead>Dimension</TableHead>
+              <TableHead>Size</TableHead>
+              <TableHead>Ends</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -365,10 +376,10 @@ function PipesPanel() {
                     {p.category ? <Badge variant="secondary" className="text-xs">{getCategoryLabel(p.category)}</Badge> : "—"}
                   </TableCell>
                   <TableCell className="font-medium">{p.product}</TableCell>
-                  <TableCell>{p.specification || "—"}</TableCell>
-                  <TableCell>{p.grade || "—"}</TableCell>
-                  <TableCell className="max-w-[150px] truncate">{p.material || "—"}</TableCell>
+                  <TableCell className="max-w-[200px] truncate">{p.material || "—"}</TableCell>
                   <TableCell>{p.dimensionalStandard?.name || "—"}</TableCell>
+                  <TableCell>{p.size || "—"}</TableCell>
+                  <TableCell>{p.ends || "—"}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Button variant="ghost" size="icon" onClick={() => openDialog(p)}><Pencil className="h-4 w-4" /></Button>
@@ -415,24 +426,27 @@ function PipesPanel() {
               </div>
               <div className="grid gap-2">
                 <Label>Product *</Label>
-                <Input value={formData.product} onChange={(e) => setFormData({ ...formData, product: e.target.value })} placeholder="e.g., C.S. SEAMLESS PIPE" required />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label>Specification</Label>
-                  <Input value={formData.specification} onChange={(e) => setFormData({ ...formData, specification: e.target.value })} placeholder="e.g., ASTM A106" />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Grade</Label>
-                  <Input value={formData.grade} onChange={(e) => setFormData({ ...formData, grade: e.target.value })} placeholder="e.g., Gr. B" />
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <Label>Material</Label>
-                <Textarea value={formData.material} onChange={(e) => setFormData({ ...formData, material: e.target.value })} placeholder="e.g., ASTM A106/A53/API 5L GR. B" rows={2} />
+                <Input
+                  value={formData.product}
+                  onChange={(e) => setFormData({ ...formData, product: e.target.value })}
+                  placeholder={
+                    formData.category === "FITTINGS" ? "e.g., C.S. 90° ELBOW, LR, SMLS"
+                    : formData.category === "FLANGES" ? "e.g., C.S. FLANGE, WNRF"
+                    : "e.g., C.S. SEAMLESS PIPE"
+                  }
+                  required
+                />
               </div>
               <div className="grid gap-2">
-                <Label>Dimensional Standard</Label>
+                <Label>Specification</Label>
+                <Input
+                  value={formData.material}
+                  onChange={(e) => setFormData({ ...formData, material: e.target.value })}
+                  placeholder={formData.category === "FITTINGS" ? "e.g., ASTM A234 GR. WPB" : "e.g., ASTM A106 GR.B"}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Dimension</Label>
                 <SmartCombobox<{ id: string; name: string; code: string }>
                   options={filteredDimStds}
                   value={dimStdSearch}
@@ -442,6 +456,32 @@ function PipesPanel() {
                   filterFn={(std, query) => { const q = query.toLowerCase(); return std.name.toLowerCase().includes(q) || std.code.toLowerCase().includes(q); }}
                   placeholder="Search dimensional standard..."
                 />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label>Size</Label>
+                  <Input
+                    value={formData.size}
+                    onChange={(e) => setFormData({ ...formData, size: e.target.value })}
+                    placeholder={
+                      formData.category === "FITTINGS" ? 'e.g., 1"NB X 3000#'
+                      : formData.category === "FLANGES" ? 'e.g., 2"NB X 150#'
+                      : 'e.g., 0.5"NB X SCH 40'
+                    }
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>End</Label>
+                  <Select value={formData.ends || "NONE"} onValueChange={(v) => setFormData({ ...formData, ends: v === "NONE" ? "" : v })}>
+                    <SelectTrigger><SelectValue placeholder="End connection type" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="NONE">— None —</SelectItem>
+                      {(END_OPTIONS[formData.category] ?? [...END_OPTIONS.PIPES, ...END_OPTIONS.FITTINGS, ...END_OPTIONS.FLANGES]).map((e) => (
+                        <SelectItem key={e} value={e}>{e}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
             <DialogFooter>

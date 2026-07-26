@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { ProductMaterialSelect } from "@/components/shared/product-material-select";
+import { ProductMaterialSelect, getMasterExtraSizes } from "@/components/shared/product-material-select";
 import { SizeSelect } from "@/components/shared/size-select";
 import { Plus, Trash2, Save, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
@@ -518,7 +518,7 @@ function CreatePOPage() {
                       <Label className="text-xs">Size</Label>
                       {item.itemCategory === "Fitting" ? (
                         <SmartCombobox
-                          options={getFittingSizeOptions(item.product)}
+                          options={Array.from(new Set([...getFittingSizeOptions(item.product), ...getMasterExtraSizes(item.product)]))}
                           value={item.sizeLabel}
                           onSelect={(s: string) => updateItem(index, "sizeLabel", s)}
                           onChange={(text) => updateItem(index, "sizeLabel", text)}
@@ -528,7 +528,7 @@ function CreatePOPage() {
                         />
                       ) : item.itemCategory === "Flange" ? (
                         <SmartCombobox
-                          options={FLANGE_SIZES}
+                          options={[...FLANGE_SIZES, ...getMasterExtraSizes(item.product).filter((s) => !FLANGE_SIZES.some((z) => z.label === s)).map((s) => ({ label: s, dim: "" }))]}
                           value={item.sizeLabel}
                           onSelect={(z: { label: string; dim: string }) => {
                             const newItems = [...items];
@@ -541,7 +541,7 @@ function CreatePOPage() {
                           }}
                           onChange={(text) => updateItem(index, "sizeLabel", text)}
                           displayFn={(z: { label: string; dim: string }) =>
-                            z.dim === "ASME B16.5" ? z.label : `${z.label} — ${z.dim.replace("ASME ", "")}`
+                            z.dim && z.dim !== "ASME B16.5" ? `${z.label} — ${z.dim.replace("ASME ", "")}` : z.label
                           }
                           filterFn={(z: { label: string; dim: string }, q) =>
                             `${z.label} ${z.dim}`.toLowerCase().includes(q.toLowerCase())

@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ProductMaterialSelect } from "@/components/shared/product-material-select";
+import { ProductMaterialSelect, getMasterExtraSizes } from "@/components/shared/product-material-select";
 import { SmartCombobox } from "@/components/shared/smart-combobox";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
@@ -1546,7 +1546,7 @@ function StandardQuotationPage() {
                       <div className="space-y-1 lg:col-span-2 xl:col-span-2">
                         <Label className="text-xs font-medium">Size <span className="text-destructive">*</span></Label>
                         <SmartCombobox
-                          options={getFittingSizeOptions(item.product)}
+                          options={Array.from(new Set([...getFittingSizeOptions(item.product), ...getMasterExtraSizes(item.product)]))}
                           value={item.sizeLabel || ""}
                           onSelect={(label: string) => {
                             setItems((prev) => {
@@ -1576,7 +1576,7 @@ function StandardQuotationPage() {
                       <div className="space-y-1 lg:col-span-2 xl:col-span-2">
                         <Label className="text-xs font-medium">Size <span className="text-destructive">*</span></Label>
                         <SmartCombobox
-                          options={FLANGE_SIZES}
+                          options={[...FLANGE_SIZES, ...getMasterExtraSizes(item.product).filter((s) => !FLANGE_SIZES.some((z) => z.label === s)).map((s) => ({ label: s, dim: "" }))]}
                           value={item.sizeLabel || ""}
                           onSelect={(z: { label: string; dim: string }) => {
                             setItems((prev) => {
@@ -1598,7 +1598,7 @@ function StandardQuotationPage() {
                             });
                           }}
                           displayFn={(z: { label: string; dim: string }) =>
-                            z.dim === "ASME B16.5" ? z.label : `${z.label} — ${z.dim.replace("ASME ", "")}`
+                            z.dim && z.dim !== "ASME B16.5" ? `${z.label} — ${z.dim.replace("ASME ", "")}` : z.label
                           }
                           filterFn={(z: { label: string; dim: string }, query) =>
                             `${z.label} ${z.dim}`.toLowerCase().includes(query.toLowerCase())

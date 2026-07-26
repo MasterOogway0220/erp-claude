@@ -198,6 +198,7 @@ model ProductSpecMaster {
   material              String?
   additionalSpec        String?
   ends                  String?
+  size                  String?
   length                String?
   createdAt             DateTime                   @default(now())
   updatedAt             DateTime                   @updatedAt

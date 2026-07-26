@@ -36,7 +36,7 @@ import {
 import { Plus, Trash2, ArrowLeft, Building2, MapPin, ListChecks, Copy, ChevronDown, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
-import { ProductMaterialSelect } from "@/components/shared/product-material-select";
+import { ProductMaterialSelect, getMasterExtraSizes } from "@/components/shared/product-material-select";
 import { FLANGE_SIZES, getFittingSizeOptions } from "@/lib/fitting-flange-sizes";
 
 type NonStdItemCategory = "Item" | "Fitting" | "Flange";
@@ -790,7 +790,7 @@ function NonStandardQuotationPage() {
           <Label className="text-sm">Size</Label>
           {isFitting ? (
             <SmartCombobox
-              options={getFittingSizeOptions(item[labelField])}
+              options={Array.from(new Set([...getFittingSizeOptions(item[labelField]), ...getMasterExtraSizes(item[labelField])]))}
               value={item.size}
               onSelect={(label: string) => patch({ size: label }, true)}
               onChange={(text) => patch({ size: text })}
@@ -800,12 +800,12 @@ function NonStandardQuotationPage() {
             />
           ) : (
             <SmartCombobox
-              options={FLANGE_SIZES}
+              options={[...FLANGE_SIZES, ...getMasterExtraSizes(item[labelField]).filter((s) => !FLANGE_SIZES.some((z) => z.label === s)).map((s) => ({ label: s, dim: "" }))]}
               value={item.size}
               onSelect={(z: { label: string; dim: string }) => patch({ size: z.label }, true)}
               onChange={(text) => patch({ size: text })}
               displayFn={(z: { label: string; dim: string }) =>
-                z.dim === "ASME B16.5" ? z.label : `${z.label} — ${z.dim.replace("ASME ", "")}`
+                z.dim && z.dim !== "ASME B16.5" ? `${z.label} — ${z.dim.replace("ASME ", "")}` : z.label
               }
               filterFn={(z: { label: string; dim: string }, q) =>
                 `${z.label} ${z.dim}`.toLowerCase().includes(q.toLowerCase())

@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     if (!authorized) return response!;
 
     const body = await request.json();
-    const { product, category, specification, grade, material, additionalSpec, ends, length, dimensionalStandardId } = body;
+    const { product, category, specification, grade, material, additionalSpec, ends, size, length, dimensionalStandardId } = body;
 
     if (!product) {
       return NextResponse.json(
@@ -86,6 +86,7 @@ export async function POST(request: NextRequest) {
         material: material || null,
         additionalSpec: additionalSpec || null,
         ends: ends || null,
+        size: size || null,
         length: length || null,
         dimensionalStandardId: dimensionalStandardId || null,
         companyId,

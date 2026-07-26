@@ -38,7 +38,7 @@ export async function PATCH(
     if (!authorized) return response!;
 
     const body = await request.json();
-    const { product, category, specification, grade, material, additionalSpec, ends, length, dimensionalStandardId } = body;
+    const { product, category, specification, grade, material, additionalSpec, ends, size, length, dimensionalStandardId } = body;
 
     const updated = await prisma.productSpecMaster.update({
       where: { id, ...companyFilter(companyId) },
@@ -50,6 +50,7 @@ export async function PATCH(
         material: material !== undefined ? (material || null) : undefined,
         additionalSpec: additionalSpec !== undefined ? (additionalSpec || null) : undefined,
         ends: ends !== undefined ? (ends || null) : undefined,
+        size: size !== undefined ? (size || null) : undefined,
         length: length !== undefined ? (length || null) : undefined,
         dimensionalStandardId: dimensionalStandardId !== undefined ? (dimensionalStandardId || null) : undefined,
       },
