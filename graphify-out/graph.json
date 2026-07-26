@@ -9,7 +9,7 @@
       "source_file": "prisma.config.ts",
       "source_location": "L1",
       "id": "prisma_config",
-      "community": 55
+      "community": 56
     },
     {
       "label": "next-env.d.ts",
@@ -17,7 +17,7 @@
       "source_file": "next-env.d.ts",
       "source_location": "L1",
       "id": "next_env_d",
-      "community": 56
+      "community": 57
     },
     {
       "label": "vitest.config.ts",
@@ -25,7 +25,7 @@
       "source_file": "vitest.config.ts",
       "source_location": "L1",
       "id": "vitest_config",
-      "community": 57
+      "community": 58
     },
     {
       "label": "next.config.ts",
@@ -33,7 +33,7 @@
       "source_file": "next.config.ts",
       "source_location": "L1",
       "id": "next_config",
-      "community": 58
+      "community": 59
     },
     {
       "label": "seed-test-company.ts",
@@ -41,7 +41,7 @@
       "source_file": "prisma/seed-test-company.ts",
       "source_location": "L1",
       "id": "seed_test_company",
-      "community": 34
+      "community": 35
     },
     {
       "label": "main()",
@@ -49,7 +49,7 @@
       "source_file": "prisma/seed-test-company.ts",
       "source_location": "L15",
       "id": "seed_test_company_main",
-      "community": 34
+      "community": 35
     },
     {
       "label": "seed-test-user.ts",
@@ -57,7 +57,7 @@
       "source_file": "prisma/seed-test-user.ts",
       "source_location": "L1",
       "id": "seed_test_user",
-      "community": 35
+      "community": 36
     },
     {
       "label": "main()",
@@ -65,7 +65,7 @@
       "source_file": "prisma/seed-test-user.ts",
       "source_location": "L16",
       "id": "seed_test_user_main",
-      "community": 35
+      "community": 36
     },
     {
       "label": "seed-production.ts",
@@ -73,7 +73,7 @@
       "source_file": "prisma/seed-production.ts",
       "source_location": "L1",
       "id": "seed_production",
-      "community": 36
+      "community": 37
     },
     {
       "label": "seedProduction()",
@@ -81,7 +81,7 @@
       "source_file": "prisma/seed-production.ts",
       "source_location": "L28",
       "id": "seed_production_seedproduction",
-      "community": 36
+      "community": 37
     },
     {
       "label": "seed.ts",
@@ -89,7 +89,7 @@
       "source_file": "prisma/seed.ts",
       "source_location": "L1",
       "id": "seed",
-      "community": 5
+      "community": 4
     },
     {
       "label": "readExcel()",
@@ -97,7 +97,7 @@
       "source_file": "prisma/seed.ts",
       "source_location": "L23",
       "id": "seed_readexcel",
-      "community": 5
+      "community": 4
     },
     {
       "label": "getVal()",
@@ -105,7 +105,7 @@
       "source_file": "prisma/seed.ts",
       "source_location": "L30",
       "id": "seed_getval",
-      "community": 5
+      "community": 4
     },
     {
       "label": "getNum()",
@@ -113,7 +113,7 @@
       "source_file": "prisma/seed.ts",
       "source_location": "L47",
       "id": "seed_getnum",
-      "community": 5
+      "community": 4
     },
     {
       "label": "excelDateToJS()",
@@ -121,7 +121,7 @@
       "source_file": "prisma/seed.ts",
       "source_location": "L53",
       "id": "seed_exceldatetojs",
-      "community": 5
+      "community": 4
     },
     {
       "label": "seedProductSpecs()",
@@ -129,7 +129,7 @@
       "source_file": "prisma/seed.ts",
       "source_location": "L59",
       "id": "seed_seedproductspecs",
-      "community": 5
+      "community": 4
     },
     {
       "label": "seedPipeSizes()",
@@ -137,7 +137,7 @@
       "source_file": "prisma/seed.ts",
       "source_location": "L82",
       "id": "seed_seedpipesizes",
-      "community": 5
+      "community": 4
     },
     {
       "label": "seedTestingMaster()",
@@ -145,7 +145,7 @@
       "source_file": "prisma/seed.ts",
       "source_location": "L116",
       "id": "seed_seedtestingmaster",
-      "community": 5
+      "community": 4
     },
     {
       "label": "seedTaxMaster()",
@@ -153,7 +153,7 @@
       "source_file": "prisma/seed.ts",
       "source_location": "L135",
       "id": "seed_seedtaxmaster",
-      "community": 5
+      "community": 4
     },
     {
       "label": "seedCurrencyMaster()",
@@ -161,7 +161,7 @@
       "source_file": "prisma/seed.ts",
       "source_location": "L154",
       "id": "seed_seedcurrencymaster",
-      "community": 5
+      "community": 4
     },
     {
       "label": "seedUomMaster()",
@@ -169,7 +169,7 @@
       "source_file": "prisma/seed.ts",
       "source_location": "L168",
       "id": "seed_seeduommaster",
-      "community": 5
+      "community": 4
     },
     {
       "label": "seedPaymentTerms()",
@@ -177,7 +177,7 @@
       "source_file": "prisma/seed.ts",
       "source_location": "L189",
       "id": "seed_seedpaymentterms",
-      "community": 5
+      "community": 4
     },
     {
       "label": "seedDeliveryTerms()",
@@ -185,7 +185,7 @@
       "source_file": "prisma/seed.ts",
       "source_location": "L205",
       "id": "seed_seeddeliveryterms",
-      "community": 5
+      "community": 4
     },
     {
       "label": "seedInspectionAgencies()",
@@ -193,7 +193,7 @@
       "source_file": "prisma/seed.ts",
       "source_location": "L220",
       "id": "seed_seedinspectionagencies",
-      "community": 5
+      "community": 4
     },
     {
       "label": "seedCertificationTypes()",
@@ -201,7 +201,7 @@
       "source_file": "prisma/seed.ts",
       "source_location": "L235",
       "id": "seed_seedcertificationtypes",
-      "community": 5
+      "community": 4
     },
     {
       "label": "seedDimensionalStandards()",
@@ -209,7 +209,7 @@
       "source_file": "prisma/seed.ts",
       "source_location": "L247",
       "id": "seed_seeddimensionalstandards",
-      "community": 5
+      "community": 4
     },
     {
       "label": "seedLengthMaster()",
@@ -217,7 +217,7 @@
       "source_file": "prisma/seed.ts",
       "source_location": "L259",
       "id": "seed_seedlengthmaster",
-      "community": 5
+      "community": 4
     },
     {
       "label": "seedVendors()",
@@ -225,7 +225,7 @@
       "source_file": "prisma/seed.ts",
       "source_location": "L277",
       "id": "seed_seedvendors",
-      "community": 5
+      "community": 4
     },
     {
       "label": "seedCustomers()",
@@ -233,7 +233,7 @@
       "source_file": "prisma/seed.ts",
       "source_location": "L293",
       "id": "seed_seedcustomers",
-      "community": 5
+      "community": 4
     },
     {
       "label": "seedAdminUser()",
@@ -241,7 +241,7 @@
       "source_file": "prisma/seed.ts",
       "source_location": "L308",
       "id": "seed_seedadminuser",
-      "community": 5
+      "community": 4
     },
     {
       "label": "seedCompanyAdmin()",
@@ -249,7 +249,7 @@
       "source_file": "prisma/seed.ts",
       "source_location": "L323",
       "id": "seed_seedcompanyadmin",
-      "community": 5
+      "community": 4
     },
     {
       "label": "seedDocumentSequences()",
@@ -257,7 +257,7 @@
       "source_file": "prisma/seed.ts",
       "source_location": "L343",
       "id": "seed_seeddocumentsequences",
-      "community": 5
+      "community": 4
     },
     {
       "label": "seedInventory()",
@@ -265,7 +265,7 @@
       "source_file": "prisma/seed.ts",
       "source_location": "L384",
       "id": "seed_seedinventory",
-      "community": 5
+      "community": 4
     },
     {
       "label": "seedCompanyMaster()",
@@ -273,7 +273,7 @@
       "source_file": "prisma/seed.ts",
       "source_location": "L443",
       "id": "seed_seedcompanymaster",
-      "community": 5
+      "community": 4
     },
     {
       "label": "seedFinancialYears()",
@@ -281,7 +281,7 @@
       "source_file": "prisma/seed.ts",
       "source_location": "L467",
       "id": "seed_seedfinancialyears",
-      "community": 5
+      "community": 4
     },
     {
       "label": "seedOfferTermTemplates()",
@@ -289,7 +289,7 @@
       "source_file": "prisma/seed.ts",
       "source_location": "L488",
       "id": "seed_seedoffertermtemplates",
-      "community": 5
+      "community": 4
     },
     {
       "label": "main()",
@@ -297,7 +297,7 @@
       "source_file": "prisma/seed.ts",
       "source_location": "L539",
       "id": "seed_main",
-      "community": 5
+      "community": 4
     },
     {
       "label": "backfill-pipe-sizes.ts",
@@ -305,7 +305,7 @@
       "source_file": "prisma/backfill-pipe-sizes.ts",
       "source_location": "L1",
       "id": "backfill_pipe_sizes",
-      "community": 23
+      "community": 24
     },
     {
       "label": "parseFraction()",
@@ -313,7 +313,7 @@
       "source_file": "prisma/backfill-pipe-sizes.ts",
       "source_location": "L17",
       "id": "backfill_pipe_sizes_parsefraction",
-      "community": 23
+      "community": 24
     },
     {
       "label": "parseSizeLabel()",
@@ -321,7 +321,7 @@
       "source_file": "prisma/backfill-pipe-sizes.ts",
       "source_location": "L44",
       "id": "backfill_pipe_sizes_parsesizelabel",
-      "community": 23
+      "community": 24
     },
     {
       "label": "main()",
@@ -329,7 +329,7 @@
       "source_file": "prisma/backfill-pipe-sizes.ts",
       "source_location": "L67",
       "id": "backfill_pipe_sizes_main",
-      "community": 23
+      "community": 24
     },
     {
       "label": "seed-pipe-spec.ts",
@@ -337,7 +337,7 @@
       "source_file": "prisma/seed-pipe-spec.ts",
       "source_location": "L1",
       "id": "seed_pipe_spec",
-      "community": 27
+      "community": 28
     },
     {
       "label": "getOrCreateDimStd()",
@@ -345,7 +345,7 @@
       "source_file": "prisma/seed-pipe-spec.ts",
       "source_location": "L19",
       "id": "seed_pipe_spec_getorcreatedimstd",
-      "community": 27
+      "community": 28
     },
     {
       "label": "main()",
@@ -353,7 +353,7 @@
       "source_file": "prisma/seed-pipe-spec.ts",
       "source_location": "L32",
       "id": "seed_pipe_spec_main",
-      "community": 27
+      "community": 28
     },
     {
       "label": "seed-offer-terms.ts",
@@ -361,7 +361,7 @@
       "source_file": "prisma/seed-offer-terms.ts",
       "source_location": "L1",
       "id": "seed_offer_terms",
-      "community": 37
+      "community": 38
     },
     {
       "label": "main()",
@@ -369,7 +369,7 @@
       "source_file": "prisma/seed-offer-terms.ts",
       "source_location": "L61",
       "id": "seed_offer_terms_main",
-      "community": 37
+      "community": 38
     },
     {
       "label": "migrate-master-data-to-company.ts",
@@ -377,7 +377,7 @@
       "source_file": "scripts/migrate-master-data-to-company.ts",
       "source_location": "L1",
       "id": "migrate_master_data_to_company",
-      "community": 38
+      "community": 39
     },
     {
       "label": "main()",
@@ -385,7 +385,7 @@
       "source_file": "scripts/migrate-master-data-to-company.ts",
       "source_location": "L19",
       "id": "migrate_master_data_to_company_main",
-      "community": 38
+      "community": 39
     },
     {
       "label": "seed-new-masters.ts",
@@ -393,7 +393,7 @@
       "source_file": "scripts/seed-new-masters.ts",
       "source_location": "L1",
       "id": "seed_new_masters",
-      "community": 8
+      "community": 9
     },
     {
       "label": "f()",
@@ -401,7 +401,7 @@
       "source_file": "scripts/seed-new-masters.ts",
       "source_location": "L36",
       "id": "seed_new_masters_f",
-      "community": 8
+      "community": 9
     },
     {
       "label": "legacyLabel()",
@@ -409,7 +409,7 @@
       "source_file": "scripts/seed-new-masters.ts",
       "source_location": "L39",
       "id": "seed_new_masters_legacylabel",
-      "community": 8
+      "community": 9
     },
     {
       "label": "updatePipeSizes()",
@@ -417,7 +417,7 @@
       "source_file": "scripts/seed-new-masters.ts",
       "source_location": "L42",
       "id": "seed_new_masters_updatepipesizes",
-      "community": 8
+      "community": 9
     },
     {
       "label": "main()",
@@ -425,7 +425,7 @@
       "source_file": "scripts/seed-new-masters.ts",
       "source_location": "L84",
       "id": "seed_new_masters_main",
-      "community": 8
+      "community": 9
     },
     {
       "label": "migrate-warehouse-details-to-heats.ts",
@@ -433,7 +433,7 @@
       "source_file": "scripts/migrate-warehouse-details-to-heats.ts",
       "source_location": "L1",
       "id": "migrate_warehouse_details_to_heats",
-      "community": 39
+      "community": 40
     },
     {
       "label": "main()",
@@ -441,7 +441,7 @@
       "source_file": "scripts/migrate-warehouse-details-to-heats.ts",
       "source_location": "L19",
       "id": "migrate_warehouse_details_to_heats_main",
-      "community": 39
+      "community": 40
     },
     {
       "label": "seed-pipe-sizes.ts",
@@ -449,7 +449,7 @@
       "source_file": "scripts/seed-pipe-sizes.ts",
       "source_location": "L1",
       "id": "seed_pipe_sizes",
-      "community": 17
+      "community": 18
     },
     {
       "label": "parseNps()",
@@ -457,7 +457,7 @@
       "source_file": "scripts/seed-pipe-sizes.ts",
       "source_location": "L30",
       "id": "seed_pipe_sizes_parsenps",
-      "community": 17
+      "community": 18
     },
     {
       "label": "parseSchedule()",
@@ -465,7 +465,7 @@
       "source_file": "scripts/seed-pipe-sizes.ts",
       "source_location": "L42",
       "id": "seed_pipe_sizes_parseschedule",
-      "community": 17
+      "community": 18
     },
     {
       "label": "readExcel()",
@@ -473,7 +473,7 @@
       "source_file": "scripts/seed-pipe-sizes.ts",
       "source_location": "L47",
       "id": "seed_pipe_sizes_readexcel",
-      "community": 17
+      "community": 18
     },
     {
       "label": "main()",
@@ -481,7 +481,7 @@
       "source_file": "scripts/seed-pipe-sizes.ts",
       "source_location": "L78",
       "id": "seed_pipe_sizes_main",
-      "community": 17
+      "community": 18
     },
     {
       "label": "seed-flange-sizes.ts",
@@ -489,7 +489,7 @@
       "source_file": "scripts/seed-flange-sizes.ts",
       "source_location": "L1",
       "id": "seed_flange_sizes",
-      "community": 40
+      "community": 41
     },
     {
       "label": "main()",
@@ -497,7 +497,7 @@
       "source_file": "scripts/seed-flange-sizes.ts",
       "source_location": "L28",
       "id": "seed_flange_sizes_main",
-      "community": 40
+      "community": 41
     },
     {
       "label": "gen-size-constants.ts",
@@ -505,7 +505,7 @@
       "source_file": "scripts/gen-size-constants.ts",
       "source_location": "L1",
       "id": "gen_size_constants",
-      "community": 8
+      "community": 9
     },
     {
       "label": "isSS()",
@@ -513,7 +513,7 @@
       "source_file": "scripts/gen-size-constants.ts",
       "source_location": "L8",
       "id": "gen_size_constants_isss",
-      "community": 8
+      "community": 9
     },
     {
       "label": "pools()",
@@ -521,7 +521,7 @@
       "source_file": "scripts/gen-size-constants.ts",
       "source_location": "L10",
       "id": "gen_size_constants_pools",
-      "community": 8
+      "community": 9
     },
     {
       "label": "j()",
@@ -529,7 +529,7 @@
       "source_file": "scripts/gen-size-constants.ts",
       "source_location": "L26",
       "id": "gen_size_constants_j",
-      "community": 8
+      "community": 9
     },
     {
       "label": "migrate-customers.ts",
@@ -537,7 +537,7 @@
       "source_file": "scripts/migration/migrate-customers.ts",
       "source_location": "L1",
       "id": "migrate_customers",
-      "community": 11
+      "community": 12
     },
     {
       "label": "readExcelFile()",
@@ -545,7 +545,7 @@
       "source_file": "scripts/migration/migrate-customers.ts",
       "source_location": "L33",
       "id": "migrate_customers_readexcelfile",
-      "community": 11
+      "community": 12
     },
     {
       "label": "cleanData()",
@@ -553,7 +553,7 @@
       "source_file": "scripts/migration/migrate-customers.ts",
       "source_location": "L52",
       "id": "migrate_customers_cleandata",
-      "community": 11
+      "community": 12
     },
     {
       "label": "generateCustomerCode()",
@@ -561,7 +561,7 @@
       "source_file": "scripts/migration/migrate-customers.ts",
       "source_location": "L84",
       "id": "migrate_customers_generatecustomercode",
-      "community": 11
+      "community": 12
     },
     {
       "label": "validateCustomer()",
@@ -569,7 +569,7 @@
       "source_file": "scripts/migration/migrate-customers.ts",
       "source_location": "L99",
       "id": "migrate_customers_validatecustomer",
-      "community": 11
+      "community": 12
     },
     {
       "label": "migrateCustomers()",
@@ -577,7 +577,7 @@
       "source_file": "scripts/migration/migrate-customers.ts",
       "source_location": "L131",
       "id": "migrate_customers_migratecustomers",
-      "community": 11
+      "community": 12
     },
     {
       "label": "generateValidationReport()",
@@ -585,7 +585,7 @@
       "source_file": "scripts/migration/migrate-customers.ts",
       "source_location": "L231",
       "id": "migrate_customers_generatevalidationreport",
-      "community": 11
+      "community": 12
     },
     {
       "label": "middleware.ts",
@@ -593,7 +593,7 @@
       "source_file": "src/middleware.ts",
       "source_location": "L1",
       "id": "middleware",
-      "community": 54
+      "community": 55
     },
     {
       "label": "audit-middleware.ts",
@@ -625,7 +625,7 @@
       "source_file": "src/types/index.ts",
       "source_location": "L1",
       "id": "index",
-      "community": 59
+      "community": 60
     },
     {
       "label": "layout.tsx",
@@ -1057,7 +1057,7 @@
       "source_file": "src/app/(dashboard)/reports/management-review/page.tsx",
       "source_location": "L86",
       "id": "page_formatcurrency",
-      "community": 43
+      "community": 44
     },
     {
       "label": "greeting()",
@@ -1105,7 +1105,7 @@
       "source_file": "src/app/(dashboard)/tenders/[id]/page.tsx",
       "source_location": "L217",
       "id": "page_fetchtender",
-      "community": 7
+      "community": 8
     },
     {
       "label": "handleStatusChange()",
@@ -1113,7 +1113,7 @@
       "source_file": "src/app/(dashboard)/warehouse/intimation/[id]/page.tsx",
       "source_location": "L161",
       "id": "page_handlestatuschange",
-      "community": 7
+      "community": 8
     },
     {
       "label": "handleUpload()",
@@ -1121,7 +1121,7 @@
       "source_file": "src/app/(dashboard)/purchase/supplier-quotations/[id]/page.tsx",
       "source_location": "L200",
       "id": "page_handleupload",
-      "community": 7
+      "community": 8
     },
     {
       "label": "handleDeleteDocument()",
@@ -1129,7 +1129,7 @@
       "source_file": "src/app/(dashboard)/tenders/[id]/page.tsx",
       "source_location": "L281",
       "id": "page_handledeletedocument",
-      "community": 7
+      "community": 8
     },
     {
       "label": "emptyItem()",
@@ -1145,7 +1145,7 @@
       "source_file": "src/app/(dashboard)/warehouse/intimation/[id]/page.tsx",
       "source_location": "L126",
       "id": "page_updateitem",
-      "community": 15
+      "community": 16
     },
     {
       "label": "addItem()",
@@ -1169,7 +1169,7 @@
       "source_file": "src/app/(dashboard)/warehouse/intimation/create/page.tsx",
       "source_location": "L177",
       "id": "page_handlesubmit",
-      "community": 18
+      "community": 19
     },
     {
       "label": "fetchSalesOrders()",
@@ -1201,7 +1201,7 @@
       "source_file": "src/app/(dashboard)/sales/[id]/page.tsx",
       "source_location": "L103",
       "id": "page_fetchsalesorder",
-      "community": 44
+      "community": 46
     },
     {
       "label": "handleCancelSO()",
@@ -1209,7 +1209,7 @@
       "source_file": "src/app/(dashboard)/sales/[id]/page.tsx",
       "source_location": "L117",
       "id": "page_handlecancelso",
-      "community": 44
+      "community": 46
     },
     {
       "label": "ReserveStockPage()",
@@ -1273,7 +1273,7 @@
       "source_file": "src/app/(dashboard)/sales/create/page.tsx",
       "source_location": "L241",
       "id": "page_submitorder",
-      "community": 18
+      "community": 19
     },
     {
       "label": "fetchInspections()",
@@ -1297,7 +1297,7 @@
       "source_file": "src/app/(dashboard)/quality/mtc/page.tsx",
       "source_location": "L36",
       "id": "page_fetchmtcs",
-      "community": 28
+      "community": 32
     },
     {
       "label": "handleMtcSearch()",
@@ -1305,7 +1305,7 @@
       "source_file": "src/app/(dashboard)/quality/mtc/page.tsx",
       "source_location": "L53",
       "id": "page_handlemtcsearch",
-      "community": 28
+      "community": 32
     },
     {
       "label": "handleMtcVerificationUpdate()",
@@ -1313,7 +1313,7 @@
       "source_file": "src/app/(dashboard)/quality/mtc/page.tsx",
       "source_location": "L57",
       "id": "page_handlemtcverificationupdate",
-      "community": 28
+      "community": 32
     },
     {
       "label": "fetchLabLetters()",
@@ -1353,7 +1353,7 @@
       "source_file": "src/app/(dashboard)/quality/inspection-offers/[id]/page.tsx",
       "source_location": "L99",
       "id": "page_fetchoffer",
-      "community": 45
+      "community": 42
     },
     {
       "label": "downloadPdf()",
@@ -1369,7 +1369,7 @@
       "source_file": "src/app/(dashboard)/quality/inspection-offers/[id]/page.tsx",
       "source_location": "L130",
       "id": "page_handleofferaction",
-      "community": 45
+      "community": 42
     },
     {
       "label": "fetchTpiAgencies()",
@@ -1449,7 +1449,7 @@
       "source_file": "src/app/(dashboard)/client-purchase-orders/create/page.tsx",
       "source_location": "L344",
       "id": "page_toggleitemselection",
-      "community": 41
+      "community": 43
     },
     {
       "label": "toggleHeatSelection()",
@@ -1521,7 +1521,7 @@
       "source_file": "src/app/(dashboard)/purchase/orders/[id]/edit/page.tsx",
       "source_location": "L99",
       "id": "page_fetchpo",
-      "community": 24
+      "community": 26
     },
     {
       "label": "fetchIntimation()",
@@ -1577,7 +1577,7 @@
       "source_file": "src/app/(dashboard)/masters/company/page.tsx",
       "source_location": "L68",
       "id": "page_handledelete",
-      "community": 7
+      "community": 8
     },
     {
       "label": "fetchRequirement()",
@@ -1705,7 +1705,7 @@
       "source_file": "src/app/(dashboard)/quality/ncr/[id]/page.tsx",
       "source_location": "L85",
       "id": "page_fetchncr",
-      "community": 19
+      "community": 21
     },
     {
       "label": "handleMoveToInvestigation()",
@@ -1713,7 +1713,7 @@
       "source_file": "src/app/(dashboard)/quality/ncr/[id]/page.tsx",
       "source_location": "L105",
       "id": "page_handlemovetoinvestigation",
-      "community": 19
+      "community": 21
     },
     {
       "label": "handleMoveToCorrective()",
@@ -1721,7 +1721,7 @@
       "source_file": "src/app/(dashboard)/quality/ncr/[id]/page.tsx",
       "source_location": "L129",
       "id": "page_handlemovetocorrective",
-      "community": 19
+      "community": 21
     },
     {
       "label": "handleVerifyNCR()",
@@ -1729,7 +1729,7 @@
       "source_file": "src/app/(dashboard)/quality/ncr/[id]/page.tsx",
       "source_location": "L155",
       "id": "page_handleverifyncr",
-      "community": 19
+      "community": 21
     },
     {
       "label": "handleCloseNCR()",
@@ -1737,7 +1737,7 @@
       "source_file": "src/app/(dashboard)/quality/ncr/[id]/page.tsx",
       "source_location": "L178",
       "id": "page_handleclosencr",
-      "community": 19
+      "community": 21
     },
     {
       "label": "CreateNCRPage()",
@@ -1753,7 +1753,7 @@
       "source_file": "src/app/(dashboard)/inventory/heat-lifecycle/page.tsx",
       "source_location": "L79",
       "id": "page_handlesearch",
-      "community": 46
+      "community": 51
     },
     {
       "label": "handleClear()",
@@ -1857,7 +1857,7 @@
       "source_file": "src/app/(dashboard)/warehouse/intimation/[id]/page.tsx",
       "source_location": "L133",
       "id": "page_handlesave",
-      "community": 7
+      "community": 8
     },
     {
       "label": "handleFinalize()",
@@ -1905,7 +1905,7 @@
       "source_file": "src/app/(dashboard)/quality/mtc/certificates/create/page.tsx",
       "source_location": "L63",
       "id": "page_generateheatno",
-      "community": 15
+      "community": 16
     },
     {
       "label": "fetchMaterialSpecs()",
@@ -1945,7 +1945,7 @@
       "source_file": "src/app/(dashboard)/quality/mtc/certificates/create/page.tsx",
       "source_location": "L325",
       "id": "page_rebuilditems",
-      "community": 41
+      "community": 43
     },
     {
       "label": "autoGenerateHeatNoForItem()",
@@ -1953,7 +1953,7 @@
       "source_file": "src/app/(dashboard)/quality/mtc/certificates/create/page.tsx",
       "source_location": "L369",
       "id": "page_autogenerateheatnoforitem",
-      "community": 15
+      "community": 16
     },
     {
       "label": "fetchSpecs()",
@@ -2065,7 +2065,7 @@
       "source_file": "src/app/(dashboard)/reports/quotation-analysis/page.tsx",
       "source_location": "L63",
       "id": "page_fetchdata",
-      "community": 10
+      "community": 11
     },
     {
       "label": "fetchPackingList()",
@@ -2081,7 +2081,7 @@
       "source_file": "src/app/(dashboard)/warehouse/intimation/create/page.tsx",
       "source_location": "L95",
       "id": "page_fetchwarehouses",
-      "community": 7
+      "community": 8
     },
     {
       "label": "fetchSODetails()",
@@ -2489,7 +2489,7 @@
       "source_file": "src/app/(dashboard)/admin/traceability/page.tsx",
       "source_location": "L236",
       "id": "page_handlekeydown",
-      "community": 46
+      "community": 51
     },
     {
       "label": "fetchClientPOs()",
@@ -2577,7 +2577,7 @@
       "source_file": "src/app/(dashboard)/client-purchase-orders/create/page.tsx",
       "source_location": "L395",
       "id": "page_getselecteditems",
-      "community": 18
+      "community": 19
     },
     {
       "label": "applyBulkDiscount()",
@@ -2801,7 +2801,7 @@
       "source_file": "src/app/(dashboard)/po-acceptance/[id]/page.tsx",
       "source_location": "L153",
       "id": "page_updatestatus",
-      "community": 42
+      "community": 45
     },
     {
       "label": "formatMonth()",
@@ -2849,7 +2849,7 @@
       "source_file": "src/app/(dashboard)/purchase/rfq/[id]/page.tsx",
       "source_location": "L109",
       "id": "page_fetchrfq",
-      "community": 31
+      "community": 30
     },
     {
       "label": "handleSendToVendors()",
@@ -2857,7 +2857,7 @@
       "source_file": "src/app/(dashboard)/purchase/rfq/[id]/page.tsx",
       "source_location": "L125",
       "id": "page_handlesendtovendors",
-      "community": 31
+      "community": 30
     },
     {
       "label": "handleGenerateCS()",
@@ -2889,7 +2889,7 @@
       "source_file": "src/app/(dashboard)/purchase/rfq/[id]/page.tsx",
       "source_location": "L217",
       "id": "page_handlesavequotation",
-      "community": 31
+      "community": 30
     },
     {
       "label": "CreateRFQContent()",
@@ -2905,7 +2905,7 @@
       "source_file": "src/app/(dashboard)/purchase/orders/[id]/page.tsx",
       "source_location": "L174",
       "id": "page_fetchvariance",
-      "community": 24
+      "community": 26
     },
     {
       "label": "handleAmendPO()",
@@ -2921,7 +2921,7 @@
       "source_file": "src/app/(dashboard)/purchase/orders/[id]/page.tsx",
       "source_location": "L242",
       "id": "page_handleapprovalaction",
-      "community": 24
+      "community": 26
     },
     {
       "label": "handleReject()",
@@ -2929,7 +2929,7 @@
       "source_file": "src/app/(dashboard)/purchase/orders/[id]/page.tsx",
       "source_location": "L281",
       "id": "page_handlereject",
-      "community": 24
+      "community": 26
     },
     {
       "label": "fetchPRs()",
@@ -2945,7 +2945,7 @@
       "source_file": "src/app/(dashboard)/purchase/orders/create/page.tsx",
       "source_location": "L166",
       "id": "page_maptopoitems",
-      "community": 30
+      "community": 31
     },
     {
       "label": "loadPRItems()",
@@ -2953,7 +2953,7 @@
       "source_file": "src/app/(dashboard)/purchase/orders/create/page.tsx",
       "source_location": "L186",
       "id": "page_loadpritems",
-      "community": 30
+      "community": 31
     },
     {
       "label": "loadSOItems()",
@@ -2961,7 +2961,7 @@
       "source_file": "src/app/(dashboard)/purchase/orders/create/page.tsx",
       "source_location": "L194",
       "id": "page_loadsoitems",
-      "community": 30
+      "community": 31
     },
     {
       "label": "getStatusColor()",
@@ -3009,7 +3009,7 @@
       "source_file": "src/app/(dashboard)/purchase/supplier-quotations/[id]/page.tsx",
       "source_location": "L181",
       "id": "page_fetchsq",
-      "community": 7
+      "community": 8
     },
     {
       "label": "handleDeleteDoc()",
@@ -3017,7 +3017,7 @@
       "source_file": "src/app/(dashboard)/purchase/supplier-quotations/[id]/page.tsx",
       "source_location": "L227",
       "id": "page_handledeletedoc",
-      "community": 7
+      "community": 8
     },
     {
       "label": "handleStatusUpdate()",
@@ -3025,7 +3025,7 @@
       "source_file": "src/app/(dashboard)/purchase/comparative-statement/[id]/page.tsx",
       "source_location": "L161",
       "id": "page_handlestatusupdate",
-      "community": 7
+      "community": 8
     },
     {
       "label": "createEmptyItem()",
@@ -3081,7 +3081,7 @@
       "source_file": "src/app/(dashboard)/purchase/comparative-statement/[id]/page.tsx",
       "source_location": "L87",
       "id": "page_fetchcs",
-      "community": 7
+      "community": 8
     },
     {
       "label": "handleSelectVendor()",
@@ -3089,7 +3089,7 @@
       "source_file": "src/app/(dashboard)/purchase/comparative-statement/[id]/page.tsx",
       "source_location": "L113",
       "id": "page_handleselectvendor",
-      "community": 7
+      "community": 8
     },
     {
       "label": "getRankLabel()",
@@ -3113,7 +3113,7 @@
       "source_file": "src/app/(dashboard)/purchase/follow-up/page.tsx",
       "source_location": "L84",
       "id": "page_fetchpotracking",
-      "community": 48
+      "community": 50
     },
     {
       "label": "calculateVendorPerformance()",
@@ -3121,7 +3121,7 @@
       "source_file": "src/app/(dashboard)/purchase/follow-up/page.tsx",
       "source_location": "L121",
       "id": "page_calculatevendorperformance",
-      "community": 48
+      "community": 50
     },
     {
       "label": "getPerformanceBadge()",
@@ -3161,7 +3161,7 @@
       "source_file": "src/app/(dashboard)/po-acceptance/[id]/page.tsx",
       "source_location": "L129",
       "id": "page_fetchacceptance",
-      "community": 42
+      "community": 45
     },
     {
       "label": "fetchContacts()",
@@ -3169,7 +3169,7 @@
       "source_file": "src/app/(dashboard)/masters/customer-contacts/page.tsx",
       "source_location": "L93",
       "id": "page_fetchcontacts",
-      "community": 7
+      "community": 8
     },
     {
       "label": "fetchCpoDetail()",
@@ -3177,7 +3177,7 @@
       "source_file": "src/app/(dashboard)/po-acceptance/create/page.tsx",
       "source_location": "L193",
       "id": "page_fetchcpodetail",
-      "community": 7
+      "community": 8
     },
     {
       "label": "handleCPOSelect()",
@@ -3185,7 +3185,7 @@
       "source_file": "src/app/(dashboard)/po-acceptance/create/page.tsx",
       "source_location": "L236",
       "id": "page_handlecposelect",
-      "community": 7
+      "community": 8
     },
     {
       "label": "fillContactFromDirectory()",
@@ -3289,7 +3289,7 @@
       "source_file": "src/app/(dashboard)/masters/payment-terms/page.tsx",
       "source_location": "L92",
       "id": "page_handleclosedialog",
-      "community": 18
+      "community": 19
     },
     {
       "label": "EditLengthPage()",
@@ -3361,7 +3361,7 @@
       "source_file": "src/app/(dashboard)/masters/warehouses/page.tsx",
       "source_location": "L94",
       "id": "page_handleaddlocation",
-      "community": 7
+      "community": 8
     },
     {
       "label": "emptyAddress()",
@@ -3433,7 +3433,7 @@
       "source_file": "src/app/(dashboard)/masters/testing/page.tsx",
       "source_location": "L118",
       "id": "page_closedialog",
-      "community": 18
+      "community": 19
     },
     {
       "label": "getCategoryLabel()",
@@ -3617,7 +3617,7 @@
       "source_file": "src/app/(dashboard)/masters/buyers/page.tsx",
       "source_location": "L32",
       "id": "page_fetchbuyers",
-      "community": 7
+      "community": 8
     },
     {
       "label": "EditBuyerPage()",
@@ -3641,7 +3641,7 @@
       "source_file": "src/app/(dashboard)/masters/company/page.tsx",
       "source_location": "L53",
       "id": "page_fetchcompanies",
-      "community": 7
+      "community": 8
     },
     {
       "label": "toDateInput()",
@@ -3881,7 +3881,7 @@
       "source_file": "src/app/(dashboard)/quotations/create/nonstandard/page.tsx",
       "source_location": "L712",
       "id": "page_onpastquoteselect",
-      "community": 15
+      "community": 16
     },
     {
       "label": "applyPastQuoteItemFields()",
@@ -3889,7 +3889,7 @@
       "source_file": "src/app/(dashboard)/quotations/create/nonstandard/page.tsx",
       "source_location": "L729",
       "id": "page_applypastquoteitemfields",
-      "community": 15
+      "community": 16
     },
     {
       "label": "selectPastQuoteItem()",
@@ -3897,7 +3897,7 @@
       "source_file": "src/app/(dashboard)/quotations/create/nonstandard/page.tsx",
       "source_location": "L733",
       "id": "page_selectpastquoteitem",
-      "community": 15
+      "community": 16
     },
     {
       "label": "fmt()",
@@ -3969,7 +3969,7 @@
       "source_file": "src/app/(dashboard)/warehouse/intimation/[id]/page.tsx",
       "source_location": "L96",
       "id": "page_fetchdetail",
-      "community": 7
+      "community": 8
     },
     {
       "label": "loadEditRows()",
@@ -3977,7 +3977,7 @@
       "source_file": "src/app/(dashboard)/warehouse/intimation/[id]/prepare/page.tsx",
       "source_location": "L104",
       "id": "page_loadeditrows",
-      "community": 10
+      "community": 11
     },
     {
       "label": "createEmptyRow()",
@@ -3985,7 +3985,7 @@
       "source_file": "src/app/(dashboard)/warehouse/intimation/[id]/prepare/page.tsx",
       "source_location": "L124",
       "id": "page_createemptyrow",
-      "community": 10
+      "community": 11
     },
     {
       "label": "addRow()",
@@ -3993,7 +3993,7 @@
       "source_file": "src/app/(dashboard)/warehouse/intimation/[id]/prepare/page.tsx",
       "source_location": "L138",
       "id": "page_addrow",
-      "community": 10
+      "community": 11
     },
     {
       "label": "deleteRow()",
@@ -4025,7 +4025,7 @@
       "source_file": "src/app/(dashboard)/warehouse/intimation/[id]/prepare/page.tsx",
       "source_location": "L172",
       "id": "page_validaterows",
-      "community": 10
+      "community": 11
     },
     {
       "label": "saveDetails()",
@@ -4033,7 +4033,7 @@
       "source_file": "src/app/(dashboard)/warehouse/intimation/[id]/prepare/page.tsx",
       "source_location": "L186",
       "id": "page_savedetails",
-      "community": 10
+      "community": 11
     },
     {
       "label": "navigateTo()",
@@ -4041,7 +4041,7 @@
       "source_file": "src/app/(dashboard)/warehouse/intimation/[id]/prepare/page.tsx",
       "source_location": "L235",
       "id": "page_navigateto",
-      "community": 10
+      "community": 11
     },
     {
       "label": "toggleSOItem()",
@@ -4073,7 +4073,7 @@
       "source_file": "src/app/(dashboard)/reports/management-review/page.tsx",
       "source_location": "L142",
       "id": "page_handleexportcsv",
-      "community": 43
+      "community": 44
     },
     {
       "label": "handlePrint()",
@@ -4113,7 +4113,7 @@
       "source_file": "src/app/(dashboard)/reports/sales/page.tsx",
       "source_location": "L105",
       "id": "page_handlefilter",
-      "community": 10
+      "community": 11
     },
     {
       "label": "getScoreColor()",
@@ -5001,7 +5001,7 @@
       "source_file": "src/components/layout/breadcrumbs.tsx",
       "source_location": "L1",
       "id": "breadcrumbs",
-      "community": 51
+      "community": 52
     },
     {
       "label": "isDynamicId()",
@@ -5009,7 +5009,7 @@
       "source_file": "src/components/layout/breadcrumbs.tsx",
       "source_location": "L95",
       "id": "breadcrumbs_isdynamicid",
-      "community": 51
+      "community": 52
     },
     {
       "label": "sidebar.tsx",
@@ -5281,7 +5281,7 @@
       "source_file": "src/lib/fitting-flange-sizes.ts",
       "source_location": "L1",
       "id": "fitting_flange_sizes",
-      "community": 26
+      "community": 27
     },
     {
       "label": "getFittingEnds()",
@@ -5289,7 +5289,7 @@
       "source_file": "src/lib/fitting-flange-sizes.ts",
       "source_location": "L1622",
       "id": "fitting_flange_sizes_getfittingends",
-      "community": 26
+      "community": 27
     },
     {
       "label": "getFittingSizeOptions()",
@@ -5297,7 +5297,7 @@
       "source_file": "src/lib/fitting-flange-sizes.ts",
       "source_location": "L1628",
       "id": "fitting_flange_sizes_getfittingsizeoptions",
-      "community": 26
+      "community": 27
     },
     {
       "label": "getFittingDimStandard()",
@@ -5305,7 +5305,7 @@
       "source_file": "src/lib/fitting-flange-sizes.ts",
       "source_location": "L1637",
       "id": "fitting_flange_sizes_getfittingdimstandard",
-      "community": 26
+      "community": 27
     },
     {
       "label": "flange-constants.ts",
@@ -5313,7 +5313,7 @@
       "source_file": "src/lib/flange-constants.ts",
       "source_location": "L1",
       "id": "flange_constants",
-      "community": 12
+      "community": 13
     },
     {
       "label": "getAllowedFacings()",
@@ -5321,7 +5321,7 @@
       "source_file": "src/lib/flange-constants.ts",
       "source_location": "L79",
       "id": "flange_constants_getallowedfacings",
-      "community": 12
+      "community": 13
     },
     {
       "label": "isScheduleApplicable()",
@@ -5329,7 +5329,7 @@
       "source_file": "src/lib/flange-constants.ts",
       "source_location": "L90",
       "id": "flange_constants_isscheduleapplicable",
-      "community": 12
+      "community": 13
     },
     {
       "label": "getStandardForSize()",
@@ -5337,7 +5337,7 @@
       "source_file": "src/lib/flange-constants.ts",
       "source_location": "L95",
       "id": "flange_constants_getstandardforsize",
-      "community": 12
+      "community": 13
     },
     {
       "label": "getRatingsForStandard()",
@@ -5345,7 +5345,7 @@
       "source_file": "src/lib/flange-constants.ts",
       "source_location": "L101",
       "id": "flange_constants_getratingsforstandard",
-      "community": 12
+      "community": 13
     },
     {
       "label": "getScheduleOptions()",
@@ -5353,7 +5353,7 @@
       "source_file": "src/lib/flange-constants.ts",
       "source_location": "L109",
       "id": "flange_constants_getscheduleoptions",
-      "community": 12
+      "community": 13
     },
     {
       "label": "isSeriesBSizeValid()",
@@ -5361,7 +5361,7 @@
       "source_file": "src/lib/flange-constants.ts",
       "source_location": "L117",
       "id": "flange_constants_isseriesbsizevalid",
-      "community": 12
+      "community": 13
     },
     {
       "label": "utils.ts",
@@ -5385,7 +5385,7 @@
       "source_file": "src/lib/export-utils.ts",
       "source_location": "L1",
       "id": "export_utils",
-      "community": 32
+      "community": 33
     },
     {
       "label": "generateCSV()",
@@ -5393,7 +5393,7 @@
       "source_file": "src/lib/export-utils.ts",
       "source_location": "L7",
       "id": "export_utils_generatecsv",
-      "community": 32
+      "community": 33
     },
     {
       "label": "downloadCSV()",
@@ -5401,7 +5401,7 @@
       "source_file": "src/lib/export-utils.ts",
       "source_location": "L21",
       "id": "export_utils_downloadcsv",
-      "community": 32
+      "community": 33
     },
     {
       "label": "download-file.ts",
@@ -5409,7 +5409,7 @@
       "source_file": "src/lib/download-file.ts",
       "source_location": "L1",
       "id": "download_file",
-      "community": 47
+      "community": 48
     },
     {
       "label": "downloadFile()",
@@ -5417,7 +5417,7 @@
       "source_file": "src/lib/download-file.ts",
       "source_location": "L6",
       "id": "download_file_downloadfile",
-      "community": 47
+      "community": 48
     },
     {
       "label": "alerts.test.ts",
@@ -5505,7 +5505,7 @@
       "source_file": "src/lib/amount-in-words.ts",
       "source_location": "L1",
       "id": "amount_in_words",
-      "community": 4
+      "community": 7
     },
     {
       "label": "convertBelowThousand()",
@@ -5513,7 +5513,7 @@
       "source_file": "src/lib/amount-in-words.ts",
       "source_location": "L11",
       "id": "amount_in_words_convertbelowthousand",
-      "community": 4
+      "community": 7
     },
     {
       "label": "convertToIndianWords()",
@@ -5521,7 +5521,7 @@
       "source_file": "src/lib/amount-in-words.ts",
       "source_location": "L33",
       "id": "amount_in_words_converttoindianwords",
-      "community": 4
+      "community": 7
     },
     {
       "label": "convertToWesternWords()",
@@ -5529,7 +5529,7 @@
       "source_file": "src/lib/amount-in-words.ts",
       "source_location": "L63",
       "id": "amount_in_words_converttowesternwords",
-      "community": 4
+      "community": 7
     },
     {
       "label": "numberToWords()",
@@ -5537,7 +5537,7 @@
       "source_file": "src/lib/amount-in-words.ts",
       "source_location": "L93",
       "id": "amount_in_words_numbertowords",
-      "community": 4
+      "community": 7
     },
     {
       "label": "download.ts",
@@ -5545,7 +5545,7 @@
       "source_file": "src/lib/download.ts",
       "source_location": "L1",
       "id": "download",
-      "community": 50
+      "community": 47
     },
     {
       "label": "downloadFile()",
@@ -5553,7 +5553,7 @@
       "source_file": "src/lib/download.ts",
       "source_location": "L6",
       "id": "download_downloadfile",
-      "community": 50
+      "community": 47
     },
     {
       "label": "weight-calculation.ts",
@@ -5561,7 +5561,7 @@
       "source_file": "src/lib/weight-calculation.ts",
       "source_location": "L1",
       "id": "weight_calculation",
-      "community": 52
+      "community": 53
     },
     {
       "label": "calculateWeightPerMeter()",
@@ -5569,7 +5569,7 @@
       "source_file": "src/lib/weight-calculation.ts",
       "source_location": "L15",
       "id": "weight_calculation_calculateweightpermeter",
-      "community": 52
+      "community": 53
     },
     {
       "label": "audit.ts",
@@ -5601,7 +5601,7 @@
       "source_file": "src/lib/soft-delete.ts",
       "source_location": "L1",
       "id": "soft_delete",
-      "community": 53
+      "community": 54
     },
     {
       "label": "softDeleteData()",
@@ -5609,7 +5609,7 @@
       "source_file": "src/lib/soft-delete.ts",
       "source_location": "L8",
       "id": "soft_delete_softdeletedata",
-      "community": 53
+      "community": 54
     },
     {
       "label": "alerts.ts",
@@ -5673,7 +5673,7 @@
       "source_file": "src/lib/quality/qap.test.ts",
       "source_location": "L1",
       "id": "qap_test",
-      "community": 16
+      "community": 17
     },
     {
       "label": "qap.ts",
@@ -5681,7 +5681,7 @@
       "source_file": "src/lib/quality/qap.ts",
       "source_location": "L1",
       "id": "qap",
-      "community": 16
+      "community": 17
     },
     {
       "label": "deriveWarehouseStatuses()",
@@ -5689,7 +5689,7 @@
       "source_file": "src/lib/quality/qap.ts",
       "source_location": "L23",
       "id": "qap_derivewarehousestatuses",
-      "community": 16
+      "community": 17
     },
     {
       "label": "qapToOfferPrefill()",
@@ -5697,7 +5697,7 @@
       "source_file": "src/lib/quality/qap.ts",
       "source_location": "L41",
       "id": "qap_qaptoofferprefill",
-      "community": 16
+      "community": 17
     },
     {
       "label": "blankToNull()",
@@ -5705,7 +5705,7 @@
       "source_file": "src/lib/quality/qap.ts",
       "source_location": "L56",
       "id": "qap_blanktonull",
-      "community": 16
+      "community": 17
     },
     {
       "label": "normalizeQapInput()",
@@ -5713,7 +5713,7 @@
       "source_file": "src/lib/quality/qap.ts",
       "source_location": "L63",
       "id": "qap_normalizeqapinput",
-      "community": 16
+      "community": 17
     },
     {
       "label": "get-rate.ts",
@@ -5721,7 +5721,7 @@
       "source_file": "src/lib/fx/get-rate.ts",
       "source_location": "L1",
       "id": "get_rate",
-      "community": 9
+      "community": 10
     },
     {
       "label": "todayKey()",
@@ -5729,7 +5729,7 @@
       "source_file": "src/lib/fx/get-rate.ts",
       "source_location": "L10",
       "id": "get_rate_todaykey",
-      "community": 9
+      "community": 10
     },
     {
       "label": "findLatestCacheForPair()",
@@ -5737,7 +5737,7 @@
       "source_file": "src/lib/fx/get-rate.ts",
       "source_location": "L15",
       "id": "get_rate_findlatestcacheforpair",
-      "community": 9
+      "community": 10
     },
     {
       "label": "getRate()",
@@ -5745,7 +5745,7 @@
       "source_file": "src/lib/fx/get-rate.ts",
       "source_location": "L27",
       "id": "get_rate_getrate",
-      "community": 9
+      "community": 10
     },
     {
       "label": "_clearCacheForTests()",
@@ -5753,7 +5753,7 @@
       "source_file": "src/lib/fx/get-rate.ts",
       "source_location": "L50",
       "id": "get_rate_clearcachefortests",
-      "community": 9
+      "community": 10
     },
     {
       "label": "_setTodayForTests()",
@@ -5761,7 +5761,7 @@
       "source_file": "src/lib/fx/get-rate.ts",
       "source_location": "L55",
       "id": "get_rate_settodayfortests",
-      "community": 9
+      "community": 10
     },
     {
       "label": "get-rate.test.ts",
@@ -5769,7 +5769,7 @@
       "source_file": "src/lib/fx/get-rate.test.ts",
       "source_location": "L1",
       "id": "get_rate_test",
-      "community": 9
+      "community": 10
     },
     {
       "label": "mockFetchOk()",
@@ -5777,7 +5777,7 @@
       "source_file": "src/lib/fx/get-rate.test.ts",
       "source_location": "L6",
       "id": "get_rate_test_mockfetchok",
-      "community": 9
+      "community": 10
     },
     {
       "label": "mockFetchFail()",
@@ -5785,7 +5785,7 @@
       "source_file": "src/lib/fx/get-rate.test.ts",
       "source_location": "L15",
       "id": "get_rate_test_mockfetchfail",
-      "community": 9
+      "community": 10
     },
     {
       "label": "order-processing.ts",
@@ -5809,47 +5809,47 @@
       "source_file": "src/lib/pdf/quotation-standard-template.ts",
       "source_location": "L1",
       "id": "quotation_standard_template",
-      "community": 4
+      "community": 5
     },
     {
       "label": "formatDate()",
       "file_type": "code",
       "source_file": "src/lib/pdf/quotation-standard-template.ts",
-      "source_location": "L79",
+      "source_location": "L78",
       "id": "quotation_standard_template_formatdate",
-      "community": 4
+      "community": 5
     },
     {
       "label": "esc()",
       "file_type": "code",
       "source_file": "src/lib/pdf/quotation-standard-template.ts",
-      "source_location": "L88",
+      "source_location": "L87",
       "id": "quotation_standard_template_esc",
-      "community": 4
+      "community": 5
     },
     {
       "label": "fmt()",
       "file_type": "code",
       "source_file": "src/lib/pdf/quotation-standard-template.ts",
-      "source_location": "L97",
+      "source_location": "L96",
       "id": "quotation_standard_template_fmt",
-      "community": 4
+      "community": 5
     },
     {
       "label": "fmtPlain()",
       "file_type": "code",
       "source_file": "src/lib/pdf/quotation-standard-template.ts",
-      "source_location": "L106",
+      "source_location": "L105",
       "id": "quotation_standard_template_fmtplain",
-      "community": 4
+      "community": 5
     },
     {
       "label": "generateStandardQuotationHtml()",
       "file_type": "code",
       "source_file": "src/lib/pdf/quotation-standard-template.ts",
-      "source_location": "L112",
+      "source_location": "L111",
       "id": "quotation_standard_template_generatestandardquotationhtml",
-      "community": 4
+      "community": 5
     },
     {
       "label": "purchase-order-template.ts",
@@ -5857,7 +5857,7 @@
       "source_file": "src/lib/pdf/purchase-order-template.ts",
       "source_location": "L1",
       "id": "purchase_order_template",
-      "community": 4
+      "community": 7
     },
     {
       "label": "formatDate()",
@@ -5865,7 +5865,7 @@
       "source_file": "src/lib/pdf/purchase-order-template.ts",
       "source_location": "L50",
       "id": "purchase_order_template_formatdate",
-      "community": 4
+      "community": 7
     },
     {
       "label": "escapeHtml()",
@@ -5873,7 +5873,7 @@
       "source_file": "src/lib/pdf/purchase-order-template.ts",
       "source_location": "L59",
       "id": "purchase_order_template_escapehtml",
-      "community": 4
+      "community": 7
     },
     {
       "label": "formatNumber()",
@@ -5881,7 +5881,7 @@
       "source_file": "src/lib/pdf/purchase-order-template.ts",
       "source_location": "L68",
       "id": "purchase_order_template_formatnumber",
-      "community": 4
+      "community": 7
     },
     {
       "label": "generatePurchaseOrderHtml()",
@@ -5889,7 +5889,7 @@
       "source_file": "src/lib/pdf/purchase-order-template.ts",
       "source_location": "L74",
       "id": "purchase_order_template_generatepurchaseorderhtml",
-      "community": 4
+      "community": 7
     },
     {
       "label": "quotation-nonstandard-template.ts",
@@ -5897,7 +5897,7 @@
       "source_file": "src/lib/pdf/quotation-nonstandard-template.ts",
       "source_location": "L1",
       "id": "quotation_nonstandard_template",
-      "community": 4
+      "community": 5
     },
     {
       "label": "formatDate()",
@@ -5905,7 +5905,7 @@
       "source_file": "src/lib/pdf/quotation-nonstandard-template.ts",
       "source_location": "L68",
       "id": "quotation_nonstandard_template_formatdate",
-      "community": 4
+      "community": 5
     },
     {
       "label": "escapeHtml()",
@@ -5913,7 +5913,7 @@
       "source_file": "src/lib/pdf/quotation-nonstandard-template.ts",
       "source_location": "L77",
       "id": "quotation_nonstandard_template_escapehtml",
-      "community": 4
+      "community": 5
     },
     {
       "label": "formatNumber()",
@@ -5921,7 +5921,7 @@
       "source_file": "src/lib/pdf/quotation-nonstandard-template.ts",
       "source_location": "L86",
       "id": "quotation_nonstandard_template_formatnumber",
-      "community": 4
+      "community": 5
     },
     {
       "label": "nl2br()",
@@ -5929,7 +5929,7 @@
       "source_file": "src/lib/pdf/quotation-nonstandard-template.ts",
       "source_location": "L92",
       "id": "quotation_nonstandard_template_nl2br",
-      "community": 4
+      "community": 5
     },
     {
       "label": "buildItemDescription()",
@@ -5937,7 +5937,7 @@
       "source_file": "src/lib/pdf/quotation-nonstandard-template.ts",
       "source_location": "L101",
       "id": "quotation_nonstandard_template_builditemdescription",
-      "community": 4
+      "community": 5
     },
     {
       "label": "generateNonStandardQuotationHtml()",
@@ -5945,7 +5945,7 @@
       "source_file": "src/lib/pdf/quotation-nonstandard-template.ts",
       "source_location": "L138",
       "id": "quotation_nonstandard_template_generatenonstandardquotationhtml",
-      "community": 4
+      "community": 5
     },
     {
       "label": "render-pdf.ts",
@@ -5993,7 +5993,7 @@
       "source_file": "src/lib/pdf/quotation-pdf.tsx",
       "source_location": "L1",
       "id": "quotation_pdf",
-      "community": 4
+      "community": 5
     },
     {
       "label": "fmtDate()",
@@ -6001,7 +6001,7 @@
       "source_file": "src/lib/pdf/quotation-pdf.tsx",
       "source_location": "L24",
       "id": "quotation_pdf_fmtdate",
-      "community": 4
+      "community": 5
     },
     {
       "label": "fmt()",
@@ -6009,7 +6009,7 @@
       "source_file": "src/lib/pdf/quotation-pdf.tsx",
       "source_location": "L30",
       "id": "quotation_pdf_fmt",
-      "community": 4
+      "community": 5
     },
     {
       "label": "fmtIN()",
@@ -6017,7 +6017,7 @@
       "source_file": "src/lib/pdf/quotation-pdf.tsx",
       "source_location": "L35",
       "id": "quotation_pdf_fmtin",
-      "community": 4
+      "community": 5
     },
     {
       "label": "DraftWatermark()",
@@ -6025,7 +6025,7 @@
       "source_file": "src/lib/pdf/quotation-pdf.tsx",
       "source_location": "L69",
       "id": "quotation_pdf_draftwatermark",
-      "community": 4
+      "community": 5
     },
     {
       "label": "T()",
@@ -6033,7 +6033,7 @@
       "source_file": "src/lib/pdf/quotation-pdf.tsx",
       "source_location": "L99",
       "id": "quotation_pdf_t",
-      "community": 4
+      "community": 5
     },
     {
       "label": "unitLabel()",
@@ -6041,7 +6041,7 @@
       "source_file": "src/lib/pdf/quotation-pdf.tsx",
       "source_location": "L125",
       "id": "quotation_pdf_unitlabel",
-      "community": 4
+      "community": 5
     },
     {
       "label": "client-status-report-template.ts",
@@ -6049,7 +6049,7 @@
       "source_file": "src/lib/pdf/client-status-report-template.ts",
       "source_location": "L1",
       "id": "client_status_report_template",
-      "community": 13
+      "community": 14
     },
     {
       "label": "formatDate()",
@@ -6057,7 +6057,7 @@
       "source_file": "src/lib/pdf/client-status-report-template.ts",
       "source_location": "L65",
       "id": "client_status_report_template_formatdate",
-      "community": 13
+      "community": 14
     },
     {
       "label": "escapeHtml()",
@@ -6065,7 +6065,7 @@
       "source_file": "src/lib/pdf/client-status-report-template.ts",
       "source_location": "L75",
       "id": "client_status_report_template_escapehtml",
-      "community": 13
+      "community": 14
     },
     {
       "label": "formatNumber()",
@@ -6073,7 +6073,7 @@
       "source_file": "src/lib/pdf/client-status-report-template.ts",
       "source_location": "L84",
       "id": "client_status_report_template_formatnumber",
-      "community": 13
+      "community": 14
     },
     {
       "label": "getStatusColor()",
@@ -6081,7 +6081,7 @@
       "source_file": "src/lib/pdf/client-status-report-template.ts",
       "source_location": "L93",
       "id": "client_status_report_template_getstatuscolor",
-      "community": 13
+      "community": 14
     },
     {
       "label": "getStatusBadge()",
@@ -6089,7 +6089,7 @@
       "source_file": "src/lib/pdf/client-status-report-template.ts",
       "source_location": "L118",
       "id": "client_status_report_template_getstatusbadge",
-      "community": 13
+      "community": 14
     },
     {
       "label": "generateClientStatusReportHtml()",
@@ -6097,7 +6097,7 @@
       "source_file": "src/lib/pdf/client-status-report-template.ts",
       "source_location": "L124",
       "id": "client_status_report_template_generateclientstatusreporthtml",
-      "community": 13
+      "community": 14
     },
     {
       "label": "invoice-template.ts",
@@ -6105,7 +6105,7 @@
       "source_file": "src/lib/pdf/invoice-template.ts",
       "source_location": "L1",
       "id": "invoice_template",
-      "community": 4
+      "community": 7
     },
     {
       "label": "formatDate()",
@@ -6113,7 +6113,7 @@
       "source_file": "src/lib/pdf/invoice-template.ts",
       "source_location": "L67",
       "id": "invoice_template_formatdate",
-      "community": 4
+      "community": 7
     },
     {
       "label": "escapeHtml()",
@@ -6121,7 +6121,7 @@
       "source_file": "src/lib/pdf/invoice-template.ts",
       "source_location": "L76",
       "id": "invoice_template_escapehtml",
-      "community": 4
+      "community": 7
     },
     {
       "label": "formatNumber()",
@@ -6129,7 +6129,7 @@
       "source_file": "src/lib/pdf/invoice-template.ts",
       "source_location": "L85",
       "id": "invoice_template_formatnumber",
-      "community": 4
+      "community": 7
     },
     {
       "label": "generateInvoiceHtml()",
@@ -6137,7 +6137,7 @@
       "source_file": "src/lib/pdf/invoice-template.ts",
       "source_location": "L94",
       "id": "invoice_template_generateinvoicehtml",
-      "community": 4
+      "community": 7
     },
     {
       "label": "inspection-offer-template.ts",
@@ -6145,7 +6145,7 @@
       "source_file": "src/lib/pdf/inspection-offer-template.ts",
       "source_location": "L1",
       "id": "inspection_offer_template",
-      "community": 14
+      "community": 15
     },
     {
       "label": "formatDate()",
@@ -6153,7 +6153,7 @@
       "source_file": "src/lib/pdf/inspection-offer-template.ts",
       "source_location": "L45",
       "id": "inspection_offer_template_formatdate",
-      "community": 14
+      "community": 15
     },
     {
       "label": "escapeHtml()",
@@ -6161,7 +6161,7 @@
       "source_file": "src/lib/pdf/inspection-offer-template.ts",
       "source_location": "L54",
       "id": "inspection_offer_template_escapehtml",
-      "community": 14
+      "community": 15
     },
     {
       "label": "generateInspectionOfferHtml()",
@@ -6169,7 +6169,7 @@
       "source_file": "src/lib/pdf/inspection-offer-template.ts",
       "source_location": "L59",
       "id": "inspection_offer_template_generateinspectionofferhtml",
-      "community": 14
+      "community": 15
     },
     {
       "label": "generateLengthTallyHtml()",
@@ -6177,7 +6177,7 @@
       "source_file": "src/lib/pdf/inspection-offer-template.ts",
       "source_location": "L178",
       "id": "inspection_offer_template_generatelengthtallyhtml",
-      "community": 14
+      "community": 15
     },
     {
       "label": "generateColourCodeHtml()",
@@ -6185,7 +6185,7 @@
       "source_file": "src/lib/pdf/inspection-offer-template.ts",
       "source_location": "L258",
       "id": "inspection_offer_template_generatecolourcodehtml",
-      "community": 14
+      "community": 15
     },
     {
       "label": "generateCriteriaChecklistHtml()",
@@ -6193,7 +6193,7 @@
       "source_file": "src/lib/pdf/inspection-offer-template.ts",
       "source_location": "L355",
       "id": "inspection_offer_template_generatecriteriachecklisthtml",
-      "community": 14
+      "community": 15
     },
     {
       "label": "packing-list-template.ts",
@@ -6201,7 +6201,7 @@
       "source_file": "src/lib/pdf/packing-list-template.ts",
       "source_location": "L1",
       "id": "packing_list_template",
-      "community": 4
+      "community": 7
     },
     {
       "label": "formatDate()",
@@ -6209,7 +6209,7 @@
       "source_file": "src/lib/pdf/packing-list-template.ts",
       "source_location": "L48",
       "id": "packing_list_template_formatdate",
-      "community": 4
+      "community": 7
     },
     {
       "label": "escapeHtml()",
@@ -6217,7 +6217,7 @@
       "source_file": "src/lib/pdf/packing-list-template.ts",
       "source_location": "L57",
       "id": "packing_list_template_escapehtml",
-      "community": 4
+      "community": 7
     },
     {
       "label": "formatNumber()",
@@ -6225,7 +6225,7 @@
       "source_file": "src/lib/pdf/packing-list-template.ts",
       "source_location": "L66",
       "id": "packing_list_template_formatnumber",
-      "community": 4
+      "community": 7
     },
     {
       "label": "generatePackingListHtml()",
@@ -6233,7 +6233,7 @@
       "source_file": "src/lib/pdf/packing-list-template.ts",
       "source_location": "L72",
       "id": "packing_list_template_generatepackinglisthtml",
-      "community": 4
+      "community": 7
     },
     {
       "label": "issue-slip-template.ts",
@@ -6257,7 +6257,7 @@
       "source_file": "src/lib/pdf/po-acceptance-template.ts",
       "source_location": "L1",
       "id": "po_acceptance_template",
-      "community": 21
+      "community": 22
     },
     {
       "label": "formatDate()",
@@ -6265,7 +6265,7 @@
       "source_file": "src/lib/pdf/po-acceptance-template.ts",
       "source_location": "L69",
       "id": "po_acceptance_template_formatdate",
-      "community": 21
+      "community": 22
     },
     {
       "label": "escapeHtml()",
@@ -6273,7 +6273,7 @@
       "source_file": "src/lib/pdf/po-acceptance-template.ts",
       "source_location": "L77",
       "id": "po_acceptance_template_escapehtml",
-      "community": 21
+      "community": 22
     },
     {
       "label": "formatCurrency()",
@@ -6281,7 +6281,7 @@
       "source_file": "src/lib/pdf/po-acceptance-template.ts",
       "source_location": "L82",
       "id": "po_acceptance_template_formatcurrency",
-      "community": 21
+      "community": 22
     },
     {
       "label": "generatePOAcceptanceLetterHtml()",
@@ -6289,7 +6289,7 @@
       "source_file": "src/lib/pdf/po-acceptance-template.ts",
       "source_location": "L88",
       "id": "po_acceptance_template_generatepoacceptanceletterhtml",
-      "community": 21
+      "community": 22
     },
     {
       "label": "po-totals.test.ts",
@@ -6297,7 +6297,7 @@
       "source_file": "src/lib/calc/po-totals.test.ts",
       "source_location": "L1",
       "id": "po_totals_test",
-      "community": 33
+      "community": 34
     },
     {
       "label": "po-totals.ts",
@@ -6305,7 +6305,7 @@
       "source_file": "src/lib/calc/po-totals.ts",
       "source_location": "L1",
       "id": "po_totals",
-      "community": 33
+      "community": 34
     },
     {
       "label": "computePOTotals()",
@@ -6313,7 +6313,7 @@
       "source_file": "src/lib/calc/po-totals.ts",
       "source_location": "L31",
       "id": "po_totals_computepototals",
-      "community": 33
+      "community": 34
     },
     {
       "label": "audit-logger.ts",
@@ -6473,7 +6473,7 @@
       "source_file": "src/lib/masters/spec-import.test.ts",
       "source_location": "L1",
       "id": "spec_import_test",
-      "community": 8
+      "community": 9
     },
     {
       "label": "f()",
@@ -6481,7 +6481,7 @@
       "source_file": "src/lib/masters/spec-import.test.ts",
       "source_location": "L12",
       "id": "spec_import_test_f",
-      "community": 8
+      "community": 9
     },
     {
       "label": "spec-import.ts",
@@ -6489,7 +6489,7 @@
       "source_file": "src/lib/masters/spec-import.ts",
       "source_location": "L1",
       "id": "spec_import",
-      "community": 8
+      "community": 9
     },
     {
       "label": "s()",
@@ -6497,7 +6497,7 @@
       "source_file": "src/lib/masters/spec-import.ts",
       "source_location": "L16",
       "id": "spec_import_s",
-      "community": 8
+      "community": 9
     },
     {
       "label": "sheetRows()",
@@ -6505,7 +6505,7 @@
       "source_file": "src/lib/masters/spec-import.ts",
       "source_location": "L18",
       "id": "spec_import_sheetrows",
-      "community": 8
+      "community": 9
     },
     {
       "label": "parseNps()",
@@ -6513,7 +6513,7 @@
       "source_file": "src/lib/masters/spec-import.ts",
       "source_location": "L38",
       "id": "spec_import_parsenps",
-      "community": 8
+      "community": 9
     },
     {
       "label": "parsePipeSizes()",
@@ -6521,7 +6521,7 @@
       "source_file": "src/lib/masters/spec-import.ts",
       "source_location": "L48",
       "id": "spec_import_parsepipesizes",
-      "community": 8
+      "community": 9
     },
     {
       "label": "parsePipeSpecs()",
@@ -6529,7 +6529,7 @@
       "source_file": "src/lib/masters/spec-import.ts",
       "source_location": "L74",
       "id": "spec_import_parsepipespecs",
-      "community": 8
+      "community": 9
     },
     {
       "label": "parseSectioned()",
@@ -6537,7 +6537,7 @@
       "source_file": "src/lib/masters/spec-import.ts",
       "source_location": "L97",
       "id": "spec_import_parsesectioned",
-      "community": 8
+      "community": 9
     },
     {
       "label": "toProductSpecPairs()",
@@ -6545,7 +6545,7 @@
       "source_file": "src/lib/masters/spec-import.ts",
       "source_location": "L122",
       "id": "spec_import_toproductspecpairs",
-      "community": 8
+      "community": 9
     },
     {
       "label": "pricing.ts",
@@ -6553,7 +6553,7 @@
       "source_file": "src/lib/quotations/pricing.ts",
       "source_location": "L1",
       "id": "pricing",
-      "community": 22
+      "community": 23
     },
     {
       "label": "parseRate()",
@@ -6561,7 +6561,7 @@
       "source_file": "src/lib/quotations/pricing.ts",
       "source_location": "L7",
       "id": "pricing_parserate",
-      "community": 22
+      "community": 23
     },
     {
       "label": "findUnpricedItems()",
@@ -6569,7 +6569,7 @@
       "source_file": "src/lib/quotations/pricing.ts",
       "source_location": "L19",
       "id": "pricing_findunpriceditems",
-      "community": 22
+      "community": 23
     },
     {
       "label": "unpricedItemsError()",
@@ -6577,7 +6577,7 @@
       "source_file": "src/lib/quotations/pricing.ts",
       "source_location": "L30",
       "id": "pricing_unpriceditemserror",
-      "community": 22
+      "community": 23
     },
     {
       "label": "display.ts",
@@ -6585,7 +6585,7 @@
       "source_file": "src/lib/quotations/display.ts",
       "source_location": "L1",
       "id": "display",
-      "community": 4
+      "community": 5
     },
     {
       "label": "displayInquiryNo()",
@@ -6593,7 +6593,7 @@
       "source_file": "src/lib/quotations/display.ts",
       "source_location": "L7",
       "id": "display_displayinquiryno",
-      "community": 4
+      "community": 5
     },
     {
       "label": "displaySizeLabel()",
@@ -6601,7 +6601,7 @@
       "source_file": "src/lib/quotations/display.ts",
       "source_location": "L21",
       "id": "display_displaysizelabel",
-      "community": 4
+      "community": 5
     },
     {
       "label": "listing.ts",
@@ -6641,7 +6641,7 @@
       "source_file": "src/lib/quotations/pricing.test.ts",
       "source_location": "L1",
       "id": "pricing_test",
-      "community": 22
+      "community": 23
     },
     {
       "label": "display.test.ts",
@@ -6649,7 +6649,7 @@
       "source_file": "src/lib/quotations/display.test.ts",
       "source_location": "L1",
       "id": "display_test",
-      "community": 4
+      "community": 5
     },
     {
       "label": "business-rules.ts",
@@ -18496,18 +18496,6 @@
     {
       "relation": "imports_from",
       "confidence": "EXTRACTED",
-      "source_file": "src/lib/pdf/quotation-standard-template.ts",
-      "source_location": "L5",
-      "weight": 1.0,
-      "_src": "quotation_standard_template",
-      "_tgt": "amount_in_words",
-      "source": "amount_in_words",
-      "target": "quotation_standard_template",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "imports_from",
-      "confidence": "EXTRACTED",
       "source_file": "src/lib/pdf/purchase-order-template.ts",
       "source_location": "L4",
       "weight": 1.0,
@@ -19013,7 +19001,7 @@
       "relation": "imports_from",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/pdf/quotation-standard-template.ts",
-      "source_location": "L6",
+      "source_location": "L5",
       "weight": 1.0,
       "_src": "quotation_standard_template",
       "_tgt": "display",
@@ -19025,7 +19013,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/pdf/quotation-standard-template.ts",
-      "source_location": "L79",
+      "source_location": "L78",
       "weight": 1.0,
       "_src": "quotation_standard_template",
       "_tgt": "quotation_standard_template_formatdate",
@@ -19037,7 +19025,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/pdf/quotation-standard-template.ts",
-      "source_location": "L88",
+      "source_location": "L87",
       "weight": 1.0,
       "_src": "quotation_standard_template",
       "_tgt": "quotation_standard_template_esc",
@@ -19049,7 +19037,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/pdf/quotation-standard-template.ts",
-      "source_location": "L97",
+      "source_location": "L96",
       "weight": 1.0,
       "_src": "quotation_standard_template",
       "_tgt": "quotation_standard_template_fmt",
@@ -19061,7 +19049,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/pdf/quotation-standard-template.ts",
-      "source_location": "L106",
+      "source_location": "L105",
       "weight": 1.0,
       "_src": "quotation_standard_template",
       "_tgt": "quotation_standard_template_fmtplain",
@@ -19073,7 +19061,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/pdf/quotation-standard-template.ts",
-      "source_location": "L112",
+      "source_location": "L111",
       "weight": 1.0,
       "_src": "quotation_standard_template",
       "_tgt": "quotation_standard_template_generatestandardquotationhtml",
@@ -19085,7 +19073,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/pdf/quotation-standard-template.ts",
-      "source_location": "L348",
+      "source_location": "L347",
       "weight": 1.0,
       "_src": "quotation_standard_template_generatestandardquotationhtml",
       "_tgt": "quotation_standard_template_formatdate",
@@ -19097,7 +19085,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/pdf/quotation-standard-template.ts",
-      "source_location": "L328",
+      "source_location": "L327",
       "weight": 1.0,
       "_src": "quotation_standard_template_generatestandardquotationhtml",
       "_tgt": "quotation_standard_template_esc",
@@ -19109,7 +19097,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/pdf/quotation-standard-template.ts",
-      "source_location": "L415",
+      "source_location": "L416",
       "weight": 1.0,
       "_src": "quotation_standard_template_generatestandardquotationhtml",
       "_tgt": "quotation_standard_template_fmt",
@@ -19121,7 +19109,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/pdf/quotation-standard-template.ts",
-      "source_location": "L412",
+      "source_location": "L413",
       "weight": 1.0,
       "_src": "quotation_standard_template_generatestandardquotationhtml",
       "_tgt": "quotation_standard_template_fmtplain",
