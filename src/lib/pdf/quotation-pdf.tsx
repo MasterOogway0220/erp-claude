@@ -102,24 +102,25 @@ function T({ style, children }: { style?: any; children?: React.ReactNode }) {
 
 // ─── STANDARD QUOTATION (A4 landscape, paginated) ─────────────────────────────
 
+// Verbatim from the client's STANDARD QUOTATION FORMAT.xlsx (RFQ sheet)
 const NOTES = [
-  "This quotation is subject to our final confirmation at the time of order placement.",
-  "Prices are subject to review in the event of any change in item scope or quantities.",
-  "Invoicing shall be based on the actual quantity supplied at the agreed unit rates.",
-  "The delivery / shipping schedule shall be calculated based on the number of business days from the date of receipt of a clear techno-commercial Purchase Order (PO).",
-  "Supply shall be made as close as reasonably possible to the requested quantities, in accordance with standard manufacturing tolerances and available fixed lengths.",
-  "Once a Purchase Order is placed, cancellation shall not be permitted under any circumstances.",
-  "The quoted specifications conform to standard industry practices and applicable specifications, without any supplementary requirements unless explicitly stated in this offer.",
-  "Reduction in ordered quantity after placement of Purchase Order shall not be accepted. Any increase in quantity shall be subject to our review and acceptance.",
-  "In the event of any change in Government duties, taxes, levies, or policies, the quoted prices shall be subject to revision accordingly.",
-  "In case of Force Majeure events, we shall not be liable for any delay or failure in performance due to unforeseen events beyond our control, and delivery schedules shall be adjusted accordingly.",
+  "Prices are subject to review if items are deleted or if quantities are changed.",
+  "This quotation is subject to confirmation at the time of order placement.",
+  "Invoicing shall be based on the actual quantity supplied at the agreed unit rate.",
+  "Shipping date will be calculated based on the number of business days after receipt of the techno-commercial Purchase Order (PO).",
+  "Supply shall be made as close as possible to the requested quantity in the fixed lengths indicated.",
+  "Once an order is placed, it cannot be cancelled under any circumstances.",
+  "The quoted specification complies with the standard practice of the specification, without supplementary requirements (unless otherwise specifically stated in the offer).",
+  "Reduction in quantity after placement of order will not be accepted. Any increase in quantity will be subject to our acceptance.",
+  "In case of any changes in Government duties, taxes, or policies, the rates are liable to revision.",
 ];
 
 // 14-column widths as % strings (landscape content ~281mm wide).
 // Layout follows the client's standard format (QTN-Rev.2): S/N, Product,
 // Specification, Dim., Add. Spec., Size, Length, Ends, Qty, Unit, Unit Rate,
 // Amount, Delivery, Remark/Material Code.
-const STD_COLS = ["3%", "11%", "10%", "6.5%", "8%", "11%", "6%", "4%", "5%", "4%", "8%", "9%", "7%", "7.5%"];
+// Size is the widest data column (spans 3 grid columns in the format sheet).
+const STD_COLS = ["3%", "11%", "9.5%", "6.5%", "8%", "14%", "6%", "4%", "4.5%", "3.5%", "7.5%", "8.5%", "6.5%", "7.5%"];
 
 // UOM as printed in the Unit column of the standard format.
 function unitLabel(uom: string): string {
@@ -232,9 +233,8 @@ function StandardQuotationPage({
 
   const includedTerms = quotation.terms.filter((t: any) => t.isIncluded !== false);
   const revLabel = quotation.version && quotation.version > 0 ? ` (Revision ${quotation.version})` : "";
-  const formatText = quotation.version && quotation.version > 0
-    ? `FORMAT: QTN-Rev.${quotation.version}, Dated: ${fmtDate(quotation.quotationDate)}`
-    : `FORMAT: ${quotation.quotationNo}, Dated: ${fmtDate(quotation.quotationDate)}`;
+  // Literal form identity per the client's format sheet (not the quotation's rev/date)
+  const formatText = "FORMAT: QTN-Rev.2, Dated: 19/12/2012";
 
   return (
     <Page size="A4" orientation="landscape" style={stdStyles.page}>
@@ -339,7 +339,7 @@ function StandardQuotationPage({
 
       {/* TOTAL ROW (per reference format) */}
       <View style={stdStyles.row} wrap={false}>
-        <View style={[stdStyles.td, { width: "59.5%" }]}>
+        <View style={[stdStyles.td, { width: "62%" }]}>
           <T style={{ textAlign: "center", fontSize: 7.5, fontFamily: "Helvetica", fontWeight: "bold" }}>Total</T>
         </View>
         <View style={[stdStyles.td, { width: STD_COLS[8] }]}>
@@ -357,22 +357,17 @@ function StandardQuotationPage({
       </View>
       </View>
 
-      {/* AMOUNT IN WORDS */}
-      {!isUnquoted && (
-        <View style={{ marginTop: 2 }}>
-          <T style={{ fontSize: 7.5 }}>
-            <T style={{ fontFamily: "Helvetica", fontWeight: "bold" }}>Amount in Words: </T>
-            {numberToWords(grandTotal, curr)}
-          </T>
-        </View>
-      )}
+      {/* REMARKS (per client format: heading line between total and terms) */}
+      <View style={{ marginTop: 4 }}>
+        <T style={{ fontFamily: "Helvetica", fontWeight: "bold", fontSize: 8.5 }}>Remarks: </T>
+      </View>
 
       {/* OFFER TERMS */}
       <View style={{ marginTop: 3 }}>
         <T style={{ fontFamily: "Helvetica", fontWeight: "bold", fontSize: 8.5, textDecoration: "underline" }}>OFFER TERMS:</T>
         {includedTerms.map((term: any, i: number) => (
           <View key={term.id} style={{ flexDirection: "row", marginTop: 1 }}>
-            <T style={{ width: 14, textAlign: "right" }}>{i + 1}.</T>
+            <T style={{ width: 14, textAlign: "right" }}>{i + 1}</T>
             <T style={{ width: 100, paddingLeft: 3, fontFamily: "Helvetica", fontWeight: "bold" }}>{term.termName}</T>
             <T style={{ flex: 1, paddingLeft: 2 }}>: {term.termValue}</T>
           </View>
@@ -384,7 +379,7 @@ function StandardQuotationPage({
         <T style={{ fontFamily: "Helvetica", fontWeight: "bold", fontSize: 8.5, textDecoration: "underline" }}>NOTES:</T>
         {NOTES.map((note, i) => (
           <View key={i} style={{ flexDirection: "row", marginTop: 1 }}>
-            <T style={{ width: 14, textAlign: "right" }}>{i + 1}.</T>
+            <T style={{ width: 14, textAlign: "right" }}>{i + 1})</T>
             <T style={{ flex: 1, paddingLeft: 3, fontSize: 7.5 }}>{note}</T>
           </View>
         ))}
@@ -522,9 +517,8 @@ function NonStandardQuotationPage({
   const prepEmail = quotation.preparedBy?.email || "";
   const prepPhone = quotation.preparedBy?.phone || "";
   const enquiryRef = displayInquiryNo(quotation.inquiryNo);
-  const formatText = quotation.version && quotation.version > 0
-    ? `FORMAT: QTN-Rev.${quotation.version}, Dated: ${fmtDate(quotation.quotationDate)}`
-    : `FORMAT: ${quotation.quotationNo}, Dated: ${fmtDate(quotation.quotationDate)}`;
+  // Literal form identity per the client's format sheet (not the quotation's rev/date)
+  const formatText = "FORMAT: QTN-Rev.2, Dated: 19/12/2012";
 
   return (
     <Page size="A4" style={nsStyles.page}>
