@@ -2,7 +2,6 @@
 // format (QTN-Rev.2): S/N, Product, Specification, Dim., Add. Spec., Size,
 // Length, Ends, Qty, Unit, Unit Rate, Amount, Delivery, Remark/Material Code
 
-import { numberToWords } from "../amount-in-words";
 import { displayInquiryNo, displaySizeLabel } from "../quotations/display";
 
 interface CompanyInfo {
@@ -63,17 +62,17 @@ interface QuotationData {
   terms: any[];
 }
 
+// Verbatim from the client's STANDARD QUOTATION FORMAT.xlsx (RFQ sheet)
 const fixedNotes = [
-  "This quotation is subject to our final confirmation at the time of order placement.",
-  "Prices are subject to review in the event of any change in item scope or quantities.",
-  "Invoicing shall be based on the actual quantity supplied at the agreed unit rates.",
-  "The delivery / shipping schedule shall be calculated based on the number of business days from the date of receipt of a clear techno-commercial Purchase Order (PO).",
-  "Supply shall be made as close as reasonably possible to the requested quantities, in accordance with standard manufacturing tolerances and available fixed lengths.",
-  "Once a Purchase Order is placed, cancellation shall not be permitted under any circumstances.",
-  "The quoted specifications conform to standard industry practices and applicable specifications, without any supplementary requirements unless explicitly stated in this offer.",
-  "Reduction in ordered quantity after placement of Purchase Order shall not be accepted. Any increase in quantity shall be subject to our review and acceptance.",
-  "In the event of any change in Government duties, taxes, levies, or policies, the quoted prices shall be subject to revision accordingly.",
-  "In case of Force Majeure events, we shall not be liable for any delay or failure in performance due to unforeseen events beyond our control, and delivery schedules shall be adjusted accordingly.",
+  "Prices are subject to review if items are deleted or if quantities are changed.",
+  "This quotation is subject to confirmation at the time of order placement.",
+  "Invoicing shall be based on the actual quantity supplied at the agreed unit rate.",
+  "Shipping date will be calculated based on the number of business days after receipt of the techno-commercial Purchase Order (PO).",
+  "Supply shall be made as close as possible to the requested quantity in the fixed lengths indicated.",
+  "Once an order is placed, it cannot be cancelled under any circumstances.",
+  "The quoted specification complies with the standard practice of the specification, without supplementary requirements (unless otherwise specifically stated in the offer).",
+  "Reduction in quantity after placement of order will not be accepted. Any increase in quantity will be subject to our acceptance.",
+  "In case of any changes in Government duties, taxes, or policies, the rates are liable to revision.",
 ];
 
 function formatDate(date: string | Date | null | undefined): string {
@@ -188,16 +187,16 @@ export function generateStandardQuotationHtml(
   const termRows = includedTerms
     .map((term: any, i: number) => {
       return `<tr class="term-row">
-        <td class="term-no">${i + 1}.</td>
+        <td class="term-no">${i + 1}</td>
         <td class="term-name">${esc(term.termName)}</td>
         <td class="term-val">: ${esc(term.termValue)}</td>
       </tr>`;
     })
     .join("\n");
 
-  // Build note rows
+  // Build note rows — "1)" numbering per the client's format sheet
   const noteRows = fixedNotes
-    .map((note, i) => `<tr class="note-row"><td colspan="3">${i + 1}. ${esc(note)}</td></tr>`)
+    .map((note, i) => `<tr class="note-row"><td colspan="3">${i + 1}) ${esc(note)}</td></tr>`)
     .join("\n");
 
   return `<!DOCTYPE html>
@@ -372,20 +371,22 @@ export function generateStandardQuotationHtml(
 
 <!-- ITEMS TABLE -->
 <table class="main">
+  <!-- Widths follow the format sheet's column spans: Product 2 grid cols,
+       Size 3 grid cols — Size is the widest data column. -->
   <colgroup>
     <col style="width:3%">
     <col style="width:11%">
-    <col style="width:10%">
+    <col style="width:9.5%">
     <col style="width:6.5%">
     <col style="width:8%">
-    <col style="width:11%">
+    <col style="width:14%">
     <col style="width:6%">
     <col style="width:4%">
-    <col style="width:5%">
-    <col style="width:4%">
-    <col style="width:8%">
-    <col style="width:9%">
-    <col style="width:7%">
+    <col style="width:4.5%">
+    <col style="width:3.5%">
+    <col style="width:7.5%">
+    <col style="width:8.5%">
+    <col style="width:6.5%">
     <col style="width:7.5%">
   </colgroup>
   <tr class="hdr">
@@ -418,12 +419,8 @@ export function generateStandardQuotationHtml(
   </tr>
 </table>
 
-${!isUnquoted ? (() => {
-  const gt = parseFloat(String(quotation.grandTotal)) || totalAmount;
-  return `<div style="font-size:8pt;padding:4px 0 2px 0;text-align:left;">
-  <b>Amount in Words:</b> ${esc(numberToWords(gt, curr))}
-</div>`;
-})() : ""}
+<!-- REMARKS (per client format: heading line between total and terms) -->
+<div style="font-size:8.5pt;font-weight:bold;padding:6px 0 2px 0;">Remarks: </div>
 
 <!-- OFFER TERMS -->
 <table class="terms">
@@ -441,7 +438,7 @@ ${!isUnquoted ? (() => {
 <!-- FOOTER -->
 <div class="footer-bar">
   <span>This is a computer generated document hence not signed.</span>
-  <span>FORMAT: ${quotation.version && quotation.version > 0 ? `QTN-Rev.${quotation.version}` : `QTN-${esc(quotation.quotationNo)}`}, Dated: ${formatDate(quotation.quotationDate)}</span>
+  <span>FORMAT: QTN-Rev.2, Dated: 19/12/2012</span>
 </div>
 <div class="footer-appreciation">
   YOUR ORDER WILL BE GREATLY APPRECIATED AND WILL RECEIVE OUR PROMPT AND CAREFUL ATTENTION.
