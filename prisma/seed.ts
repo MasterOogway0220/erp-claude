@@ -20,8 +20,10 @@ const DOCUMENTS_DIR = path.join(__dirname, "..", "documents");
 // Shared companyId — set after seedCompanyMaster()
 let NPS_COMPANY_ID = "";
 
-function readExcel(filename: string): Record<string, unknown>[] {
-  const filePath = path.join(DOCUMENTS_DIR, filename);
+const NEW_MASTER_DIR = path.join(__dirname, "..", "new master");
+
+function readExcel(filename: string, dir: string = DOCUMENTS_DIR): Record<string, unknown>[] {
+  const filePath = path.join(dir, filename);
   const wb = XLSX.readFile(filePath);
   const sheet = wb.Sheets[wb.SheetNames[0]];
   return XLSX.utils.sheet_to_json(sheet, { defval: "" });
@@ -56,32 +58,9 @@ function excelDateToJS(serial: number | string): Date | null {
   return new Date((num - 25569) * 86400000);
 }
 
-async function seedProductSpecs() {
-  console.log("Seeding Product Spec Master...");
-  const rows = readExcel("PRODUCT SPEC MASTER - 1.xlsx");
-  let lastProduct = "";
-
-  for (const row of rows) {
-    const r = row as Record<string, unknown>;
-    const product = getVal(r, "Product", "Product ") || lastProduct;
-    if (product) lastProduct = product;
-
-    await prisma.productSpecMaster.create({
-      data: {
-        product,
-        material: getVal(r, "Material") || null,
-        additionalSpec: getVal(r, "Additional Spec") || null,
-        ends: getVal(r, "Ends") || null,
-        length: getVal(r, "Length", "Length ") || null,
-      },
-    });
-  }
-  console.log(`  Inserted ${rows.length} product specs`);
-}
-
 async function seedPipeSizes() {
   console.log("Seeding Pipe Size Master (CS & AS)...");
-  const csRows = readExcel("PIPES SIZE MASTER CS & AS PIPES.xlsx");
+  const csRows = readExcel("PIPES SIZE MASTER CS & AS PIPES.xlsx", NEW_MASTER_DIR);
   for (const row of csRows) {
     const r = row as Record<string, unknown>;
     await prisma.sizeMaster.create({
@@ -97,7 +76,7 @@ async function seedPipeSizes() {
   console.log(`  Inserted ${csRows.length} CS/AS pipe sizes`);
 
   console.log("Seeding Pipe Size Master (SS & DS)...");
-  const ssRows = readExcel("PIPES SIZE MASTER SS & DS PIPES.xlsx");
+  const ssRows = readExcel("PIPES SIZE MASTER SS & DS PIPES.xlsx", NEW_MASTER_DIR);
   for (const row of ssRows) {
     const r = row as Record<string, unknown>;
     await prisma.sizeMaster.create({
@@ -606,7 +585,6 @@ async function main() {
   await seedCompanyAdmin();
   await seedFinancialYears();
   await seedOfferTermTemplates();
-  await seedProductSpecs();
   await seedPipeSizes();
   await seedTestingMaster();
   await seedTaxMaster();
