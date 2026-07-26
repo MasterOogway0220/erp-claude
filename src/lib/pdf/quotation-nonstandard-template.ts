@@ -52,17 +52,18 @@ interface QuotationData {
   terms: any[];
 }
 
+// Verbatim from the client's STANDARD QUOTATION FORMAT.xlsx (RFQ sheet) —
+// kept in sync with the standard template and quotation-pdf.tsx NOTES.
 const exportNotes = [
-  "This quotation is subject to our final confirmation at the time of order placement.",
-  "Prices are subject to review in the event of any change in item scope or quantities.",
-  "Invoicing shall be based on the actual quantity supplied at the agreed unit rates.",
-  "The delivery / shipping schedule shall be calculated based on the number of business days from the date of receipt of a clear techno-commercial Purchase Order (PO).",
-  "Supply shall be made as close as reasonably possible to the requested quantities, in accordance with standard manufacturing tolerances and available fixed lengths.",
-  "Once a Purchase Order is placed, cancellation shall not be permitted under any circumstances.",
-  "The quoted specifications conform to standard industry practices and applicable specifications, without any supplementary requirements unless explicitly stated in this offer.",
-  "Reduction in ordered quantity after placement of Purchase Order shall not be accepted. Any increase in quantity shall be subject to our review and acceptance.",
-  "In the event of any change in Government duties, taxes, levies, or policies, the quoted prices shall be subject to revision accordingly.",
-  "In case of Force Majeure events, we shall not be liable for any delay or failure in performance due to unforeseen events beyond our control, and delivery schedules shall be adjusted accordingly.",
+  "Prices are subject to review if items are deleted or if quantities are changed.",
+  "This quotation is subject to confirmation at the time of order placement.",
+  "Invoicing shall be based on the actual quantity supplied at the agreed unit rate.",
+  "Shipping date will be calculated based on the number of business days after receipt of the techno-commercial Purchase Order (PO).",
+  "Supply shall be made as close as possible to the requested quantity in the fixed lengths indicated.",
+  "Once an order is placed, it cannot be cancelled under any circumstances.",
+  "The quoted specification complies with the standard practice of the specification, without supplementary requirements (unless otherwise specifically stated in the offer).",
+  "Reduction in quantity after placement of order will not be accepted. Any increase in quantity will be subject to our acceptance.",
+  "In case of any changes in Government duties, taxes, or policies, the rates are liable to revision.",
 ];
 
 function formatDate(date: string | Date | null | undefined): string {
@@ -267,11 +268,11 @@ export function generateNonStandardQuotationHtml(
 
   /* ZONE 1: Type label */
   .type-label {
-    font-size: 18pt;
+    font-size: 10pt;
     font-weight: bold;
     text-align: center;
     border: 1px solid #000;
-    padding: 4px 10px;
+    padding: 2px 8px;
     vertical-align: middle;
   }
 
@@ -466,14 +467,8 @@ export function generateNonStandardQuotationHtml(
   <!-- ============================================================ -->
   <tr class="qtn-row">
     <td colspan="6"></td>
-    <td class="qtn-label" colspan="2">Quotation Number :</td>
-    <td class="qtn-label">Dated :</td>
-  </tr>
-  <!-- ROW 5: Quotation Number / Dated values -->
-  <tr class="qtn-row">
-    <td colspan="6"></td>
-    <td class="qtn-value" colspan="2">${escapeHtml(quotation.quotationNo)}</td>
-    <td class="qtn-value">${formatDate(quotation.quotationDate)}</td>
+    <td class="qtn-value" colspan="2"><span class="qtn-label">Quotation Number :</span> ${escapeHtml(quotation.quotationNo)}</td>
+    <td class="qtn-value"><span class="qtn-label">Dated :</span> ${formatDate(quotation.quotationDate)}</td>
   </tr>
 
   <!-- ============================================================ -->

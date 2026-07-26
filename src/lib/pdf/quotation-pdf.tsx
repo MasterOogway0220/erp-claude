@@ -538,22 +538,22 @@ function NonStandardQuotationPage({
             : <T style={{ fontSize: 16, fontFamily: "Helvetica", fontWeight: "bold" }}>{company.companyName}</T>
           }
         </View>
-        <View style={{ width: "33%", ...BOLD_BORDER, alignItems: "center", justifyContent: "center", padding: "6pt 4pt" }}>
-          <T style={{ fontSize: 16, fontFamily: "Helvetica", fontWeight: "bold", textAlign: "center" }}>{revLabel}</T>
+        <View style={{ width: "33%", ...BOLD_BORDER, alignItems: "center", justifyContent: "center", padding: "3pt 4pt" }}>
+          <T style={{ fontSize: 10, fontFamily: "Helvetica", fontWeight: "bold", textAlign: "center" }}>{revLabel}</T>
         </View>
       </View>
 
-      {/* QUOTATION NUMBER + DATE (right side) */}
+      {/* QUOTATION NUMBER + DATE — one line, right side */}
       <View style={[nsStyles.row, { justifyContent: "flex-end", marginBottom: 2 }]}>
-        <View style={{ width: "45%" }}>
-          <View style={nsStyles.row}>
-            <T style={{ fontFamily: "Helvetica", fontWeight: "bold", width: "55%" }}>Quotation Number :</T>
-            <T style={{ fontFamily: "Helvetica", fontWeight: "bold", width: "45%" }}>Dated :</T>
-          </View>
-          <View style={nsStyles.row}>
-            <T style={{ width: "55%" }}>{quotation.quotationNo}</T>
-            <T style={{ width: "45%" }}>{fmtDate(quotation.quotationDate)}</T>
-          </View>
+        <View style={[nsStyles.row, { width: "62%" }]}>
+          <T style={{ width: "62%" }}>
+            <T style={{ fontFamily: "Helvetica", fontWeight: "bold" }}>Quotation Number : </T>
+            {quotation.quotationNo}
+          </T>
+          <T style={{ width: "38%" }}>
+            <T style={{ fontFamily: "Helvetica", fontWeight: "bold" }}>Dated : </T>
+            {fmtDate(quotation.quotationDate)}
+          </T>
         </View>
       </View>
 
