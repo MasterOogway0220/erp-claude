@@ -33,8 +33,10 @@ const flange = parseSectioned(path.join(dir, "PRODUCT SPEC MASTER - FLANGE B16.5
 const flangeType = (p: string): "THREADED" | "PLAIN" | "BORED" =>
   /THREADED/i.test(p) ? "THREADED" : /BLIND|LAP\s*JOINT/i.test(p) ? "PLAIN" : "BORED";
 
+const seenPerPool = new Map<string, { sizes: string[]; products: string }>();
+
 const flangePools = (() => {
-  const out = {
+  const out: Record<string, Set<string>> = {
     BORED_CS_AS: new Set<string>(),
     BORED_SS_DS: new Set<string>(),
     PLAIN: new Set<string>(),
@@ -49,12 +51,26 @@ const flangePools = (() => {
       );
     }
     const t = flangeType(sec.products[0]);
-    const target =
-      t === "THREADED" ? out.THREADED
-      : t === "PLAIN" ? out.PLAIN
-      : isSS(sec.products[0]) ? out.BORED_SS_DS
-      : out.BORED_CS_AS;
-    for (const z of sec.sizes) target.add(z.label);
+    const key =
+      t === "THREADED" ? "THREADED"
+      : t === "PLAIN" ? "PLAIN"
+      : isSS(sec.products[0]) ? "BORED_SS_DS"
+      : "BORED_CS_AS";
+    const sizes = sec.sizes.map((z) => z.label);
+    // PLAIN and THREADED collapse four material-class sections into one pool,
+    // which is only valid while those sections are identical. If a future
+    // master diverges them, a silent union would offer sizes the product
+    // cannot take — fail loudly instead.
+    const seen = seenPerPool.get(key);
+    if (seen && (seen.sizes.length !== sizes.length || seen.sizes.some((s, i) => s !== sizes[i]))) {
+      throw new Error(
+        `Flange sections "${seen.products}" and "${sec.products.join(", ")}" both map to pool ${key} ` +
+          `but their size lists differ (${seen.sizes.length} vs ${sizes.length}). ` +
+          `Split the pool in this script instead of letting the union hide the difference.`
+      );
+    }
+    if (!seen) seenPerPool.set(key, { sizes, products: sec.products.join(", ") });
+    for (const label of sizes) out[key].add(label);
   }
   return out;
 })();
