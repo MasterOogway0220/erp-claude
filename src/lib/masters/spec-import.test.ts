@@ -8,6 +8,7 @@ import {
   parseSectioned,
   toProductSpecPairs,
 } from "./spec-import";
+import { FLANGE_SIZES, getFlangeSizeOptions } from "../fitting-flange-sizes";
 
 const f = (name: string) => path.join(__dirname, "../../../new master", name);
 
@@ -59,16 +60,53 @@ describe("sectioned fitting/flange files", () => {
     expect(pairs).toHaveLength(858);
   });
 
-  it("FLANGE (1): 4 sections, 24 products, 66 specs, 396 pairs, 302 sizes/3 dims", () => {
-    const file = parseSectioned(f("PRODUCT SPEC MASTER - FLANGE (1).xlsx"));
-    expect(file.sections).toHaveLength(4);
-    expect(file.sections.map((s) => s.products.length)).toEqual([6, 6, 6, 6]);
-    expect(file.sections.map((s) => s.specs.length)).toEqual([6, 30, 22, 8]);
-    expect(toProductSpecPairs(file)).toHaveLength(396);
+  // Replaced July 2026: the client's B16.5-only master. Unlike the previous
+  // flange file it splits each material class into three sections by flange
+  // TYPE, because only bored types (weld neck / socket weld / slip on) carry a
+  // schedule in their size.
+  it("FLANGE B16.5: 12 sections, 24 products, 396 pairs, B16.5 throughout", () => {
+    const file = parseSectioned(f("PRODUCT SPEC MASTER - FLANGE B16.5.xlsx"));
+    expect(file.sections).toHaveLength(12);
+    expect(file.sections.map((s) => s.products.length)).toEqual([3, 2, 1, 3, 2, 1, 3, 2, 1, 3, 2, 1]);
+    expect(file.sections.map((s) => s.specs.length)).toEqual([6, 6, 6, 22, 22, 22, 30, 30, 30, 8, 8, 8]);
+    const pairs = toProductSpecPairs(file);
+    expect(pairs).toHaveLength(396);
+    expect(new Set(pairs.map((p) => p.product)).size).toBe(24);
     const sizes = file.sections.flatMap((s) => s.sizes);
-    expect(sizes).toHaveLength(302);
-    expect(new Set(sizes.map((z) => z.dim))).toEqual(
-      new Set(["ASME B16.5", "ASME B16.47 Sr. A", "ASME B16.47 Sr. B"])
-    );
+    expect(new Set(sizes.map((z) => z.dim))).toEqual(new Set(["ASME B16.5"]));
+    // Bored sections carry a schedule; blind/lap-joint and threaded do not.
+    expect(file.sections[0].sizes.every((z) => /SCH/.test(z.label))).toBe(true);
+    expect(file.sections[1].sizes.some((z) => /SCH/.test(z.label))).toBe(false);
+    expect(file.sections[2].sizes.some((z) => /SCH/.test(z.label))).toBe(false);
+  });
+});
+
+describe("flange size pools", () => {
+  it("routes each flange type to the pool that matches its size format", () => {
+    // Guards the generated FLANGE_SIZES split — a mis-routed product would
+    // offer schedule-bearing sizes for a blind flange, or none at all.
+    expect(getFlangeSizeOptions("C.S. FLANGE, WELD NECK")).toBe(FLANGE_SIZES.BORED_CS_AS);
+    expect(getFlangeSizeOptions("A.S. FLANGE, SLIP ON")).toBe(FLANGE_SIZES.BORED_CS_AS);
+    expect(getFlangeSizeOptions("S.S. FLANGE, SOCKET WELD")).toBe(FLANGE_SIZES.BORED_SS_DS);
+    expect(getFlangeSizeOptions("D.S. FLANGE, WELD NECK")).toBe(FLANGE_SIZES.BORED_SS_DS);
+    expect(getFlangeSizeOptions("C.S. FLANGE, BLIND")).toBe(FLANGE_SIZES.PLAIN);
+    expect(getFlangeSizeOptions("S.S. FLANGE, LAP JOINT")).toBe(FLANGE_SIZES.PLAIN);
+    expect(getFlangeSizeOptions("A.S. FLANGE, THREADED")).toBe(FLANGE_SIZES.THREADED);
+    expect(FLANGE_SIZES.BORED_CS_AS).toHaveLength(855);
+    expect(FLANGE_SIZES.BORED_SS_DS).toHaveLength(754);
+    expect(FLANGE_SIZES.PLAIN).toHaveLength(120);
+    expect(FLANGE_SIZES.THREADED).toHaveLength(50);
+  });
+
+  it("covers every product in the master", () => {
+    const file = parseSectioned(f("PRODUCT SPEC MASTER - FLANGE B16.5.xlsx"));
+    for (const sec of file.sections) {
+      const pool = new Set(getFlangeSizeOptions(sec.products[0]));
+      for (const product of sec.products) {
+        // every product in a section must resolve to that section's own sizes
+        expect(getFlangeSizeOptions(product)).toEqual([...pool]);
+        for (const z of sec.sizes) expect(pool.has(z.label)).toBe(true);
+      }
+    }
   });
 });

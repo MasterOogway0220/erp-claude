@@ -36,16 +36,18 @@ import {
 import { Plus, Trash2, ArrowLeft, Building2, MapPin, ListChecks, FileText, Package, Copy, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
+import { useCurrentUser } from "@/hooks/use-current-user";
 import {
-  FLANGE_SIZES,
+  FLANGE_DIM_STANDARD,
   getFittingDimStandard,
   getFittingEnds,
   getFittingSizeOptions,
+  getFlangeSizeOptions,
   inferItemCategory,
 } from "@/lib/fitting-flange-sizes";
 import { calculateWeightPerMeter } from "@/lib/weight-calculation";
 
-type ItemCategory = "Pipe" | "Fitting" | "Flange";
+type ItemCategory = "Pipe" | "Fitting" | "Flange" | "Plate";
 
 interface QuotationItem {
   itemCategory: ItemCategory;
@@ -144,6 +146,7 @@ function StandardQuotationPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get("editId");
+  const { user: currentUser } = useCurrentUser();
 
   const [formData, setFormData] = useState({
     customerId: "",
@@ -157,7 +160,6 @@ function StandardQuotationPage() {
     inquiryDate: "",
     // New fields
     dealOwnerId: "",
-    preparedById: "",
     nextActionDate: "",
     kindAttention: "",
     placeOfSupplyCity: "",
@@ -591,7 +593,6 @@ function StandardQuotationPage() {
         inquiryNo: q.inquiryNo || "",
         inquiryDate: q.inquiryDate ? new Date(q.inquiryDate).toISOString().split("T")[0] : "",
         dealOwnerId: q.dealOwnerId || "",
-        preparedById: q.preparedById || "",
         nextActionDate: q.nextActionDate ? new Date(q.nextActionDate).toISOString().split("T")[0] : "",
         kindAttention: q.kindAttention || "",
         placeOfSupplyCity: q.placeOfSupplyCity || "",
@@ -610,7 +611,7 @@ function StandardQuotationPage() {
           // (costing, BOM/tag fields) survive the PUT's delete-and-recreate
           // instead of being wiped on every edit.
           ...item,
-          itemCategory: (["Pipe", "Fitting", "Flange"].includes(item.itemType)
+          itemCategory: (["Pipe", "Fitting", "Flange", "Plate"].includes(item.itemType)
             ? item.itemType
             : item.fittingId ? "Fitting" : item.flangeId ? "Flange" : "Pipe") as ItemCategory,
           slNo: item.slNo || "",
@@ -1222,34 +1223,13 @@ function StandardQuotationPage() {
 
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium">Prepared By</Label>
-                {editId ? (
-                  // Set once, by whoever created the quotation — editing it later
-                  // must not reassign authorship, so show it read-only.
-                  <div className="flex h-9 items-center rounded-md border bg-muted px-3 text-sm">
-                    {editData?.quotation?.preparedBy?.name ||
-                      usersData?.users?.find((u: any) => u.id === formData.preparedById)?.name ||
-                      "Unassigned"}
-                  </div>
-                ) : (
-                <Select
-                  value={formData.preparedById || "NONE"}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, preparedById: value === "NONE" ? "" : value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select person" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="NONE">Unassigned</SelectItem>
-                    {usersData?.users?.map((user: any) => (
-                      <SelectItem key={user.id} value={user.id}>
-                        {user.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                )}
+                {/* Authorship is the ERP login, not a picker: the API stamps
+                    session.user on create and never reassigns it on edit. */}
+                <div className="flex h-9 items-center rounded-md border bg-muted px-3 text-sm">
+                  {editId
+                    ? editData?.quotation?.preparedBy?.name || "Unassigned"
+                    : currentUser?.name || "—"}
+                </div>
               </div>
             </div>
 
@@ -1291,7 +1271,7 @@ function StandardQuotationPage() {
                         />
                       </div>
                       <div className="flex rounded-md border overflow-hidden text-xs">
-                        {(["Pipe", "Fitting", "Flange"] as ItemCategory[]).map((cat) => (
+                        {(["Pipe", "Fitting", "Flange", "Plate"] as ItemCategory[]).map((cat) => (
                           <button
                             key={cat}
                             type="button"
@@ -1317,7 +1297,8 @@ function StandardQuotationPage() {
                                   ends: cat === "Pipe" ? "BE" : "",
                                   // historical FK + label no longer describe this line
                                   fittingId: "", fittingLabel: "", flangeId: "", flangeLabel: "",
-                                  uom: cat === "Pipe" ? "Mtr" : "Nos",
+                                  // plates are traded by weight, pipes by length
+                                  uom: cat === "Pipe" ? "Mtr" : cat === "Plate" ? "Kg" : "Nos",
                                 };
                                 return newItems;
                               });
@@ -1558,13 +1539,14 @@ function StandardQuotationPage() {
                       category={
                         item.itemCategory === "Fitting" ? "FITTINGS"
                         : item.itemCategory === "Flange" ? "FLANGES"
+                        : item.itemCategory === "Plate" ? "PLATES"
                         : "PIPES"
                       }
                       onProductChange={(val) => updateItem(index, "product", val)}
                       onMaterialChange={(val) => updateItem(index, "material", val)}
                       onAdditionalSpecChange={(val) => updateItem(index, "additionalSpec", val)}
                       showAdditionalSpec
-                      onAutoFill={({ ends, dimStandard }) => {
+                      onAutoFill={({ ends, dimStandard, size }) => {
                         setItems((prev) => {
                           const newItems = [...prev];
                           newItems[index] = {
@@ -1572,6 +1554,12 @@ function StandardQuotationPage() {
                             ends: ends || newItems[index].ends,
                             // "" clears a stale dim for dim-less materials
                             dimStandard: dimStandard ?? newItems[index].dimStandard,
+                            // A Pipe's label is derived from the size master,
+                            // and an existing entry is the user's — only fill
+                            // a blank one from the master row.
+                            sizeLabel:
+                              newItems[index].sizeLabel ||
+                              (newItems[index].itemCategory !== "Pipe" ? size || "" : ""),
                           };
                           return newItems;
                         });
@@ -1611,18 +1599,15 @@ function StandardQuotationPage() {
                       <div className="space-y-1 lg:col-span-2 xl:col-span-2">
                         <Label className="text-xs font-medium">Size <span className="text-destructive">*</span></Label>
                         <SmartCombobox
-                          options={[...FLANGE_SIZES, ...getMasterExtraSizes(item.product).filter((s) => !FLANGE_SIZES.some((z) => z.label === s)).map((s) => ({ label: s, dim: "" }))]}
+                          options={Array.from(new Set([...getFlangeSizeOptions(item.product), ...getMasterExtraSizes(item.product)]))}
                           value={item.sizeLabel || ""}
-                          onSelect={(z: { label: string; dim: string }) => {
+                          onSelect={(label: string) => {
                             setItems((prev) => {
                               const newItems = [...prev];
                               newItems[index] = {
                                 ...newItems[index],
-                                sizeLabel: z.label,
-                                // B16.5 vs B16.47 Sr. A/B depends on the size
-                                // row; master-extra sizes carry no dim — keep
-                                // whatever is already set.
-                                dimStandard: z.dim || newItems[index].dimStandard,
+                                sizeLabel: label,
+                                dimStandard: newItems[index].dimStandard || FLANGE_DIM_STANDARD,
                               };
                               return newItems;
                             });
@@ -1634,13 +1619,25 @@ function StandardQuotationPage() {
                               return newItems;
                             });
                           }}
-                          displayFn={(z: { label: string; dim: string }) =>
-                            z.dim && z.dim !== "ASME B16.5" ? `${z.label} — ${z.dim.replace("ASME ", "")}` : z.label
-                          }
-                          filterFn={(z: { label: string; dim: string }, query) =>
-                            `${z.label} ${z.dim}`.toLowerCase().includes(query.toLowerCase())
-                          }
-                          placeholder="Search sizes..."
+                          displayFn={(s: string) => s}
+                          filterFn={(s: string, query) => s.toLowerCase().includes(query.toLowerCase())}
+                          placeholder={item.product ? "Search sizes..." : "Select product first"}
+                        />
+                      </div>
+                    ) : item.itemCategory === "Plate" ? (
+                      <div className="space-y-1 lg:col-span-2 xl:col-span-2">
+                        <Label className="text-xs font-medium">Size (Thk x W x L) <span className="text-destructive">*</span></Label>
+                        {/* No plate size master exists — the only sizes are the
+                            ones typed against the product in Product Master, so
+                            this is free text with those as suggestions. */}
+                        <SmartCombobox
+                          options={getMasterExtraSizes(item.product)}
+                          value={item.sizeLabel || ""}
+                          onSelect={(label: string) => updateItem(index, "sizeLabel", label)}
+                          onChange={(text) => updateItem(index, "sizeLabel", text)}
+                          displayFn={(s: string) => s}
+                          filterFn={(s: string, query) => s.toLowerCase().includes(query.toLowerCase())}
+                          placeholder='e.g., 10MM THK X 1500 X 6000'
                         />
                       </div>
                     ) : (
@@ -1709,6 +1706,8 @@ function StandardQuotationPage() {
                         </div>
                       </>
                     )}
+                    {/* Plates have no end connection — the column prints "-" */}
+                    {item.itemCategory !== "Plate" && (
                     <div className="space-y-1">
                       <Label className="text-xs font-medium">Ends</Label>
                       <Select
@@ -1730,6 +1729,7 @@ function StandardQuotationPage() {
                         </SelectContent>
                       </Select>
                     </div>
+                    )}
                     <div className="space-y-1">
                       <Label className="text-xs font-medium">Qty <span className="text-destructive">*</span></Label>
                       <Input

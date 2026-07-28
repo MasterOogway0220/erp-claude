@@ -18,7 +18,7 @@ import { Separator } from "@/components/ui/separator";
 import { ProductMaterialSelect } from "@/components/shared/product-material-select";
 import { SizeSelect } from "@/components/shared/size-select";
 import { SmartCombobox } from "@/components/shared/smart-combobox";
-import { FLANGE_SIZES, getFittingSizeOptions, inferItemCategory } from "@/lib/fitting-flange-sizes";
+import { getFittingSizeOptions, getFlangeSizeOptions, inferItemCategory } from "@/lib/fitting-flange-sizes";
 import { Plus, Trash2, Save, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -476,16 +476,12 @@ function CreateSalesOrderPage() {
                         />
                       ) : inferItemCategory(item.product) === "Flange" ? (
                         <SmartCombobox
-                          options={FLANGE_SIZES}
+                          options={getFlangeSizeOptions(item.product)}
                           value={item.sizeLabel}
-                          onSelect={(z: { label: string; dim: string }) => updateItem(index, "sizeLabel", z.label)}
+                          onSelect={(s: string) => updateItem(index, "sizeLabel", s)}
                           onChange={(text) => updateItem(index, "sizeLabel", text)}
-                          displayFn={(z: { label: string; dim: string }) =>
-                            z.dim && z.dim !== "ASME B16.5" ? `${z.label} — ${z.dim.replace("ASME ", "")}` : z.label
-                          }
-                          filterFn={(z: { label: string; dim: string }, q) =>
-                            `${z.label} ${z.dim}`.toLowerCase().includes(q.toLowerCase())
-                          }
+                          displayFn={(s: string) => s}
+                          filterFn={(s: string, q) => s.toLowerCase().includes(q.toLowerCase())}
                           placeholder="Search sizes..."
                         />
                       ) : (

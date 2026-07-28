@@ -23,7 +23,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { PageLoading } from "@/components/shared/page-loading";
 import { SmartCombobox } from "@/components/shared/smart-combobox";
-import { FLANGE_SIZES, getFittingSizeOptions, inferItemCategory } from "@/lib/fitting-flange-sizes";
+import { FLANGE_DIM_STANDARD, getFittingSizeOptions, getFlangeSizeOptions, inferItemCategory } from "@/lib/fitting-flange-sizes";
 
 type POItemCategory = "Pipe" | "Fitting" | "Flange";
 
@@ -511,7 +511,18 @@ function CreatePOPage() {
                         showAdditionalSpec
                         productLabel="Product *"
                         materialLabel="Material"
-                        onAutoFill={({ ends, dimStandard }) => {
+                        onAutoFill={({ ends, dimStandard, size }) => {
+                          // A size recorded on the master row lands on the item
+                          // when it is blank (never over the user's own entry).
+                          if (size) {
+                            setItems((prev) => {
+                              const cur = prev[index];
+                              if (!cur || cur.sizeLabel || cur.itemCategory === "Pipe") return prev;
+                              const next = [...prev];
+                              next[index] = { ...cur, sizeLabel: size };
+                              return next;
+                            });
+                          }
                           // Old FittingSelect composed end/standard into the
                           // spec column; keep that for fitting items. Guard
                           // INSIDE the functional update — the render-scoped
@@ -543,25 +554,21 @@ function CreatePOPage() {
                         />
                       ) : item.itemCategory === "Flange" ? (
                         <SmartCombobox
-                          options={[...FLANGE_SIZES, ...getMasterExtraSizes(item.product).filter((s) => !FLANGE_SIZES.some((z) => z.label === s)).map((s) => ({ label: s, dim: "" }))]}
+                          options={Array.from(new Set([...getFlangeSizeOptions(item.product), ...getMasterExtraSizes(item.product)]))}
                           value={item.sizeLabel}
-                          onSelect={(z: { label: string; dim: string }) => {
+                          onSelect={(label: string) => {
                             const newItems = [...items];
                             newItems[index] = {
                               ...newItems[index],
-                              sizeLabel: z.label,
-                              additionalSpec: newItems[index].additionalSpec || z.dim,
+                              sizeLabel: label,
+                              additionalSpec: newItems[index].additionalSpec || FLANGE_DIM_STANDARD,
                             };
                             setItems(newItems);
                           }}
                           onChange={(text) => updateItem(index, "sizeLabel", text)}
-                          displayFn={(z: { label: string; dim: string }) =>
-                            z.dim && z.dim !== "ASME B16.5" ? `${z.label} — ${z.dim.replace("ASME ", "")}` : z.label
-                          }
-                          filterFn={(z: { label: string; dim: string }, q) =>
-                            `${z.label} ${z.dim}`.toLowerCase().includes(q.toLowerCase())
-                          }
-                          placeholder="Search sizes..."
+                          displayFn={(s: string) => s}
+                          filterFn={(s: string, q) => s.toLowerCase().includes(q.toLowerCase())}
+                          placeholder={item.product ? "Search sizes..." : "Select product first"}
                         />
                       ) : (
                         <SizeSelect

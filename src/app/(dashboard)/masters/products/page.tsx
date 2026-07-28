@@ -143,6 +143,7 @@ const PRODUCT_CATEGORIES = [
   { value: "VALVES", label: "Valves" },
   { value: "NUT_BOLT", label: "Nut Bolt" },
   { value: "GASKETS", label: "Gaskets" },
+  { value: "PLATES", label: "Plates" },
 ];
 
 interface ProductSpec {
@@ -183,6 +184,7 @@ const END_OPTIONS: Record<string, string[]> = {
   PIPES: ["BE", "PE", "NPTM", "BSPT"],
   FITTINGS: ["BW", "SW", "NPT"],
   FLANGES: ["RF", "FF", "RTJ"],
+  PLATES: [], // no end connection — keeps the select from offering pipe ends
 };
 
 function PipesPanel() {

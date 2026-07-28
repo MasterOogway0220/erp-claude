@@ -134,22 +134,49 @@ async function main() {
       newRows.push({ product: p.product, material: p.material, category: "FITTINGS", ends: parsed.ends, dim });
   }
 
-  // Flange dimension standard depends on the size picked at quotation time
-  for (const p of toProductSpecPairs(parseSectioned(f("PRODUCT SPEC MASTER - FLANGE (1).xlsx"))))
-    newRows.push({ product: p.product, material: p.material, category: "FLANGES", ends: null, dim: null });
+  // The whole flange master is ASME B16.5 now, so the standard is a property of
+  // the product rather than of the size picked at quotation time.
+  for (const p of toProductSpecPairs(parseSectioned(f("PRODUCT SPEC MASTER - FLANGE B16.5.xlsx"))))
+    newRows.push({ product: p.product, material: p.material, category: "FLANGES", ends: null, dim: "ASME B16.5" });
 
   const byCat = newRows.reduce<Record<string, number>>((a, r) => ((a[r.category] = (a[r.category] || 0) + 1), a), {});
   console.log(`New ProductSpecMaster rows: ${newRows.length}`, byCat);
 
   // 3. Wipe + reload ProductSpecMaster
+  //
+  // Two things must survive a reload, because the Excel files cannot recreate
+  // them: categories with no source file (PLATES, VALVES, …), and rows a user
+  // typed in Masters > Products. This seed only ever writes product, material,
+  // category, ends and dimensionalStandardId — so a row carrying a size,
+  // specification, grade or length was entered by hand.
+  const handEntered = {
+    OR: [
+      { size: { not: null } },
+      { specification: { not: null } },
+      { grade: { not: null } },
+      { length: { not: null } },
+    ],
+  };
+  const wipeWhere = {
+    category: { in: ["PIPES", "FITTINGS", "FLANGES"] as ProductCategory[] },
+    NOT: handEntered,
+  };
+
   const existing = await prisma.productSpecMaster.groupBy({ by: ["category"], _count: true });
   console.log(
-    "Existing ProductSpecMaster rows to delete:",
+    "Existing ProductSpecMaster rows:",
     existing.map((e) => `${e.category ?? "null"}=${e._count}`).join(", ") || "none"
   );
+  const keep = await prisma.productSpecMaster.findMany({
+    where: { category: { in: ["PIPES", "FITTINGS", "FLANGES"] }, ...handEntered },
+    select: { product: true, material: true, category: true, size: true },
+  });
+  console.log(`  to delete: ${await prisma.productSpecMaster.count({ where: wipeWhere })}`);
+  console.log(`  hand-entered, preserved: ${keep.length}`);
+  for (const k of keep) console.log(`    · ${k.category} ${k.product} / ${k.material ?? "-"} / ${k.size ?? "-"}`);
 
   if (!DRY) {
-    await prisma.productSpecMaster.deleteMany({});
+    await prisma.productSpecMaster.deleteMany({ where: wipeWhere });
     const chunk = 100;
     for (let i = 0; i < newRows.length; i += chunk) {
       const data = [];

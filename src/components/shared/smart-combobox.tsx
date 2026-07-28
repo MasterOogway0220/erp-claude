@@ -128,7 +128,12 @@ export function SmartCombobox<T>({
           ref={listRef}
           className="absolute z-50 mt-1 max-h-48 w-full overflow-auto rounded-md border bg-popover p-1 shadow-md"
         >
-          {filtered.slice(0, 50).map((item, i) => (
+          {/* No render cap: callers append master-entered options AFTER the
+              built-in pools (fitting sizes are 173 long, flange sizes 302), so
+              a cap hid exactly the hand-added entries. It also desynced
+              keyboard nav, which indexes the full `filtered`. Worst real list
+              is ~300 rows inside a scroll box. */}
+          {filtered.map((item, i) => (
             <div
               key={i}
               className={cn(

@@ -156,7 +156,6 @@ export async function POST(request: NextRequest) {
       inquiryDate,
       // New fields
       dealOwnerId,
-      preparedById: preparedByIdBody,
       sourceTenderId,
       nextActionDate,
       kindAttention,
@@ -253,12 +252,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // "Prepared by" is the ERP login that created the quotation — it prints on
+    // the customer-facing PDF as the contact, so it is taken from the session
+    // and never from the request body (a client must not forge authorship).
     // Verify user exists in DB (guards against stale JWT after DB reset)
     const userInDb = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: { id: true },
     });
-    const preparedById = preparedByIdBody || (userInDb ? session.user.id : null);
+    const preparedById = userInDb ? session.user.id : null;
 
     // Generate quotation number using shared document numbering utility
     const quotationNo = await generateDocumentNumber("QUOTATION", companyId);

@@ -36,8 +36,9 @@ import {
 import { Plus, Trash2, ArrowLeft, Building2, MapPin, ListChecks, Copy, ChevronDown, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
+import { useCurrentUser } from "@/hooks/use-current-user";
 import { ProductMaterialSelect, getMasterExtraSizes } from "@/components/shared/product-material-select";
-import { FLANGE_SIZES, getFittingSizeOptions } from "@/lib/fitting-flange-sizes";
+import { getFittingSizeOptions, getFlangeSizeOptions } from "@/lib/fitting-flange-sizes";
 
 type NonStdItemCategory = "Item" | "Fitting" | "Flange";
 
@@ -117,6 +118,7 @@ function NonStandardQuotationPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get("editId");
+  const { user: currentUser } = useCurrentUser();
 
   const [formData, setFormData] = useState({
     customerId: "",
@@ -132,7 +134,6 @@ function NonStandardQuotationPage() {
     placeOfSupplyState: "",
     placeOfSupplyCountry: "India",
     dealOwnerId: "",
-    preparedById: "",
     nextActionDate: "",
     kindAttention: "",
     sourceTenderId: "",
@@ -532,7 +533,6 @@ function NonStandardQuotationPage() {
         placeOfSupplyState: q.placeOfSupplyState || "",
         placeOfSupplyCountry: q.placeOfSupplyCountry || "India",
         dealOwnerId: q.dealOwnerId || "",
-        preparedById: q.preparedById || "",
         nextActionDate: q.nextActionDate ? new Date(q.nextActionDate).toISOString().split("T")[0] : "",
         kindAttention: q.kindAttention || "",
         sourceTenderId: q.sourceTenderId || "",
@@ -808,7 +808,17 @@ function NonStandardQuotationPage() {
             patch({ [labelField]: val, size: "" } as Partial<NonStdItem>)
           }
           onMaterialChange={(val) => patch({ material: val })}
-          onAutoFill={({ ends }) => patch(ends && isFitting ? { endType: ends } : {}, true)}
+          onAutoFill={({ ends, size }) =>
+            patch(
+              {
+                ...(ends && isFitting ? { endType: ends } : {}),
+                // a size recorded on the master row belongs on the item, but
+                // never over an entry the user already made
+                ...(size && !item.size ? { size } : {}),
+              },
+              true
+            )
+          }
         />
         <div className="grid gap-2">
           <Label className="text-sm">Size</Label>
@@ -824,24 +834,13 @@ function NonStandardQuotationPage() {
             />
           ) : (
             <SmartCombobox
-              options={[...FLANGE_SIZES, ...getMasterExtraSizes(item[labelField]).filter((s) => !FLANGE_SIZES.some((z) => z.label === s)).map((s) => ({ label: s, dim: "" }))]}
+              options={Array.from(new Set([...getFlangeSizeOptions(item[labelField]), ...getMasterExtraSizes(item[labelField])]))}
               value={item.size}
-              onSelect={(z: { label: string; dim: string }) =>
-                // keep the B16.47 Sr. A/B distinction — the same label exists
-                // under both series and the size string is all that persists
-                patch(
-                  { size: z.dim && z.dim !== "ASME B16.5" ? `${z.label} (${z.dim.replace("ASME ", "")})` : z.label },
-                  true
-                )
-              }
+              onSelect={(label: string) => patch({ size: label }, true)}
               onChange={(text) => patch({ size: text })}
-              displayFn={(z: { label: string; dim: string }) =>
-                z.dim && z.dim !== "ASME B16.5" ? `${z.label} — ${z.dim.replace("ASME ", "")}` : z.label
-              }
-              filterFn={(z: { label: string; dim: string }, q) =>
-                `${z.label} ${z.dim}`.toLowerCase().includes(q.toLowerCase())
-              }
-              placeholder="Search sizes..."
+              displayFn={(s: string) => s}
+              filterFn={(s: string, q) => s.toLowerCase().includes(q.toLowerCase())}
+              placeholder={item[labelField] ? "Search sizes..." : "Select flange first"}
             />
           )}
         </div>
@@ -1198,34 +1197,13 @@ function NonStandardQuotationPage() {
 
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium">Prepared By</Label>
-                {editId ? (
-                  // Set once, by whoever created the quotation — editing it later
-                  // must not reassign authorship, so show it read-only.
-                  <div className="flex h-9 items-center rounded-md border bg-muted px-3 text-sm">
-                    {editData?.quotation?.preparedBy?.name ||
-                      usersData?.users?.find((u: any) => u.id === formData.preparedById)?.name ||
-                      "Unassigned"}
-                  </div>
-                ) : (
-                <Select
-                  value={formData.preparedById || "NONE"}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, preparedById: value === "NONE" ? "" : value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select person" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="NONE">Unassigned</SelectItem>
-                    {usersData?.users?.map((user: any) => (
-                      <SelectItem key={user.id} value={user.id}>
-                        {user.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                )}
+                {/* Authorship is the ERP login, not a picker: the API stamps
+                    session.user on create and never reassigns it on edit. */}
+                <div className="flex h-9 items-center rounded-md border bg-muted px-3 text-sm">
+                  {editId
+                    ? editData?.quotation?.preparedBy?.name || "Unassigned"
+                    : currentUser?.name || "—"}
+                </div>
               </div>
             </div>
 

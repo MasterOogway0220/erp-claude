@@ -33,6 +33,7 @@ interface ProductMaterialSelectProps {
     additionalSpec?: string;
     ends?: string;
     dimStandard?: string;
+    size?: string;
   }) => void;
   // Restrict the product list to one master category (PIPES/FITTINGS/FLANGES)
   category?: string;
@@ -170,6 +171,9 @@ export function ProductMaterialSelect({
     onAutoFill({
       additionalSpec: unique(matches.map((p) => p.additionalSpec)),
       ends: unique(matches.map((p) => p.ends)),
+      // A size recorded on the master row is the whole point of entering it —
+      // carry it onto the item when the match is unambiguous.
+      size: unique(matches.map((p) => p.size)),
       dimStandard:
         unique(matches.map((p) => p.dimensionalStandard?.name)) ??
         (explicitlyDimless ? "-" : undefined),
