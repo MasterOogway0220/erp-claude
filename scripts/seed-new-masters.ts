@@ -98,7 +98,10 @@ async function main() {
     if (!name) return null;
     if (dimIds.has(name)) return dimIds.get(name)!;
     const code = name.replace(/\s+/g, "_").toUpperCase();
-    let row = await prisma.dimensionalStandardMaster.findUnique({ where: { code } });
+    // Look up by NAME, not by the derived code: the legacy seed wrote
+    // "ASME_B36_10" where this derivation yields "ASME_B36.10", so keying on
+    // code created a second row for the same standard.
+    let row = await prisma.dimensionalStandardMaster.findFirst({ where: { name } });
     if (!row) {
       if (DRY) {
         console.log(`  (would create dimensional standard: ${name})`);
@@ -175,12 +178,24 @@ async function main() {
   console.log(`  hand-entered, preserved: ${keep.length}`);
   for (const k of keep) console.log(`    · ${k.category} ${k.product} / ${k.material ?? "-"} / ${k.size ?? "-"}`);
 
+  // A preserved row whose product/material also exists in the Excel would gain
+  // a twin on every reload (no unique constraint, so createMany can't skip it),
+  // and the twins accumulate. Drop the file's copy — the preserved row carries
+  // strictly more information.
+  const preservedKeys = new Set(keep.map((k) => `${k.category}§${k.product}§${k.material ?? ""}`));
+  const beforeDedupe = newRows.length;
+  const insertRows = newRows.filter(
+    (r) => !preservedKeys.has(`${r.category}§${r.product}§${r.material}`)
+  );
+  if (insertRows.length !== beforeDedupe)
+    console.log(`  skipped ${beforeDedupe - insertRows.length} file row(s) already covered by a preserved row`);
+
   if (!DRY) {
     await prisma.productSpecMaster.deleteMany({ where: wipeWhere });
     const chunk = 100;
-    for (let i = 0; i < newRows.length; i += chunk) {
+    for (let i = 0; i < insertRows.length; i += chunk) {
       const data = [];
-      for (const r of newRows.slice(i, i + chunk)) {
+      for (const r of insertRows.slice(i, i + chunk)) {
         data.push({
           product: r.product,
           material: r.material,
@@ -191,7 +206,7 @@ async function main() {
         });
       }
       await prisma.productSpecMaster.createMany({ data });
-      console.log(`  inserted ${Math.min(i + chunk, newRows.length)} / ${newRows.length}`);
+      console.log(`  inserted ${Math.min(i + chunk, insertRows.length)} / ${insertRows.length}`);
     }
     const final = await prisma.productSpecMaster.groupBy({ by: ["category"], _count: true });
     console.log("Final:", final.map((e) => `${e.category}=${e._count}`).join(", "));

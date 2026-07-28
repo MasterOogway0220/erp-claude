@@ -97,10 +97,12 @@ export const FLANGE_DIM_STANDARD = "ASME B16.5";
 // Blind and lap-joint flanges have no bore and threaded ones are NPT, so only
 // weld neck / socket weld / slip on take a schedule in their size.
 export function getFlangeSizeOptions(product: string): string[] {
-  const p = (product || "").toUpperCase();
+  const p = (product || "").trim().toUpperCase();
   if (p.includes("THREADED")) return FLANGE_SIZES.THREADED;
   if (/BLIND|LAP\\s*JOINT/.test(p)) return FLANGE_SIZES.PLAIN;
-  return /^(S\\.S\\.|D\\.S\\.)/.test(product.trim())
+  // match the material class on the same uppercased string as the type tests —
+  // a free-typed "s.s. flange, weld neck" must not fall through to the CS pool
+  return /^(S\\.S\\.|D\\.S\\.)/.test(p)
     ? FLANGE_SIZES.BORED_SS_DS
     : FLANGE_SIZES.BORED_CS_AS;
 }

@@ -129,10 +129,12 @@ export function SmartCombobox<T>({
           className="absolute z-50 mt-1 max-h-48 w-full overflow-auto rounded-md border bg-popover p-1 shadow-md"
         >
           {/* No render cap: callers append master-entered options AFTER the
-              built-in pools (fitting sizes are 173 long, flange sizes 302), so
-              a cap hid exactly the hand-added entries. It also desynced
-              keyboard nav, which indexes the full `filtered`. Worst real list
-              is ~300 rows inside a scroll box. */}
+              built-in pools (fitting sizes 172, flange sizes up to 855), so a
+              cap hid exactly the hand-added entries. It also desynced keyboard
+              nav, which indexes the full `filtered`. Worst real list is 855
+              rows (FLANGE_SIZES.BORED_CS_AS) inside a scroll box; typing
+              filters it down immediately. Virtualise only if that measures
+              slow — a cap is the wrong fix, it hides the tail by design. */}
           {filtered.map((item, i) => (
             <div
               key={i}

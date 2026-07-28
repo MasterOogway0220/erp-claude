@@ -613,7 +613,12 @@ function StandardQuotationPage() {
           ...item,
           itemCategory: (["Pipe", "Fitting", "Flange", "Plate"].includes(item.itemType)
             ? item.itemType
-            : item.fittingId ? "Fitting" : item.flangeId ? "Flange" : "Pipe") as ItemCategory,
+            : item.fittingId ? "Fitting"
+            : item.flangeId ? "Flange"
+            // Plate lines quoted before the Plate tab existed carry no
+            // itemType; recognise them by name so they don't reopen as pipes.
+            : /\bPLATE\b|\bSHEET\b/i.test(item.product || "") ? "Plate"
+            : "Pipe") as ItemCategory,
           slNo: item.slNo || "",
           materialCodeId: item.materialCodeId || "",
           materialCodeLabel: item.materialCodeLabel || item.materialCode?.code || "",
@@ -1551,7 +1556,13 @@ function StandardQuotationPage() {
                           const newItems = [...prev];
                           newItems[index] = {
                             ...newItems[index],
-                            ends: ends || newItems[index].ends,
+                            // a plate has no end connection and the field is
+                            // hidden, so an autofilled value could never be seen
+                            // or corrected — but would still print
+                            ends:
+                              newItems[index].itemCategory === "Plate"
+                                ? ""
+                                : ends || newItems[index].ends,
                             // "" clears a stale dim for dim-less materials
                             dimStandard: dimStandard ?? newItems[index].dimStandard,
                             // A Pipe's label is derived from the size master,
@@ -1626,10 +1637,12 @@ function StandardQuotationPage() {
                       </div>
                     ) : item.itemCategory === "Plate" ? (
                       <div className="space-y-1 lg:col-span-2 xl:col-span-2">
-                        <Label className="text-xs font-medium">Size (Thk x W x L) <span className="text-destructive">*</span></Label>
+                        <Label className="text-xs font-medium">Size (W x L x Thk) <span className="text-destructive">*</span></Label>
                         {/* No plate size master exists — the only sizes are the
                             ones typed against the product in Product Master, so
-                            this is free text with those as suggestions. */}
+                            this is free text with those as suggestions. The
+                            placeholder mirrors how plates are already written
+                            on existing quotations. */}
                         <SmartCombobox
                           options={getMasterExtraSizes(item.product)}
                           value={item.sizeLabel || ""}
@@ -1637,7 +1650,7 @@ function StandardQuotationPage() {
                           onChange={(text) => updateItem(index, "sizeLabel", text)}
                           displayFn={(s: string) => s}
                           filterFn={(s: string, query) => s.toLowerCase().includes(query.toLowerCase())}
-                          placeholder='e.g., 10MM THK X 1500 X 6000'
+                          placeholder="e.g., 150MM W X 500MM L X 10MM THK"
                         />
                       </div>
                     ) : (

@@ -809,15 +809,23 @@ function NonStandardQuotationPage() {
           }
           onMaterialChange={(val) => patch({ material: val })}
           onAutoFill={({ ends, size }) =>
-            patch(
-              {
+            // Guard INSIDE the functional update: onProductChange clears size
+            // in this same event, so the render-scoped `item` still holds the
+            // previous product's size and would wrongly block the autofill.
+            setItems((prev) => {
+              const cur = prev[index];
+              if (!cur) return prev;
+              const merged = {
+                ...cur,
                 ...(ends && isFitting ? { endType: ends } : {}),
                 // a size recorded on the master row belongs on the item, but
                 // never over an entry the user already made
-                ...(size && !item.size ? { size } : {}),
-              },
-              true
-            )
+                ...(size && !cur.size ? { size } : {}),
+              };
+              return prev.map((it, i) =>
+                i === index ? { ...merged, itemDescription: compose(merged) } : it
+              );
+            })
           }
         />
         <div className="grid gap-2">
