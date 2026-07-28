@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { ProductMaterialSelect } from "@/components/shared/product-material-select";
+import { ProductMaterialSelect, getMasterExtraSizes } from "@/components/shared/product-material-select";
 import { SizeSelect } from "@/components/shared/size-select";
 import { SmartCombobox } from "@/components/shared/smart-combobox";
 import { getFittingSizeOptions, getFlangeSizeOptions, inferItemCategory } from "@/lib/fitting-flange-sizes";
@@ -459,14 +459,25 @@ function CreateSalesOrderPage() {
                         onMaterialChange={(val) => updateItem(index, "material", val)}
                         onAdditionalSpecChange={(val) => updateItem(index, "additionalSpec", val)}
                         showAdditionalSpec
-                        onAutoFill={() => {}}
+                        onAutoFill={({ size }) => {
+                          // same master-size linkage as the quotation and PO
+                          // screens: fill a blank size from the master row
+                          if (!size) return;
+                          setItems((prev) => {
+                            const cur = prev[index];
+                            if (!cur || cur.sizeLabel) return prev;
+                            const next = [...prev];
+                            next[index] = { ...cur, sizeLabel: size };
+                            return next;
+                          });
+                        }}
                       />
                     </div>
                     <div className="md:col-span-2">
                       <Label className="text-xs">Size</Label>
                       {inferItemCategory(item.product) === "Fitting" ? (
                         <SmartCombobox
-                          options={getFittingSizeOptions(item.product)}
+                          options={Array.from(new Set([...getFittingSizeOptions(item.product), ...getMasterExtraSizes(item.product)]))}
                           value={item.sizeLabel}
                           onSelect={(s: string) => updateItem(index, "sizeLabel", s)}
                           onChange={(text) => updateItem(index, "sizeLabel", text)}
@@ -476,7 +487,7 @@ function CreateSalesOrderPage() {
                         />
                       ) : inferItemCategory(item.product) === "Flange" ? (
                         <SmartCombobox
-                          options={getFlangeSizeOptions(item.product)}
+                          options={Array.from(new Set([...getFlangeSizeOptions(item.product), ...getMasterExtraSizes(item.product)]))}
                           value={item.sizeLabel}
                           onSelect={(s: string) => updateItem(index, "sizeLabel", s)}
                           onChange={(text) => updateItem(index, "sizeLabel", text)}

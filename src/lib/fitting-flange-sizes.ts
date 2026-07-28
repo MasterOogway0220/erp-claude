@@ -2208,12 +2208,17 @@ export function getFittingEnds(product: string): "BW" | "SW" | "NPT" {
 // the name-suffix convention, so custom master products that don't follow
 // the ", SW"/", SCRD" naming still route to the right pool.
 export function getFittingSizeOptions(product: string, knownEnds?: string): string[] {
+  const p = (product || "").trim().toUpperCase();
+  // No product yet means no pool is decided — offering one anyway lets a size
+  // be picked that the eventual product cannot take. The call sites already
+  // say "Select product first".
+  if (!p) return [];
   const ends = knownEnds === "SW" || knownEnds === "NPT" || knownEnds === "BW"
     ? knownEnds
     : getFittingEnds(product);
   if (ends === "SW") return FITTING_SIZES.SW;
   if (ends === "NPT") return FITTING_SIZES.THRD;
-  return /^(S\.S\.|D\.S\.)/.test(product.trim())
+  return /^(S\.S\.|D\.S\.)/.test(p)
     ? FITTING_SIZES.BW_SS_DS
     : FITTING_SIZES.BW_CS_AS;
 }
@@ -2230,6 +2235,7 @@ export const FLANGE_DIM_STANDARD = "ASME B16.5";
 // weld neck / socket weld / slip on take a schedule in their size.
 export function getFlangeSizeOptions(product: string): string[] {
   const p = (product || "").trim().toUpperCase();
+  if (!p) return []; // see getFittingSizeOptions — no product, no pool
   if (p.includes("THREADED")) return FLANGE_SIZES.THREADED;
   if (/BLIND|LAP\s*JOINT/.test(p)) return FLANGE_SIZES.PLAIN;
   // match the material class on the same uppercased string as the type tests —
