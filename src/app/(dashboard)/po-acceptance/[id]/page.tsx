@@ -41,6 +41,9 @@ interface POAcceptanceDetail {
   accountsName: string | null;
   accountsEmail: string | null;
   accountsPhone: string | null;
+  signedCopyPath: string | null;
+  signedCopyName: string | null;
+  signedCopyAt: string | null;
   createdAt: string;
   createdBy: { name: string } | null;
   clientPurchaseOrder: {
@@ -113,6 +116,7 @@ export default function POAcceptanceDetailPage({
   const [acceptance, setAcceptance] = useState<POAcceptanceDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [uploadingSigned, setUploadingSigned] = useState(false);
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [emailTo, setEmailTo] = useState("");
   const [emailCc, setEmailCc] = useState("");
@@ -136,6 +140,54 @@ export default function POAcceptanceDetailPage({
       console.error("Failed to fetch:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // The client's countersigned copy comes back by email and gets scanned in.
+  // Goes through /api/upload, so it lands in the database like every other
+  // document rather than on a disk that Vercel wipes.
+  const handleSignedCopyUpload = async (file: File) => {
+    setUploadingSigned(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const up = await fetch("/api/upload", { method: "POST", body: fd });
+      const uploaded = await up.json();
+      if (!up.ok) throw new Error(uploaded.error || "Upload failed");
+
+      const res = await fetch(`/api/po-acceptance/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          signedCopyPath: uploaded.filePath,
+          signedCopyName: uploaded.fileName,
+        }),
+      });
+      if (!res.ok) throw new Error("Could not attach the signed copy");
+      toast.success("Signed copy attached");
+      fetchAcceptance();
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setUploadingSigned(false);
+    }
+  };
+
+  const handleSignedCopyRemove = async () => {
+    setUploadingSigned(true);
+    try {
+      const res = await fetch(`/api/po-acceptance/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ signedCopyPath: "", signedCopyName: "" }),
+      });
+      if (!res.ok) throw new Error("Could not remove the signed copy");
+      toast.success("Signed copy removed");
+      fetchAcceptance();
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setUploadingSigned(false);
     }
   };
 
@@ -313,6 +365,54 @@ export default function POAcceptanceDetailPage({
               value={format(new Date(acceptance.createdAt), "dd/MM/yyyy HH:mm")}
             />
             <DetailRow label="Created By" value={acceptance.createdBy?.name} />
+
+            <div className="pt-2 border-t space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">
+                Client Signed Copy
+              </p>
+              {acceptance.signedCopyPath ? (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <a
+                    href={acceptance.signedCopyPath}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-sm text-primary hover:underline break-all"
+                  >
+                    {acceptance.signedCopyName || "View signed copy"}
+                  </a>
+                  {acceptance.signedCopyAt && (
+                    <span className="text-xs text-muted-foreground">
+                      received {format(new Date(acceptance.signedCopyAt), "dd/MM/yyyy")}
+                    </span>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={uploadingSigned}
+                    onClick={handleSignedCopyRemove}
+                  >
+                    Remove
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    disabled={uploadingSigned}
+                    className="h-9 text-xs"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) handleSignedCopyUpload(f);
+                      e.target.value = "";
+                    }}
+                  />
+                  {uploadingSigned && (
+                    <span className="text-xs text-muted-foreground">Uploading...</span>
+                  )}
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 

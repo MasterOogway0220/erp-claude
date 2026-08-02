@@ -203,6 +203,7 @@ export async function PATCH(
       status,
       acceptanceDetails,
       wizardStep,
+      signedCopyPath, signedCopyName,
       gstRate, isInterState,
       freight, freightTaxApplicable,
       packingForwarding, packingTaxApplicable,
@@ -230,6 +231,13 @@ export async function PATCH(
         ...(accountsEmail !== undefined && { accountsEmail: accountsEmail || null }),
         ...(accountsPhone !== undefined && { accountsPhone: accountsPhone || null }),
         ...(status && { status }),
+        // Stamp the received-on date from the upload itself; clearing the path
+        // clears the date, so the two can never disagree.
+        ...(signedCopyPath !== undefined && {
+          signedCopyPath: signedCopyPath || null,
+          signedCopyName: signedCopyName || null,
+          signedCopyAt: signedCopyPath ? new Date() : null,
+        }),
         ...(acceptanceDetails !== undefined && { acceptanceDetails: acceptanceDetails ?? null }),
         ...(wizardStep !== undefined && { wizardStep }),
         ...(gstRate !== undefined && { gstRate: gstRate ?? null }),

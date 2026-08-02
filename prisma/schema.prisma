@@ -755,6 +755,7 @@ model CustomerDispatchAddress {
   invoices      Invoice[]
   salesOrders   SalesOrder[]
   clientPOs     ClientPurchaseOrder[]
+  purchaseRequisitions PurchaseRequisition[]
 
   @@index([customerId])
 }
@@ -816,6 +817,8 @@ model DepartmentMaster {
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  purchaseRequisitions PurchaseRequisition[]
 
   @@unique([companyId, name])
   @@index([companyId])
@@ -1136,6 +1139,12 @@ model PurchaseRequisition {
   approvalDate          DateTime?
   requestedById         String?
   approvalRemarks       String?
+  // From the purchase workflow document's PR basic-details screen. `remarks`
+  // is the requester's note; approvalRemarks above belongs to the approver and
+  // the two were being conflated because only the latter existed.
+  remarks               String?                @db.Text
+  departmentId          String?
+  dispatchAddressId     String?
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
   companyId             String?
@@ -1147,6 +1156,8 @@ model PurchaseRequisition {
   requestedBy           User?                  @relation("PRRequestedBy", fields: [requestedById], references: [id])
   salesOrder            SalesOrder?            @relation(fields: [salesOrderId], references: [id])
   suggestedVendor       VendorMaster?          @relation("PRVendor", fields: [suggestedVendorId], references: [id])
+  department            DepartmentMaster?        @relation(fields: [departmentId], references: [id])
+  dispatchAddress       CustomerDispatchAddress? @relation(fields: [dispatchAddressId], references: [id])
   rfqs                  RFQ[]
 
   @@index([companyId])
@@ -1154,6 +1165,8 @@ model PurchaseRequisition {
   @@index([approvedById], map: "PurchaseRequisition_approvedById_fkey")
   @@index([requestedById], map: "PurchaseRequisition_requestedById_fkey")
   @@index([salesOrderId], map: "PurchaseRequisition_salesOrderId_fkey")
+  @@index([departmentId])
+  @@index([dispatchAddressId])
   @@index([suggestedVendorId], map: "PurchaseRequisition_suggestedVendorId_fkey")
 }
 
@@ -2372,6 +2385,11 @@ model POAcceptance {
   accountsEmail             String?
   accountsPhone             String?
   status                    String                 @default("DRAFT")
+  // The client's countersigned copy, returned by email and scanned back in.
+  // generatedPath above is our outgoing PDF; this is their acknowledgement.
+  signedCopyPath            String?
+  signedCopyName            String?
+  signedCopyAt              DateTime?
   createdById               String
   createdAt                 DateTime               @default(now())
   updatedAt                 DateTime               @updatedAt

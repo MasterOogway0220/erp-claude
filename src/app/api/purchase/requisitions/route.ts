@@ -62,6 +62,9 @@ export async function POST(request: NextRequest) {
       suggestedVendorId,
       requisitionType,
       requiredByDate,
+      remarks,
+      departmentId,
+      dispatchAddressId,
       items,
     } = body;
 
@@ -70,6 +73,18 @@ export async function POST(request: NextRequest) {
         { error: "At least one item is required" },
         { status: 400 }
       );
+    }
+
+    // A PR raised against a sales order ships to wherever that order ships.
+    // Asking again would be a second chance to get it wrong, and stock or
+    // emergency PRs have no customer to pick an address from at all.
+    let resolvedDispatchAddressId = dispatchAddressId || null;
+    if (!resolvedDispatchAddressId && salesOrderId) {
+      const so = await prisma.salesOrder.findUnique({
+        where: { id: salesOrderId },
+        select: { dispatchAddressId: true },
+      });
+      resolvedDispatchAddressId = so?.dispatchAddressId ?? null;
     }
 
     // Generate PR number using shared utility
@@ -84,6 +99,9 @@ export async function POST(request: NextRequest) {
         suggestedVendorId: suggestedVendorId || null,
         requisitionType: requisitionType || null,
         requiredByDate: requiredByDate ? new Date(requiredByDate) : null,
+        remarks: remarks || null,
+        departmentId: departmentId || null,
+        dispatchAddressId: resolvedDispatchAddressId,
         requestedById: session.user.id,
         status: "DRAFT",
         items: {

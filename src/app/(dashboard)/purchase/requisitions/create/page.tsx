@@ -67,7 +67,11 @@ function CreatePRPage() {
       new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       "yyyy-MM-dd"
     ),
+    departmentId: "",
+    remarks: "",
   });
+
+  const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
 
   const [items, setItems] = useState<PRItem[]>([
     {
@@ -84,7 +88,19 @@ function CreatePRPage() {
   useEffect(() => {
     fetchVendors();
     fetchSalesOrders();
+    fetchDepartments();
   }, []);
+
+  const fetchDepartments = async () => {
+    try {
+      const res = await fetch("/api/masters/departments");
+      if (!res.ok) return;
+      const data = await res.json();
+      setDepartments(data.departments || data || []);
+    } catch {
+      // Department is optional on a PR — a failed lookup must not block it.
+    }
+  };
 
   const fetchVendors = async () => {
     try {
@@ -217,6 +233,28 @@ function CreatePRPage() {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="departmentId">Department</Label>
+                <Select
+                  value={formData.departmentId || "NONE"}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, departmentId: value === "NONE" ? "" : value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Raising department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NONE">Not specified</SelectItem>
+                    {departments.map((d) => (
+                      <SelectItem key={d.id} value={d.id}>
+                        {d.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="salesOrderId">Order Reference (Optional)</Label>
                 <Select
                   value={formData.salesOrderId || "NONE"}
@@ -271,6 +309,19 @@ function CreatePRPage() {
                   }
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="remarks">Remarks</Label>
+              {/* The requester's note. Distinct from approvalRemarks, which
+                  belongs to whoever approves it. */}
+              <Textarea
+                id="remarks"
+                rows={2}
+                placeholder="General remarks for this requisition"
+                value={formData.remarks}
+                onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
+              />
             </div>
           </CardContent>
         </Card>
