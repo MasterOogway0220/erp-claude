@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
       prisma.rFQ.count({ where: { ...filter } }),
     ]);
 
-    const activeStatuses = ["DRAFT", "PENDING_APPROVAL", "OPEN", "SENT_TO_VENDOR", "PARTIALLY_RECEIVED"] as const;
+    const activeStatuses = ["DRAFT", "PENDING_APPROVAL", "OPEN", "SENT_TO_VENDOR", "ACKNOWLEDGED", "IN_PRODUCTION", "READY_FOR_DISPATCH", "PARTIALLY_RECEIVED"] as const;
 
     const activePOs = await prisma.purchaseOrder.count({
       where: {

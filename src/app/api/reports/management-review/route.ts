@@ -27,13 +27,13 @@ export async function GET(request: NextRequest) {
       prisma.quotation.count({ where: { status: { in: ["DRAFT", "SENT", "APPROVED", "PENDING_APPROVAL"] }, ...companyFilter(companyId) } }),
       prisma.quotation.count({ where: { ...companyFilter(companyId) } }),
       prisma.quotation.count({ where: { status: "WON", ...companyFilter(companyId) } }),
-      prisma.purchaseOrder.count({ where: { status: { in: ["OPEN", "SENT_TO_VENDOR", "PARTIALLY_RECEIVED"] }, ...companyFilter(companyId) } }),
+      prisma.purchaseOrder.count({ where: { status: { in: ["OPEN", "SENT_TO_VENDOR", "ACKNOWLEDGED", "IN_PRODUCTION", "READY_FOR_DISPATCH", "PARTIALLY_RECEIVED"] }, ...companyFilter(companyId) } }),
       prisma.salesOrderItem.aggregate({
         where: { salesOrder: { status: { in: ["OPEN", "PARTIALLY_DISPATCHED"] }, ...companyFilter(companyId) } },
         _sum: { amount: true },
       }),
       prisma.purchaseOrder.aggregate({
-        where: { status: { in: ["OPEN", "SENT_TO_VENDOR", "PARTIALLY_RECEIVED"] }, ...companyFilter(companyId) },
+        where: { status: { in: ["OPEN", "SENT_TO_VENDOR", "ACKNOWLEDGED", "IN_PRODUCTION", "READY_FOR_DISPATCH", "PARTIALLY_RECEIVED"] }, ...companyFilter(companyId) },
         _sum: { totalAmount: true },
       }),
       prisma.salesOrder.count({ where: { status: { in: ["OPEN", "PARTIALLY_DISPATCHED"] }, ...companyFilter(companyId) } }),

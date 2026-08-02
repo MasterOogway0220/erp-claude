@@ -11,7 +11,19 @@ const VALID_PO_STATUS_TRANSITIONS: Record<string, string[]> = {
   DRAFT: ["PENDING_APPROVAL", "CANCELLED"],
   PENDING_APPROVAL: ["OPEN", "DRAFT", "CANCELLED"],
   OPEN: ["SENT_TO_VENDOR", "CANCELLED"],
-  SENT_TO_VENDOR: ["PARTIALLY_RECEIVED", "CANCELLED"],
+  // The vendor milestones are reportable in any forward order and skippable —
+  // a stock item is never "in production", and a vendor who ships without
+  // acknowledging must not block the GRN. Only going backwards is refused.
+  SENT_TO_VENDOR: [
+    "ACKNOWLEDGED",
+    "IN_PRODUCTION",
+    "READY_FOR_DISPATCH",
+    "PARTIALLY_RECEIVED",
+    "CANCELLED",
+  ],
+  ACKNOWLEDGED: ["IN_PRODUCTION", "READY_FOR_DISPATCH", "PARTIALLY_RECEIVED", "CANCELLED"],
+  IN_PRODUCTION: ["READY_FOR_DISPATCH", "PARTIALLY_RECEIVED", "CANCELLED"],
+  READY_FOR_DISPATCH: ["PARTIALLY_RECEIVED", "CANCELLED"],
   PARTIALLY_RECEIVED: ["FULLY_RECEIVED", "CANCELLED"],
   FULLY_RECEIVED: ["CLOSED", "CANCELLED"],
   CLOSED: ["CANCELLED"],
@@ -207,6 +219,27 @@ export async function PATCH(
         );
       }
       updateData.status = "SENT_TO_VENDOR";
+      auditAction = "STATUS_CHANGE";
+    } else if (action === "vendor_milestone") {
+      // One action for the three vendor-reported stages; the transition map
+      // above decides what is reachable rather than three near-identical
+      // branches each repeating the same guard.
+      const target = body.status as string;
+      const allowed = ["ACKNOWLEDGED", "IN_PRODUCTION", "READY_FOR_DISPATCH"];
+      if (!allowed.includes(target)) {
+        return NextResponse.json(
+          { error: `Not a vendor milestone: ${target}` },
+          { status: 400 }
+        );
+      }
+      const permitted = VALID_PO_STATUS_TRANSITIONS[existing.status] ?? [];
+      if (!permitted.includes(target)) {
+        return NextResponse.json(
+          { error: `Cannot move a ${existing.status} purchase order to ${target}` },
+          { status: 400 }
+        );
+      }
+      updateData.status = target;
       auditAction = "STATUS_CHANGE";
     } else if (action === "full_edit") {
       if (existing.status !== "DRAFT") {

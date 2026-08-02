@@ -2956,6 +2956,12 @@ enum POStatus {
   PENDING_APPROVAL
   OPEN
   SENT_TO_VENDOR
+  // Vendor-reported milestones between issuing the PO and goods arriving.
+  // Without them the order jumps from "sent" straight to "received" and there
+  // is no way to tell whether the vendor even accepted it.
+  ACKNOWLEDGED
+  IN_PRODUCTION
+  READY_FOR_DISPATCH
   PARTIALLY_RECEIVED
   FULLY_RECEIVED
   CLOSED

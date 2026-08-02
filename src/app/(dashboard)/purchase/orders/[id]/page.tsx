@@ -45,6 +45,7 @@ import { toast } from "sonner";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { downloadFile } from "@/lib/download-file";
 import { PageLoading } from "@/components/shared/page-loading";
+import { VENDOR_MILESTONES, isMilestoneAhead } from "@/lib/purchase/po-milestones";
 
 interface PO {
   id: string;
@@ -116,6 +117,9 @@ const poStatusColors: Record<string, string> = {
   APPROVED: "bg-blue-500",
   OPEN: "bg-green-500",
   SENT_TO_VENDOR: "bg-indigo-500",
+  ACKNOWLEDGED: "bg-sky-500",
+  IN_PRODUCTION: "bg-amber-500",
+  READY_FOR_DISPATCH: "bg-teal-500",
   PARTIALLY_RECEIVED: "bg-yellow-500",
   FULLY_RECEIVED: "bg-purple-500",
   CLOSED: "bg-gray-500",
@@ -286,6 +290,28 @@ export default function PurchaseOrderDetailPage() {
     handleApprovalAction("reject", rejectionRemarks);
   };
 
+  const handleVendorMilestone = async (status: string, label: string) => {
+    if (!po) return;
+    setSubmitting(true);
+    try {
+      const response = await fetch(`/api/purchase/orders/${po.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "vendor_milestone", status }),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to update status");
+      }
+      toast.success(label.replace("Mark ", "Marked "));
+      fetchPO(po.id);
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const canApprove = user?.role === "MANAGEMENT" || user?.role === "ADMIN" || user?.role === "SUPER_ADMIN";
   const canSubmitForApproval = user?.role === "PURCHASE" || user?.role === "SUPER_ADMIN" || user?.role === "MANAGEMENT";
 
@@ -335,6 +361,20 @@ export default function PurchaseOrderDetailPage() {
             <FileDown className="w-4 h-4 mr-2" />
             Download PDF
           </Button>
+          {/* Vendor-reported progress. Only the stages still ahead of this PO
+              are offered, and each is optional — a vendor who ships straight
+              from stock never passes through production. */}
+          {VENDOR_MILESTONES.filter((m) => isMilestoneAhead(po.status, m.status)).map((m) => (
+            <Button
+              key={m.status}
+              variant="outline"
+              size="sm"
+              disabled={submitting}
+              onClick={() => handleVendorMilestone(m.status, m.label)}
+            >
+              {m.label}
+            </Button>
+          ))}
           {(po?.status === "APPROVED" || po?.status === "CONFIRMED") && (
             <Button
               variant="outline"
