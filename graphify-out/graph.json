@@ -9,7 +9,7 @@
       "source_file": "prisma.config.ts",
       "source_location": "L1",
       "id": "prisma_config",
-      "community": 52
+      "community": 55
     },
     {
       "label": "next-env.d.ts",
@@ -17,7 +17,7 @@
       "source_file": "next-env.d.ts",
       "source_location": "L1",
       "id": "next_env_d",
-      "community": 53
+      "community": 56
     },
     {
       "label": "vitest.config.ts",
@@ -25,7 +25,7 @@
       "source_file": "vitest.config.ts",
       "source_location": "L1",
       "id": "vitest_config",
-      "community": 54
+      "community": 57
     },
     {
       "label": "next.config.ts",
@@ -33,7 +33,7 @@
       "source_file": "next.config.ts",
       "source_location": "L1",
       "id": "next_config",
-      "community": 55
+      "community": 58
     },
     {
       "label": "seed-test-company.ts",
@@ -41,7 +41,7 @@
       "source_file": "prisma/seed-test-company.ts",
       "source_location": "L1",
       "id": "seed_test_company",
-      "community": 33
+      "community": 36
     },
     {
       "label": "main()",
@@ -49,7 +49,7 @@
       "source_file": "prisma/seed-test-company.ts",
       "source_location": "L15",
       "id": "seed_test_company_main",
-      "community": 33
+      "community": 36
     },
     {
       "label": "seed-test-user.ts",
@@ -57,7 +57,7 @@
       "source_file": "prisma/seed-test-user.ts",
       "source_location": "L1",
       "id": "seed_test_user",
-      "community": 34
+      "community": 37
     },
     {
       "label": "main()",
@@ -65,7 +65,7 @@
       "source_file": "prisma/seed-test-user.ts",
       "source_location": "L16",
       "id": "seed_test_user_main",
-      "community": 34
+      "community": 37
     },
     {
       "label": "seed-production.ts",
@@ -73,7 +73,7 @@
       "source_file": "prisma/seed-production.ts",
       "source_location": "L1",
       "id": "seed_production",
-      "community": 35
+      "community": 38
     },
     {
       "label": "seedProduction()",
@@ -81,7 +81,7 @@
       "source_file": "prisma/seed-production.ts",
       "source_location": "L28",
       "id": "seed_production_seedproduction",
-      "community": 35
+      "community": 38
     },
     {
       "label": "seed.ts",
@@ -297,7 +297,7 @@
       "source_file": "prisma/seed-offer-terms.ts",
       "source_location": "L1",
       "id": "seed_offer_terms",
-      "community": 36
+      "community": 39
     },
     {
       "label": "main()",
@@ -305,7 +305,7 @@
       "source_file": "prisma/seed-offer-terms.ts",
       "source_location": "L61",
       "id": "seed_offer_terms_main",
-      "community": 36
+      "community": 39
     },
     {
       "label": "seed-new-masters.ts",
@@ -353,7 +353,7 @@
       "source_file": "scripts/migrate-warehouse-details-to-heats.ts",
       "source_location": "L1",
       "id": "migrate_warehouse_details_to_heats",
-      "community": 37
+      "community": 40
     },
     {
       "label": "main()",
@@ -361,7 +361,7 @@
       "source_file": "scripts/migrate-warehouse-details-to-heats.ts",
       "source_location": "L19",
       "id": "migrate_warehouse_details_to_heats_main",
-      "community": 37
+      "community": 40
     },
     {
       "label": "gen-size-constants.ts",
@@ -465,7 +465,7 @@
       "source_file": "src/middleware.ts",
       "source_location": "L1",
       "id": "middleware",
-      "community": 51
+      "community": 54
     },
     {
       "label": "audit-middleware.ts",
@@ -497,7 +497,7 @@
       "source_file": "src/types/index.ts",
       "source_location": "L1",
       "id": "index",
-      "community": 56
+      "community": 59
     },
     {
       "label": "layout.tsx",
@@ -897,7 +897,7 @@
       "source_file": "src/app/(auth)/login/page.tsx",
       "source_location": "L48",
       "id": "page_finishsignin",
-      "community": 16
+      "community": 18
     },
     {
       "label": "handleSubmit()",
@@ -905,7 +905,7 @@
       "source_file": "src/app/(dashboard)/warehouse/intimation/create/page.tsx",
       "source_location": "L177",
       "id": "page_handlesubmit",
-      "community": 16
+      "community": 18
     },
     {
       "label": "resendCode()",
@@ -945,7 +945,7 @@
       "source_file": "src/app/(dashboard)/reports/management-review/page.tsx",
       "source_location": "L86",
       "id": "page_formatcurrency",
-      "community": 41
+      "community": 50
     },
     {
       "label": "greeting()",
@@ -1033,7 +1033,7 @@
       "source_file": "src/app/(dashboard)/warehouse/intimation/[id]/page.tsx",
       "source_location": "L126",
       "id": "page_updateitem",
-      "community": 17
+      "community": 19
     },
     {
       "label": "addItem()",
@@ -1081,7 +1081,7 @@
       "source_file": "src/app/(dashboard)/sales/[id]/page.tsx",
       "source_location": "L103",
       "id": "page_fetchsalesorder",
-      "community": 38
+      "community": 46
     },
     {
       "label": "handleCancelSO()",
@@ -1089,7 +1089,7 @@
       "source_file": "src/app/(dashboard)/sales/[id]/page.tsx",
       "source_location": "L117",
       "id": "page_handlecancelso",
-      "community": 38
+      "community": 46
     },
     {
       "label": "ReserveStockPage()",
@@ -1153,7 +1153,7 @@
       "source_file": "src/app/(dashboard)/sales/create/page.tsx",
       "source_location": "L244",
       "id": "page_submitorder",
-      "community": 16
+      "community": 18
     },
     {
       "label": "fetchInspections()",
@@ -1177,7 +1177,7 @@
       "source_file": "src/app/(dashboard)/quality/mtc/page.tsx",
       "source_location": "L36",
       "id": "page_fetchmtcs",
-      "community": 30
+      "community": 31
     },
     {
       "label": "handleMtcSearch()",
@@ -1185,7 +1185,7 @@
       "source_file": "src/app/(dashboard)/quality/mtc/page.tsx",
       "source_location": "L53",
       "id": "page_handlemtcsearch",
-      "community": 30
+      "community": 31
     },
     {
       "label": "handleMtcVerificationUpdate()",
@@ -1193,7 +1193,7 @@
       "source_file": "src/app/(dashboard)/quality/mtc/page.tsx",
       "source_location": "L57",
       "id": "page_handlemtcverificationupdate",
-      "community": 30
+      "community": 31
     },
     {
       "label": "fetchLabLetters()",
@@ -1233,7 +1233,7 @@
       "source_file": "src/app/(dashboard)/quality/inspection-offers/[id]/page.tsx",
       "source_location": "L99",
       "id": "page_fetchoffer",
-      "community": 43
+      "community": 45
     },
     {
       "label": "downloadPdf()",
@@ -1249,7 +1249,7 @@
       "source_file": "src/app/(dashboard)/quality/inspection-offers/[id]/page.tsx",
       "source_location": "L130",
       "id": "page_handleofferaction",
-      "community": 43
+      "community": 45
     },
     {
       "label": "fetchTpiAgencies()",
@@ -1329,7 +1329,7 @@
       "source_file": "src/app/(dashboard)/client-purchase-orders/create/page.tsx",
       "source_location": "L397",
       "id": "page_toggleitemselection",
-      "community": 45
+      "community": 48
     },
     {
       "label": "toggleHeatSelection()",
@@ -1401,7 +1401,7 @@
       "source_file": "src/app/(dashboard)/purchase/orders/[id]/edit/page.tsx",
       "source_location": "L99",
       "id": "page_fetchpo",
-      "community": 19
+      "community": 24
     },
     {
       "label": "fetchIntimation()",
@@ -1585,7 +1585,7 @@
       "source_file": "src/app/(dashboard)/quality/ncr/[id]/page.tsx",
       "source_location": "L85",
       "id": "page_fetchncr",
-      "community": 20
+      "community": 23
     },
     {
       "label": "handleMoveToInvestigation()",
@@ -1593,7 +1593,7 @@
       "source_file": "src/app/(dashboard)/quality/ncr/[id]/page.tsx",
       "source_location": "L105",
       "id": "page_handlemovetoinvestigation",
-      "community": 20
+      "community": 23
     },
     {
       "label": "handleMoveToCorrective()",
@@ -1601,7 +1601,7 @@
       "source_file": "src/app/(dashboard)/quality/ncr/[id]/page.tsx",
       "source_location": "L129",
       "id": "page_handlemovetocorrective",
-      "community": 20
+      "community": 23
     },
     {
       "label": "handleVerifyNCR()",
@@ -1609,7 +1609,7 @@
       "source_file": "src/app/(dashboard)/quality/ncr/[id]/page.tsx",
       "source_location": "L155",
       "id": "page_handleverifyncr",
-      "community": 20
+      "community": 23
     },
     {
       "label": "handleCloseNCR()",
@@ -1617,7 +1617,7 @@
       "source_file": "src/app/(dashboard)/quality/ncr/[id]/page.tsx",
       "source_location": "L178",
       "id": "page_handleclosencr",
-      "community": 20
+      "community": 23
     },
     {
       "label": "CreateNCRPage()",
@@ -1633,7 +1633,7 @@
       "source_file": "src/app/(dashboard)/inventory/heat-lifecycle/page.tsx",
       "source_location": "L79",
       "id": "page_handlesearch",
-      "community": 44
+      "community": 51
     },
     {
       "label": "handleClear()",
@@ -1649,7 +1649,7 @@
       "source_file": "src/app/(dashboard)/reports/client-status/page.tsx",
       "source_location": "L151",
       "id": "page_fetchreport",
-      "community": 39
+      "community": 47
     },
     {
       "label": "handleUpdate()",
@@ -1657,7 +1657,7 @@
       "source_file": "src/app/(dashboard)/quality/lab-reports/[id]/page.tsx",
       "source_location": "L113",
       "id": "page_handleupdate",
-      "community": 39
+      "community": 47
     },
     {
       "label": "fetchPurchaseOrders()",
@@ -1785,7 +1785,7 @@
       "source_file": "src/app/(dashboard)/quality/mtc/certificates/create/page.tsx",
       "source_location": "L63",
       "id": "page_generateheatno",
-      "community": 17
+      "community": 19
     },
     {
       "label": "fetchMaterialSpecs()",
@@ -1825,7 +1825,7 @@
       "source_file": "src/app/(dashboard)/quality/mtc/certificates/create/page.tsx",
       "source_location": "L325",
       "id": "page_rebuilditems",
-      "community": 45
+      "community": 48
     },
     {
       "label": "autoGenerateHeatNoForItem()",
@@ -1833,7 +1833,7 @@
       "source_file": "src/app/(dashboard)/quality/mtc/certificates/create/page.tsx",
       "source_location": "L369",
       "id": "page_autogenerateheatnoforitem",
-      "community": 17
+      "community": 19
     },
     {
       "label": "fetchSpecs()",
@@ -2025,7 +2025,7 @@
       "source_file": "src/app/(dashboard)/dispatch/invoices/[id]/page.tsx",
       "source_location": "L83",
       "id": "page_fetchinvoice",
-      "community": 24
+      "community": 27
     },
     {
       "label": "fetchEmailLogs()",
@@ -2033,7 +2033,7 @@
       "source_file": "src/app/(dashboard)/po-acceptance/[id]/page.tsx",
       "source_location": "L194",
       "id": "page_fetchemaillogs",
-      "community": 24
+      "community": 27
     },
     {
       "label": "markAsSent()",
@@ -2041,7 +2041,7 @@
       "source_file": "src/app/(dashboard)/dispatch/invoices/[id]/page.tsx",
       "source_location": "L109",
       "id": "page_markassent",
-      "community": 24
+      "community": 27
     },
     {
       "label": "downloadEInvoice()",
@@ -2065,7 +2065,7 @@
       "source_file": "src/app/(dashboard)/po-acceptance/[id]/page.tsx",
       "source_location": "L250",
       "id": "page_sendemail",
-      "community": 24
+      "community": 27
     },
     {
       "label": "fetchTaxRates()",
@@ -2297,7 +2297,7 @@
       "source_file": "src/app/(dashboard)/admin/page.tsx",
       "source_location": "L109",
       "id": "page_humanize",
-      "community": 27
+      "community": 32
     },
     {
       "label": "truncate()",
@@ -2305,7 +2305,7 @@
       "source_file": "src/app/(dashboard)/admin/page.tsx",
       "source_location": "L112",
       "id": "page_truncate",
-      "community": 27
+      "community": 32
     },
     {
       "label": "describeLog()",
@@ -2313,7 +2313,7 @@
       "source_file": "src/app/(dashboard)/admin/page.tsx",
       "source_location": "L114",
       "id": "page_describelog",
-      "community": 27
+      "community": 32
     },
     {
       "label": "handleAddUser()",
@@ -2369,7 +2369,7 @@
       "source_file": "src/app/(dashboard)/admin/traceability/page.tsx",
       "source_location": "L236",
       "id": "page_handlekeydown",
-      "community": 44
+      "community": 51
     },
     {
       "label": "fetchClientPOs()",
@@ -2457,7 +2457,7 @@
       "source_file": "src/app/(dashboard)/client-purchase-orders/create/page.tsx",
       "source_location": "L448",
       "id": "page_getselecteditems",
-      "community": 16
+      "community": 18
     },
     {
       "label": "applyBulkDiscount()",
@@ -2521,7 +2521,7 @@
       "source_file": "src/app/(dashboard)/inventory/stock/[id]/page.tsx",
       "source_location": "L44",
       "id": "page_fetchstock",
-      "community": 21
+      "community": 22
     },
     {
       "label": "fetchStockIssues()",
@@ -2601,7 +2601,7 @@
       "source_file": "src/app/(dashboard)/inventory/stock/[id]/page.tsx",
       "source_location": "L57",
       "id": "page_handleupdatestock",
-      "community": 21
+      "community": 22
     },
     {
       "label": "handlePartialAccept()",
@@ -2609,7 +2609,7 @@
       "source_file": "src/app/(dashboard)/inventory/stock/[id]/page.tsx",
       "source_location": "L68",
       "id": "page_handlepartialaccept",
-      "community": 21
+      "community": 22
     },
     {
       "label": "handleAcceptedQtyChange()",
@@ -2625,7 +2625,7 @@
       "source_file": "src/app/(dashboard)/inventory/stock/[id]/page.tsx",
       "source_location": "L97",
       "id": "page_initpiperows",
-      "community": 21
+      "community": 22
     },
     {
       "label": "addPipeRow()",
@@ -2665,7 +2665,7 @@
       "source_file": "src/app/(dashboard)/inventory/stock/[id]/page.tsx",
       "source_location": "L145",
       "id": "page_savepipedetails",
-      "community": 21
+      "community": 22
     },
     {
       "label": "fetchPR()",
@@ -2681,7 +2681,7 @@
       "source_file": "src/app/(dashboard)/po-acceptance/[id]/page.tsx",
       "source_location": "L205",
       "id": "page_updatestatus",
-      "community": 25
+      "community": 28
     },
     {
       "label": "fetchDepartments()",
@@ -2737,7 +2737,7 @@
       "source_file": "src/app/(dashboard)/purchase/rfq/[id]/page.tsx",
       "source_location": "L109",
       "id": "page_fetchrfq",
-      "community": 29
+      "community": 33
     },
     {
       "label": "handleSendToVendors()",
@@ -2745,7 +2745,7 @@
       "source_file": "src/app/(dashboard)/purchase/rfq/[id]/page.tsx",
       "source_location": "L125",
       "id": "page_handlesendtovendors",
-      "community": 29
+      "community": 33
     },
     {
       "label": "handleGenerateCS()",
@@ -2777,7 +2777,7 @@
       "source_file": "src/app/(dashboard)/purchase/rfq/[id]/page.tsx",
       "source_location": "L217",
       "id": "page_handlesavequotation",
-      "community": 29
+      "community": 33
     },
     {
       "label": "CreateRFQContent()",
@@ -2793,7 +2793,7 @@
       "source_file": "src/app/(dashboard)/purchase/orders/[id]/page.tsx",
       "source_location": "L178",
       "id": "page_fetchvariance",
-      "community": 19
+      "community": 24
     },
     {
       "label": "handleAmendPO()",
@@ -2809,7 +2809,7 @@
       "source_file": "src/app/(dashboard)/purchase/orders/[id]/page.tsx",
       "source_location": "L246",
       "id": "page_handleapprovalaction",
-      "community": 19
+      "community": 24
     },
     {
       "label": "handleReject()",
@@ -2817,7 +2817,7 @@
       "source_file": "src/app/(dashboard)/purchase/orders/[id]/page.tsx",
       "source_location": "L285",
       "id": "page_handlereject",
-      "community": 19
+      "community": 24
     },
     {
       "label": "handleVendorMilestone()",
@@ -2825,7 +2825,7 @@
       "source_file": "src/app/(dashboard)/purchase/orders/[id]/page.tsx",
       "source_location": "L293",
       "id": "page_handlevendormilestone",
-      "community": 19
+      "community": 24
     },
     {
       "label": "fetchPRs()",
@@ -2841,7 +2841,7 @@
       "source_file": "src/app/(dashboard)/purchase/orders/create/page.tsx",
       "source_location": "L166",
       "id": "page_maptopoitems",
-      "community": 28
+      "community": 30
     },
     {
       "label": "loadPRItems()",
@@ -2849,7 +2849,7 @@
       "source_file": "src/app/(dashboard)/purchase/orders/create/page.tsx",
       "source_location": "L190",
       "id": "page_loadpritems",
-      "community": 28
+      "community": 30
     },
     {
       "label": "loadSOItems()",
@@ -2857,7 +2857,7 @@
       "source_file": "src/app/(dashboard)/purchase/orders/create/page.tsx",
       "source_location": "L198",
       "id": "page_loadsoitems",
-      "community": 28
+      "community": 30
     },
     {
       "label": "getStatusColor()",
@@ -3009,7 +3009,7 @@
       "source_file": "src/app/(dashboard)/purchase/follow-up/page.tsx",
       "source_location": "L84",
       "id": "page_fetchpotracking",
-      "community": 40
+      "community": 41
     },
     {
       "label": "calculateVendorPerformance()",
@@ -3017,7 +3017,7 @@
       "source_file": "src/app/(dashboard)/purchase/follow-up/page.tsx",
       "source_location": "L121",
       "id": "page_calculatevendorperformance",
-      "community": 40
+      "community": 41
     },
     {
       "label": "getPerformanceBadge()",
@@ -3057,7 +3057,7 @@
       "source_file": "src/app/(dashboard)/po-acceptance/[id]/page.tsx",
       "source_location": "L133",
       "id": "page_fetchacceptance",
-      "community": 25
+      "community": 28
     },
     {
       "label": "handleSignedCopyUpload()",
@@ -3065,7 +3065,7 @@
       "source_file": "src/app/(dashboard)/po-acceptance/[id]/page.tsx",
       "source_location": "L149",
       "id": "page_handlesignedcopyupload",
-      "community": 25
+      "community": 28
     },
     {
       "label": "handleSignedCopyRemove()",
@@ -3073,7 +3073,7 @@
       "source_file": "src/app/(dashboard)/po-acceptance/[id]/page.tsx",
       "source_location": "L176",
       "id": "page_handlesignedcopyremove",
-      "community": 25
+      "community": 28
     },
     {
       "label": "fetchContacts()",
@@ -3201,7 +3201,7 @@
       "source_file": "src/app/(dashboard)/masters/payment-terms/page.tsx",
       "source_location": "L92",
       "id": "page_handleclosedialog",
-      "community": 16
+      "community": 18
     },
     {
       "label": "EditLengthPage()",
@@ -3345,7 +3345,7 @@
       "source_file": "src/app/(dashboard)/masters/testing/page.tsx",
       "source_location": "L118",
       "id": "page_closedialog",
-      "community": 16
+      "community": 18
     },
     {
       "label": "getCategoryLabel()",
@@ -3745,7 +3745,7 @@
       "source_file": "src/app/(dashboard)/quotations/create/nonstandard/page.tsx",
       "source_location": "L732",
       "id": "page_onpastquoteselect",
-      "community": 17
+      "community": 19
     },
     {
       "label": "applyPastQuoteItemFields()",
@@ -3753,7 +3753,7 @@
       "source_file": "src/app/(dashboard)/quotations/create/nonstandard/page.tsx",
       "source_location": "L749",
       "id": "page_applypastquoteitemfields",
-      "community": 17
+      "community": 19
     },
     {
       "label": "selectPastQuoteItem()",
@@ -3761,7 +3761,7 @@
       "source_file": "src/app/(dashboard)/quotations/create/nonstandard/page.tsx",
       "source_location": "L753",
       "id": "page_selectpastquoteitem",
-      "community": 17
+      "community": 19
     },
     {
       "label": "fmt()",
@@ -3929,7 +3929,7 @@
       "source_file": "src/app/(dashboard)/reports/management-review/page.tsx",
       "source_location": "L142",
       "id": "page_handleexportcsv",
-      "community": 41
+      "community": 50
     },
     {
       "label": "handlePrint()",
@@ -4121,7 +4121,7 @@
       "source_file": "src/components/ui/sheet.tsx",
       "source_location": "L1",
       "id": "sheet",
-      "community": 1
+      "community": 15
     },
     {
       "label": "Sheet()",
@@ -4129,7 +4129,7 @@
       "source_file": "src/components/ui/sheet.tsx",
       "source_location": "L9",
       "id": "sheet_sheet",
-      "community": 1
+      "community": 15
     },
     {
       "label": "SheetTrigger()",
@@ -4137,7 +4137,7 @@
       "source_file": "src/components/ui/sheet.tsx",
       "source_location": "L13",
       "id": "sheet_sheettrigger",
-      "community": 1
+      "community": 15
     },
     {
       "label": "SheetClose()",
@@ -4145,7 +4145,7 @@
       "source_file": "src/components/ui/sheet.tsx",
       "source_location": "L19",
       "id": "sheet_sheetclose",
-      "community": 1
+      "community": 15
     },
     {
       "label": "SheetPortal()",
@@ -4153,7 +4153,7 @@
       "source_file": "src/components/ui/sheet.tsx",
       "source_location": "L25",
       "id": "sheet_sheetportal",
-      "community": 1
+      "community": 15
     },
     {
       "label": "cn()",
@@ -4161,7 +4161,7 @@
       "source_file": "src/components/ui/sheet.tsx",
       "source_location": "L62",
       "id": "sheet_cn",
-      "community": 1
+      "community": 15
     },
     {
       "label": "SheetDescription()",
@@ -4169,7 +4169,7 @@
       "source_file": "src/components/ui/sheet.tsx",
       "source_location": "L121",
       "id": "sheet_sheetdescription",
-      "community": 1
+      "community": 15
     },
     {
       "label": "scroll-area.tsx",
@@ -4857,7 +4857,7 @@
       "source_file": "src/components/layout/breadcrumbs.tsx",
       "source_location": "L1",
       "id": "breadcrumbs",
-      "community": 48
+      "community": 52
     },
     {
       "label": "isDynamicId()",
@@ -4865,7 +4865,7 @@
       "source_file": "src/components/layout/breadcrumbs.tsx",
       "source_location": "L95",
       "id": "breadcrumbs_isdynamicid",
-      "community": 48
+      "community": 52
     },
     {
       "label": "sidebar.tsx",
@@ -5153,7 +5153,7 @@
       "source_file": "src/lib/mailer.ts",
       "source_location": "L1",
       "id": "mailer",
-      "community": 3
+      "community": 14
     },
     {
       "label": "missingMailerConfig()",
@@ -5161,7 +5161,7 @@
       "source_file": "src/lib/mailer.ts",
       "source_location": "L11",
       "id": "mailer_missingmailerconfig",
-      "community": 3
+      "community": 14
     },
     {
       "label": "mailerConfigured()",
@@ -5169,7 +5169,7 @@
       "source_file": "src/lib/mailer.ts",
       "source_location": "L15",
       "id": "mailer_mailerconfigured",
-      "community": 3
+      "community": 14
     },
     {
       "label": "smtpPort()",
@@ -5177,7 +5177,7 @@
       "source_file": "src/lib/mailer.ts",
       "source_location": "L19",
       "id": "mailer_smtpport",
-      "community": 3
+      "community": 14
     },
     {
       "label": "mailer()",
@@ -5185,7 +5185,7 @@
       "source_file": "src/lib/mailer.ts",
       "source_location": "L28",
       "id": "mailer_mailer",
-      "community": 3
+      "community": 14
     },
     {
       "label": "mailFrom()",
@@ -5193,7 +5193,7 @@
       "source_file": "src/lib/mailer.ts",
       "source_location": "L52",
       "id": "mailer_mailfrom",
-      "community": 3
+      "community": 14
     },
     {
       "label": "location-tag.ts",
@@ -5289,7 +5289,7 @@
       "source_file": "src/lib/export-utils.ts",
       "source_location": "L1",
       "id": "export_utils",
-      "community": 31
+      "community": 34
     },
     {
       "label": "generateCSV()",
@@ -5297,7 +5297,7 @@
       "source_file": "src/lib/export-utils.ts",
       "source_location": "L7",
       "id": "export_utils_generatecsv",
-      "community": 31
+      "community": 34
     },
     {
       "label": "downloadCSV()",
@@ -5305,7 +5305,7 @@
       "source_file": "src/lib/export-utils.ts",
       "source_location": "L21",
       "id": "export_utils_downloadcsv",
-      "community": 31
+      "community": 34
     },
     {
       "label": "download-file.ts",
@@ -5313,7 +5313,7 @@
       "source_file": "src/lib/download-file.ts",
       "source_location": "L1",
       "id": "download_file",
-      "community": 42
+      "community": 49
     },
     {
       "label": "downloadFile()",
@@ -5321,7 +5321,7 @@
       "source_file": "src/lib/download-file.ts",
       "source_location": "L6",
       "id": "download_file_downloadfile",
-      "community": 42
+      "community": 49
     },
     {
       "label": "alerts.test.ts",
@@ -5449,7 +5449,7 @@
       "source_file": "src/lib/download.ts",
       "source_location": "L1",
       "id": "download",
-      "community": 47
+      "community": 44
     },
     {
       "label": "downloadFile()",
@@ -5457,7 +5457,7 @@
       "source_file": "src/lib/download.ts",
       "source_location": "L6",
       "id": "download_downloadfile",
-      "community": 47
+      "community": 44
     },
     {
       "label": "weight-calculation.ts",
@@ -5465,7 +5465,7 @@
       "source_file": "src/lib/weight-calculation.ts",
       "source_location": "L1",
       "id": "weight_calculation",
-      "community": 49
+      "community": 43
     },
     {
       "label": "calculateWeightPerMeter()",
@@ -5473,7 +5473,7 @@
       "source_file": "src/lib/weight-calculation.ts",
       "source_location": "L15",
       "id": "weight_calculation_calculateweightpermeter",
-      "community": 49
+      "community": 43
     },
     {
       "label": "audit.ts",
@@ -5505,7 +5505,7 @@
       "source_file": "src/lib/soft-delete.ts",
       "source_location": "L1",
       "id": "soft_delete",
-      "community": 50
+      "community": 53
     },
     {
       "label": "softDeleteData()",
@@ -5513,7 +5513,7 @@
       "source_file": "src/lib/soft-delete.ts",
       "source_location": "L8",
       "id": "soft_delete_softdeletedata",
-      "community": 50
+      "community": 53
     },
     {
       "label": "mailer.test.ts",
@@ -5521,7 +5521,7 @@
       "source_file": "src/lib/mailer.test.ts",
       "source_location": "L1",
       "id": "mailer_test",
-      "community": 3
+      "community": 14
     },
     {
       "label": "alerts.ts",
@@ -5553,7 +5553,7 @@
       "source_file": "src/lib/access/module-access.ts",
       "source_location": "L1",
       "id": "module_access",
-      "community": 1
+      "community": 3
     },
     {
       "label": "parseModuleAccess()",
@@ -5561,7 +5561,7 @@
       "source_file": "src/lib/access/module-access.ts",
       "source_location": "L15",
       "id": "module_access_parsemoduleaccess",
-      "community": 1
+      "community": 3
     },
     {
       "label": "isNavItemVisible()",
@@ -5569,7 +5569,7 @@
       "source_file": "src/lib/access/module-access.ts",
       "source_location": "L53",
       "id": "module_access_isnavitemvisible",
-      "community": 1
+      "community": 3
     },
     {
       "label": "module-access.test.ts",
@@ -5577,7 +5577,7 @@
       "source_file": "src/lib/access/module-access.test.ts",
       "source_location": "L1",
       "id": "module_access_test",
-      "community": 1
+      "community": 3
     },
     {
       "label": "qap.test.ts",
@@ -5585,7 +5585,7 @@
       "source_file": "src/lib/quality/qap.test.ts",
       "source_location": "L1",
       "id": "qap_test",
-      "community": 18
+      "community": 20
     },
     {
       "label": "qap.ts",
@@ -5593,7 +5593,7 @@
       "source_file": "src/lib/quality/qap.ts",
       "source_location": "L1",
       "id": "qap",
-      "community": 18
+      "community": 20
     },
     {
       "label": "deriveWarehouseStatuses()",
@@ -5601,7 +5601,7 @@
       "source_file": "src/lib/quality/qap.ts",
       "source_location": "L23",
       "id": "qap_derivewarehousestatuses",
-      "community": 18
+      "community": 20
     },
     {
       "label": "qapToOfferPrefill()",
@@ -5609,7 +5609,7 @@
       "source_file": "src/lib/quality/qap.ts",
       "source_location": "L41",
       "id": "qap_qaptoofferprefill",
-      "community": 18
+      "community": 20
     },
     {
       "label": "blankToNull()",
@@ -5617,7 +5617,7 @@
       "source_file": "src/lib/quality/qap.ts",
       "source_location": "L56",
       "id": "qap_blanktonull",
-      "community": 18
+      "community": 20
     },
     {
       "label": "normalizeQapInput()",
@@ -5625,7 +5625,7 @@
       "source_file": "src/lib/quality/qap.ts",
       "source_location": "L63",
       "id": "qap_normalizeqapinput",
-      "community": 18
+      "community": 20
     },
     {
       "label": "otp.test.ts",
@@ -5697,7 +5697,7 @@
       "source_file": "src/lib/auth/otp-client.ts",
       "source_location": "L1",
       "id": "otp_client",
-      "community": 46
+      "community": 42
     },
     {
       "label": "requestLoginOtp()",
@@ -5705,7 +5705,7 @@
       "source_file": "src/lib/auth/otp-client.ts",
       "source_location": "L12",
       "id": "otp_client_requestloginotp",
-      "community": 46
+      "community": 42
     },
     {
       "label": "otp.ts",
@@ -6065,7 +6065,7 @@
       "source_file": "src/lib/pdf/client-status-report-template.ts",
       "source_location": "L1",
       "id": "client_status_report_template",
-      "community": 14
+      "community": 16
     },
     {
       "label": "formatDate()",
@@ -6073,7 +6073,7 @@
       "source_file": "src/lib/pdf/client-status-report-template.ts",
       "source_location": "L65",
       "id": "client_status_report_template_formatdate",
-      "community": 14
+      "community": 16
     },
     {
       "label": "escapeHtml()",
@@ -6081,7 +6081,7 @@
       "source_file": "src/lib/pdf/client-status-report-template.ts",
       "source_location": "L75",
       "id": "client_status_report_template_escapehtml",
-      "community": 14
+      "community": 16
     },
     {
       "label": "formatNumber()",
@@ -6089,7 +6089,7 @@
       "source_file": "src/lib/pdf/client-status-report-template.ts",
       "source_location": "L84",
       "id": "client_status_report_template_formatnumber",
-      "community": 14
+      "community": 16
     },
     {
       "label": "getStatusColor()",
@@ -6097,7 +6097,7 @@
       "source_file": "src/lib/pdf/client-status-report-template.ts",
       "source_location": "L93",
       "id": "client_status_report_template_getstatuscolor",
-      "community": 14
+      "community": 16
     },
     {
       "label": "getStatusBadge()",
@@ -6105,7 +6105,7 @@
       "source_file": "src/lib/pdf/client-status-report-template.ts",
       "source_location": "L118",
       "id": "client_status_report_template_getstatusbadge",
-      "community": 14
+      "community": 16
     },
     {
       "label": "generateClientStatusReportHtml()",
@@ -6113,7 +6113,7 @@
       "source_file": "src/lib/pdf/client-status-report-template.ts",
       "source_location": "L124",
       "id": "client_status_report_template_generateclientstatusreporthtml",
-      "community": 14
+      "community": 16
     },
     {
       "label": "invoice-template.ts",
@@ -6161,7 +6161,7 @@
       "source_file": "src/lib/pdf/inspection-offer-template.ts",
       "source_location": "L1",
       "id": "inspection_offer_template",
-      "community": 15
+      "community": 17
     },
     {
       "label": "formatDate()",
@@ -6169,7 +6169,7 @@
       "source_file": "src/lib/pdf/inspection-offer-template.ts",
       "source_location": "L45",
       "id": "inspection_offer_template_formatdate",
-      "community": 15
+      "community": 17
     },
     {
       "label": "escapeHtml()",
@@ -6177,7 +6177,7 @@
       "source_file": "src/lib/pdf/inspection-offer-template.ts",
       "source_location": "L54",
       "id": "inspection_offer_template_escapehtml",
-      "community": 15
+      "community": 17
     },
     {
       "label": "generateInspectionOfferHtml()",
@@ -6185,7 +6185,7 @@
       "source_file": "src/lib/pdf/inspection-offer-template.ts",
       "source_location": "L59",
       "id": "inspection_offer_template_generateinspectionofferhtml",
-      "community": 15
+      "community": 17
     },
     {
       "label": "generateLengthTallyHtml()",
@@ -6193,7 +6193,7 @@
       "source_file": "src/lib/pdf/inspection-offer-template.ts",
       "source_location": "L178",
       "id": "inspection_offer_template_generatelengthtallyhtml",
-      "community": 15
+      "community": 17
     },
     {
       "label": "generateColourCodeHtml()",
@@ -6201,7 +6201,7 @@
       "source_file": "src/lib/pdf/inspection-offer-template.ts",
       "source_location": "L258",
       "id": "inspection_offer_template_generatecolourcodehtml",
-      "community": 15
+      "community": 17
     },
     {
       "label": "generateCriteriaChecklistHtml()",
@@ -6209,7 +6209,7 @@
       "source_file": "src/lib/pdf/inspection-offer-template.ts",
       "source_location": "L355",
       "id": "inspection_offer_template_generatecriteriachecklisthtml",
-      "community": 15
+      "community": 17
     },
     {
       "label": "packing-list-template.ts",
@@ -6273,7 +6273,7 @@
       "source_file": "src/lib/pdf/po-acceptance-template.ts",
       "source_location": "L1",
       "id": "po_acceptance_template",
-      "community": 22
+      "community": 25
     },
     {
       "label": "formatDate()",
@@ -6281,7 +6281,7 @@
       "source_file": "src/lib/pdf/po-acceptance-template.ts",
       "source_location": "L69",
       "id": "po_acceptance_template_formatdate",
-      "community": 22
+      "community": 25
     },
     {
       "label": "escapeHtml()",
@@ -6289,7 +6289,7 @@
       "source_file": "src/lib/pdf/po-acceptance-template.ts",
       "source_location": "L77",
       "id": "po_acceptance_template_escapehtml",
-      "community": 22
+      "community": 25
     },
     {
       "label": "formatCurrency()",
@@ -6297,7 +6297,7 @@
       "source_file": "src/lib/pdf/po-acceptance-template.ts",
       "source_location": "L82",
       "id": "po_acceptance_template_formatcurrency",
-      "community": 22
+      "community": 25
     },
     {
       "label": "generatePOAcceptanceLetterHtml()",
@@ -6305,7 +6305,7 @@
       "source_file": "src/lib/pdf/po-acceptance-template.ts",
       "source_location": "L88",
       "id": "po_acceptance_template_generatepoacceptanceletterhtml",
-      "community": 22
+      "community": 25
     },
     {
       "label": "policy.test.ts",
@@ -6417,7 +6417,7 @@
       "source_file": "src/lib/calc/po-totals.test.ts",
       "source_location": "L1",
       "id": "po_totals_test",
-      "community": 32
+      "community": 35
     },
     {
       "label": "po-totals.ts",
@@ -6425,7 +6425,7 @@
       "source_file": "src/lib/calc/po-totals.ts",
       "source_location": "L1",
       "id": "po_totals",
-      "community": 32
+      "community": 35
     },
     {
       "label": "computePOTotals()",
@@ -6433,7 +6433,7 @@
       "source_file": "src/lib/calc/po-totals.ts",
       "source_location": "L31",
       "id": "po_totals_computepototals",
-      "community": 32
+      "community": 35
     },
     {
       "label": "audit-logger.ts",
@@ -6561,7 +6561,7 @@
       "source_file": "src/lib/purchase/po-milestones.test.ts",
       "source_location": "L1",
       "id": "po_milestones_test",
-      "community": 26
+      "community": 29
     },
     {
       "label": "offered()",
@@ -6569,7 +6569,7 @@
       "source_file": "src/lib/purchase/po-milestones.test.ts",
       "source_location": "L4",
       "id": "po_milestones_test_offered",
-      "community": 26
+      "community": 29
     },
     {
       "label": "po-milestones.ts",
@@ -6577,7 +6577,7 @@
       "source_file": "src/lib/purchase/po-milestones.ts",
       "source_location": "L1",
       "id": "po_milestones",
-      "community": 26
+      "community": 29
     },
     {
       "label": "isMilestoneAhead()",
@@ -6585,7 +6585,55 @@
       "source_file": "src/lib/purchase/po-milestones.ts",
       "source_location": "L26",
       "id": "po_milestones_ismilestoneahead",
-      "community": 26
+      "community": 29
+    },
+    {
+      "label": "rfq-reminders.test.ts",
+      "file_type": "code",
+      "source_file": "src/lib/purchase/rfq-reminders.test.ts",
+      "source_location": "L1",
+      "id": "rfq_reminders_test",
+      "community": 21
+    },
+    {
+      "label": "hours()",
+      "file_type": "code",
+      "source_file": "src/lib/purchase/rfq-reminders.test.ts",
+      "source_location": "L11",
+      "id": "rfq_reminders_test_hours",
+      "community": 21
+    },
+    {
+      "label": "days()",
+      "file_type": "code",
+      "source_file": "src/lib/purchase/rfq-reminders.test.ts",
+      "source_location": "L12",
+      "id": "rfq_reminders_test_days",
+      "community": 21
+    },
+    {
+      "label": "rfq-reminders.ts",
+      "file_type": "code",
+      "source_file": "src/lib/purchase/rfq-reminders.ts",
+      "source_location": "L1",
+      "id": "rfq_reminders",
+      "community": 21
+    },
+    {
+      "label": "needsReminder()",
+      "file_type": "code",
+      "source_file": "src/lib/purchase/rfq-reminders.ts",
+      "source_location": "L26",
+      "id": "rfq_reminders_needsreminder",
+      "community": 21
+    },
+    {
+      "label": "hasExpired()",
+      "file_type": "code",
+      "source_file": "src/lib/purchase/rfq-reminders.ts",
+      "source_location": "L42",
+      "id": "rfq_reminders_hasexpired",
+      "community": 21
     },
     {
       "label": "advance-cpo.test.ts",
@@ -6737,7 +6785,7 @@
       "source_file": "src/lib/quotations/pricing.ts",
       "source_location": "L1",
       "id": "pricing",
-      "community": 23
+      "community": 26
     },
     {
       "label": "parseRate()",
@@ -6745,7 +6793,7 @@
       "source_file": "src/lib/quotations/pricing.ts",
       "source_location": "L7",
       "id": "pricing_parserate",
-      "community": 23
+      "community": 26
     },
     {
       "label": "findUnpricedItems()",
@@ -6753,7 +6801,7 @@
       "source_file": "src/lib/quotations/pricing.ts",
       "source_location": "L19",
       "id": "pricing_findunpriceditems",
-      "community": 23
+      "community": 26
     },
     {
       "label": "unpricedItemsError()",
@@ -6761,7 +6809,7 @@
       "source_file": "src/lib/quotations/pricing.ts",
       "source_location": "L30",
       "id": "pricing_unpriceditemserror",
-      "community": 23
+      "community": 26
     },
     {
       "label": "deal-owner.test.ts",
@@ -6833,7 +6881,7 @@
       "source_file": "src/lib/quotations/pricing.test.ts",
       "source_location": "L1",
       "id": "pricing_test",
-      "community": 23
+      "community": 26
     },
     {
       "label": "display.test.ts",
@@ -9231,6 +9279,18 @@
       "_tgt": "route_randominrange",
       "source": "route",
       "target": "route_randominrange",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/api/cron/rfq-reminders/route.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "_src": "route",
+      "_tgt": "rfq_reminders",
+      "source": "route",
+      "target": "rfq_reminders",
       "confidence_score": 1.0
     },
     {
@@ -21075,6 +21135,66 @@
       "_tgt": "po_milestones_ismilestoneahead",
       "source": "po_milestones",
       "target": "po_milestones_ismilestoneahead",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/purchase/rfq-reminders.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_src": "rfq_reminders_test",
+      "_tgt": "rfq_reminders",
+      "source": "rfq_reminders_test",
+      "target": "rfq_reminders",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/purchase/rfq-reminders.test.ts",
+      "source_location": "L11",
+      "weight": 1.0,
+      "_src": "rfq_reminders_test",
+      "_tgt": "rfq_reminders_test_hours",
+      "source": "rfq_reminders_test",
+      "target": "rfq_reminders_test_hours",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/purchase/rfq-reminders.test.ts",
+      "source_location": "L12",
+      "weight": 1.0,
+      "_src": "rfq_reminders_test",
+      "_tgt": "rfq_reminders_test_days",
+      "source": "rfq_reminders_test",
+      "target": "rfq_reminders_test_days",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/purchase/rfq-reminders.ts",
+      "source_location": "L26",
+      "weight": 1.0,
+      "_src": "rfq_reminders",
+      "_tgt": "rfq_reminders_needsreminder",
+      "source": "rfq_reminders",
+      "target": "rfq_reminders_needsreminder",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/purchase/rfq-reminders.ts",
+      "source_location": "L42",
+      "weight": 1.0,
+      "_src": "rfq_reminders",
+      "_tgt": "rfq_reminders_hasexpired",
+      "source": "rfq_reminders",
+      "target": "rfq_reminders_hasexpired",
       "confidence_score": 1.0
     },
     {
