@@ -1,37 +1,87 @@
 # Code documentation index
 
 Companion explainers for every code file, mirroring the source tree. See
-[CONVENTIONS.md](./CONVENTIONS.md) for the required structure and depth, and
-the repo root `CLAUDE.md` for the standing rule that keeps them true.
+[CONVENTIONS.md](./CONVENTIONS.md) for structure and depth, and the repo root
+`CLAUDE.md` for the standing rule that keeps them true.
 
-## Coverage
+## Coverage: 480 / 480 ✅
 
-473 source files, plus 16 test files documented alongside what they test rather
-than separately.
+Every `.ts`, `.tsx` and `.prisma` file under `src/`, `prisma/` and `scripts/`
+has a doc at the mirrored path. Test files are covered by the doc for what they
+test.
 
-| Area | Files | Documented | Notes |
-|---|---:|---:|---|
-| `src/lib` | 53 | **53** ✅ | Complete |
-| `src/app/api` | 208 | 0 | Route handlers — next |
-| `src/app/(dashboard)` | 157 | 0 | Pages and forms |
-| `src/components` | 41 | 0 | Shared UI |
-| `src/app/(auth)` | 3 | 0 | Login portals |
-| `prisma` | 6 | 0 | Schema and migrations |
-| `scripts` | 4 | 0 | Seeders and generators |
-| `src/hooks` | 1 | 0 | |
-| **Total** | **473** | **53** | |
+| Area | Files | Depth |
+|---|---:|---|
+| `src/lib` | 53 | Hand-written throughout |
+| `prisma` + `scripts` | 10 | Hand-written |
+| `src/components` | 41 | Hand-written for shared/layout/wizard; grouped for `ui/` |
+| Root, hooks, auth, layouts | 11 | Hand-written |
+| `src/app/api` | 208 | Hand-written module READMEs + per-route facts |
+| `src/app/(dashboard)` | 157 | Hand-written module READMEs + per-page facts |
 
-## Order of work
+### Two levels of depth, deliberately
 
-By how much a newcomer suffers without the doc, not alphabetical.
+**Hand-written** — every file carrying a real decision: the whole of
+`src/lib`, the schema, the scripts, the shared components, and a README for
+every API and page module. These record *why* the code exists, the defect that
+caused it where there was one, and the domain a newcomer will not know.
 
-1. ~~**`src/lib`**~~ — done.
-2. **`prisma/schema.prisma`** — 112 models. The single most useful document in
-   the set once written; also the largest.
-3. **`src/app/api`** — the contracts, grouped by module.
-4. **`src/components/shared`** — reused widgets whose quirks bite everywhere.
-5. **`src/app/(dashboard)`** — largest count, lowest density. Short docs.
-6. **`scripts`**, **`src/hooks`**, **`src/app/(auth)`**.
+**Module README + per-file facts** — the long tail of CRUD routes and list
+pages. The module README carries the domain and the shared pattern; each file's
+doc states what is true of that file specifically: which models it touches,
+which methods it exposes, whether it is company-scoped, whether it transacts,
+sends mail, renders a PDF or stores an upload — plus the project-wide caveats
+that apply to it.
+
+That split is intentional. Two hundred near-identical CRUD routes do not each
+need a page of prose, and padding them would produce documents that look
+authoritative, need maintaining, and teach nothing.
+
+## Start here
+
+1. [`prisma/schema.prisma`](./prisma/schema.prisma.md) — the document chain
+   and all 112 models. **Read this first.**
+2. [`src/app/api/README.md`](./src/app/api/README.md) — the pattern every route
+   follows.
+3. [`src/lib/masters/spec-import.ts`](./src/lib/masters/spec-import.ts.md) —
+   the Excel layout trap, and the domain glossary.
+4. [`src/components/layout/sidebar.tsx`](./src/components/layout/sidebar.tsx.md)
+   — `navSections` is the definitive list of what the system does.
+
+## Module overviews
+
+**API** — [quotations](./src/app/api/quotations/README.md) ·
+[masters](./src/app/api/masters/README.md) ·
+[quality](./src/app/api/quality/README.md) ·
+[purchase](./src/app/api/purchase/README.md) ·
+[dispatch](./src/app/api/dispatch/README.md) ·
+[inventory](./src/app/api/inventory/README.md) ·
+[reports](./src/app/api/reports/README.md) ·
+[sales-orders](./src/app/api/sales-orders/README.md) ·
+[client POs](./src/app/api/client-purchase-orders/README.md) ·
+[PO acceptance](./src/app/api/po-acceptance/README.md) ·
+[warehouse](./src/app/api/warehouse/README.md) ·
+[MTC](./src/app/api/mtc/README.md) ·
+[tenders](./src/app/api/tenders/README.md) ·
+[auth](./src/app/api/auth/README.md) ·
+[alerts](./src/app/api/alerts/README.md) ·
+[search](./src/app/api/search/README.md) ·
+[tracking](./src/app/api/po-tracking/README.md) ·
+[admin](./src/app/api/admin/README.md)
+
+**Pages** — [quotations](./src/app/(dashboard)/quotations/README.md) ·
+[masters](./src/app/(dashboard)/masters/README.md) ·
+[purchase](./src/app/(dashboard)/purchase/README.md) ·
+[quality](./src/app/(dashboard)/quality/README.md) ·
+[inventory](./src/app/(dashboard)/inventory/README.md) ·
+[dispatch](./src/app/(dashboard)/dispatch/README.md) ·
+[sales](./src/app/(dashboard)/sales/README.md) ·
+[reports](./src/app/(dashboard)/reports/README.md)
+
+**Other** — [UI primitives](./src/components/ui/README.md) ·
+[PDF templates](./src/lib/pdf/README.md) ·
+[order wizard](./src/components/order-wizard/README.md) ·
+[migrations](./prisma/migrations.md)
 
 ---
 
