@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { requestLoginOtp } from "@/lib/auth/otp-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,20 +23,50 @@ export default function SuperAdminLoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [otpStep, setOtpStep] = useState(false);
+  const [notice, setNotice] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
+    // Same two-step as the staff portal. Without it this page would submit no
+    // code and authorize() would reject every super-admin sign-in the moment
+    // 2FA is switched on — locking out the one account that can fix things.
+    let code = otp.trim();
+    if (!otpStep) {
+      const step1 = await requestLoginOtp(email, password);
+      if (!step1.ok) {
+        setError(step1.error);
+        setLoading(false);
+        return;
+      }
+      if (step1.otpRequired) {
+        setOtpStep(true);
+        setNotice(
+          step1.sent
+            ? `We sent a 6-digit code to ${email}. It expires in 10 minutes.`
+            : `A code was already sent to ${email}. Check your inbox.`
+        );
+        setLoading(false);
+        return;
+      }
+      code = "";
+    }
+
     const result = await signIn("credentials", {
       email,
       password,
+      otp: code,
       redirect: false,
     });
 
     if (result?.error) {
-      setError("Invalid email or password");
+      setError(
+        code ? "That code was not accepted. Check it, or request a new one." : "Invalid email or password"
+      );
       setLoading(false);
     } else {
       // Verify the user is a SUPER_ADMIN
@@ -203,6 +234,31 @@ export default function SuperAdminLoginPage() {
                     </button>
                   </div>
                 </div>
+
+                {otpStep && (
+                  <div className="space-y-2">
+                    <Label htmlFor="otp">6-digit code</Label>
+                    <Input
+                      id="otp"
+                      inputMode="numeric"
+                      pattern="[0-9]{6}"
+                      maxLength={6}
+                      placeholder="000000"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                      required
+                      autoFocus
+                      autoComplete="one-time-code"
+                      className="h-10 text-center text-lg tracking-[0.5em] font-mono"
+                    />
+                  </div>
+                )}
+
+                {notice && (
+                  <div className="rounded-md bg-muted border px-3 py-2">
+                    <p className="text-sm text-muted-foreground">{notice}</p>
+                  </div>
+                )}
 
                 {error && (
                   <div className="rounded-md bg-destructive/10 border border-destructive/20 px-3 py-2">

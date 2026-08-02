@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
 import { generatePOAcceptanceLetterHtml } from "@/lib/pdf/po-acceptance-template";
 import nodemailer from "nodemailer";
+import { mailFrom, mailer } from "@/lib/mailer";
 
 export const maxDuration = 30;
 export const dynamic = "force-dynamic";
@@ -138,18 +139,10 @@ export async function POST(
     `;
 
     // Create transporter
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || "smtp.gmail.com",
-      port: parseInt(process.env.SMTP_PORT || "587"),
-      secure: false,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
+    const transporter = mailer();
 
     const mailOptions: nodemailer.SendMailOptions = {
-      from: process.env.SMTP_FROM || `"${(companyInfo as any).companyName || "NPS Piping Solutions"}" <${process.env.SMTP_USER || "noreply@npspipe.com"}>`,
+      from: mailFrom((companyInfo as any).companyName || "NPS Piping Solutions"),
       to,
       subject: emailSubject,
       html: emailHtml,

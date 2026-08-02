@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { renderHtmlToPdf } from "@/lib/pdf/render-pdf";
 import { wrapHtmlForPrint } from "@/lib/pdf/print-wrapper";
 import nodemailer from "nodemailer";
+import { mailFrom, mailer } from "@/lib/mailer";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
@@ -158,15 +159,7 @@ export async function POST(
 
     const fileName = `dossier-${dispatchNote.dnNo.replace(/\//g, "-")}.pdf`;
 
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || "smtp.gmail.com",
-      port: parseInt(process.env.SMTP_PORT || "587"),
-      secure: false,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
+    const transporter = mailer();
 
     const emailSubject = subject || `Dispatch Dossier — ${dispatchNote.dnNo} | NPS Piping Solutions`;
 
@@ -191,7 +184,7 @@ export async function POST(
     `;
 
     const mailOptions: nodemailer.SendMailOptions = {
-      from: process.env.SMTP_FROM || `"NPS Piping Solutions" <${process.env.SMTP_USER}>`,
+      from: mailFrom("NPS Piping Solutions"),
       to: recipientTo,
       subject: emailSubject,
       html: emailHtml,

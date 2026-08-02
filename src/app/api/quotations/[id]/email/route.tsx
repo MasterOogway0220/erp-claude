@@ -5,6 +5,7 @@ import { createAuditLog } from "@/lib/audit";
 import { generateStandardQuotationHtml } from "@/lib/pdf/quotation-standard-template";
 import { generateNonStandardQuotationHtml } from "@/lib/pdf/quotation-nonstandard-template";
 import nodemailer from "nodemailer";
+import { mailFrom, mailer } from "@/lib/mailer";
 
 // Vercel serverless: increase timeout for email send
 export const maxDuration = 30;
@@ -89,15 +90,7 @@ export async function POST(
     const quotationHtml = generateHtml(quotation as any, companyInfo as any, "QUOTED");
 
     // Create email transporter
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || "smtp.gmail.com",
-      port: parseInt(process.env.SMTP_PORT || "587"),
-      secure: false,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
+    const transporter = mailer();
 
     // Prepare email
     const totalAmount = quotation.items.reduce(
@@ -147,9 +140,7 @@ export async function POST(
 
     // Build mail options
     const mailOptions: nodemailer.SendMailOptions = {
-      from:
-        process.env.SMTP_FROM ||
-        `"${companyInfo.companyName}" <${process.env.SMTP_USER || "noreply@npspipe.com"}>`,
+      from: mailFrom(companyInfo.companyName),
       to,
       subject:
         subject ||

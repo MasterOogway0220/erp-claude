@@ -653,7 +653,10 @@ export default function QuotationDetailPage() {
             </div>
             <div>
               <div className="text-xs text-muted-foreground">Deal Owner</div>
-              <div className="text-sm font-medium">{quotation.dealOwner?.name || quotation.preparedBy?.name || "---"}</div>
+              {/* No fallback to the creator: showing Prepared By under this
+                  label made unassigned quotations look assigned, so the blank
+                  owner only surfaced when someone opened the edit form. */}
+              <div className="text-sm font-medium">{quotation.dealOwner?.name || "---"}</div>
             </div>
             <div>
               <div className="text-xs text-muted-foreground">Prepared By</div>

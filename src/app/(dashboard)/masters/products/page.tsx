@@ -779,8 +779,12 @@ interface AdditionalSpec {
 function AdditionalSpecsPanel() {
   const queryClient = useQueryClient();
   const [productFilter, setProductFilter] = useState("");
-  const [newSpec, setNewSpec] = useState({ product: "", specName: "" });
+  const [newSpecName, setNewSpecName] = useState("");
   const [adding, setAdding] = useState(false);
+  // The add row has no product picker — a new spec lands on whatever the
+  // filter is showing, or on "ALL" (quotation dropdowns list every spec
+  // regardless of product, so "ALL" is the sensible catch-all).
+  const targetProduct = productFilter || "ALL";
 
   const { data, isLoading } = useQuery({
     queryKey: ["additional-specs", productFilter],
@@ -816,8 +820,8 @@ function AdditionalSpecsPanel() {
   }, {});
 
   const handleAdd = async () => {
-    if (!newSpec.product || !newSpec.specName.trim()) {
-      toast.error("Product and spec name are required");
+    if (!newSpecName.trim()) {
+      toast.error("Spec name is required");
       return;
     }
     setAdding(true);
@@ -825,15 +829,18 @@ function AdditionalSpecsPanel() {
       const res = await fetch("/api/masters/additional-specs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newSpec),
+        body: JSON.stringify({ product: targetProduct, specName: newSpecName.trim() }),
       });
       if (!res.ok) {
         const err = await res.json();
         throw new Error(err.error || "Failed");
       }
       toast.success("Additional spec added");
-      setNewSpec({ product: newSpec.product, specName: "" });
+      setNewSpecName("");
       queryClient.invalidateQueries({ queryKey: ["additional-specs"] });
+      // Quotation/PO spec dropdowns read a module-level cache — drop it or the
+      // new spec stays invisible until a full page reload.
+      invalidateProductCache();
     } catch (err: any) {
       toast.error(err.message);
     } finally {
@@ -879,8 +886,16 @@ function AdditionalSpecsPanel() {
       {/* Add new spec */}
       <div className="flex gap-3 items-end border rounded-lg p-3 bg-muted/30">
         <div className="grid gap-1 flex-1">
-          <Label className="text-xs">Additional Spec Name</Label>
-          <Input value={newSpec.specName} onChange={(e) => setNewSpec({ ...newSpec, specName: e.target.value })} placeholder="e.g., NACE MR0175" />
+          <Label className="text-xs">
+            Additional Spec Name{" "}
+            <span className="text-muted-foreground font-normal">— adds under {targetProduct}</span>
+          </Label>
+          <Input
+            value={newSpecName}
+            onChange={(e) => setNewSpecName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAdd(); } }}
+            placeholder="e.g., NACE MR0175"
+          />
         </div>
         <Button onClick={handleAdd} disabled={adding}>
           <Plus className="h-4 w-4 mr-1" />{adding ? "Adding..." : "Add"}

@@ -22,9 +22,40 @@ function pools(file: ReturnType<typeof parseSectioned>) {
 }
 
 const bw = pools(parseSectioned(path.join(dir, "PRODUCT SPEC MASTER - BW FITTING.xlsx")));
+
+// Butt-weld REDUCING fittings (conc./eccn. reducer, unequal + reducing tee) are
+// quoted as two sizes, "<large end> - <small end>", so their pool is the list of
+// valid pairs rather than the single-size BW pool. The client lists one identical
+// pool under all four material classes — verified below rather than assumed,
+// because a union would silently offer a C.S. reducer an S.S.-only pair.
+const bwReducing = (() => {
+  const file = parseSectioned(path.join(dir, "PRODUCT SPEC MASTER - BW FITTING-2.xlsx"));
+  const sigs = file.sections.map((s) => s.sizes.map((z) => z.label).join("|"));
+  if (new Set(sigs).size !== 1) {
+    throw new Error(
+      `BW FITTING-2 sections no longer share one size pool (${new Set(sigs).size} distinct). ` +
+        `Split BW_REDUCING by material class in this script instead of unioning them.`
+    );
+  }
+  const sizes = [...new Set(file.sections[0].sizes.map((z) => z.label))];
+  const notPairs = sizes.filter((s) => s.split(" - ").length !== 2);
+  if (notPairs.length) {
+    throw new Error(`BW FITTING-2 has ${notPairs.length} size(s) that are not "large - small" pairs, e.g. ${notPairs[0]}`);
+  }
+  return sizes;
+})();
 const sw = pools(parseSectioned(path.join(dir, "PRODUCT SPEC MASTER - SW FITTING.xlsx")));
 const thrd = pools(parseSectioned(path.join(dir, "PRODUCT SPEC MASTER - THRD FITTING.xlsx")));
 const flange = parseSectioned(path.join(dir, "PRODUCT SPEC MASTER - FLANGE B16.5.xlsx"));
+const flange1647 = parseSectioned(
+  path.join(dir, "PRODUCT SPEC MASTER - FLANGE B16.47 SER. A & B.xlsx")
+);
+
+// B16.47 picks up where B16.5 stops (26"–60"). Its sizes carry no schedule
+// even for weld neck, and Sr. A / Sr. B share labels, so they form one pool
+// that hangs off the two product types B16.47 actually covers: weld neck and
+// blind. Sr. B's 26"–48" range is a subset of Sr. A's, hence a single list.
+const b1647Sizes = new Set(flange1647.sections.flatMap((s) => s.sizes.map((z) => z.label)));
 
 // Flange sizes key off the flange TYPE, not only the material class: weld neck
 // / socket weld / slip on are bored, so their size carries a schedule; blind,
@@ -102,6 +133,11 @@ export function getFittingSizeOptions(product: string, knownEnds?: string): stri
     : getFittingEnds(product);
   if (ends === "SW") return FITTING_SIZES.SW;
   if (ends === "NPT") return FITTING_SIZES.THRD;
+  // Butt-weld reducing fittings are quoted "<large end> - <small end>" and draw
+  // from the pair pool. This test sits AFTER the ends split on purpose: the SW
+  // and threaded masters also carry a "REDUCING TEE", but those are single-size
+  // and must keep their own pools.
+  if (/REDUCER|UNEQUAL\\s*TEE|REDUCING\\s*TEE/.test(p)) return FITTING_SIZES.BW_REDUCING;
   return /^(S\\.S\\.|D\\.S\\.)/.test(p)
     ? FITTING_SIZES.BW_SS_DS
     : FITTING_SIZES.BW_CS_AS;
@@ -111,22 +147,36 @@ export function getFittingDimStandard(product: string): string {
   return getFittingEnds(product) === "BW" ? "ASME B16.9" : "ASME B16.11";
 }
 
-// The whole flange master is ASME B16.5 — the size no longer decides the
-// standard (the previous master also carried B16.47 Sr. A/B).
+// B16.5 is the default standard for flanges up to 24". B16.47 sizes are the
+// exception and are handled by flangeDimForSize below.
 export const FLANGE_DIM_STANDARD = "ASME B16.5";
 
+const B16_47_SIZES = new Set(FLANGE_SIZES.B16_47);
+
+// Which standard a chosen flange size implies. B16.47 Sr. A and Sr. B list
+// identical size labels, so a 26"+ size cannot say which series it is —
+// return null and let the user pick rather than stamping "ASME B16.5", which
+// would print the wrong standard on the quotation.
+export function flangeDimForSize(sizeLabel: string): string | null {
+  if (!sizeLabel) return null;
+  return B16_47_SIZES.has(sizeLabel.trim()) ? null : FLANGE_DIM_STANDARD;
+}
+
 // Blind and lap-joint flanges have no bore and threaded ones are NPT, so only
-// weld neck / socket weld / slip on take a schedule in their size.
+// weld neck / socket weld / slip on take a schedule in their size. Weld neck
+// and blind additionally reach into B16.47 territory above 24".
 export function getFlangeSizeOptions(product: string): string[] {
   const p = (product || "").trim().toUpperCase();
   if (!p) return []; // see getFittingSizeOptions — no product, no pool
   if (p.includes("THREADED")) return FLANGE_SIZES.THREADED;
-  if (/BLIND|LAP\\s*JOINT/.test(p)) return FLANGE_SIZES.PLAIN;
+  if (/LAP\\s*JOINT/.test(p)) return FLANGE_SIZES.PLAIN;
+  if (p.includes("BLIND")) return [...FLANGE_SIZES.PLAIN, ...FLANGE_SIZES.B16_47];
   // match the material class on the same uppercased string as the type tests —
   // a free-typed "s.s. flange, weld neck" must not fall through to the CS pool
-  return /^(S\\.S\\.|D\\.S\\.)/.test(p)
+  const bored = /^(S\\.S\\.|D\\.S\\.)/.test(p)
     ? FLANGE_SIZES.BORED_SS_DS
     : FLANGE_SIZES.BORED_CS_AS;
+  return /WELD\\s*NECK/.test(p) ? [...bored, ...FLANGE_SIZES.B16_47] : bored;
 }
 
 // Best-effort Pipe/Fitting/Flange classification from a product name — for
@@ -149,6 +199,7 @@ export const FITTING_SIZES = {
   BW_SS_DS: ${j(bw.ss)},
   SW: ${j(new Set([...sw.cs, ...sw.ss]))},
   THRD: ${j(new Set([...thrd.cs, ...thrd.ss]))},
+  BW_REDUCING: ${j(bwReducing)},
 };
 
 export const FLANGE_SIZES = {
@@ -156,6 +207,7 @@ export const FLANGE_SIZES = {
   BORED_SS_DS: ${j(flangePools.BORED_SS_DS)},
   PLAIN: ${j(flangePools.PLAIN)},
   THREADED: ${j(flangePools.THREADED)},
+  B16_47: ${j(b1647Sizes)},
 };
 
 // ── helpers ─────────────────────────────────────────────────────────────────
@@ -166,7 +218,8 @@ fs.writeFileSync(dest, out);
 console.log(
   `Wrote ${dest}\n` +
     `  BW_CS_AS=${bw.cs.length} BW_SS_DS=${bw.ss.length} ` +
-    `SW=${new Set([...sw.cs, ...sw.ss]).size} THRD=${new Set([...thrd.cs, ...thrd.ss]).size}\n` +
+    `SW=${new Set([...sw.cs, ...sw.ss]).size} THRD=${new Set([...thrd.cs, ...thrd.ss]).size} ` +
+    `BW_REDUCING=${bwReducing.length}\n` +
     `  FLANGE BORED_CS_AS=${flangePools.BORED_CS_AS.size} BORED_SS_DS=${flangePools.BORED_SS_DS.size} ` +
-    `PLAIN=${flangePools.PLAIN.size} THREADED=${flangePools.THREADED.size}`
+    `PLAIN=${flangePools.PLAIN.size} THREADED=${flangePools.THREADED.size} B16_47=${b1647Sizes.size}`
 );

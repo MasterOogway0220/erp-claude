@@ -131,10 +131,12 @@ export function SmartCombobox<T>({
           {/* No render cap: callers append master-entered options AFTER the
               built-in pools (fitting sizes 172, flange sizes up to 855), so a
               cap hid exactly the hand-added entries. It also desynced keyboard
-              nav, which indexes the full `filtered`. Worst real list is 855
-              rows (FLANGE_SIZES.BORED_CS_AS) inside a scroll box; typing
-              filters it down immediately. Virtualise only if that measures
-              slow — a cap is the wrong fix, it hides the tail by design. */}
+              nav, which indexes the full `filtered`. Worst real list is now
+              5,626 rows (FITTING_SIZES.BW_REDUCING, the two-size butt-weld
+              reducer pairs) inside a scroll box; typing filters it down
+              immediately, but that first open is the one to watch. Virtualise
+              if it measures slow — a cap is the wrong fix, it hides the tail
+              by design. */}
           {filtered.map((item, i) => (
             <div
               key={i}

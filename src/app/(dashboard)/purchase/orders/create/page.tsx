@@ -23,7 +23,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { PageLoading } from "@/components/shared/page-loading";
 import { SmartCombobox } from "@/components/shared/smart-combobox";
-import { FLANGE_DIM_STANDARD, getFittingSizeOptions, getFlangeSizeOptions, inferItemCategory } from "@/lib/fitting-flange-sizes";
+import { flangeDimForSize, getFittingSizeOptions, getFlangeSizeOptions, inferItemCategory } from "@/lib/fitting-flange-sizes";
 
 type POItemCategory = "Pipe" | "Fitting" | "Flange";
 
@@ -561,7 +561,10 @@ function CreatePOPage() {
                             newItems[index] = {
                               ...newItems[index],
                               sizeLabel: label,
-                              additionalSpec: newItems[index].additionalSpec || FLANGE_DIM_STANDARD,
+                              // B16.47 sizes leave this blank on purpose — the
+                              // size can't say Sr. A from Sr. B, so guessing
+                              // B16.5 would print the wrong standard.
+                              additionalSpec: newItems[index].additionalSpec || flangeDimForSize(label) || "",
                             };
                             setItems(newItems);
                           }}

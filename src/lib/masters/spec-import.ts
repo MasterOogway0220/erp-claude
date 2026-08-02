@@ -87,6 +87,9 @@ export interface PoolSection {
   products: string[];
   specs: string[];
   sizes: { label: string; dim: string }[];
+  // Ends is a pool like every other column: B16.47 Sr. A lists RF and RTJ,
+  // Sr. B lists RF alone. Empty for files with no Ends column (B16.5).
+  ends: string[];
 }
 
 export interface SectionedFile {
@@ -104,7 +107,7 @@ export function parseSectioned(path: string): SectionedFile {
   for (const r of rows) {
     const [, product, spec, dim, size, end] = r;
     if (product && !prevProduct) {
-      cur = { products: [], specs: [], sizes: [] };
+      cur = { products: [], specs: [], sizes: [], ends: [] };
       sections.push(cur);
     }
     prevProduct = product;
@@ -112,9 +115,54 @@ export function parseSectioned(path: string): SectionedFile {
     if (product) cur.products.push(product);
     if (spec) cur.specs.push(spec);
     if (size) cur.sizes.push({ label: size, dim });
+    if (end) cur.ends.push(end);
     if (end && !ends) ends = end;
   }
   return { sections, ends };
+}
+
+// The one dimensional standard a section's sizes agree on. A section that
+// mixes standards means the file's layout changed — fail loudly rather than
+// silently stamping the first one onto every row.
+export function sectionDim(sec: PoolSection): string {
+  const dims = new Set(sec.sizes.map((z) => z.dim).filter(Boolean));
+  if (dims.size !== 1) {
+    throw new Error(
+      `Section "${sec.products[0] ?? "?"}" has ${dims.size} dimensional standards (${[...dims].join(", ") || "none"}); expected exactly 1`
+    );
+  }
+  return [...dims][0];
+}
+
+export interface FlangeSpecRow {
+  product: string;
+  material: string;
+  dim: string;
+  ends: string | null;
+}
+
+// Flange rows carry their standard AND their end finish, both per section.
+// One row per (product × material × end): B16.47 Sr. A yields an RF row and an
+// RTJ row, Sr. B only RF — which is how the "Sr. B is RF-only" rule is
+// enforced in data rather than in a comment somewhere.
+export function toFlangeSpecRows(file: SectionedFile): FlangeSpecRow[] {
+  const seen = new Set<string>();
+  const rows: FlangeSpecRow[] = [];
+  for (const sec of file.sections) {
+    const dim = sectionDim(sec);
+    const ends: (string | null)[] = sec.ends.length ? sec.ends : [null];
+    for (const product of sec.products) {
+      for (const material of sec.specs) {
+        for (const end of ends) {
+          const key = `${product}§${material}§${dim}§${end ?? ""}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          rows.push({ product, material, dim, ends: end });
+        }
+      }
+    }
+  }
+  return rows;
 }
 
 // Every (product × spec) combination, deduped across sections (THRD repeats

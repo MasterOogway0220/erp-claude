@@ -17,6 +17,7 @@ import {
   parsePipeSizes,
   parsePipeSpecs,
   parseSectioned,
+  toFlangeSpecRows,
   toProductSpecPairs,
 } from "../src/lib/masters/spec-import";
 
@@ -123,11 +124,18 @@ async function main() {
   };
   const newRows: NewRow[] = [];
 
-  for (const r of parsePipeSpecs(f("PRODUCT SPEC MASTER - PIPES.xlsx")))
+  // "PIPES 2" is the client's Aug-2026 revision of the pipe master (adds the
+  // API 5L PSL-1/PSL-2 grades to C.S. LSAW PIPE). The original file is kept on
+  // disk for reference only.
+  for (const r of parsePipeSpecs(f("PRODUCT SPEC MASTER - PIPES 2.xlsx")))
     newRows.push({ product: r.product, material: r.material, category: "PIPES", ends: null, dim: r.dimStandard });
 
   const fittingFiles: [string, string][] = [
     ["PRODUCT SPEC MASTER - BW FITTING.xlsx", "ASME B16.9"],
+    // "BW FITTING-2" adds the reducing butt-weld fittings (conc./eccn. reducer,
+    // unequal + reducing tee). It extends the first file rather than replacing
+    // it — no product appears in both.
+    ["PRODUCT SPEC MASTER - BW FITTING-2.xlsx", "ASME B16.9"],
     ["PRODUCT SPEC MASTER - SW FITTING.xlsx", "ASME B16.11"],
     ["PRODUCT SPEC MASTER - THRD FITTING.xlsx", "ASME B16.11"],
   ];
@@ -137,10 +145,15 @@ async function main() {
       newRows.push({ product: p.product, material: p.material, category: "FITTINGS", ends: parsed.ends, dim });
   }
 
-  // The whole flange master is ASME B16.5 now, so the standard is a property of
-  // the product rather than of the size picked at quotation time.
+  // B16.5 covers 0.5"–24" and has no Ends column — one standard, no end finish.
   for (const p of toProductSpecPairs(parseSectioned(f("PRODUCT SPEC MASTER - FLANGE B16.5.xlsx"))))
     newRows.push({ product: p.product, material: p.material, category: "FLANGES", ends: null, dim: "ASME B16.5" });
+
+  // B16.47 covers 26"–60" in two series that share product and material names,
+  // so the standard AND the end finish come from the section, not the product.
+  // Sr. A ships RF and RTJ (two rows per pair), Sr. B is RF-only (one row).
+  for (const r of toFlangeSpecRows(parseSectioned(f("PRODUCT SPEC MASTER - FLANGE B16.47 SER. A & B.xlsx"))))
+    newRows.push({ product: r.product, material: r.material, category: "FLANGES", ends: r.ends, dim: r.dim });
 
   const byCat = newRows.reduce<Record<string, number>>((a, r) => ((a[r.category] = (a[r.category] || 0) + 1), a), {});
   console.log(`New ProductSpecMaster rows: ${newRows.length}`, byCat);

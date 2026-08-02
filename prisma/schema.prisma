@@ -2461,6 +2461,22 @@ model Alert {
   @@index([assignedToRole])
 }
 
+// One-time login codes emailed as the second factor. Not tied to User by FK on
+// purpose: a code is issued against the address that was typed, so an unknown
+// address is handled the same way as a known one and can't be probed.
+model EmailOtp {
+  id        String    @id @default(cuid())
+  email     String
+  codeHash  String
+  expiresAt DateTime
+  attempts  Int       @default(0)
+  consumedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([email, createdAt])
+  @@index([expiresAt])
+}
+
 model AuditLog {
   id        String         @id @default(cuid())
   tableName String

@@ -918,7 +918,10 @@ function NonStandardQuotationPage() {
       quotationDate: formData.quotationDate || undefined,
       inquiryNo: formData.inquiryNo || undefined,
       inquiryDate: formData.inquiryDate || undefined,
-      dealOwnerId: formData.dealOwnerId || undefined,
+      // null, not undefined: JSON.stringify drops undefined keys, and the API
+      // treats a missing dealOwnerId as "leave the owner alone". Sending null
+      // is how "Unassigned" actually clears it.
+      dealOwnerId: formData.dealOwnerId || null,
       nextActionDate: formData.nextActionDate || undefined,
       kindAttention: formData.kindAttention || undefined,
       taxRate: taxRate || undefined,

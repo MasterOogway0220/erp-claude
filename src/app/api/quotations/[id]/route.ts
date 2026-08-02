@@ -4,6 +4,7 @@ import { createAuditLog } from "@/lib/audit";
 import { numberToWords } from "@/lib/amount-in-words";
 import { checkAccess, companyFilter } from "@/lib/rbac";
 import { unpricedItemsError } from "@/lib/quotations/pricing";
+import { dealOwnerPatch } from "@/lib/quotations/deal-owner";
 
 // Valid quotation status transitions
 const VALID_QUOTATION_TRANSITIONS: Record<string, string[]> = {
@@ -481,7 +482,8 @@ export async function PUT(
           deliveryTermsId: deliveryTermsId || null,
           deliveryPeriod: deliveryPeriod || null,
           // New fields
-          dealOwnerId: dealOwnerId || null,
+          // Omitted key = not editing the owner; explicit null = unassign.
+          ...dealOwnerPatch(dealOwnerId),
           // preparedById is deliberately NOT updatable: it records who created
           // the quotation and must survive every later edit by anyone else.
           // Who edited what is kept in the audit log below. Reassigning the

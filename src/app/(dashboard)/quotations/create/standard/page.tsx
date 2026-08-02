@@ -38,7 +38,7 @@ import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import {
-  FLANGE_DIM_STANDARD,
+  flangeDimForSize,
   getFittingDimStandard,
   getFittingEnds,
   getFittingSizeOptions,
@@ -936,7 +936,10 @@ function StandardQuotationPage() {
       quotationDate: formData.quotationDate || undefined,
       inquiryNo: formData.inquiryNo || undefined,
       inquiryDate: formData.inquiryDate || undefined,
-      dealOwnerId: formData.dealOwnerId || undefined,
+      // null, not undefined: JSON.stringify drops undefined keys, and the API
+      // treats a missing dealOwnerId as "leave the owner alone". Sending null
+      // is how "Unassigned" actually clears it.
+      dealOwnerId: formData.dealOwnerId || null,
       nextActionDate: formData.nextActionDate || undefined,
       kindAttention: formData.kindAttention || undefined,
       placeOfSupplyCity: formData.placeOfSupplyCity || undefined,
@@ -1618,7 +1621,10 @@ function StandardQuotationPage() {
                               newItems[index] = {
                                 ...newItems[index],
                                 sizeLabel: label,
-                                dimStandard: newItems[index].dimStandard || FLANGE_DIM_STANDARD,
+                                // B16.47 sizes leave this blank on purpose —
+                                // the size can't say Sr. A from Sr. B, so
+                                // guessing B16.5 would print the wrong standard.
+                                dimStandard: newItems[index].dimStandard || flangeDimForSize(label) || "",
                               };
                               return newItems;
                             });

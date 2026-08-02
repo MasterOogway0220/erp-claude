@@ -5,6 +5,7 @@ import { createAuditLog } from "@/lib/audit";
 import { renderHtmlToPdf } from "@/lib/pdf/render-pdf";
 import { generateInvoiceHtml } from "@/lib/pdf/invoice-template";
 import nodemailer from "nodemailer";
+import { mailFrom, mailer } from "@/lib/mailer";
 
 const DEFAULT_COMPANY = {
   companyName: "NPS Piping Solutions",
@@ -114,15 +115,7 @@ export async function POST(
     const attachments = [{ filename: `${baseName}.pdf`, content: pdfBuffer }];
 
     // Create email transporter
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || "smtp.gmail.com",
-      port: parseInt(process.env.SMTP_PORT || "587"),
-      secure: false,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
+    const transporter = mailer();
 
     // Build email HTML
     const totalAmount = Number(invoice.totalAmount);
@@ -157,9 +150,7 @@ export async function POST(
 
     // Build mail options
     const mailOptions: nodemailer.SendMailOptions = {
-      from:
-        process.env.SMTP_FROM ||
-        `"${companyInfo.companyName}" <noreply@npspipe.com>`,
+      from: mailFrom(companyInfo.companyName),
       to,
       subject:
         subject ||

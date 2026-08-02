@@ -5,6 +5,8 @@ import { prisma } from "./prisma";
 import { UserRole } from "@prisma/client";
 import { parseModuleAccess } from "./access/module-access";
 import { createAuditLog } from "./audit";
+import { OTP_ENABLED, OTP_ERRORS, sessionExpired } from "./auth/otp-policy";
+import { verifyOtp } from "./auth/otp";
 
 declare module "next-auth" {
   interface Session {
@@ -35,6 +37,8 @@ declare module "next-auth/jwt" {
     companyId: string | null;
     moduleAccess: string[];
     verifiedAt?: number;
+    /** Sign-in time, set once — the anchor for the absolute 24h session cap. */
+    loginAt?: number;
   }
 }
 
@@ -49,6 +53,7 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        otp: { label: "Login code", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -71,6 +76,14 @@ export const authOptions: NextAuthOptions = {
 
         if (!isPasswordValid) {
           throw new Error("Invalid credentials");
+        }
+
+        // Second factor. Enforced here rather than only in the login page so a
+        // direct POST to /api/auth/callback/credentials can't skip it.
+        if (OTP_ENABLED) {
+          if (!credentials.otp) throw new Error("Login code is required");
+          const check = await verifyOtp(user.email, credentials.otp.trim());
+          if (!check.ok) throw new Error(OTP_ERRORS[check.reason]);
         }
 
         // Update last login
@@ -115,7 +128,19 @@ export const authOptions: NextAuthOptions = {
         token.companyId = user.companyId;
         token.moduleAccess = user.moduleAccess;
         token.verifiedAt = Date.now();
+        // Stamped once, never refreshed — this is what makes the 24h window
+        // absolute instead of sliding.
+        token.loginAt = Date.now();
         return token;
+      }
+
+      // Hard 24h cap from sign-in. next-auth's own maxAge re-issues the token
+      // on every session poll, so an open tab would otherwise stay logged in
+      // indefinitely. Blanking the token is the same mechanism the deactivated
+      // -user path below uses: the session reads as signed out and middleware
+      // sends them to /login.
+      if (OTP_ENABLED && sessionExpired(token.loginAt, Date.now())) {
+        return {} as typeof token;
       }
       // Re-verify periodically so deactivated users get booted mid-session
       // (throttled — this was a DB query on every single request).
