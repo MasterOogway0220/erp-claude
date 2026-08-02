@@ -16,6 +16,10 @@ import {
 } from "@/components/ui/card";
 import { LogIn, Loader2, Eye, EyeOff, Shield, Building2, Users, Database } from "lucide-react";
 
+// See the staff login page: 2FA is dark until OTP_ENABLED (server) and
+// NEXT_PUBLIC_OTP_ENABLED (client) are both set.
+const TWO_FACTOR_UI = process.env.NEXT_PUBLIC_OTP_ENABLED === "true";
+
 export default function SuperAdminLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -32,11 +36,12 @@ export default function SuperAdminLoginPage() {
     setError("");
     setLoading(true);
 
-    // Same two-step as the staff portal. Without it this page would submit no
-    // code and authorize() would reject every super-admin sign-in the moment
-    // 2FA is switched on — locking out the one account that can fix things.
+    // Same two-step as the staff portal, and dormant the same way. Admins are
+    // exempt from the code anyway, but this page still has to ask when the
+    // exemption is ever narrowed — otherwise it submits no code and
+    // authorize() rejects the one account that can switch 2FA back off.
     let code = otp.trim();
-    if (!otpStep) {
+    if (TWO_FACTOR_UI && !otpStep) {
       const step1 = await requestLoginOtp(email, password);
       if (!step1.ok) {
         setError(step1.error);

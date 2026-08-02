@@ -24,6 +24,14 @@ import {
   BarChart3,
 } from "lucide-react";
 
+// 2FA ships dormant. The server is the authority (OTP_ENABLED); this only
+// decides whether the browser bothers with the code step, so with it unset the
+// page signs in exactly as it always has — one request, no pre-flight, no code
+// field. Set this together with OTP_ENABLED when turning 2FA on; on its own it
+// does nothing, and without it the server would ask for a code the UI never
+// collects.
+const TWO_FACTOR_UI = process.env.NEXT_PUBLIC_OTP_ENABLED === "true";
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -67,6 +75,12 @@ export default function LoginPage() {
 
     if (otpStep) {
       await finishSignIn(otp.trim());
+      return;
+    }
+
+    // 2FA off: straight to sign-in, same single round trip as before it existed.
+    if (!TWO_FACTOR_UI) {
+      await finishSignIn("");
       return;
     }
 

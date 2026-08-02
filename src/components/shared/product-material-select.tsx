@@ -79,9 +79,23 @@ let fetchAdditionalSpecsPromise: Promise<AdditionalSpecOption[]> | null = null;
 function fetchProducts(): Promise<ProductSpec[]> {
   if (cachedProducts) return Promise.resolve(cachedProducts);
   if (fetchPromise) return fetchPromise;
-  fetchPromise = fetch("/api/masters/products?limit=5000")
+  // One page has to hold the whole catalogue — this fills the product and
+  // material dropdowns, so anything left behind is silently unquotable. The
+  // masters grew to ~3.5k rows in Aug 2026 (B16.47 flanges, reducing
+  // fittings); the old 5000 cap was close enough to bite on the next load.
+  fetchPromise = fetch("/api/masters/products?limit=20000")
     .then((res) => { if (!res.ok) throw new Error("Failed"); return res.json(); })
-    .then((data) => { cachedProducts = data.products || []; return cachedProducts!; })
+    .then((data) => {
+      cachedProducts = data.products || [];
+      const total = data.pagination?.total;
+      if (typeof total === "number" && cachedProducts!.length < total) {
+        console.error(
+          `[product master] only ${cachedProducts!.length} of ${total} rows loaded — ` +
+            `raise the limit, products are missing from the dropdowns`
+        );
+      }
+      return cachedProducts!;
+    })
     .catch(() => { fetchPromise = null; return [] as ProductSpec[]; });
   return fetchPromise;
 }
