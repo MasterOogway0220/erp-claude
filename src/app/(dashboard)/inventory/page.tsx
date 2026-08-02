@@ -410,15 +410,13 @@ export default function InventoryPage() {
 
   return (
     <div className="space-y-6">
+      {/* No action here — each tab carries its own create button (New GRN,
+          New Stock Issue, New MPR), so a header button would only ever apply
+          to one of the four tabs. */}
       <PageHeader
         title="Inventory Management"
         description="Stock view, GRN register, and inventory tracking"
-      >
-        <Button onClick={() => router.push("/inventory/grn/create")}>
-          <Plus className="w-4 h-4 mr-2" />
-          New GRN
-        </Button>
-      </PageHeader>
+      />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Card>
