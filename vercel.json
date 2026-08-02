@@ -1,5 +1,11 @@
 {
   "regions": ["bom1"],
+  "crons": [
+    {
+      "path": "/api/cron/rfq-reminders",
+      "schedule": "30 3 * * *"
+    }
+  ],
   "functions": {
     "src/app/api/quotations/[id]/pdf/route.tsx": {
       "maxDuration": 60,
