@@ -2485,6 +2485,28 @@ model EmailOtp {
   @@index([expiresAt])
 }
 
+// Uploaded documents live in the database, not on disk. Vercel's filesystem is
+// read-only apart from /tmp, and /tmp is wiped between invocations, so every
+// upload written to disk was either rejected or silently lost. Bytes is
+// LONGBLOB on MariaDB; max_allowed_packet is 1 GB on this host.
+model StoredFile {
+  id           String   @id @default(cuid())
+  fileName     String
+  mimeType     String
+  // Size as the user sent it, before downscaling or compression — what the
+  // UI should show. `size` is what the row actually costs.
+  originalSize Int
+  size         Int
+  gzipped      Boolean  @default(false)
+  data         Bytes
+  uploadedById String?
+  companyId    String?
+  createdAt    DateTime @default(now())
+
+  @@index([companyId])
+  @@index([createdAt])
+}
+
 model AuditLog {
   id        String         @id @default(cuid())
   tableName String

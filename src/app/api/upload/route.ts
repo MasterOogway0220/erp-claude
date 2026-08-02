@@ -1,51 +1,49 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAuth } from "@/lib/rbac";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
+import { storeFile } from "@/lib/storage/files";
 
-// On Vercel, only /tmp is writable at runtime.
-// Note: /tmp is ephemeral — files are lost between function invocations.
-// For persistent file storage, migrate to cloud storage (S3, Cloudinary, etc.)
-const UPLOAD_DIR =
-  process.env.NODE_ENV === "production"
-    ? "/tmp/uploads"
-    : path.join(process.cwd(), "uploads");
+// Vercel's filesystem is read-only outside /tmp, and /tmp is wiped between
+// invocations — files written to disk here were lost the moment the function
+// froze, and the /uploads path they were served from never existed. Uploads
+// now go into the database (StoredFile) and are served from /api/files/[id].
+//
+// The response shape is unchanged: callers keep storing `filePath`, so the
+// QAP, inspection, lab report, company logo and order wizard screens needed no
+// edits — only where the bytes live changed.
+export const maxDuration = 30;
+export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   try {
-    const { authorized, response } = await checkAuth();
+    const { authorized, session, response } = await checkAuth();
     if (!authorized) return response!;
 
     const formData = await request.formData();
-    const file = formData.get("file") as File;
+    const file = formData.get("file") as File | null;
 
     if (!file) {
-      return NextResponse.json(
-        { error: "No file provided" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    await mkdir(UPLOAD_DIR, { recursive: true });
-
-    const timestamp = Date.now();
-    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-    const fileName = `${timestamp}_${safeName}`;
-    const filePath = path.join(UPLOAD_DIR, fileName);
-
-    await writeFile(filePath, buffer);
+    const stored = await storeFile(file, {
+      uploadedById: session?.user?.id ?? null,
+      companyId: session?.user?.companyId ?? null,
+    });
 
     return NextResponse.json(
-      { filePath: `/uploads/${fileName}`, fileName },
+      {
+        filePath: stored.filePath,
+        fileName: stored.fileName,
+        id: stored.id,
+        size: stored.size,
+        originalSize: stored.originalSize,
+      },
       { status: 201 }
     );
-  } catch (error) {
-    console.error("Error uploading file:", error);
+  } catch (error: any) {
+    console.error("Error uploading file:", error?.message || error);
     return NextResponse.json(
-      { error: "Failed to upload file" },
+      { error: error?.message || "Failed to upload file" },
       { status: 500 }
     );
   }

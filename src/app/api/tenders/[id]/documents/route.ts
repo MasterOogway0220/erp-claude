@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkAccess } from "@/lib/rbac";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
+import { storeFile } from "@/lib/storage/files";
 
 export async function GET(
   request: NextRequest,
@@ -62,24 +61,20 @@ export async function POST(
     else if (["doc", "docx"].includes(ext)) fileType = "WORD";
     else if (["jpg", "jpeg", "png", "webp"].includes(ext)) fileType = "IMAGE";
 
-    // Save file
-    const uploadDir = path.join(process.cwd(), "public", "uploads", "tenders", id);
-    await mkdir(uploadDir, { recursive: true });
-
-    const uniqueName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-    const filePath = path.join(uploadDir, uniqueName);
-    const buffer = Buffer.from(await file.arrayBuffer());
-    await writeFile(filePath, buffer);
-
-    const relativePath = `/uploads/tenders/${id}/${uniqueName}`;
+    // Into the database, not the filesystem: this used to write under
+    // public/uploads, which is read-only on Vercel, so every upload threw.
+    const stored = await storeFile(file, {
+      uploadedById: session.user.id,
+      companyId: session.user.companyId ?? null,
+    });
 
     const doc = await prisma.tenderDocument.create({
       data: {
         tenderId: id,
         fileName: file.name,
         fileType,
-        filePath: relativePath,
-        fileSize: file.size,
+        filePath: stored.filePath,
+        fileSize: stored.originalSize,
         category,
         uploadedById: session.user.id,
       },
