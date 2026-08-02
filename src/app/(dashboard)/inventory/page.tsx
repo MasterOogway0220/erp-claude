@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
+import { WarehouseIntimationPanel } from "@/components/inventory/warehouse-intimation-panel";
 
 const stockStatusColors: Record<string, string> = {
   UNDER_INSPECTION: "bg-yellow-500",
@@ -472,6 +473,7 @@ export default function InventoryPage() {
           <TabsTrigger value="stock">Stock View</TabsTrigger>
           <TabsTrigger value="grn">GRN Register</TabsTrigger>
           <TabsTrigger value="stock-issues">Stock Issues</TabsTrigger>
+          <TabsTrigger value="intimation">Warehouse Intimation</TabsTrigger>
         </TabsList>
 
         <TabsContent value="stock">
@@ -690,6 +692,12 @@ export default function InventoryPage() {
               />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="intimation">
+          {/* Same list as the /warehouse/intimation route, minus its own page
+              header — this page already has one. */}
+          <WarehouseIntimationPanel embedded />
         </TabsContent>
       </Tabs>
     </div>

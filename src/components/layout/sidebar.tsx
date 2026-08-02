@@ -146,18 +146,16 @@ const navSections: NavSection[] = [
         ],
       },
       {
+        // One entry, no sub-menu: everything lives on the inventory page as a
+        // tab (stock, GRN register, stock issues, warehouse intimation) and
+        // the create screens are reached from buttons there, so listing them
+        // again here was two routes to the same place.
         title: "Inventory",
+        href: "/inventory",
         icon: <Warehouse className="h-5 w-5" />,
         iconColorClass: "text-cyan-500",
         roles: ["STORES", "MANAGEMENT", "ADMIN", "SUPER_ADMIN"],
         moduleKey: "inventory",
-        productionHidden: true,
-        children: [
-          { title: "Stock View", href: "/inventory" },
-          { title: "New GRN", href: "/inventory/grn/create" },
-          { title: "Stock Issue", href: "/inventory/stock-issue/create" },
-          { title: "Warehouse Intimation", href: "/warehouse/intimation" },
-        ],
       },
       {
         title: "Quality",
