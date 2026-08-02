@@ -5,7 +5,7 @@ import { prisma } from "./prisma";
 import { UserRole } from "@prisma/client";
 import { parseModuleAccess } from "./access/module-access";
 import { createAuditLog } from "./audit";
-import { OTP_ENABLED, OTP_ERRORS, sessionExpired } from "./auth/otp-policy";
+import { OTP_ERRORS, otpEnabled, otpRequiredFor, sessionExpired } from "./auth/otp-policy";
 import { verifyOtp } from "./auth/otp";
 
 declare module "next-auth" {
@@ -79,8 +79,9 @@ export const authOptions: NextAuthOptions = {
         }
 
         // Second factor. Enforced here rather than only in the login page so a
-        // direct POST to /api/auth/callback/credentials can't skip it.
-        if (OTP_ENABLED) {
+        // direct POST to /api/auth/callback/credentials can't skip it. Admins
+        // are exempt — see OTP_EXEMPT_ROLES.
+        if (otpRequiredFor(user.role)) {
           if (!credentials.otp) throw new Error("Login code is required");
           const check = await verifyOtp(user.email, credentials.otp.trim());
           if (!check.ok) throw new Error(OTP_ERRORS[check.reason]);
@@ -139,7 +140,7 @@ export const authOptions: NextAuthOptions = {
       // indefinitely. Blanking the token is the same mechanism the deactivated
       // -user path below uses: the session reads as signed out and middleware
       // sends them to /login.
-      if (OTP_ENABLED && sessionExpired(token.loginAt, Date.now())) {
+      if (otpEnabled() && sessionExpired(token.loginAt, Date.now())) {
         return {} as typeof token;
       }
       // Re-verify periodically so deactivated users get booted mid-session

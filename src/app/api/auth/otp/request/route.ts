@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { OTP_ENABLED } from "@/lib/auth/otp-policy";
+import { otpEnabled, otpRequiredFor } from "@/lib/auth/otp-policy";
 import { issueOtp } from "@/lib/auth/otp";
 
 // Vercel serverless: SMTP handshakes are slow, same allowance as the other
@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 // issued by NextAuth in step 2 — this route never logs anybody in.
 export async function POST(request: NextRequest) {
   try {
-    if (!OTP_ENABLED) {
+    if (!otpEnabled()) {
       return NextResponse.json({ otpRequired: false });
     }
 
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
 
     const user = await prisma.user.findUnique({
       where: { email },
-      select: { email: true, name: true, isActive: true, passwordHash: true },
+      select: { email: true, name: true, role: true, isActive: true, passwordHash: true },
     });
 
     // Same response whether the address is unknown, inactive, or the password
@@ -35,6 +35,12 @@ export async function POST(request: NextRequest) {
       !!user && user.isActive && (await bcrypt.compare(password, user.passwordHash));
     if (!passwordOk) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+    }
+
+    // Must match authorize() exactly: telling the browser a code is needed
+    // when the callback won't ask for one (or the reverse) strands the login.
+    if (!otpRequiredFor(user!.role)) {
+      return NextResponse.json({ otpRequired: false });
     }
 
     // A failure to send must not read as "code sent" — the user would sit

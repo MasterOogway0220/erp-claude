@@ -3,10 +3,27 @@
 // server — otp.ts holds the parts that actually touch the world.
 import { randomInt } from "node:crypto";
 
-// Off unless OTP_ENABLED=true. That default is deliberate: if SMTP is
-// misconfigured, turning this on locks every user out of the ERP, so it has to
-// be an explicit switch that can be flipped back off without a code change.
-export const OTP_ENABLED = process.env.OTP_ENABLED === "true";
+// Off unless OTP_ENABLED=true. That default is deliberate: the code is
+// delivered by email and nothing else, so with SMTP unset or broken, turning
+// this on locks every non-exempt user out of the ERP. Read per call rather
+// than captured at module load so flipping the variable takes effect on the
+// next request instead of the next cold start.
+export function otpEnabled(): boolean {
+  return process.env.OTP_ENABLED === "true";
+}
+
+// Roles that sign in with a password alone. Email OTP is only as available as
+// SMTP, so the accounts that would have to fix a broken mail setup must not
+// depend on mail to get in. It is a real trade-off — the most privileged logins
+// are the ones skipping the second factor — kept deliberately because these
+// are also the break-glass accounts, and because the staff logins 2FA was asked
+// for (sales, management, accounts, stores) are all outside this list.
+export const OTP_EXEMPT_ROLES: readonly string[] = ["ADMIN", "SUPER_ADMIN"];
+
+/** Whether this role must supply an emailed code on top of its password. */
+export function otpRequiredFor(role: string | null | undefined): boolean {
+  return otpEnabled() && !OTP_EXEMPT_ROLES.includes(role ?? "");
+}
 
 export const OTP_TTL_MS = 10 * 60 * 1000; // code is valid for 10 minutes
 export const OTP_MAX_ATTEMPTS = 5; // wrong guesses before the code is burned

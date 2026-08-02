@@ -1,8 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import {
   OTP_MAX_ATTEMPTS,
   SESSION_ABSOLUTE_MS,
   generateCode,
+  otpEnabled,
+  otpRequiredFor,
   otpUsable,
   sessionExpired,
 } from "./otp-policy";
@@ -59,6 +61,45 @@ describe("sessionExpired", () => {
     // Tokens minted before 2FA existed carry no loginAt. Defaulting them to
     // "still valid" would exempt every current session from the cap forever.
     expect(sessionExpired(undefined, loginAt)).toBe(true);
+  });
+});
+
+describe("otpRequiredFor", () => {
+  const saved = process.env.OTP_ENABLED;
+  afterEach(() => {
+    if (saved === undefined) delete process.env.OTP_ENABLED;
+    else process.env.OTP_ENABLED = saved;
+  });
+
+  it("asks nobody for a code while the feature is off", () => {
+    delete process.env.OTP_ENABLED;
+    expect(otpEnabled()).toBe(false);
+    expect(otpRequiredFor("SALES")).toBe(false);
+    expect(otpRequiredFor("ADMIN")).toBe(false);
+  });
+
+  it("only counts the exact string 'true' as on", () => {
+    process.env.OTP_ENABLED = "1";
+    expect(otpEnabled()).toBe(false);
+    process.env.OTP_ENABLED = "TRUE";
+    expect(otpEnabled()).toBe(false);
+    process.env.OTP_ENABLED = "true";
+    expect(otpEnabled()).toBe(true);
+  });
+
+  it("exempts admins and requires a code from everyone else", () => {
+    process.env.OTP_ENABLED = "true";
+    // Break-glass accounts: email OTP is only as available as SMTP.
+    expect(otpRequiredFor("ADMIN")).toBe(false);
+    expect(otpRequiredFor("SUPER_ADMIN")).toBe(false);
+    // The roles 2FA was actually asked for.
+    for (const role of ["SALES", "MANAGEMENT", "ACCOUNTS", "STORES", "PURCHASE", "QC"]) {
+      expect(otpRequiredFor(role)).toBe(true);
+    }
+    // An unknown or missing role must not fall into the exempt list.
+    expect(otpRequiredFor(null)).toBe(true);
+    expect(otpRequiredFor(undefined)).toBe(true);
+    expect(otpRequiredFor("")).toBe(true);
   });
 });
 
