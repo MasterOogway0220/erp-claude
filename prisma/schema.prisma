@@ -754,6 +754,7 @@ model CustomerDispatchAddress {
   dispatchNotes DispatchNote[]
   invoices      Invoice[]
   salesOrders   SalesOrder[]
+  clientPOs     ClientPurchaseOrder[]
 
   @@index([customerId])
 }
@@ -1069,6 +1070,12 @@ model ClientPurchaseOrder {
   tpiCharges                Decimal?          @db.Decimal(14, 2)
   tpiTaxApplicable          Boolean           @default(false)
   deliveryDate              DateTime?
+  // Where the material physically ships. Picked from the customer's saved
+  // dispatch addresses at PO registration, because a client PO routinely
+  // delivers to a site rather than the billing address, and the sales order,
+  // dispatch note and invoice all inherit it from here.
+  dispatchAddressId         String?
+  dispatchAddress           CustomerDispatchAddress? @relation(fields: [dispatchAddressId], references: [id])
   items                     ClientPOItem[]
   company                   CompanyMaster?    @relation(fields: [companyId], references: [id])
   createdBy                 User?             @relation("CPOCreatedBy", fields: [createdById], references: [id])
@@ -1083,6 +1090,7 @@ model ClientPurchaseOrder {
   @@index([customerId])
   @@index([quotationId])
   @@index([createdById], map: "ClientPurchaseOrder_createdById_fkey")
+  @@index([dispatchAddressId])
 }
 
 model ClientPOItem {

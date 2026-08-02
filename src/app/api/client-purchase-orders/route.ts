@@ -283,6 +283,7 @@ export async function POST(request: NextRequest) {
         committedDeliveryDate: body.committedDeliveryDate ? new Date(body.committedDeliveryDate) : null,
         isDomesticDelivery: Boolean(body.isDomesticDelivery),
         shipmentAddress: body.shipmentAddress ?? null,
+        dispatchAddressId: body.dispatchAddressId || null,
         subtotal,
         // Additional charges
         freight: parsedCharges.freight || null,

@@ -105,6 +105,10 @@ export async function POST(request: NextRequest) {
           projectName: cpo.projectName,
           paymentTerms: cpo.paymentTerms,
           deliverySchedule: cpo.deliverySchedule,
+          // Carry the ship-to site chosen at PO registration. Nothing used to
+          // write SalesOrder.dispatchAddressId, so the dispatch note had to
+          // ask for the address again at the very end of the flow.
+          dispatchAddressId: cpo.dispatchAddressId,
           poAcceptanceStatus: "ACCEPTED",
           processingStatus: "UNPROCESSED",
           status: "OPEN",

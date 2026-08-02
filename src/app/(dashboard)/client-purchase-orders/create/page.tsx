@@ -56,6 +56,20 @@ interface Quotation {
   customer: { name: string };
 }
 
+interface DispatchAddress {
+  id: string;
+  label: string | null;
+  companyName: string | null;
+  addressLine1: string | null;
+  city: string | null;
+  state: string | null;
+  pincode: string | null;
+  contactPerson: string | null;
+  contactNumber: string | null;
+  gstNo: string | null;
+  isDefault: boolean;
+}
+
 interface BalanceItem {
   id: string;
   sNo: number;
@@ -148,6 +162,9 @@ function CreateClientPOPage() {
     Record<string, { lastQuote: { rate: number; quoteNo: string; quotedAt: string } | null; lastPO: { rate: number; poNo: string; orderedAt: string; remark: string | null } | null }>
   >({});
 
+  // Saved ship-to sites for the selected customer, from the customer master.
+  const [dispatchAddressesLoading, setDispatchAddressesLoading] = useState(false);
+
   const [formData, setFormData] = useState({
     customerId: "",
     quotationId: "",
@@ -162,11 +179,16 @@ function CreateClientPOPage() {
     remarks: "",
     isDomesticDelivery: false,
     shipmentAddress: "",
+    dispatchAddressId: "",
     exchangeRate: null as number | null,
     committedDeliveryDate: "",
   });
 
   const [isInternational, setIsInternational] = useState(false);
+  const [dispatchAddresses, setDispatchAddresses] = useState<DispatchAddress[]>([]);
+  const selectedDispatchAddress = dispatchAddresses.find(
+    (a) => a.id === formData.dispatchAddressId
+  );
 
   const [charges, setCharges] = useState<AdditionalCharge[]>(
     DEFAULT_CHARGES.map((c) => ({ ...c }))
@@ -217,6 +239,35 @@ function CreateClientPOPage() {
       setFilteredQuotations(quotations);
     }
   }, [formData.customerId, quotations]);
+
+  // Load the customer's saved ship-to sites and preselect their default.
+  useEffect(() => {
+    if (!formData.customerId) return;
+    let cancelled = false;
+    setDispatchAddressesLoading(true);
+    fetch(`/api/masters/customers/${formData.customerId}/dispatch-addresses`)
+      .then((res) => (res.ok ? res.json() : { addresses: [] }))
+      .then((data) => {
+        if (cancelled) return;
+        const list: DispatchAddress[] = data.addresses || [];
+        setDispatchAddresses(list);
+        const preset = list.find((a) => a.isDefault);
+        if (preset) {
+          setFormData((prev) =>
+            prev.dispatchAddressId ? prev : { ...prev, dispatchAddressId: preset.id }
+          );
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setDispatchAddresses([]);
+      })
+      .finally(() => {
+        if (!cancelled) setDispatchAddressesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [formData.customerId]);
 
   const fetchQuotationBalance = useCallback(
     async (quotationId: string) => {
@@ -330,7 +381,9 @@ function CreateClientPOPage() {
       exchangeRate: null,
       isDomesticDelivery: false,
       shipmentAddress: "",
+      dispatchAddressId: "",
     }));
+    setDispatchAddresses([]);
     setBalanceItems([]);
     setQuotationMeta(null);
     setMaterialHistory({});
@@ -532,6 +585,7 @@ function CreateClientPOPage() {
           committedDeliveryDate: formData.committedDeliveryDate || null,
           isDomesticDelivery: formData.isDomesticDelivery,
           shipmentAddress: formData.shipmentAddress || null,
+          dispatchAddressId: formData.dispatchAddressId || null,
           ...chargePayload,
           gstRate,
           supplierState,
@@ -768,6 +822,79 @@ function CreateClientPOPage() {
                 </div>
               </div>
             )}
+
+            {/* Ship-to site. A client PO routinely delivers to a project site
+                rather than the billing address, and it is picked here so the
+                sales order, dispatch note and invoice all inherit it instead
+                of being asked again at dispatch. */}
+            <div className="space-y-2">
+              <Label>Dispatch Address</Label>
+              <Select
+                value={formData.dispatchAddressId || "NONE"}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    dispatchAddressId: value === "NONE" ? "" : value,
+                  }))
+                }
+                disabled={!formData.customerId || dispatchAddressesLoading}
+              >
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={
+                      !formData.customerId
+                        ? "Select a customer first"
+                        : dispatchAddressesLoading
+                        ? "Loading addresses..."
+                        : "Same as billing address"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="NONE">Same as billing address</SelectItem>
+                  {dispatchAddresses.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>
+                      {[a.label, a.companyName, a.city, a.state].filter(Boolean).join(" — ") ||
+                        a.addressLine1 ||
+                        "Unnamed address"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {formData.customerId && !dispatchAddressesLoading && dispatchAddresses.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  No saved sites for this customer — add them under Masters →
+                  Customer / Vendor → Dispatch Addresses.
+                </p>
+              )}
+              {selectedDispatchAddress && (
+                <div className="rounded-md border bg-muted/40 px-3 py-2 text-xs text-muted-foreground space-y-0.5">
+                  {selectedDispatchAddress.companyName && (
+                    <div className="font-medium text-foreground">
+                      {selectedDispatchAddress.companyName}
+                    </div>
+                  )}
+                  <div>
+                    {[
+                      selectedDispatchAddress.addressLine1,
+                      selectedDispatchAddress.city,
+                      selectedDispatchAddress.state,
+                      selectedDispatchAddress.pincode,
+                    ]
+                      .filter(Boolean)
+                      .join(", ")}
+                  </div>
+                  {(selectedDispatchAddress.contactPerson || selectedDispatchAddress.contactNumber) && (
+                    <div>
+                      {[selectedDispatchAddress.contactPerson, selectedDispatchAddress.contactNumber]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </div>
+                  )}
+                  {selectedDispatchAddress.gstNo && <div>GST: {selectedDispatchAddress.gstNo}</div>}
+                </div>
+              )}
+            </div>
 
             {isInternational && (
               <div className="space-y-2">
