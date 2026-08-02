@@ -473,7 +473,7 @@
       "source_file": "src/middleware/audit-middleware.ts",
       "source_location": "L1",
       "id": "audit_middleware",
-      "community": 3
+      "community": 6
     },
     {
       "label": "withAudit()",
@@ -481,7 +481,7 @@
       "source_file": "src/middleware/audit-middleware.ts",
       "source_location": "L19",
       "id": "audit_middleware_withaudit",
-      "community": 3
+      "community": 6
     },
     {
       "label": "auditLog()",
@@ -489,7 +489,7 @@
       "source_file": "src/middleware/audit-middleware.ts",
       "source_location": "L53",
       "id": "audit_middleware_auditlog",
-      "community": 3
+      "community": 6
     },
     {
       "label": "index.ts",
@@ -945,7 +945,7 @@
       "source_file": "src/app/(dashboard)/reports/management-review/page.tsx",
       "source_location": "L86",
       "id": "page_formatcurrency",
-      "community": 40
+      "community": 43
     },
     {
       "label": "greeting()",
@@ -1081,7 +1081,7 @@
       "source_file": "src/app/(dashboard)/sales/[id]/page.tsx",
       "source_location": "L103",
       "id": "page_fetchsalesorder",
-      "community": 45
+      "community": 38
     },
     {
       "label": "handleCancelSO()",
@@ -1089,7 +1089,7 @@
       "source_file": "src/app/(dashboard)/sales/[id]/page.tsx",
       "source_location": "L117",
       "id": "page_handlecancelso",
-      "community": 45
+      "community": 38
     },
     {
       "label": "ReserveStockPage()",
@@ -1233,7 +1233,7 @@
       "source_file": "src/app/(dashboard)/quality/inspection-offers/[id]/page.tsx",
       "source_location": "L99",
       "id": "page_fetchoffer",
-      "community": 43
+      "community": 40
     },
     {
       "label": "downloadPdf()",
@@ -1249,7 +1249,7 @@
       "source_file": "src/app/(dashboard)/quality/inspection-offers/[id]/page.tsx",
       "source_location": "L130",
       "id": "page_handleofferaction",
-      "community": 43
+      "community": 40
     },
     {
       "label": "fetchTpiAgencies()",
@@ -1329,7 +1329,7 @@
       "source_file": "src/app/(dashboard)/client-purchase-orders/create/page.tsx",
       "source_location": "L344",
       "id": "page_toggleitemselection",
-      "community": 42
+      "community": 46
     },
     {
       "label": "toggleHeatSelection()",
@@ -1633,7 +1633,7 @@
       "source_file": "src/app/(dashboard)/inventory/heat-lifecycle/page.tsx",
       "source_location": "L79",
       "id": "page_handlesearch",
-      "community": 38
+      "community": 44
     },
     {
       "label": "handleClear()",
@@ -1649,7 +1649,7 @@
       "source_file": "src/app/(dashboard)/reports/client-status/page.tsx",
       "source_location": "L151",
       "id": "page_fetchreport",
-      "community": 37
+      "community": 45
     },
     {
       "label": "handleUpdate()",
@@ -1657,7 +1657,7 @@
       "source_file": "src/app/(dashboard)/quality/lab-reports/[id]/page.tsx",
       "source_location": "L113",
       "id": "page_handleupdate",
-      "community": 37
+      "community": 45
     },
     {
       "label": "fetchPurchaseOrders()",
@@ -1825,7 +1825,7 @@
       "source_file": "src/app/(dashboard)/quality/mtc/certificates/create/page.tsx",
       "source_location": "L325",
       "id": "page_rebuilditems",
-      "community": 42
+      "community": 46
     },
     {
       "label": "autoGenerateHeatNoForItem()",
@@ -2297,7 +2297,7 @@
       "source_file": "src/app/(dashboard)/admin/page.tsx",
       "source_location": "L109",
       "id": "page_humanize",
-      "community": 27
+      "community": 26
     },
     {
       "label": "truncate()",
@@ -2305,7 +2305,7 @@
       "source_file": "src/app/(dashboard)/admin/page.tsx",
       "source_location": "L112",
       "id": "page_truncate",
-      "community": 27
+      "community": 26
     },
     {
       "label": "describeLog()",
@@ -2313,7 +2313,7 @@
       "source_file": "src/app/(dashboard)/admin/page.tsx",
       "source_location": "L114",
       "id": "page_describelog",
-      "community": 27
+      "community": 26
     },
     {
       "label": "handleAddUser()",
@@ -2369,7 +2369,7 @@
       "source_file": "src/app/(dashboard)/admin/traceability/page.tsx",
       "source_location": "L236",
       "id": "page_handlekeydown",
-      "community": 38
+      "community": 44
     },
     {
       "label": "fetchClientPOs()",
@@ -2681,7 +2681,7 @@
       "source_file": "src/app/(dashboard)/po-acceptance/[id]/page.tsx",
       "source_location": "L153",
       "id": "page_updatestatus",
-      "community": 39
+      "community": 37
     },
     {
       "label": "formatMonth()",
@@ -2729,7 +2729,7 @@
       "source_file": "src/app/(dashboard)/purchase/rfq/[id]/page.tsx",
       "source_location": "L109",
       "id": "page_fetchrfq",
-      "community": 26
+      "community": 29
     },
     {
       "label": "handleSendToVendors()",
@@ -2737,7 +2737,7 @@
       "source_file": "src/app/(dashboard)/purchase/rfq/[id]/page.tsx",
       "source_location": "L125",
       "id": "page_handlesendtovendors",
-      "community": 26
+      "community": 29
     },
     {
       "label": "handleGenerateCS()",
@@ -2769,7 +2769,7 @@
       "source_file": "src/app/(dashboard)/purchase/rfq/[id]/page.tsx",
       "source_location": "L217",
       "id": "page_handlesavequotation",
-      "community": 26
+      "community": 29
     },
     {
       "label": "CreateRFQContent()",
@@ -2825,7 +2825,7 @@
       "source_file": "src/app/(dashboard)/purchase/orders/create/page.tsx",
       "source_location": "L166",
       "id": "page_maptopoitems",
-      "community": 29
+      "community": 27
     },
     {
       "label": "loadPRItems()",
@@ -2833,7 +2833,7 @@
       "source_file": "src/app/(dashboard)/purchase/orders/create/page.tsx",
       "source_location": "L190",
       "id": "page_loadpritems",
-      "community": 29
+      "community": 27
     },
     {
       "label": "loadSOItems()",
@@ -2841,7 +2841,7 @@
       "source_file": "src/app/(dashboard)/purchase/orders/create/page.tsx",
       "source_location": "L198",
       "id": "page_loadsoitems",
-      "community": 29
+      "community": 27
     },
     {
       "label": "getStatusColor()",
@@ -2993,7 +2993,7 @@
       "source_file": "src/app/(dashboard)/purchase/follow-up/page.tsx",
       "source_location": "L84",
       "id": "page_fetchpotracking",
-      "community": 46
+      "community": 39
     },
     {
       "label": "calculateVendorPerformance()",
@@ -3001,7 +3001,7 @@
       "source_file": "src/app/(dashboard)/purchase/follow-up/page.tsx",
       "source_location": "L121",
       "id": "page_calculatevendorperformance",
-      "community": 46
+      "community": 39
     },
     {
       "label": "getPerformanceBadge()",
@@ -3041,7 +3041,7 @@
       "source_file": "src/app/(dashboard)/po-acceptance/[id]/page.tsx",
       "source_location": "L129",
       "id": "page_fetchacceptance",
-      "community": 39
+      "community": 37
     },
     {
       "label": "fetchContacts()",
@@ -3913,7 +3913,7 @@
       "source_file": "src/app/(dashboard)/reports/management-review/page.tsx",
       "source_location": "L142",
       "id": "page_handleexportcsv",
-      "community": 40
+      "community": 43
     },
     {
       "label": "handlePrint()",
@@ -5273,7 +5273,7 @@
       "source_file": "src/lib/download-file.ts",
       "source_location": "L1",
       "id": "download_file",
-      "community": 44
+      "community": 41
     },
     {
       "label": "downloadFile()",
@@ -5281,7 +5281,7 @@
       "source_file": "src/lib/download-file.ts",
       "source_location": "L6",
       "id": "download_file_downloadfile",
-      "community": 44
+      "community": 41
     },
     {
       "label": "alerts.test.ts",
@@ -5599,7 +5599,7 @@
       "label": "at()",
       "file_type": "code",
       "source_file": "src/lib/auth/otp.test.ts",
-      "source_location": "L10",
+      "source_location": "L12",
       "id": "otp_test_at",
       "community": 3
     },
@@ -5612,10 +5612,26 @@
       "community": 3
     },
     {
+      "label": "otpEnabled()",
+      "file_type": "code",
+      "source_file": "src/lib/auth/otp-policy.ts",
+      "source_location": "L11",
+      "id": "otp_policy_otpenabled",
+      "community": 3
+    },
+    {
+      "label": "otpRequiredFor()",
+      "file_type": "code",
+      "source_file": "src/lib/auth/otp-policy.ts",
+      "source_location": "L24",
+      "id": "otp_policy_otprequiredfor",
+      "community": 3
+    },
+    {
       "label": "otpUsable()",
       "file_type": "code",
       "source_file": "src/lib/auth/otp-policy.ts",
-      "source_location": "L32",
+      "source_location": "L49",
       "id": "otp_policy_otpusable",
       "community": 3
     },
@@ -5623,7 +5639,7 @@
       "label": "sessionExpired()",
       "file_type": "code",
       "source_file": "src/lib/auth/otp-policy.ts",
-      "source_location": "L40",
+      "source_location": "L57",
       "id": "otp_policy_sessionexpired",
       "community": 3
     },
@@ -5631,7 +5647,7 @@
       "label": "generateCode()",
       "file_type": "code",
       "source_file": "src/lib/auth/otp-policy.ts",
-      "source_location": "L46",
+      "source_location": "L63",
       "id": "otp_policy_generatecode",
       "community": 3
     },
@@ -5641,7 +5657,7 @@
       "source_file": "src/lib/auth/otp-client.ts",
       "source_location": "L1",
       "id": "otp_client",
-      "community": 41
+      "community": 42
     },
     {
       "label": "requestLoginOtp()",
@@ -5649,7 +5665,7 @@
       "source_file": "src/lib/auth/otp-client.ts",
       "source_location": "L12",
       "id": "otp_client_requestloginotp",
-      "community": 41
+      "community": 42
     },
     {
       "label": "otp.ts",
@@ -5769,7 +5785,7 @@
       "source_file": "src/lib/pdf/quotation-standard-template.ts",
       "source_location": "L1",
       "id": "quotation_standard_template",
-      "community": 6
+      "community": 7
     },
     {
       "label": "formatDate()",
@@ -5777,7 +5793,7 @@
       "source_file": "src/lib/pdf/quotation-standard-template.ts",
       "source_location": "L78",
       "id": "quotation_standard_template_formatdate",
-      "community": 6
+      "community": 7
     },
     {
       "label": "esc()",
@@ -5785,7 +5801,7 @@
       "source_file": "src/lib/pdf/quotation-standard-template.ts",
       "source_location": "L87",
       "id": "quotation_standard_template_esc",
-      "community": 6
+      "community": 7
     },
     {
       "label": "fmt()",
@@ -5793,7 +5809,7 @@
       "source_file": "src/lib/pdf/quotation-standard-template.ts",
       "source_location": "L96",
       "id": "quotation_standard_template_fmt",
-      "community": 6
+      "community": 7
     },
     {
       "label": "fmtPlain()",
@@ -5801,7 +5817,7 @@
       "source_file": "src/lib/pdf/quotation-standard-template.ts",
       "source_location": "L105",
       "id": "quotation_standard_template_fmtplain",
-      "community": 6
+      "community": 7
     },
     {
       "label": "generateStandardQuotationHtml()",
@@ -5809,7 +5825,7 @@
       "source_file": "src/lib/pdf/quotation-standard-template.ts",
       "source_location": "L111",
       "id": "quotation_standard_template_generatestandardquotationhtml",
-      "community": 6
+      "community": 7
     },
     {
       "label": "purchase-order-template.ts",
@@ -5857,7 +5873,7 @@
       "source_file": "src/lib/pdf/quotation-nonstandard-template.ts",
       "source_location": "L1",
       "id": "quotation_nonstandard_template",
-      "community": 6
+      "community": 7
     },
     {
       "label": "formatDate()",
@@ -5865,7 +5881,7 @@
       "source_file": "src/lib/pdf/quotation-nonstandard-template.ts",
       "source_location": "L69",
       "id": "quotation_nonstandard_template_formatdate",
-      "community": 6
+      "community": 7
     },
     {
       "label": "escapeHtml()",
@@ -5873,7 +5889,7 @@
       "source_file": "src/lib/pdf/quotation-nonstandard-template.ts",
       "source_location": "L78",
       "id": "quotation_nonstandard_template_escapehtml",
-      "community": 6
+      "community": 7
     },
     {
       "label": "formatNumber()",
@@ -5881,7 +5897,7 @@
       "source_file": "src/lib/pdf/quotation-nonstandard-template.ts",
       "source_location": "L87",
       "id": "quotation_nonstandard_template_formatnumber",
-      "community": 6
+      "community": 7
     },
     {
       "label": "nl2br()",
@@ -5889,7 +5905,7 @@
       "source_file": "src/lib/pdf/quotation-nonstandard-template.ts",
       "source_location": "L93",
       "id": "quotation_nonstandard_template_nl2br",
-      "community": 6
+      "community": 7
     },
     {
       "label": "buildItemDescription()",
@@ -5897,7 +5913,7 @@
       "source_file": "src/lib/pdf/quotation-nonstandard-template.ts",
       "source_location": "L102",
       "id": "quotation_nonstandard_template_builditemdescription",
-      "community": 6
+      "community": 7
     },
     {
       "label": "generateNonStandardQuotationHtml()",
@@ -5905,7 +5921,7 @@
       "source_file": "src/lib/pdf/quotation-nonstandard-template.ts",
       "source_location": "L139",
       "id": "quotation_nonstandard_template_generatenonstandardquotationhtml",
-      "community": 6
+      "community": 7
     },
     {
       "label": "render-pdf.ts",
@@ -5953,7 +5969,7 @@
       "source_file": "src/lib/pdf/quotation-pdf.tsx",
       "source_location": "L1",
       "id": "quotation_pdf",
-      "community": 6
+      "community": 7
     },
     {
       "label": "fmtDate()",
@@ -5961,7 +5977,7 @@
       "source_file": "src/lib/pdf/quotation-pdf.tsx",
       "source_location": "L24",
       "id": "quotation_pdf_fmtdate",
-      "community": 6
+      "community": 7
     },
     {
       "label": "fmt()",
@@ -5969,7 +5985,7 @@
       "source_file": "src/lib/pdf/quotation-pdf.tsx",
       "source_location": "L30",
       "id": "quotation_pdf_fmt",
-      "community": 6
+      "community": 7
     },
     {
       "label": "fmtIN()",
@@ -5977,7 +5993,7 @@
       "source_file": "src/lib/pdf/quotation-pdf.tsx",
       "source_location": "L35",
       "id": "quotation_pdf_fmtin",
-      "community": 6
+      "community": 7
     },
     {
       "label": "DraftWatermark()",
@@ -5985,7 +6001,7 @@
       "source_file": "src/lib/pdf/quotation-pdf.tsx",
       "source_location": "L69",
       "id": "quotation_pdf_draftwatermark",
-      "community": 6
+      "community": 7
     },
     {
       "label": "T()",
@@ -5993,7 +6009,7 @@
       "source_file": "src/lib/pdf/quotation-pdf.tsx",
       "source_location": "L99",
       "id": "quotation_pdf_t",
-      "community": 6
+      "community": 7
     },
     {
       "label": "unitLabel()",
@@ -6001,7 +6017,7 @@
       "source_file": "src/lib/pdf/quotation-pdf.tsx",
       "source_location": "L126",
       "id": "quotation_pdf_unitlabel",
-      "community": 6
+      "community": 7
     },
     {
       "label": "client-status-report-template.ts",
@@ -6281,7 +6297,7 @@
       "source_file": "src/lib/audit/audit-logger.ts",
       "source_location": "L1",
       "id": "audit_logger",
-      "community": 7
+      "community": 6
     },
     {
       "label": "logAudit()",
@@ -6289,7 +6305,7 @@
       "source_file": "src/lib/audit/audit-logger.ts",
       "source_location": "L67",
       "id": "audit_logger_logaudit",
-      "community": 7
+      "community": 6
     },
     {
       "label": "logFieldChanges()",
@@ -6297,7 +6313,7 @@
       "source_file": "src/lib/audit/audit-logger.ts",
       "source_location": "L93",
       "id": "audit_logger_logfieldchanges",
-      "community": 7
+      "community": 6
     },
     {
       "label": "detectFieldChanges()",
@@ -6305,7 +6321,7 @@
       "source_file": "src/lib/audit/audit-logger.ts",
       "source_location": "L130",
       "id": "audit_logger_detectfieldchanges",
-      "community": 7
+      "community": 6
     },
     {
       "label": "getIpAddress()",
@@ -6313,7 +6329,7 @@
       "source_file": "src/lib/audit/audit-logger.ts",
       "source_location": "L167",
       "id": "audit_logger_getipaddress",
-      "community": 7
+      "community": 6
     },
     {
       "label": "getUserAgent()",
@@ -6321,7 +6337,7 @@
       "source_file": "src/lib/audit/audit-logger.ts",
       "source_location": "L178",
       "id": "audit_logger_getuseragent",
-      "community": 7
+      "community": 6
     },
     {
       "label": "logCreate()",
@@ -6329,7 +6345,7 @@
       "source_file": "src/lib/audit/audit-logger.ts",
       "source_location": "L185",
       "id": "audit_logger_logcreate",
-      "community": 7
+      "community": 6
     },
     {
       "label": "logUpdate()",
@@ -6337,7 +6353,7 @@
       "source_file": "src/lib/audit/audit-logger.ts",
       "source_location": "L211",
       "id": "audit_logger_logupdate",
-      "community": 7
+      "community": 6
     },
     {
       "label": "logDelete()",
@@ -6345,7 +6361,7 @@
       "source_file": "src/lib/audit/audit-logger.ts",
       "source_location": "L242",
       "id": "audit_logger_logdelete",
-      "community": 7
+      "community": 6
     },
     {
       "label": "logApproval()",
@@ -6353,7 +6369,7 @@
       "source_file": "src/lib/audit/audit-logger.ts",
       "source_location": "L272",
       "id": "audit_logger_logapproval",
-      "community": 7
+      "community": 6
     },
     {
       "label": "logStatusChange()",
@@ -6361,7 +6377,7 @@
       "source_file": "src/lib/audit/audit-logger.ts",
       "source_location": "L305",
       "id": "audit_logger_logstatuschange",
-      "community": 7
+      "community": 6
     },
     {
       "label": "logAuthEvent()",
@@ -6369,7 +6385,7 @@
       "source_file": "src/lib/audit/audit-logger.ts",
       "source_location": "L338",
       "id": "audit_logger_logauthevent",
-      "community": 7
+      "community": 6
     },
     {
       "label": "logEmailSent()",
@@ -6377,7 +6393,7 @@
       "source_file": "src/lib/audit/audit-logger.ts",
       "source_location": "L359",
       "id": "audit_logger_logemailsent",
-      "community": 7
+      "community": 6
     },
     {
       "label": "getAuditLogs()",
@@ -6385,7 +6401,7 @@
       "source_file": "src/lib/audit/audit-logger.ts",
       "source_location": "L387",
       "id": "audit_logger_getauditlogs",
-      "community": 7
+      "community": 6
     },
     {
       "label": "getAuditContext()",
@@ -6393,7 +6409,7 @@
       "source_file": "src/lib/audit/audit-logger.ts",
       "source_location": "L435",
       "id": "audit_logger_getauditcontext",
-      "community": 7
+      "community": 6
     },
     {
       "label": "advance-cpo.test.ts",
@@ -6585,7 +6601,7 @@
       "source_file": "src/lib/quotations/display.ts",
       "source_location": "L1",
       "id": "display",
-      "community": 6
+      "community": 7
     },
     {
       "label": "displayInquiryNo()",
@@ -6593,7 +6609,7 @@
       "source_file": "src/lib/quotations/display.ts",
       "source_location": "L7",
       "id": "display_displayinquiryno",
-      "community": 6
+      "community": 7
     },
     {
       "label": "displaySizeLabel()",
@@ -6601,7 +6617,7 @@
       "source_file": "src/lib/quotations/display.ts",
       "source_location": "L21",
       "id": "display_displaysizelabel",
-      "community": 6
+      "community": 7
     },
     {
       "label": "listing.ts",
@@ -6649,7 +6665,7 @@
       "source_file": "src/lib/quotations/display.test.ts",
       "source_location": "L1",
       "id": "display_test",
-      "community": 6
+      "community": 7
     },
     {
       "label": "deal-owner.ts",
@@ -6769,7 +6785,7 @@
       "source_file": "src/lib/business-logic/auto-pr-generation.ts",
       "source_location": "L1",
       "id": "auto_pr_generation",
-      "community": 7
+      "community": 6
     },
     {
       "label": "analyzeSalesOrderShortfall()",
@@ -6777,7 +6793,7 @@
       "source_file": "src/lib/business-logic/auto-pr-generation.ts",
       "source_location": "L37",
       "id": "auto_pr_generation_analyzesalesordershortfall",
-      "community": 7
+      "community": 6
     },
     {
       "label": "autoGeneratePRFromShortfall()",
@@ -6785,7 +6801,7 @@
       "source_file": "src/lib/business-logic/auto-pr-generation.ts",
       "source_location": "L124",
       "id": "auto_pr_generation_autogenerateprfromshortfall",
-      "community": 7
+      "community": 6
     },
     {
       "label": "addDays()",
@@ -6793,7 +6809,7 @@
       "source_file": "src/lib/business-logic/auto-pr-generation.ts",
       "source_location": "L223",
       "id": "auto_pr_generation_adddays",
-      "community": 7
+      "community": 6
     },
     {
       "label": "shouldAutoGeneratePR()",
@@ -6801,7 +6817,7 @@
       "source_file": "src/lib/business-logic/auto-pr-generation.ts",
       "source_location": "L232",
       "id": "auto_pr_generation_shouldautogeneratepr",
-      "community": 7
+      "community": 6
     },
     {
       "label": "notifyPurchaseTeam()",
@@ -6809,7 +6825,7 @@
       "source_file": "src/lib/business-logic/auto-pr-generation.ts",
       "source_location": "L277",
       "id": "auto_pr_generation_notifypurchaseteam",
-      "community": 7
+      "community": 6
     },
     {
       "label": "handleAutoGeneratePR()",
@@ -6817,7 +6833,7 @@
       "source_file": "src/lib/business-logic/auto-pr-generation.ts",
       "source_location": "L321",
       "id": "auto_pr_generation_handleautogeneratepr",
-      "community": 7
+      "community": 6
     },
     {
       "label": "po-variance-detection.ts",
@@ -18825,7 +18841,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/auth/otp.test.ts",
-      "source_location": "L10",
+      "source_location": "L12",
       "weight": 1.0,
       "_src": "otp_test",
       "_tgt": "otp_test_at",
@@ -18837,7 +18853,31 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/auth/otp-policy.ts",
-      "source_location": "L32",
+      "source_location": "L11",
+      "weight": 1.0,
+      "_src": "otp_policy",
+      "_tgt": "otp_policy_otpenabled",
+      "source": "otp_policy",
+      "target": "otp_policy_otpenabled",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/auth/otp-policy.ts",
+      "source_location": "L24",
+      "weight": 1.0,
+      "_src": "otp_policy",
+      "_tgt": "otp_policy_otprequiredfor",
+      "source": "otp_policy",
+      "target": "otp_policy_otprequiredfor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/auth/otp-policy.ts",
+      "source_location": "L49",
       "weight": 1.0,
       "_src": "otp_policy",
       "_tgt": "otp_policy_otpusable",
@@ -18849,7 +18889,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/auth/otp-policy.ts",
-      "source_location": "L40",
+      "source_location": "L57",
       "weight": 1.0,
       "_src": "otp_policy",
       "_tgt": "otp_policy_sessionexpired",
@@ -18861,7 +18901,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/auth/otp-policy.ts",
-      "source_location": "L46",
+      "source_location": "L63",
       "weight": 1.0,
       "_src": "otp_policy",
       "_tgt": "otp_policy_generatecode",
@@ -18879,6 +18919,18 @@
       "_tgt": "otp_policy",
       "source": "otp_policy",
       "target": "otp",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/auth/otp-policy.ts",
+      "source_location": "L25",
+      "weight": 1.0,
+      "_src": "otp_policy_otprequiredfor",
+      "_tgt": "otp_policy_otpenabled",
+      "source": "otp_policy_otpenabled",
+      "target": "otp_policy_otprequiredfor",
       "confidence_score": 1.0
     },
     {

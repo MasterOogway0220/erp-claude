@@ -1,11 +1,11 @@
 # Graph Report - .  (2026-08-02)
 
 ## Corpus Check
-- 488 files · ~531,680 words
+- 488 files · ~532,072 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 867 nodes · 1191 edges · 57 communities detected
+- 869 nodes · 1194 edges · 57 communities detected
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
 
@@ -49,7 +49,7 @@ Nodes (36): buildAlertData(), createAlert(), findSystemBrowser(), renderHtmlToPd
 
 ### Community 3 - "Community 3"
 Cohesion: 0.05
-Nodes (13): generateDocumentNumber(), getCurrentFinancialYear(), getShortFinancialYear(), calculateValueDetails(), determineSupplyType(), extractStateCode(), formatDate(), generateEInvoiceJSON() (+5 more)
+Nodes (15): generateDocumentNumber(), getCurrentFinancialYear(), getShortFinancialYear(), calculateValueDetails(), determineSupplyType(), extractStateCode(), formatDate(), generateEInvoiceJSON() (+7 more)
 
 ### Community 4 - "Community 4"
 Cohesion: 0.09
@@ -60,12 +60,12 @@ Cohesion: 0.17
 Nodes (25): excelDateToJS(), getNum(), getVal(), main(), readExcel(), seedAdminUser(), seedCertificationTypes(), seedCompanyAdmin() (+17 more)
 
 ### Community 6 - "Community 6"
-Cohesion: 0.12
-Nodes (10): buildItemDescription(), escapeHtml(), formatDate(), generateNonStandardQuotationHtml(), nl2br(), esc(), fmt(), fmtPlain() (+2 more)
+Cohesion: 0.13
+Nodes (18): detectFieldChanges(), getAuditContext(), getIpAddress(), getUserAgent(), logApproval(), logAudit(), logAuthEvent(), logCreate() (+10 more)
 
 ### Community 7 - "Community 7"
-Cohesion: 0.16
-Nodes (18): detectFieldChanges(), getAuditContext(), getIpAddress(), getUserAgent(), logApproval(), logAudit(), logAuthEvent(), logCreate() (+10 more)
+Cohesion: 0.12
+Nodes (10): buildItemDescription(), escapeHtml(), formatDate(), generateNonStandardQuotationHtml(), nl2br(), esc(), fmt(), fmtPlain() (+2 more)
 
 ### Community 8 - "Community 8"
 Cohesion: 0.17
@@ -141,11 +141,11 @@ Nodes (4): fetchEmailLogs(), fetchInvoice(), markAsSent(), sendEmail()
 
 ### Community 26 - "Community 26"
 Cohesion: 0.67
-Nodes (3): fetchRFQ(), handleSaveQuotation(), handleSendToVendors()
+Nodes (3): describeLog(), humanize(), truncate()
 
 ### Community 27 - "Community 27"
 Cohesion: 0.67
-Nodes (3): describeLog(), humanize(), truncate()
+Nodes (3): loadPRItems(), loadSOItems(), mapToPOItems()
 
 ### Community 28 - "Community 28"
 Cohesion: 0.67
@@ -153,7 +153,7 @@ Nodes (3): fetchMTCs(), handleMtcSearch(), handleMtcVerificationUpdate()
 
 ### Community 29 - "Community 29"
 Cohesion: 0.67
-Nodes (3): loadPRItems(), loadSOItems(), mapToPOItems()
+Nodes (3): fetchRFQ(), handleSaveQuotation(), handleSendToVendors()
 
 ### Community 30 - "Community 30"
 Cohesion: 0.67
@@ -185,19 +185,19 @@ Nodes (0):
 
 ### Community 37 - "Community 37"
 Cohesion: 1.0
-Nodes (2): fetchReport(), handleUpdate()
+Nodes (2): fetchAcceptance(), updateStatus()
 
 ### Community 38 - "Community 38"
 Cohesion: 1.0
-Nodes (2): handleKeyDown(), handleSearch()
+Nodes (2): fetchSalesOrder(), handleCancelSO()
 
 ### Community 39 - "Community 39"
 Cohesion: 1.0
-Nodes (2): fetchAcceptance(), updateStatus()
+Nodes (2): calculateVendorPerformance(), fetchPOTracking()
 
 ### Community 40 - "Community 40"
 Cohesion: 1.0
-Nodes (2): formatCurrency(), handleExportCSV()
+Nodes (2): fetchOffer(), handleOfferAction()
 
 ### Community 41 - "Community 41"
 Cohesion: 1.0
@@ -205,23 +205,23 @@ Nodes (0):
 
 ### Community 42 - "Community 42"
 Cohesion: 1.0
-Nodes (2): rebuildItems(), toggleItemSelection()
+Nodes (0): 
 
 ### Community 43 - "Community 43"
 Cohesion: 1.0
-Nodes (2): fetchOffer(), handleOfferAction()
+Nodes (2): formatCurrency(), handleExportCSV()
 
 ### Community 44 - "Community 44"
 Cohesion: 1.0
-Nodes (0): 
+Nodes (2): handleKeyDown(), handleSearch()
 
 ### Community 45 - "Community 45"
 Cohesion: 1.0
-Nodes (2): fetchSalesOrder(), handleCancelSO()
+Nodes (2): fetchReport(), handleUpdate()
 
 ### Community 46 - "Community 46"
 Cohesion: 1.0
-Nodes (2): calculateVendorPerformance(), fetchPOTracking()
+Nodes (2): rebuildItems(), toggleItemSelection()
 
 ### Community 47 - "Community 47"
 Cohesion: 1.0
@@ -274,25 +274,25 @@ Nodes (0):
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 36`** (2 nodes): `migrate-warehouse-details-to-heats.ts`, `main()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 37`** (2 nodes): `fetchReport()`, `handleUpdate()`
+- **Thin community `Community 37`** (2 nodes): `fetchAcceptance()`, `updateStatus()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 38`** (2 nodes): `handleKeyDown()`, `handleSearch()`
+- **Thin community `Community 38`** (2 nodes): `fetchSalesOrder()`, `handleCancelSO()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 39`** (2 nodes): `fetchAcceptance()`, `updateStatus()`
+- **Thin community `Community 39`** (2 nodes): `calculateVendorPerformance()`, `fetchPOTracking()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 40`** (2 nodes): `formatCurrency()`, `handleExportCSV()`
+- **Thin community `Community 40`** (2 nodes): `fetchOffer()`, `handleOfferAction()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 41`** (2 nodes): `otp-client.ts`, `requestLoginOtp()`
+- **Thin community `Community 41`** (2 nodes): `download-file.ts`, `downloadFile()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 42`** (2 nodes): `rebuildItems()`, `toggleItemSelection()`
+- **Thin community `Community 42`** (2 nodes): `otp-client.ts`, `requestLoginOtp()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 43`** (2 nodes): `fetchOffer()`, `handleOfferAction()`
+- **Thin community `Community 43`** (2 nodes): `formatCurrency()`, `handleExportCSV()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 44`** (2 nodes): `download-file.ts`, `downloadFile()`
+- **Thin community `Community 44`** (2 nodes): `handleKeyDown()`, `handleSearch()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 45`** (2 nodes): `fetchSalesOrder()`, `handleCancelSO()`
+- **Thin community `Community 45`** (2 nodes): `fetchReport()`, `handleUpdate()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 46`** (2 nodes): `calculateVendorPerformance()`, `fetchPOTracking()`
+- **Thin community `Community 46`** (2 nodes): `rebuildItems()`, `toggleItemSelection()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 47`** (2 nodes): `breadcrumbs.tsx`, `isDynamicId()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
@@ -329,6 +329,6 @@ _Questions this graph is uniquely positioned to answer:_
 - **Should `Community 4` be split into smaller, more focused modules?**
   _Cohesion score 0.09 - nodes in this community are weakly interconnected._
 - **Should `Community 6` be split into smaller, more focused modules?**
+  _Cohesion score 0.13 - nodes in this community are weakly interconnected._
+- **Should `Community 7` be split into smaller, more focused modules?**
   _Cohesion score 0.12 - nodes in this community are weakly interconnected._
-- **Should `Community 9` be split into smaller, more focused modules?**
-  _Cohesion score 0.11 - nodes in this community are weakly interconnected._
