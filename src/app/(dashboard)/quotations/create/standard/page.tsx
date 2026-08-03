@@ -46,8 +46,14 @@ import {
   inferItemCategory,
 } from "@/lib/fitting-flange-sizes";
 import { calculateWeightPerMeter } from "@/lib/weight-calculation";
+import { fillBlankCurrencyTerm } from "@/lib/quotations/currency";
+import { toDateInput } from "@/lib/dates";
 
 type ItemCategory = "Pipe" | "Fitting" | "Flange" | "Plate";
+
+// Single source for the Unit dropdown — the stored-value fallback below
+// checks against this same list, so they cannot drift apart.
+const UOM_OPTIONS = ["Mtr", "Nos", "Kg", "MT", "Feet", "Set", "Lot"];
 
 interface QuotationItem {
   itemCategory: ItemCategory;
@@ -155,7 +161,7 @@ function StandardQuotationPage() {
     quotationCategory: "STANDARD",
     currency: "INR",
     validUpto: "",
-    quotationDate: new Date().toISOString().split("T")[0],
+    quotationDate: toDateInput(new Date()),
     inquiryNo: "",
     inquiryDate: "",
     // New fields
@@ -262,9 +268,16 @@ function StandardQuotationPage() {
     },
   });
 
+  // Customer the edit data was loaded with — set by the populate effect
+  const loadedCustomerIdRef = useRef<string | null>(null);
+
   // Auto-select the sole buyer when a customer has exactly one
   useEffect(() => {
     const buyers = buyersData?.buyers;
+    // In edit mode a stored "no buyer" is a saved choice — don't invent one
+    // on open. The convenience still applies when the user picks a different
+    // customer mid-edit (buyer was reset to blank by then).
+    if (editId && formData.customerId === loadedCustomerIdRef.current) return;
     if (buyers && buyers.length === 1 && !formData.buyerId) {
       setFormData((prev) => ({ ...prev, buyerId: buyers[0].id }));
     }
@@ -373,10 +386,18 @@ function StandardQuotationPage() {
 
   // Track whether we're loading from edit data — skip auto-currency effects until loaded
   const editLoadedRef = useRef(false);
+  // Last quotationType this effect saw — the populate effect syncs it so the
+  // programmatic DOMESTIC→EXPORT change during edit load doesn't count as a
+  // user flip. Without this, opening an EXPORT quotation stored in INR
+  // (corrupted by the old `currency || "INR"` bug) silently flipped it to USD
+  // and FX-repriced every item before the user touched anything.
+  const prevQuotationTypeRef = useRef(formData.quotationType);
 
-  // Auto-set currency based on market type (skip in edit mode until data is loaded)
+  // Auto-set currency based on market type — only on a user-initiated flip
   useEffect(() => {
     if (editId && !editLoadedRef.current) return;
+    if (prevQuotationTypeRef.current === formData.quotationType) return;
+    prevQuotationTypeRef.current = formData.quotationType;
     if (formData.quotationType === "EXPORT" && formData.currency === "INR") {
       setFormData((prev) => ({ ...prev, currency: "USD" }));
     } else if (formData.quotationType === "DOMESTIC" && formData.currency !== "INR") {
@@ -435,12 +456,19 @@ function StandardQuotationPage() {
 
   // Clear GST fields when currency is not INR (only INR supports GST)
   // Also update any "Currency" term value to reflect selected currency
+  const termCurrencyRef = useRef(formData.currency);
   useEffect(() => {
+    // Only a real currency change may act here — the edit load's INR→saved
+    // transition also fires this effect, and acting there tampered with
+    // saved data: it wiped a stored GST rate (changing the grand total) and
+    // replaced a saved Currency term like "USD ($)" with the bare "USD".
+    // The populate effect syncs this ref so the load transition is skipped.
+    if (termCurrencyRef.current === formData.currency) return;
+    termCurrencyRef.current = formData.currency;
     if (formData.currency !== "INR") {
       setTaxRate("");
       setRcmEnabled(false);
     }
-    // Auto-update currency term value
     setTerms((prev) => prev.map((t) =>
       t.termName.toLowerCase().includes("currency")
         ? { ...t, termValue: formData.currency }
@@ -473,6 +501,12 @@ function StandardQuotationPage() {
   // Track the quotationType + customer combo that was last used to populate terms
   const termsLoadedForKey = useRef<string | null>(null);
 
+  // A reload here lands after the currency effect has already run, so without
+  // this a blank Currency term stays empty and prints as a blank "Currency :"
+  // line on the customer's quotation. See fillBlankCurrencyTerm for why blanks
+  // exist at all.
+  const fillCurrencyTerm = (list: any[]) => fillBlankCurrencyTerm(list, formData.currency);
+
   // Load terms: customer-specific first, then fall back to global templates
   useEffect(() => {
     if (!templatesData?.templates) return;
@@ -496,16 +530,16 @@ function StandardQuotationPage() {
             // one and overwrite the correct terms
             if (termsLoadedForKey.current !== termsKey) return;
             if (data.terms?.length > 0) {
-              setTerms(data.terms.map((t: any) => ({
+              setTerms(fillCurrencyTerm(data.terms.map((t: any) => ({
                 termName: t.termName,
                 termValue: t.termValue || "",
                 isIncluded: t.isIncluded ?? true,
                 isCustom: false,
                 isHeadingEditable: false,
-              })));
+              }))));
             } else {
               // No customer-specific terms, use global templates
-              setTerms(
+              setTerms(fillCurrencyTerm(
                 templatesData.templates.map((t: any) => ({
                   termName: t.termName,
                   termValue: t.termDefaultValue || "",
@@ -513,13 +547,13 @@ function StandardQuotationPage() {
                   isCustom: false,
                   isHeadingEditable: false,
                 }))
-              );
+              ));
             }
           })
           .catch(() => {
             if (termsLoadedForKey.current !== termsKey) return;
             // Fallback to global templates on error
-            setTerms(
+            setTerms(fillCurrencyTerm(
               templatesData.templates.map((t: any) => ({
                 termName: t.termName,
                 termValue: t.termDefaultValue || "",
@@ -527,11 +561,11 @@ function StandardQuotationPage() {
                 isCustom: false,
                 isHeadingEditable: false,
               }))
-            );
+            ));
           });
       } else {
         // No customer selected, use global templates
-        setTerms(
+        setTerms(fillCurrencyTerm(
           templatesData.templates.map((t: any) => ({
             termName: t.termName,
             termValue: t.termDefaultValue || "",
@@ -539,7 +573,7 @@ function StandardQuotationPage() {
             isCustom: false,
             isHeadingEditable: false,
           }))
-        );
+        ));
       }
       termsLoadedForKey.current = termsKey;
     }
@@ -595,18 +629,24 @@ function StandardQuotationPage() {
   useEffect(() => {
     if (editData?.quotation && !editLoadedRef.current) {
       const q = editData.quotation;
+      // Whitespace/blank currency is junk from the old-incident era: the
+      // Select can't display it and every "(curr)" label prints "()". The
+      // server normalizes it to INR on save anyway (resolveUpdateCurrency),
+      // so show the same thing the save would produce.
+      const loadedCurrency =
+        (typeof q.currency === "string" && q.currency.trim()) || "INR";
       setFormData({
         customerId: q.customerId || "",
         buyerId: q.buyerId || "",
         quotationType: q.quotationType || "DOMESTIC",
         quotationCategory: q.quotationCategory || "STANDARD",
-        currency: q.currency || "INR",
-        validUpto: q.validUpto ? new Date(q.validUpto).toISOString().split("T")[0] : "",
-        quotationDate: q.quotationDate ? new Date(q.quotationDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+        currency: loadedCurrency,
+        validUpto: q.validUpto ? toDateInput(q.validUpto) : "",
+        quotationDate: q.quotationDate ? toDateInput(q.quotationDate) : toDateInput(new Date()),
         inquiryNo: q.inquiryNo || "",
-        inquiryDate: q.inquiryDate ? new Date(q.inquiryDate).toISOString().split("T")[0] : "",
+        inquiryDate: q.inquiryDate ? toDateInput(q.inquiryDate) : "",
         dealOwnerId: q.dealOwnerId || "",
-        nextActionDate: q.nextActionDate ? new Date(q.nextActionDate).toISOString().split("T")[0] : "",
+        nextActionDate: q.nextActionDate ? toDateInput(q.nextActionDate) : "",
         kindAttention: q.kindAttention || "",
         placeOfSupplyCity: q.placeOfSupplyCity || "",
         placeOfSupplyState: q.placeOfSupplyState || "",
@@ -676,12 +716,19 @@ function StandardQuotationPage() {
           isCustom: t.isCustom,
           isHeadingEditable: t.isHeadingEditable,
         })));
-        // Record the key so the terms-template effect doesn't reload over the
-        // quotation's saved terms.
-        termsLoadedForKey.current = `${q.quotationType || "DOMESTIC"}|${q.customerId || ""}`;
       }
-      // Sync prevCurrencyRef so the currency conversion effect doesn't fire
-      prevCurrencyRef.current = q.currency || "INR";
+      // Record the key EVEN when the quotation has zero terms — otherwise the
+      // template effect "helpfully" loads a full T&C block into a document
+      // that was deliberately saved without one.
+      termsLoadedForKey.current = `${q.quotationType || "DOMESTIC"}|${q.customerId || ""}`;
+      // Sync the effect refs so the programmatic changes this populate causes
+      // don't fire the user-action effects: currency conversion, market-type
+      // currency snap, buyer auto-select, and the Currency-term rewrite all
+      // stay quiet on load.
+      prevCurrencyRef.current = loadedCurrency;
+      prevQuotationTypeRef.current = q.quotationType || "DOMESTIC";
+      termCurrencyRef.current = loadedCurrency;
+      loadedCustomerIdRef.current = q.customerId || "";
       // Mark edit as loaded so auto-currency effects can work for manual changes
       editLoadedRef.current = true;
     }
@@ -691,6 +738,10 @@ function StandardQuotationPage() {
   useEffect(() => {
     const tenderId = searchParams.get("tenderId");
     if (!tenderId) return;
+    // An edit URL that also carries tenderId (stale share/bookmark) must not
+    // let the tender fetch race the populate effect and replace the saved
+    // customer/items — prefill is a create-only convenience.
+    if (editId) return;
     fetch(`/api/tenders/${tenderId}`)
       .then((r) => r.json())
       .then((tender) => {
@@ -1783,13 +1834,15 @@ function StandardQuotationPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Mtr">Mtr</SelectItem>
-                          <SelectItem value="Nos">Nos</SelectItem>
-                          <SelectItem value="Kg">Kg</SelectItem>
-                          <SelectItem value="MT">MT</SelectItem>
-                          <SelectItem value="Feet">Feet</SelectItem>
-                          <SelectItem value="Set">Set</SelectItem>
-                          <SelectItem value="Lot">Lot</SelectItem>
+                          {/* An older row can hold a UOM not in the list
+                              (e.g. "MTR") — keep it selectable so editing
+                              shows the stored value instead of a blank. */}
+                          {item.uom && !UOM_OPTIONS.includes(item.uom) && (
+                            <SelectItem value={item.uom}>{item.uom}</SelectItem>
+                          )}
+                          {UOM_OPTIONS.map((u) => (
+                            <SelectItem key={u} value={u}>{u}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>

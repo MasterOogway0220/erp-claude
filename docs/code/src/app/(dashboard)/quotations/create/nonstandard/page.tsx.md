@@ -22,12 +22,23 @@ Renders the `/quotations/create/nonstandard` screen. 1794 lines.
   category and no "Structured" entry mode — both were removed. A non-standard
   item is something the pipe/fitting/flange masters cannot describe (a clad
   plate, a bought-out special), so the typed description *is* the item and gets
-  printed verbatim on the PDF. Every row saves as `itemType: "Item"` /
-  `product: "Non-Standard Item"`, and `fittingId`/`flangeId` are no longer sent.
-- Historical rows created before that change may still carry a `fittingId`,
-  `flangeId` or a real product name. They load as plain free text from the saved
-  `itemDescription` (which was always persisted), and re-saving clears the stale
-  FKs. Nothing reconstructs the old picker.
+  printed verbatim on the PDF.
+- **Editing must not rewrite what the form does not show.** The first version
+  of the free-text refactor rebuilt the PUT payload from scratch — every edit
+  overwrote `product` with "Non-Standard Item", `itemType` with "Item", and
+  nulled `hsnCode`, per-item `taxRate`, `dimStandard`, OD/WT, weights, the six
+  costing columns, tube/component fields and the `fittingId`/`flangeId` FKs.
+  That is the "values changing by themselves" bug the client reported. The
+  populate effect now spreads the raw DB row into state and `handleSubmit`
+  spreads it back, so hidden columns round-trip untouched; only new rows get
+  the `"Item"` / `"Non-Standard Item"` defaults.
+- Same edit-mode discipline as the standard page (see its doc for the full
+  list): load-time effects are ref-suppressed so opening an EXPORT+INR row
+  cannot FX-reprice it, a stored GST rate or hand-typed Currency term
+  survives load, a sole buyer is not auto-assigned to a buyer-less quotation,
+  zero-terms quotations do not gain template terms, dates go through
+  `toDateInput`, terms loads go through `fillBlankCurrencyTerm`, and the
+  tender prefill is create-only.
 - Large file (1794 lines). Read the section you are changing rather than pattern-matching from a sibling.
 - Any `Select` needs a non-empty `SelectItem` value; the codebase uses a `"NONE"` sentinel mapped to `""`.
 - Role gating in the UI is cosmetic — the API is the boundary, and its role checks are currently disabled.

@@ -108,6 +108,9 @@ authoritative, need maintaining, and teach nothing.
 - [`validators/auth.ts`](./src/lib/validators/auth.ts.md) — password policy.
 
 ### Quotations
+- [`quotations/currency.ts`](./src/lib/quotations/currency.ts.md) — update
+  currency resolution and the blank Currency-term fill; both born from live
+  incidents.
 - [`quotations/deal-owner.ts`](./src/lib/quotations/deal-owner.ts.md) — why an
   omitted field must not mean "erase this".
 - [`quotations/display.ts`](./src/lib/quotations/display.ts.md) — size and
@@ -124,6 +127,8 @@ authoritative, need maintaining, and teach nothing.
 - [`fitting-flange-sizes.ts`](./src/lib/fitting-flange-sizes.ts.md) —
   **generated**; the size pools and product routing.
 - [`weight-calculation.ts`](./src/lib/weight-calculation.ts.md)
+- [`dates.ts`](./src/lib/dates.ts.md) — local-calendar date formatting for
+  date inputs; why `toISOString()` shifted dates a day.
 - [`calc/po-totals.ts`](./src/lib/calc/po-totals.ts.md) — GST split and landed
   totals.
 - [`amount-in-words.ts`](./src/lib/amount-in-words.ts.md) — Indian vs Western

@@ -18,9 +18,34 @@ Operates on `quotation`, `customerContact`, `buyerMaster`.
 
 - Gated by `checkAccess("quotation", "approve")`, `checkAccess("quotation", "delete")`, `checkAccess("quotation", "read")`, `checkAccess("quotation", "write")`. **Authentication only** — role enforcement is disabled app-wide.
 - Company-scoped with `companyFilter(companyId)`.
-- Writes inside `$transaction`. Item updates follow the delete-and-recreate pattern, so **a field the caller omits is lost**.
+- Writes inside `$transaction`. Item updates follow the delete-and-recreate pattern, so **a field the caller omits is lost** — which is why the edit pages spread the raw loaded row back into their payload, and why the header fields below are guarded.
 - Status changes validated against a transition map; invalid moves are refused.
 - Writes an audit row. Audit failures are swallowed and never block the operation.
+
+### PUT guards against silent data loss
+
+Each of these exists because an ordinary edit destroyed data at least once:
+
+- **Currency** resolves through `resolveUpdateCurrency(currency, existing.currency)` —
+  a blank/missing payload currency keeps the stored value instead of the old
+  `currency || "INR"`, which repriced EXPORT quotation NPS/26/15214 from USD
+  to INR (amount-in-words included) with nothing logged.
+- **`quotationType`** is persisted when sent. It used to be dropped, so a
+  DOMESTIC↔EXPORT switch kept its currency side-effect while the header kept
+  the old market type.
+- **`paymentTermsId` / `deliveryTermsId` / `deliveryPeriod`** are written only
+  when the key is present in the body. Neither edit form carries them, and the
+  old unconditional `x || null` wiped values that revisions had copied
+  forward. Explicit `null` still clears.
+- **`dealOwnerId`** goes through `dealOwnerPatch` (absent = leave alone,
+  null/"" = unassign); **`preparedById` is write-once** — editing is not
+  authoring.
+- The **item audit diff** tracks `slNo, product, material, dimStandard,
+  sizeLabel, length, ends, uom, quantity, unitRate, amount`, and the
+  `existing` select fetches exactly those fields — a diffed field missing from
+  the select reads as `undefined` and logs a phantom change. `length/ends/uom`
+  were added after a client reported lengths "disappearing" and the audit log
+  could not prove or disprove it.
 
 ## Gotchas
 

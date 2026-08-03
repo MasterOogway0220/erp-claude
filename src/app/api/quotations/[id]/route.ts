@@ -5,6 +5,7 @@ import { numberToWords } from "@/lib/amount-in-words";
 import { checkAccess, companyFilter } from "@/lib/rbac";
 import { unpricedItemsError } from "@/lib/quotations/pricing";
 import { dealOwnerPatch } from "@/lib/quotations/deal-owner";
+import { resolveUpdateCurrency } from "@/lib/quotations/currency";
 
 // Valid quotation status transitions
 const VALID_QUOTATION_TRANSITIONS: Record<string, string[]> = {
@@ -321,9 +322,11 @@ export async function PUT(
     const existing = await prisma.quotation.findFirst({
       where: { id, ...companyFilter(companyId) },
       select: {
-        status: true, quotationNo: true, customerId: true,
+        status: true, quotationNo: true, customerId: true, currency: true,
         quotationType: true, quotationCategory: true, version: true,
-        items: { select: { id: true, sNo: true, product: true, material: true, sizeLabel: true, quantity: true, unitRate: true, amount: true } },
+        // Every field the audit diff below compares must be selected here —
+        // a missing one reads as undefined and logs a phantom "change".
+        items: { select: { id: true, sNo: true, slNo: true, product: true, material: true, dimStandard: true, sizeLabel: true, length: true, ends: true, uom: true, quantity: true, unitRate: true, amount: true } },
         terms: { select: { id: true, termName: true, termValue: true, isIncluded: true } },
       },
     });
@@ -351,6 +354,7 @@ export async function PUT(
     const body = await request.json();
     const {
       currency,
+      quotationType,
       validUpto,
       buyerId,
       paymentTermsId,
@@ -459,7 +463,9 @@ export async function PUT(
     const grandTotalBeforeRoundOff = totalAfterDiscount + taxAmount;
     const roundOffAmount = roundOff ? (Math.round(grandTotalBeforeRoundOff) - grandTotalBeforeRoundOff) : 0;
     const grandTotal = grandTotalBeforeRoundOff + roundOffAmount;
-    const effectiveCurrency = currency || "INR";
+    // A blank or missing currency means "the client did not tell us", not
+    // "INR" — see resolveUpdateCurrency for the incident this guards against.
+    const effectiveCurrency = resolveUpdateCurrency(currency, existing.currency);
     const computedAmountInWords = numberToWords(grandTotal, effectiveCurrency);
 
     // Transaction: update header, delete old items/terms, create new ones
@@ -473,14 +479,22 @@ export async function PUT(
         where: { id },
         data: {
           currency: effectiveCurrency,
+          // The form can change the market type, but this route used to drop it
+          // silently — so a DOMESTIC switch kept its currency side-effect while
+          // the header stayed EXPORT, leaving an export quotation priced in INR.
+          // Persist it so the two cannot diverge.
+          ...(quotationType ? { quotationType } : {}),
           ...(quotationDate ? { quotationDate: new Date(quotationDate) } : {}),
           validUpto: validUpto ? new Date(validUpto) : null,
           buyerId: resolvedBuyerId,
           inquiryNo: inquiryNo || null,
           inquiryDate: inquiryDate ? new Date(inquiryDate) : null,
-          paymentTermsId: paymentTermsId || null,
-          deliveryTermsId: deliveryTermsId || null,
-          deliveryPeriod: deliveryPeriod || null,
+          // Neither edit form carries these three, so an absent key means
+          // "not edited", not "clear" — writing null here wiped values that
+          // revisions had copied forward. Explicit null still clears.
+          ...(paymentTermsId !== undefined ? { paymentTermsId: paymentTermsId || null } : {}),
+          ...(deliveryTermsId !== undefined ? { deliveryTermsId: deliveryTermsId || null } : {}),
+          ...(deliveryPeriod !== undefined ? { deliveryPeriod: deliveryPeriod || null } : {}),
           // New fields
           // Omitted key = not editing the owner; explicit null = unassign.
           ...dealOwnerPatch(dealOwnerId),
@@ -593,9 +607,12 @@ export async function PUT(
       const oldItem = oldItemMap.get(sNo);
       if (oldItem) {
         const diffs: Record<string, { old: any; new: any }> = {};
-        for (const field of ["slNo", "product", "material", "dimStandard", "sizeLabel", "quantity", "unitRate", "amount"]) {
+        // length/ends/uom are here because the client reported lengths
+        // "disappearing" — without them in the diff the audit log could not
+        // prove or disprove what an edit actually changed.
+        for (const field of ["slNo", "product", "material", "dimStandard", "sizeLabel", "length", "ends", "uom", "quantity", "unitRate", "amount"]) {
           const oldVal = String(oldItem[field] ?? "");
-          const newVal = String(newItem[field] ?? newItem[field === "sizeLabel" ? "sizeLabel" : field] ?? "");
+          const newVal = String(newItem[field] ?? "");
           if (oldVal !== newVal) {
             diffs[field] = { old: oldItem[field], new: newItem[field] };
           }
