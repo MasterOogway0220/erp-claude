@@ -54,6 +54,7 @@ type ItemCategory = "Pipe" | "Fitting" | "Flange" | "Plate";
 // Single source for the Unit dropdown — the stored-value fallback below
 // checks against this same list, so they cannot drift apart.
 const UOM_OPTIONS = ["Mtr", "Nos", "Kg", "MT", "Feet", "Set", "Lot"];
+const CURRENCY_OPTIONS = ["INR", "USD", "EUR", "AED"];
 
 interface QuotationItem {
   itemCategory: ItemCategory;
@@ -1245,10 +1246,14 @@ function StandardQuotationPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="INR">INR</SelectItem>
-                    <SelectItem value="USD">USD</SelectItem>
-                    <SelectItem value="EUR">EUR</SelectItem>
-                    <SelectItem value="AED">AED</SelectItem>
+                    {/* A stored code outside the list must stay visible and
+                        selectable, not render the trigger blank. */}
+                    {formData.currency && !CURRENCY_OPTIONS.includes(formData.currency) && (
+                      <SelectItem value={formData.currency}>{formData.currency}</SelectItem>
+                    )}
+                    {CURRENCY_OPTIONS.map((c) => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
