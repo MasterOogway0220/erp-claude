@@ -7,9 +7,26 @@ import { Select as SelectPrimitive } from "radix-ui"
 import { cn } from "@/lib/utils"
 
 function Select({
+  onValueChange,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Root>) {
-  return <SelectPrimitive.Root data-slot="select" {...props} />
+  return (
+    <SelectPrimitive.Root
+      data-slot="select"
+      // Radix fires a phantom onValueChange("") when a controlled value is
+      // swapped programmatically mid-render (e.g. an edit form populating from
+      // fetched data) — no user involved. It wiped currency/length/uom on the
+      // quotation edit pages, and the wipe got SAVED when the user then hit
+      // Update. A real selection can never be "": Radix throws on
+      // <SelectItem value="">, so every legitimate value is non-empty
+      // (sentinels like "NONE"/"__none__" are used for "no selection").
+      // Swallow the phantom here, once, for every Select in the app.
+      onValueChange={(value) => {
+        if (value !== "") onValueChange?.(value)
+      }}
+      {...props}
+    />
+  )
 }
 
 function SelectGroup({
