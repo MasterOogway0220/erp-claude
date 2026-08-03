@@ -18,6 +18,10 @@ Renders the `/quotations/[id]` screen. 1719 lines.
 ## Gotchas
 
 - Large file (1719 lines). Read the section you are changing rather than pattern-matching from a sibling.
+- The standard items table must show every field the edit form saves — Length
+  was once saved and printed but not shown here, and users read the gap as
+  "my edit didn't save". The total row's `colSpan` is keyed to this column
+  count; adding a column means bumping it.
 - Any `Select` needs a non-empty `SelectItem` value; the codebase uses a `"NONE"` sentinel mapped to `""`.
 - Role gating in the UI is cosmetic — the API is the boundary, and its role checks are currently disabled.
 

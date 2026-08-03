@@ -871,6 +871,7 @@ export default function QuotationDetailPage() {
                       <TableHead>OD</TableHead>
                       <TableHead>WT</TableHead>
                       <TableHead>Ends</TableHead>
+                      <TableHead>Length</TableHead>
                       <TableHead className="text-right">Qty</TableHead>
                       <TableHead>Unit</TableHead>
                       <TableHead className="text-right">Rate</TableHead>
@@ -941,6 +942,9 @@ export default function QuotationDetailPage() {
                         <TableCell>{item.od || "---"}</TableCell>
                         <TableCell>{item.wt || "---"}</TableCell>
                         <TableCell>{item.ends || "---"}</TableCell>
+                        {/* Length was saved and printed but never shown here,
+                            so a saved length read as "not saved" on this page */}
+                        <TableCell>{item.length || "---"}</TableCell>
                         <TableCell className="text-right">
                           {parseFloat(item.quantity).toFixed(3)}
                         </TableCell>
@@ -963,7 +967,7 @@ export default function QuotationDetailPage() {
                 ))}
                 <TableRow className="font-bold">
                   <TableCell />
-                  <TableCell colSpan={quotation.quotationCategory === "NON_STANDARD" ? 5 : 11} className="text-right">
+                  <TableCell colSpan={quotation.quotationCategory === "NON_STANDARD" ? 5 : 12} className="text-right">
                     Total:
                   </TableCell>
                   <TableCell className="text-right">
