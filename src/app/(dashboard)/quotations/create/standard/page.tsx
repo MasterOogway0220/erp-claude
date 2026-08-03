@@ -280,6 +280,19 @@ function StandardQuotationPage() {
     },
   });
 
+  // Fetch lengths for the Length dropdown — driven by Length Master so entries
+  // added under Masters > Products > Lengths show up here without a code change
+  const { data: lengthsData } = useQuery({
+    queryKey: ["lengths"],
+    queryFn: async () => {
+      const res = await fetch("/api/masters/lengths");
+      if (!res.ok) throw new Error("Failed to fetch lengths");
+      return res.json();
+    },
+  });
+
+  const lengthOptions: string[] = (lengthsData?.lengths || []).map((l: { label: string }) => l.label);
+
   // Fetch material codes for autocomplete — scoped to selected customer (only codes used in their past quotations)
   const { data: materialCodesData } = useQuery({
     queryKey: ["material-codes", formData.customerId, "STANDARD"],
@@ -1712,14 +1725,14 @@ function StandardQuotationPage() {
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="__none__">Select</SelectItem>
-                              <SelectItem value="5.8">5.8 Mtr</SelectItem>
-                              <SelectItem value="6.0">6.0 Mtr</SelectItem>
-                              <SelectItem value="6.1">6.1 Mtr</SelectItem>
-                              <SelectItem value="9.0-11.8">9.0-11.8 Mtr</SelectItem>
-                              <SelectItem value="5.8-6.1">5.8-6.1 Mtr</SelectItem>
-                              <SelectItem value="Random">Random</SelectItem>
-                              <SelectItem value="Fixed">Fixed</SelectItem>
-                              <SelectItem value="Cut Length">Cut Length</SelectItem>
+                              {/* An older quotation can hold a length that is not (or no longer) in
+                                  the master — keep it selectable so editing does not blank it. */}
+                              {item.length && !lengthOptions.includes(item.length) && (
+                                <SelectItem value={item.length}>{item.length}</SelectItem>
+                              )}
+                              {lengthOptions.map((label) => (
+                                <SelectItem key={label} value={label}>{label}</SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                         </div>

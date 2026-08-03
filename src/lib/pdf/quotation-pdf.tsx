@@ -530,59 +530,62 @@ function NonStandardQuotationPage({
     <Page size="A4" style={nsStyles.page}>
       {watermark ? <DraftWatermark /> : null}
 
-      {/* ROW 1-2: Logo + Type Label */}
-      <View style={[nsStyles.row, { marginBottom: 3, alignItems: "center" }]}>
-        <View style={{ width: "25%", justifyContent: "center" }}>
-          {company.isoLogoUrl
-            ? <Image src={company.isoLogoUrl} style={{ height: 60, objectFit: "contain" }} />
-            : <T style={{ fontSize: 6.5, color: "#666" }}>ISO 9001:2015 | ISO 14001:2015 | ISO 45001:2018</T>
-          }
+      {/* HEADER — one bordered grid per the client's format sheet: the logo band,
+          the quotation number/date and the party block share a single frame, and
+          the number/date sit under the COMMERCIAL/TECHNICAL box rather than
+          floating on their own line. */}
+      <View style={{ marginBottom: 4 }}>
+        {/* Logos + type label (number/date nested under the type box) */}
+        <View style={nsStyles.row}>
+          <View style={[CELL, CELL_TOP, { width: "25%", justifyContent: "center", alignItems: "center", padding: "2pt 3pt" }]}>
+            {company.isoLogoUrl
+              ? <Image src={company.isoLogoUrl} style={{ height: 52, objectFit: "contain" }} />
+              : <T style={{ fontSize: 6.5, color: "#666", textAlign: "center" }}>ISO 9001:2015 | ISO 14001:2015 | ISO 45001:2018</T>
+            }
+          </View>
+          <View style={[CELL, CELL_TOP, { width: "40%", alignItems: "center", justifyContent: "center", padding: "2pt 3pt" }]}>
+            {company.companyLogoUrl
+              ? <Image src={company.companyLogoUrl} style={{ height: 42, objectFit: "contain" }} />
+              : <T style={{ fontSize: 16, fontFamily: "Helvetica", fontWeight: "bold" }}>{company.companyName}</T>
+            }
+          </View>
+          <View style={[CELL, CELL_TOP, CELL_END, { width: "35%" }]}>
+            <View style={{ flexGrow: 1, alignItems: "center", justifyContent: "center", padding: "4pt 4pt" }}>
+              <T style={{ fontSize: 11, fontFamily: "Helvetica", fontWeight: "bold", textAlign: "center" }}>{revLabel}</T>
+            </View>
+            <View style={[nsStyles.row, { borderTopWidth: 0.5, borderTopColor: "#999", borderTopStyle: "solid" }]}>
+              <View style={{ width: "58%", padding: "1pt 3pt", borderRightWidth: 0.5, borderRightColor: "#999", borderRightStyle: "solid" }}>
+                <T style={{ fontFamily: "Helvetica", fontWeight: "bold" }}>Quotation Number :</T>
+                <T>{quotation.quotationNo}</T>
+              </View>
+              <View style={{ width: "42%", padding: "1pt 3pt" }}>
+                <T style={{ fontFamily: "Helvetica", fontWeight: "bold" }}>Dated :</T>
+                <T>{fmtDate(quotation.quotationDate)}</T>
+              </View>
+            </View>
+          </View>
         </View>
-        <View style={{ width: "42%", alignItems: "center", justifyContent: "center" }}>
-          {company.companyLogoUrl
-            ? <Image src={company.companyLogoUrl} style={{ height: 45, objectFit: "contain" }} />
-            : <T style={{ fontSize: 16, fontFamily: "Helvetica", fontWeight: "bold" }}>{company.companyName}</T>
-          }
-        </View>
-        <View style={{ width: "33%", ...BOLD_BORDER, alignItems: "center", justifyContent: "center", padding: "3pt 4pt" }}>
-          <T style={{ fontSize: 10, fontFamily: "Helvetica", fontWeight: "bold", textAlign: "center" }}>{revLabel}</T>
-        </View>
-      </View>
 
-      {/* QUOTATION NUMBER + DATE — one line, right side */}
-      <View style={[nsStyles.row, { justifyContent: "flex-end", marginBottom: 2 }]}>
-        <View style={[nsStyles.row, { width: "62%" }]}>
-          <T style={{ width: "62%" }}>
-            <T style={{ fontFamily: "Helvetica", fontWeight: "bold" }}>Quotation Number : </T>
-            {quotation.quotationNo}
-          </T>
-          <T style={{ width: "38%" }}>
-            <T style={{ fontFamily: "Helvetica", fontWeight: "bold" }}>Dated : </T>
-            {fmtDate(quotation.quotationDate)}
-          </T>
-        </View>
-      </View>
-
-      {/* CUSTOMER / ATTENTION / PREPARED BY GRID */}
-      <View style={[nsStyles.row, { ...BORDER }]}>
-        <View style={[nsStyles.infoCell, { width: "38%", borderRightWidth: 0.5, borderRightColor: "#999", borderRightStyle: "solid" }]}>
-          <T style={{ fontFamily: "Helvetica", fontWeight: "bold" }}>Customer :</T>
-          <T style={{ fontFamily: "Helvetica", fontWeight: "bold", fontSize: 9 }}>M/s. {quotation.customer.name}</T>
-          {customerAddressLines.map((line, i) => <T key={i}>{line}</T>)}
-        </View>
-        <View style={[nsStyles.infoCell, { width: "30%", borderRightWidth: 0.5, borderRightColor: "#999", borderRightStyle: "solid" }]}>
-          <T style={{ fontFamily: "Helvetica", fontWeight: "bold" }}>Attention :</T>
-          <T>{buyerName}</T>
-          <T>{buyerDes}</T>
-          <T>{buyerEmail}</T>
-          <T>{buyerContact}</T>
-        </View>
-        <View style={[nsStyles.infoCell, { width: "32%" }]}>
-          <T style={{ fontFamily: "Helvetica", fontWeight: "bold" }}>Prepared by: {prepName}</T>
-          {prepPhone ? <T>Direct Line : {prepPhone}</T> : null}
-          {prepEmail ? <T>Email : {prepEmail}</T> : null}
-          {enquiryRef ? <><T style={{ fontFamily: "Helvetica", fontWeight: "bold", marginTop: 3 }}>Enquiry Reference :</T><T>{enquiryRef}</T></> : null}
-          {quotation.inquiryDate ? <T>Dated: {fmtDate(quotation.inquiryDate)}</T> : null}
+        {/* Customer / Attention / Prepared by */}
+        <View style={nsStyles.row}>
+          <View style={[nsStyles.infoCell, CELL, { width: "38%" }]}>
+            <T style={{ fontFamily: "Helvetica", fontWeight: "bold" }}>Customer :</T>
+            <T style={{ fontFamily: "Helvetica", fontWeight: "bold", fontSize: 9 }}>M/s. {quotation.customer.name}</T>
+            {customerAddressLines.map((line, i) => <T key={i}>{line}</T>)}
+          </View>
+          <View style={[nsStyles.infoCell, CELL, { width: "30%" }]}>
+            <T style={{ fontFamily: "Helvetica", fontWeight: "bold" }}>Attention :</T>
+            <T>{buyerName}</T>
+            <T>{buyerDes}</T>
+            {buyerEmail ? <T><T style={{ fontFamily: "Helvetica", fontWeight: "bold" }}>Email: </T>{buyerEmail}</T> : null}
+            {buyerContact ? <T><T style={{ fontFamily: "Helvetica", fontWeight: "bold" }}>Tel.: </T>{buyerContact}</T> : null}
+          </View>
+          <View style={[nsStyles.infoCell, CELL, CELL_END, { width: "32%" }]}>
+            <T style={{ fontFamily: "Helvetica", fontWeight: "bold" }}>Prepared by: {prepName}</T>
+            {prepPhone ? <T>Direct Line : {prepPhone}</T> : null}
+            {enquiryRef ? <><T style={{ fontFamily: "Helvetica", fontWeight: "bold" }}>Enquiry Reference :</T><T>{enquiryRef}</T></> : null}
+            {quotation.inquiryDate ? <T>Dated: {fmtDate(quotation.inquiryDate)}</T> : null}
+          </View>
         </View>
       </View>
 

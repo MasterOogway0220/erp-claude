@@ -37,13 +37,8 @@ import { Plus, Trash2, ArrowLeft, Building2, MapPin, ListChecks, Copy, ChevronDo
 import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
 import { useCurrentUser } from "@/hooks/use-current-user";
-import { ProductMaterialSelect, getMasterExtraSizes } from "@/components/shared/product-material-select";
-import { getFittingSizeOptions, getFlangeSizeOptions } from "@/lib/fitting-flange-sizes";
-
-type NonStdItemCategory = "Item" | "Fitting" | "Flange";
 
 interface NonStdItem {
-  itemCategory: NonStdItemCategory;
   // Printed serial as per the client's inquiry; blank = auto (position).
   slNo: string;
   materialCodeId: string;
@@ -67,16 +62,11 @@ interface NonStdItem {
   pastQuotePrice: string;
   pastPo: string;
   pastPoPrice: string;
-  fittingId: string;
-  fittingLabel: string;
-  flangeId: string;
-  flangeLabel: string;
 }
 
 const GST_RATES = ["0", "5", "12", "18", "28"];
 
 const emptyItem: NonStdItem = {
-  itemCategory: "Item",
   slNo: "",
   materialCodeId: "",
   materialCodeLabel: "",
@@ -99,10 +89,6 @@ const emptyItem: NonStdItem = {
   pastQuotePrice: "",
   pastPo: "",
   pastPoPrice: "",
-  fittingId: "",
-  fittingLabel: "",
-  flangeId: "",
-  flangeLabel: "",
 };
 
 
@@ -147,7 +133,6 @@ function NonStandardQuotationPage() {
     isHeadingEditable: boolean;
   }[]>([]);
   const [showTerms, setShowTerms] = useState(false);
-  const [useStructuredInput, setUseStructuredInput] = useState<boolean[]>([false]);
 
   // Financial controls
   const [taxRate, setTaxRate] = useState("");
@@ -451,23 +436,6 @@ function NonStandardQuotationPage() {
     }
   }, [templatesData, formData.quotationType, formData.customerId]);
 
-  // Build description from structured fields
-  const buildDescription = (item: NonStdItem): string => {
-    const lines: string[] = [];
-    if (item.materialCode) lines.push(`MATERIAL CODE: ${item.materialCode}`);
-    if (item.itemDescription) lines.push(item.itemDescription);
-    if (item.size) lines.push(`SIZE: ${item.size}`);
-    if (item.endType) lines.push(`END TYPE: ${item.endType}`);
-    if (item.material) lines.push(`MATERIAL: ${item.material}`);
-    if (item.tagNo) lines.push(`TAG NUMBER: ${item.tagNo}`);
-    if (item.drawingRef) lines.push(`DWG: ${item.drawingRef}`);
-    if (item.itemNo) lines.push(`ITEM NO.: ${item.itemNo}`);
-    if (item.certificateReq) {
-      lines.push("");
-      lines.push(`CERTIFICATE REQUIRED: ${item.certificateReq}`);
-    }
-    return lines.join("\n");
-  };
 
   const toggleTermIncluded = (index: number) => {
     const newTerms = [...terms];
@@ -544,13 +512,7 @@ function NonStandardQuotationPage() {
       setAdvanceToPay(q.advanceToPay ? String(q.advanceToPay) : "");
       if (q.items?.length > 0) {
         setItems(q.items.map((item: any) => {
-          // itemType is authoritative; fittingId/flangeId only exist on
-          // historical rows (the master-pool picker never sets them).
-          const cat = (["Fitting", "Flange"].includes(item.itemType)
-            ? item.itemType
-            : item.fittingId ? "Fitting" : item.flangeId ? "Flange" : "Item") as NonStdItemCategory;
           return {
-          itemCategory: cat,
           slNo: item.slNo || "",
           materialCodeId: item.materialCodeId || "",
           materialCodeLabel: item.materialCodeLabel || item.materialCode?.code || "",
@@ -577,10 +539,6 @@ function NonStandardQuotationPage() {
           pastQuotePrice: item.pastQuotePrice ? String(item.pastQuotePrice) : "",
           pastPo: item.pastPo || "",
           pastPoPrice: item.pastPoPrice ? String(item.pastPoPrice) : "",
-          fittingId: item.fittingId || "",
-          fittingLabel: cat === "Fitting" && item.product !== "Non-Standard Item" ? item.product || "" : "",
-          flangeId: item.flangeId || "",
-          flangeLabel: cat === "Flange" && item.product !== "Non-Standard Item" ? item.product || "" : "",
           };
         }));
       }
@@ -673,7 +631,6 @@ function NonStandardQuotationPage() {
 
   const addItem = () => {
     setItems([...items, { ...emptyItem }]);
-    setUseStructuredInput([...useStructuredInput, false]);
   };
 
   // Fetch material history (past quote + PO) when material code is selected
@@ -760,7 +717,6 @@ function NonStandardQuotationPage() {
   const removeItem = (index: number) => {
     if (items.length > 1) {
       setItems(items.filter((_, i) => i !== index));
-      setUseStructuredInput(useStructuredInput.filter((_, i) => i !== index));
     }
   };
 
@@ -779,83 +735,6 @@ function NonStandardQuotationPage() {
     });
   };
 
-  // Fitting/Flange picker backed by the product spec master pools. The
-  // product name lives in fittingLabel/flangeLabel; the one-line description
-  // is recomposed only on actual selections so hand-edits survive typing.
-  const renderFittingFlangePicker = (item: NonStdItem, index: number) => {
-    const isFitting = item.itemCategory === "Fitting";
-    const labelField = isFitting ? "fittingLabel" : "flangeLabel";
-    const compose = (it: NonStdItem) =>
-      [it[labelField], it.size, it.material].filter(Boolean).join(" ");
-    const patch = (p: Partial<NonStdItem>, recompose = false) =>
-      setItems((prev) => {
-        const newItems = [...prev];
-        const merged = { ...newItems[index], ...p };
-        newItems[index] = recompose ? { ...merged, itemDescription: compose(merged) } : merged;
-        return newItems;
-      });
-    return (
-      <div className="grid md:grid-cols-3 gap-4 items-end">
-        <ProductMaterialSelect
-          className="md:col-span-2"
-          product={item[labelField]}
-          material={item.material}
-          category={isFitting ? "FITTINGS" : "FLANGES"}
-          productLabel={isFitting ? "Fitting *" : "Flange *"}
-          onProductChange={(val) =>
-            // size pools differ per product — a kept size may not exist in
-            // the new product's pool and would compose a wrong description
-            patch({ [labelField]: val, size: "" } as Partial<NonStdItem>)
-          }
-          onMaterialChange={(val) => patch({ material: val })}
-          onAutoFill={({ ends, size }) =>
-            // Guard INSIDE the functional update: onProductChange clears size
-            // in this same event, so the render-scoped `item` still holds the
-            // previous product's size and would wrongly block the autofill.
-            setItems((prev) => {
-              const cur = prev[index];
-              if (!cur) return prev;
-              const merged = {
-                ...cur,
-                ...(ends && isFitting ? { endType: ends } : {}),
-                // a size recorded on the master row belongs on the item, but
-                // never over an entry the user already made
-                ...(size && !cur.size ? { size } : {}),
-              };
-              return prev.map((it, i) =>
-                i === index ? { ...merged, itemDescription: compose(merged) } : it
-              );
-            })
-          }
-        />
-        <div className="grid gap-2">
-          <Label className="text-sm">Size</Label>
-          {isFitting ? (
-            <SmartCombobox
-              options={Array.from(new Set([...getFittingSizeOptions(item[labelField], item.endType), ...getMasterExtraSizes(item[labelField])]))}
-              value={item.size}
-              onSelect={(label: string) => patch({ size: label }, true)}
-              onChange={(text) => patch({ size: text })}
-              displayFn={(s: string) => s}
-              filterFn={(s: string, q) => s.toLowerCase().includes(q.toLowerCase())}
-              placeholder={item[labelField] ? "Search sizes..." : "Select fitting first"}
-            />
-          ) : (
-            <SmartCombobox
-              options={Array.from(new Set([...getFlangeSizeOptions(item[labelField]), ...getMasterExtraSizes(item[labelField])]))}
-              value={item.size}
-              onSelect={(label: string) => patch({ size: label }, true)}
-              onChange={(text) => patch({ size: text })}
-              displayFn={(s: string) => s}
-              filterFn={(s: string, q) => s.toLowerCase().includes(q.toLowerCase())}
-              placeholder={item[labelField] ? "Search sizes..." : "Select flange first"}
-            />
-          )}
-        </div>
-      </div>
-    );
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.customerId) {
@@ -870,20 +749,16 @@ function NonStandardQuotationPage() {
     }
 
     // Transform items for API
-    const apiItems = items.map((item, i) => {
-      const description = useStructuredInput[i]
-        ? buildDescription(item)
-        : item.itemDescription;
+    const apiItems = items.map((item) => {
+      // A non-standard line is free text only — the description the user typed
+      // is the item, so there is nothing to compose from structured fields.
+      const description = item.itemDescription;
       return {
         slNo: item.slNo || "",
         materialCodeId: item.materialCodeId || undefined,
         materialCodeLabel: item.materialCodeLabel || "",
-        // persist the picker's product so category + picker restore on edit
-        itemType: item.itemCategory,
-        product:
-          item.itemCategory === "Fitting" ? item.fittingLabel || "Non-Standard Item"
-          : item.itemCategory === "Flange" ? item.flangeLabel || "Non-Standard Item"
-          : "Non-Standard Item",
+        itemType: "Item",
+        product: "Non-Standard Item",
         material: item.material || "",
         additionalSpec: "",
         sizeId: null,
@@ -908,8 +783,6 @@ function NonStandardQuotationPage() {
         pastQuotePrice: item.pastQuotePrice || "",
         pastPo: item.pastPo || "",
         pastPoPrice: item.pastPoPrice || "",
-        fittingId: item.fittingId || "",
-        flangeId: item.flangeId || "",
       };
     });
 
@@ -1227,7 +1100,7 @@ function NonStandardQuotationPage() {
             <div>
               <CardTitle>Item Details</CardTitle>
               <p className="text-sm text-muted-foreground mt-1">
-                Use structured fields or paste full description
+                Paste or type the full item description
               </p>
             </div>
           </CardHeader>
@@ -1247,70 +1120,6 @@ function NonStandardQuotationPage() {
                         title="Serial number as per client inquiry (printed on the quotation)"
                         className="h-7 w-16 text-xs"
                       />
-                    </div>
-                    <div className="flex rounded-md border overflow-hidden text-xs">
-                      {(["Item", "Fitting", "Flange"] as NonStdItemCategory[]).map((cat) => (
-                        <button
-                          key={cat}
-                          type="button"
-                          className={`px-3 py-1 transition-colors ${
-                            item.itemCategory === cat
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-muted hover:bg-accent"
-                          }`}
-                          onClick={() => {
-                            if (cat === item.itemCategory) return;
-                            setItems((prev) => {
-                              const newItems = [...prev];
-                              // stale FK/labels must not resurrect the old
-                              // category on the next edit-load
-                              newItems[index] = {
-                                ...item,
-                                itemCategory: cat,
-                                fittingId: "", fittingLabel: "",
-                                flangeId: "", flangeLabel: "",
-                                size: "", endType: "",
-                              };
-                              return newItems;
-                            });
-                          }}
-                        >
-                          {cat}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        variant={!useStructuredInput[index] ? "default" : "outline"}
-                        size="sm"
-                        className="h-7 text-xs"
-                        onClick={() => {
-                          const newFlags = [...useStructuredInput];
-                          newFlags[index] = false;
-                          // Pre-fill free text from structured fields
-                          if (useStructuredInput[index]) {
-                            const desc = buildDescription(item);
-                            updateItem(index, "itemDescription", desc);
-                          }
-                          setUseStructuredInput(newFlags);
-                        }}
-                      >
-                        Free Text
-                      </Button>
-                      <Button
-                        type="button"
-                        variant={useStructuredInput[index] ? "default" : "outline"}
-                        size="sm"
-                        className="h-7 text-xs"
-                        onClick={() => {
-                          const newFlags = [...useStructuredInput];
-                          newFlags[index] = true;
-                          setUseStructuredInput(newFlags);
-                        }}
-                      >
-                        Structured
-                      </Button>
                     </div>
                   </div>
                   {items.length > 1 && (
@@ -1332,7 +1141,6 @@ function NonStandardQuotationPage() {
                                   const newItems = [...prev];
                                   newItems[index] = {
                                     ...newItems[index],
-                                    itemCategory: src.itemCategory,
                                     materialCodeId: src.materialCodeId,
                                     materialCodeLabel: src.materialCodeLabel,
                                     materialCode: src.materialCode,
@@ -1345,17 +1153,8 @@ function NonStandardQuotationPage() {
                                     uom: src.uom,
                                     delivery: src.delivery,
                                     remark: src.remark,
-                                    fittingId: src.fittingId,
-                                    fittingLabel: src.fittingLabel,
-                                    flangeId: src.flangeId,
-                                    flangeLabel: src.flangeLabel,
                                   };
                                   return newItems;
-                                });
-                                setUseStructuredInput((prev) => {
-                                  const newFlags = [...prev];
-                                  newFlags[index] = prev[i];
-                                  return newFlags;
                                 });
                               }}
                             >
@@ -1373,275 +1172,6 @@ function NonStandardQuotationPage() {
                   )}
                 </div>
 
-                {useStructuredInput[index] ? (
-                  <>
-                    {/* Fitting/Flange selector for non-Item categories */}
-                    {(item.itemCategory === "Fitting" || item.itemCategory === "Flange") &&
-                      renderFittingFlangePicker(item, index)}
-
-                    {/* Row 1: Material Code | Short Description | Size | End Type | Material | Tag Number */}
-                    <div className="grid grid-cols-6 gap-4">
-                      <div className="grid gap-2">
-                        <Label className="text-sm">Material Code</Label>
-                        <div className="flex gap-1">
-                          {materialCodes.length > 0 ? (
-                            <SmartCombobox
-                              options={materialCodes}
-                              value={item.materialCodeLabel || ""}
-                              onSelect={(mc: any) => {
-                                setItems((prev) => {
-                                  const newItems = [...prev];
-                                  newItems[index] = {
-                                    ...newItems[index],
-                                    materialCodeId: mc.id,
-                                    materialCodeLabel: mc.code,
-                                    materialCode: mc.code,
-                                    ...(mc.productType ? { itemDescription: mc.productType } : {}),
-                                    ...(mc.materialGrade ? { material: mc.materialGrade } : {}),
-                                    ...(mc.size ? { size: mc.size } : {}),
-                                    ...(mc.unit ? { uom: mc.unit } : {}),
-                                  };
-                                  return newItems;
-                                });
-                                fetchMaterialHistory(index, mc.id);
-                              }}
-                              onChange={(text) => {
-                                setItems((prev) => {
-                                  const newItems = [...prev];
-                                  newItems[index] = { ...newItems[index], materialCodeLabel: text, materialCodeId: "", materialCode: text };
-                                  return newItems;
-                                });
-                              }}
-                              displayFn={(mc: any) => `${mc.code}${mc.description ? ` — ${mc.description}` : ""}`}
-                              filterFn={(mc: any, query) =>
-                                mc.code.toLowerCase().includes(query.toLowerCase()) ||
-                                (mc.description || "").toLowerCase().includes(query.toLowerCase())
-                              }
-                              placeholder="Search material code..."
-                              inputClassName="h-8"
-                            />
-                          ) : (
-                            <Input
-                              value={item.materialCodeLabel || ""}
-                              onChange={(e) => {
-                                const text = e.target.value;
-                                setItems((prev) => {
-                                  const newItems = [...prev];
-                                  newItems[index] = { ...newItems[index], materialCodeLabel: text, materialCodeId: "", materialCode: text };
-                                  return newItems;
-                                });
-                              }}
-                              placeholder={formData.customerId ? "Enter new material code" : "Select customer first"}
-                              disabled={!formData.customerId}
-                              className="h-8"
-                            />
-                          )}
-                          {item.materialCodeLabel && (item.material || item.itemDescription) && (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="h-8 px-2 text-[10px] whitespace-nowrap shrink-0"
-                              title="Save to Material Code Master"
-                              onClick={async () => {
-                                const code = item.materialCodeLabel.trim();
-                                if (!code) { toast.error("Material Code is required"); return; }
-                                try {
-                                  const checkRes = await fetch("/api/masters/material-codes/check-duplicate", {
-                                    method: "POST",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({
-                                      productType: item.itemDescription || item.material || "",
-                                      materialGrade: item.material,
-                                      size: item.size,
-                                      code,
-                                    }),
-                                  });
-                                  const checkData = await checkRes.json();
-                                  if (checkData.duplicates?.length > 0) {
-                                    const dup = checkData.duplicates[0];
-                                    const replace = window.confirm(
-                                      `A product with same specifications exists in the master with material code "${dup.code}".\n\nDo you want to replace it with "${code}"?`
-                                    );
-                                    if (!replace) return;
-                                    const updateRes = await fetch(`/api/masters/material-codes/${dup.id}`, {
-                                      method: "PATCH",
-                                      headers: { "Content-Type": "application/json" },
-                                      body: JSON.stringify({ code }),
-                                    });
-                                    if (!updateRes.ok) {
-                                      const err = await updateRes.json().catch(() => ({}));
-                                      throw new Error(err.error || "Failed to update material code");
-                                    }
-                                    const updated = await updateRes.json();
-                                    setItems((prev) => {
-                                      const newItems = [...prev];
-                                      newItems[index] = { ...newItems[index], materialCodeId: updated.id, materialCodeLabel: code, materialCode: code };
-                                      return newItems;
-                                    });
-                                    queryClient.invalidateQueries({ queryKey: ["material-codes"] });
-                                    toast.success(`Material code updated from "${dup.code}" to "${code}"`);
-                                    return;
-                                  }
-                                  const desc = [item.itemDescription || item.material, item.size, item.endType].filter(Boolean).join(" ");
-                                  const createRes = await fetch("/api/masters/material-codes", {
-                                    method: "POST",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({
-                                      code,
-                                      productType: item.itemDescription || item.material || "",
-                                      materialGrade: item.material || "",
-                                      size: item.size || "",
-                                      description: desc,
-                                    }),
-                                  });
-                                  if (!createRes.ok) {
-                                    const err = await createRes.json().catch(() => ({}));
-                                    throw new Error(err.error || "Failed to create material code");
-                                  }
-                                  const created = await createRes.json();
-                                  setItems((prev) => {
-                                    const newItems = [...prev];
-                                    newItems[index] = { ...newItems[index], materialCodeId: created.id, materialCodeLabel: code, materialCode: code };
-                                    return newItems;
-                                  });
-                                  queryClient.invalidateQueries({ queryKey: ["material-codes"] });
-                                  toast.success("Material code recorded successfully");
-                                } catch (err: any) {
-                                  toast.error(err.message || "Failed to record material code");
-                                }
-                              }}
-                            >
-                              Record
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                      <div className="grid gap-2">
-                        <Label className="text-sm">Short Description</Label>
-                        <Input
-                          value={item.itemDescription}
-                          onChange={(e) => updateItem(index, "itemDescription", e.target.value)}
-                          placeholder="PIPE BE 6&quot; S-40 A106B + NACE"
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label className="text-sm">Size</Label>
-                        <Input
-                          value={item.size}
-                          onChange={(e) => updateItem(index, "size", e.target.value)}
-                          placeholder='6" X SCH-40'
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label className="text-sm">End Type</Label>
-                        <Input
-                          value={item.endType}
-                          onChange={(e) => updateItem(index, "endType", e.target.value)}
-                          placeholder="BEVELLED ENDS"
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label className="text-sm">Material</Label>
-                        <Input
-                          value={item.material}
-                          onChange={(e) => updateItem(index, "material", e.target.value)}
-                          placeholder="A106Gr.B + NACE"
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label className="text-sm">Tag Number</Label>
-                        <Input
-                          value={item.tagNo}
-                          onChange={(e) => updateItem(index, "tagNo", e.target.value)}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Row 2: Drawing Ref | Item No | Certificate Req */}
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="grid gap-2">
-                        <Label className="text-sm">Drawing Ref (DWG)</Label>
-                        <Input
-                          value={item.drawingRef}
-                          onChange={(e) => updateItem(index, "drawingRef", e.target.value)}
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label className="text-sm">Item No.</Label>
-                        <Input
-                          value={item.itemNo}
-                          onChange={(e) => updateItem(index, "itemNo", e.target.value)}
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label className="text-sm">Certificate Required</Label>
-                        <Input
-                          value={item.certificateReq}
-                          onChange={(e) => updateItem(index, "certificateReq", e.target.value)}
-                          placeholder="NACE MILLS TEST CERTS..."
-                        />
-                      </div>
-                    </div>
-                    {/* Row 3: Qty | Unit | Unit Rate | Total | Delivery | Remarks */}
-                    <div className="grid grid-cols-6 gap-4">
-                      <div className="grid gap-2">
-                        <Label className="text-sm">Qty *</Label>
-                        <Input
-                          type="number"
-                          step="0.001"
-                          value={item.quantity}
-                          onChange={(e) => updateItem(index, "quantity", e.target.value)}
-                          required
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label className="text-sm">Unit</Label>
-                        <Select value={item.uom} onValueChange={(v) => updateItem(index, "uom", v)}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Mtr">Mtr</SelectItem>
-                            <SelectItem value="Nos">Nos</SelectItem>
-                            <SelectItem value="Kg">Kg</SelectItem>
-                            <SelectItem value="MT">MT</SelectItem>
-                            <SelectItem value="Feet">Feet</SelectItem>
-                            <SelectItem value="Set">Set</SelectItem>
-                            <SelectItem value="Lot">Lot</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="grid gap-2">
-                        <Label className="text-sm">Unit Rate ({formData.currency})</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={item.unitRate}
-                          onChange={(e) => updateItem(index, "unitRate", e.target.value)}
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label className="text-sm">Total Amount ({formData.currency})</Label>
-                        <Input value={item.amount} readOnly className="bg-muted font-semibold" />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label className="text-sm">Delivery</Label>
-                        <Input
-                          value={item.delivery}
-                          onChange={(e) => updateItem(index, "delivery", e.target.value)}
-                          placeholder="8-10 Weeks"
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label className="text-sm">Remarks</Label>
-                        <Input
-                          value={item.remark}
-                          onChange={(e) => updateItem(index, "remark", e.target.value)}
-                          placeholder="Any remarks"
-                        />
-                      </div>
-                    </div>
-                  </>
-                ) : (
                   <>
                     {/* Free Text mode: Material Code + Description textarea */}
                     <div className="grid gap-2">
@@ -1778,10 +1308,6 @@ function NonStandardQuotationPage() {
                       </div>
                     </div>
 
-                    {/* Fitting/Flange selector for non-Item categories */}
-                    {(item.itemCategory === "Fitting" || item.itemCategory === "Flange") &&
-                      renderFittingFlangePicker(item, index)}
-
                     <div className="grid gap-1">
                       <Label className="text-xs">Full Item Description</Label>
                       <Textarea
@@ -1901,7 +1427,6 @@ function NonStandardQuotationPage() {
                       </div>
                     </div>
                   </>
-                )}
               </div>
             ))}
 

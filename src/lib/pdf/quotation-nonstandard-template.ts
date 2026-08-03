@@ -488,7 +488,7 @@ export function generateNonStandardQuotationHtml(
   <tr class="info-grid">
     <td class="info-customer-name" colspan="3">M/s. ${escapeHtml(quotation.customer.name)}</td>
     <td class="info-value" colspan="3">${escapeHtml(buyerName)}</td>
-    <td class="info-value" colspan="3">Direct Line : ${escapeHtml(preparedByPhone)}${preparedByEmail ? ` &nbsp;|&nbsp; Email : ${escapeHtml(preparedByEmail)}` : ""}</td>
+    <td class="info-value" colspan="3">Direct Line : ${escapeHtml(preparedByPhone)}</td>
   </tr>
 
   <!-- ROW 8: Customer address line 1 / Buyer designation / Enquiry Reference -->
@@ -501,14 +501,14 @@ export function generateNonStandardQuotationHtml(
   <!-- ROW 9: Customer address line 2 / Buyer email / Enquiry number -->
   <tr class="info-grid">
     <td class="info-value" colspan="3">${escapeHtml(customerAddressLines[1] || "")}</td>
-    <td class="info-value" colspan="3">${escapeHtml(buyerEmail)}</td>
+    <td class="info-value" colspan="3">${buyerEmail ? `<strong>Email:</strong> ${escapeHtml(buyerEmail)}` : ""}</td>
     <td class="info-small" colspan="3">${escapeHtml(enquiryRef)}</td>
   </tr>
 
   <!-- ROW 10: Customer address line 3 / Buyer contact / Enquiry dated -->
   <tr class="info-grid">
     <td class="info-value" colspan="3">${escapeHtml(customerAddressLines[2] || "")}</td>
-    <td class="info-value" colspan="3">${escapeHtml(buyerContact)}</td>
+    <td class="info-value" colspan="3">${buyerContact ? `<strong>Tel.:</strong> ${escapeHtml(buyerContact)}` : ""}</td>
     <td class="info-value" colspan="3">${enquiryDate ? `<strong>Dated:</strong> ${formatDate(enquiryDate)}` : ""}</td>
   </tr>
 
