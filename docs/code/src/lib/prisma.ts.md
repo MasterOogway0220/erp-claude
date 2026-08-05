@@ -27,20 +27,39 @@ credentials — authenticates incorrectly without it.
 
 ### Pool settings
 
+Built by `poolConfig(databaseUrl)`, which is exported (and covered by
+`prisma.test.ts`) purely so the tuning can be asserted without opening a socket.
+
 ```
 connectionLimit: 5
-connectTimeout:  10_000
+minimumIdle:     0
+idleTimeout:     10       // seconds
+connectTimeout:  5_000
+acquireTimeout:  15_000
 socketTimeout:   30_000
 ```
 
-Five is low because the host is **shared hosting** with a cap on concurrent
-connections, and serverless makes that worse: every warm lambda holds its own
-pool, so the effective total is 5 × instances. Raising this is the fastest way
-to start seeing connection errors under load.
+`connectionLimit` is low because the host is **shared hosting** with a cap on
+concurrent connections, and serverless makes that worse: every warm lambda holds
+its own pool, so the effective total is 5 × instances. Raising this is the
+fastest way to start seeing connection errors under load.
 
-Note the server's own `wait_timeout` is **20 seconds** — shorter than the
-30-second socket timeout. The server will drop an idle connection before the
-client gives up on it.
+The other four exist because of a specific outage, and the reasoning matters
+more than the numbers:
+
+- The server's `wait_timeout` and `interactive_timeout` are **20 seconds**
+  (`SERVER_WAIT_TIMEOUT_SEC` in the file records this). The driver's
+  `minimumIdle` defaults to `connectionLimit`, so the pool used to keep five
+  sockets warm that the server killed every 20 seconds — measured at **20 fresh
+  connections per 70 seconds of a completely idle instance**, forever, on every
+  warm lambda. `minimumIdle: 0` opens on demand instead; `idleTimeout: 10`
+  retires a socket before the server does. Same measurement after the change:
+  two connections, and nothing held while idle.
+- `connectTimeout` must stay well under `acquireTimeout`. Both were 10 000, and
+  the driver clamps `connectTimeout` down to `acquireTimeout` — so one slow
+  connect consumed the entire acquire window and the request failed instead of
+  retrying. At 5 000 / 15 000 the driver's backoff gets two or three attempts
+  inside one acquire.
 
 ### The `globalThis` cache
 
@@ -64,6 +83,14 @@ None.
 - No `$connect()`; the client connects lazily on first query.
 - A transient failure here surfaces in odd places — the NextAuth `jwt` callback
   explicitly catches DB errors so an outage does not delete session cookies.
+- **The signature of a pool problem** is a 500 from *every* DB-touching route
+  at once, with `prisma:error pool timeout: failed to retrieve a connection
+  from pool after Nms (pool connections: active=0 idle=0 limit=5)` in the
+  Vercel runtime log. `active=0 idle=0` means the pool could not open a single
+  connection — look at the host, not at the route that happened to fail. Users
+  report it as "cannot save the quotation", because that is the screen they
+  were on. Fetch the evidence with
+  `vercel logs --environment production --query "status:500" -x`.
 
 ## Related
 
