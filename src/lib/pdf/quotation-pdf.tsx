@@ -433,6 +433,16 @@ function NsTh({ w, last, children }: { w: string | number; last?: boolean; child
   );
 }
 
+// Colon-aligned label/value line for the header's right-hand info box.
+function NsField({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={nsStyles.row}>
+      <T style={{ width: 54, fontFamily: "Helvetica", fontWeight: "bold" }}>{label}</T>
+      <T>: {value}</T>
+    </View>
+  );
+}
+
 function NsTd({ w, align, top, last, children }: { w: string | number; align?: "left" | "center" | "right"; top?: boolean; last?: boolean; children?: React.ReactNode }) {
   return (
     <View style={[nsStyles.td, { width: w as any, justifyContent: top ? "flex-start" : "center" }, last ? CELL_END : {}]}>
@@ -573,18 +583,21 @@ function NonStandardQuotationPage({
             <T style={{ fontFamily: "Helvetica", fontWeight: "bold", fontSize: 9 }}>M/s. {quotation.customer.name}</T>
             {customerAddressLines.map((line, i) => <T key={i}>{line}</T>)}
           </View>
-          <View style={[nsStyles.infoCell, CELL, { width: "30%" }]}>
+          <View style={[nsStyles.infoCell, CELL, { width: "27%" }]}>
             <T style={{ fontFamily: "Helvetica", fontWeight: "bold" }}>Attention :</T>
             <T>{buyerName}</T>
             <T>{buyerDes}</T>
             {buyerEmail ? <T><T style={{ fontFamily: "Helvetica", fontWeight: "bold" }}>Email: </T>{buyerEmail}</T> : null}
             {buyerContact ? <T><T style={{ fontFamily: "Helvetica", fontWeight: "bold" }}>Tel.: </T>{buyerContact}</T> : null}
           </View>
-          <View style={[nsStyles.infoCell, CELL, CELL_END, { width: "32%" }]}>
+          {/* 35% so this box's left edge lines up with the Quotation Number cell
+              in the logo band above (25% + 40%). */}
+          <View style={[nsStyles.infoCell, CELL, CELL_END, { width: "35%" }]}>
+            {enquiryRef ? <NsField label="Inquiry No." value={enquiryRef} /> : null}
+            {quotation.inquiryDate ? <NsField label="Date" value={fmtDate(quotation.inquiryDate)} /> : null}
             <T style={{ fontFamily: "Helvetica", fontWeight: "bold" }}>Prepared by: {prepName}</T>
-            {prepPhone ? <T>Direct Line : {prepPhone}</T> : null}
-            {enquiryRef ? <><T style={{ fontFamily: "Helvetica", fontWeight: "bold" }}>Enquiry Reference :</T><T>{enquiryRef}</T></> : null}
-            {quotation.inquiryDate ? <T>Dated: {fmtDate(quotation.inquiryDate)}</T> : null}
+            {prepPhone ? <NsField label="Direct Line" value={prepPhone} /> : null}
+            {prepEmail ? <NsField label="Email" value={prepEmail} /> : null}
           </View>
         </View>
       </View>

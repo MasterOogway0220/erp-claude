@@ -291,7 +291,8 @@ export function generateNonStandardQuotationHtml(
   .info-label { font-weight: bold; }
   .info-value { font-weight: normal; }
   .info-customer-name { font-weight: bold; font-size: 9pt; }
-  .info-small { font-size: 8pt; }
+  /* Fixed-width label keeps the colons in the right-hand box on one column. */
+  .fld { display: inline-block; width: 62px; font-weight: bold; }
 
   /* Quotation number block */
   .qtn-row td {
@@ -481,35 +482,35 @@ export function generateNonStandardQuotationHtml(
   <tr class="info-grid">
     <td class="info-label" colspan="3">Customer :</td>
     <td class="info-label" colspan="3">Attention :</td>
-    <td class="info-value" colspan="3"><strong>Prepared by:</strong> ${escapeHtml(preparedByName)}</td>
+    <td class="info-value" colspan="3">${enquiryRef ? `<span class="fld">Inquiry No.</span>: ${escapeHtml(enquiryRef)}` : ""}</td>
   </tr>
 
-  <!-- ROW 7: Customer name / Buyer name / Direct Line -->
+  <!-- ROW 7: Customer name / Buyer name / Enquiry date -->
   <tr class="info-grid">
     <td class="info-customer-name" colspan="3">M/s. ${escapeHtml(quotation.customer.name)}</td>
     <td class="info-value" colspan="3">${escapeHtml(buyerName)}</td>
-    <td class="info-value" colspan="3">Direct Line : ${escapeHtml(preparedByPhone)}</td>
+    <td class="info-value" colspan="3">${enquiryDate ? `<span class="fld">Date</span>: ${formatDate(enquiryDate)}` : ""}</td>
   </tr>
 
-  <!-- ROW 8: Customer address line 1 / Buyer designation / Enquiry Reference -->
+  <!-- ROW 8: Customer address line 1 / Buyer designation / Prepared by -->
   <tr class="info-grid">
     <td class="info-value" colspan="3">${escapeHtml(customerAddressLines[0] || "")}</td>
     <td class="info-value" colspan="3">${escapeHtml(buyerDesignation)}</td>
-    <td class="info-value" colspan="3"><strong>Enquiry Reference :</strong>${enquiryRef ? "" : ""}</td>
+    <td class="info-value" colspan="3"><strong>Prepared by: ${escapeHtml(preparedByName)}</strong></td>
   </tr>
 
-  <!-- ROW 9: Customer address line 2 / Buyer email / Enquiry number -->
+  <!-- ROW 9: Customer address line 2 / Buyer email / Direct line -->
   <tr class="info-grid">
     <td class="info-value" colspan="3">${escapeHtml(customerAddressLines[1] || "")}</td>
     <td class="info-value" colspan="3">${buyerEmail ? `<strong>Email:</strong> ${escapeHtml(buyerEmail)}` : ""}</td>
-    <td class="info-small" colspan="3">${escapeHtml(enquiryRef)}</td>
+    <td class="info-value" colspan="3">${preparedByPhone ? `<span class="fld">Direct Line</span>: ${escapeHtml(preparedByPhone)}` : ""}</td>
   </tr>
 
-  <!-- ROW 10: Customer address line 3 / Buyer contact / Enquiry dated -->
+  <!-- ROW 10: Customer address line 3 / Buyer contact / Prepared-by email -->
   <tr class="info-grid">
     <td class="info-value" colspan="3">${escapeHtml(customerAddressLines[2] || "")}</td>
     <td class="info-value" colspan="3">${buyerContact ? `<strong>Tel.:</strong> ${escapeHtml(buyerContact)}` : ""}</td>
-    <td class="info-value" colspan="3">${enquiryDate ? `<strong>Dated:</strong> ${formatDate(enquiryDate)}` : ""}</td>
+    <td class="info-value" colspan="3">${preparedByEmail ? `<span class="fld">Email</span>: ${escapeHtml(preparedByEmail)}` : ""}</td>
   </tr>
 
   <!-- ============================================================ -->
