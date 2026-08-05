@@ -32,7 +32,7 @@ Built by `poolConfig(databaseUrl)`, which is exported (and covered by
 
 ```
 connectionLimit: 5
-minimumIdle:     0
+minimumIdle:     1        // MUST NOT be 0 — see below
 idleTimeout:     10       // seconds
 connectTimeout:  5_000
 acquireTimeout:  15_000
@@ -52,9 +52,11 @@ more than the numbers:
   `minimumIdle` defaults to `connectionLimit`, so the pool used to keep five
   sockets warm that the server killed every 20 seconds — measured at **20 fresh
   connections per 70 seconds of a completely idle instance**, forever, on every
-  warm lambda. `minimumIdle: 0` opens on demand instead; `idleTimeout: 10`
-  retires a socket before the server does. Same measurement after the change:
-  two connections, and nothing held while idle.
+  warm lambda. Holding **one** instead of five cuts that by 80%;
+  `idleTimeout: 10` retires anything above `minimumIdle` before the server
+  does.
+- **`minimumIdle` must never be `0`.** See the gotcha below — a zero here takes
+  the entire application down.
 - `connectTimeout` must stay well under `acquireTimeout`. Both were 10 000, and
   the driver clamps `connectTimeout` down to `acquireTimeout` — so one slow
   connect consumed the entire acquire window and the request failed instead of
@@ -83,6 +85,21 @@ None.
 - No `$connect()`; the client connects lazily on first query.
 - A transient failure here surfaces in odd places — the NextAuth `jwt` callback
   explicitly catches DB errors so an outage does not delete session cookies.
+- **There are two copies of the `mariadb` driver installed, and the one that
+  matters is not the obvious one.** `@prisma/adapter-mariadb` bundles its own
+  nested `mariadb` (3.4.5 at the time of writing); npm also hoists a different
+  version (3.5.1) to the top level. The adapter loads *its* nested copy, so
+  anything you verify against the top-level one may be meaningless.
+
+  The two disagree about `minimumIdle: 0`. In 3.4.5 the decision to open a
+  socket is `idleConnections.length < opts.minimumIdle`, which with `0` is
+  false forever — the pool never opens a single connection, and every query in
+  the application waits out `acquireTimeout` and fails with
+  `active=0 idle=0`. 3.5.1 rewrote it to also open on demand for a pending
+  request, so `0` is harmless there. A `minimumIdle: 0` was shipped on that
+  basis and took production down for roughly 40 minutes while the database
+  itself was idle and healthy. `prisma.test.ts` now resolves the driver the way
+  the adapter does and asserts the pool actually attempts a connection.
 - **The signature of a pool problem** is a 500 from *every* DB-touching route
   at once, with `prisma:error pool timeout: failed to retrieve a connection
   from pool after Nms (pool connections: active=0 idle=0 limit=5)` in the

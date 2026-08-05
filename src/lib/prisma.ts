@@ -24,10 +24,20 @@ export function poolConfig(databaseUrl: string) {
     // driver keeps `minimumIdle` (= connectionLimit) sockets warm by default —
     // so every Vercel instance re-opened 5 connections every ~20s forever, even
     // while completely idle (measured: 20 connects in 70s of doing nothing).
-    // That churn is what tipped the shared server into refusing connects, and
-    // every request then died on "pool timeout ... (active=0 idle=0 limit=5)".
-    // Open on demand instead, and retire a socket before the server kills it.
-    minimumIdle: 0,
+    // Holding one instead of five cuts that churn by 80%.
+    //
+    // MUST NOT BE 0. `@prisma/adapter-mariadb` bundles its own mariadb 3.4.5
+    // (not the 3.5.1 at the top level), and 3.4.5 decides whether to open a
+    // socket with:
+    //     idleConnections.length < opts.minimumIdle
+    // With minimumIdle: 0 that is false forever, so the pool never opens a
+    // single connection and every query waits out acquireTimeout and dies on
+    // "pool timeout ... (active=0 idle=0 limit=5)" — the whole app, not one
+    // route. 3.5.1 rewrote that check to also open on demand for a pending
+    // request, so a 0 tests clean against the top-level copy and still takes
+    // production down. Test against the bundled copy, not the hoisted one.
+    minimumIdle: 1,
+    // Retires any socket beyond `minimumIdle` before the server's 20s kill.
     idleTimeout: 10,
     // connectTimeout must stay well under acquireTimeout: with both at 10s a
     // single slow connect consumed the whole acquire window and the request
