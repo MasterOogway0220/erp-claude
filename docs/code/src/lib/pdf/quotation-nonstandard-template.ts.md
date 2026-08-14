@@ -25,6 +25,13 @@ Same letterhead, totals and terms as the standard template. The item table is
 the difference: a free-text item description carrying whatever the salesperson
 typed, with structured fields alongside where they exist.
 
+The header's right-hand info box prints the inquiry no. (exactly as entered,
+above the inquiry date) and a **"Prepared by"** contact block. That block shows
+the **Inquiry Owner** (`dealOwner` — the salesperson who owns the deal), not
+the user who keyed the quotation in; `preparedBy` is only a fallback when no
+owner is assigned. Callers must include `dealOwner` in the Prisma query for
+this to work.
+
 Portrait at **210 × 320 mm** — taller than A4 so the footer lands on the same
 page rather than orphaning onto a second sheet.
 

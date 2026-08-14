@@ -18,6 +18,12 @@ Operates on `quotation`, `companyMaster`.
 
 ## Gotchas
 
+- The include must select both `preparedBy` and `dealOwner` — the non-standard
+  header's "Prepared by" block prints the Inquiry Owner (`dealOwner`) with
+  `preparedBy` only as fallback; drop `dealOwner` from the query and the PDF
+  silently shows the wrong contact.
+- The filename uses `displayInquiryNo` (digit filter) but the printed header
+  shows the inquiry no. raw — the two differing is intentional.
 - `params` is a `Promise` (Next.js 16) and must be awaited.
 - Named `.tsx` because it contains JSX — a route file with JSX must not be `.ts`.
 - Confirm the company-scoping story before reusing this as a template.

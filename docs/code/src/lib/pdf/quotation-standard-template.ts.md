@@ -36,8 +36,9 @@ the API 5L PSL grades — which is the client's own convention, not missing data
 **Size** goes through `displaySizeLabel`, so a line with no stored label still
 prints a size reconstructed from NPS and schedule.
 
-**Inquiry No.** goes through `displayInquiryNo`, which suppresses free-text
-placeholders like *"require quotation"* so they never reach the client.
+**Inquiry No.** prints exactly as entered. It used to go through
+`displayInquiryNo`'s digit filter, but that hid legitimate entries the sales
+team expected on the document; the filter now guards only the PDF filename.
 
 There are deliberately **no OD or WT columns** — the client's format identifies
 pipe by nominal bore and schedule, not by measured dimensions.

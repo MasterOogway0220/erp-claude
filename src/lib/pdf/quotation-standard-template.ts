@@ -2,7 +2,7 @@
 // format (QTN-Rev.2): S/N, Product, Specification, Dim., Add. Spec., Size,
 // Length, Ends, Qty, Unit, Unit Rate, Amount, Delivery, Remark/Material Code
 
-import { displayInquiryNo, displaySizeLabel } from "../quotations/display";
+import { displaySizeLabel } from "../quotations/display";
 
 interface CompanyInfo {
   companyName: string;
@@ -339,7 +339,7 @@ export function generateStandardQuotationHtml(
   </colgroup>
   <tr>
     <td class="bold">Customer<span style="float:right">:</span></td><td class="bold">${esc(quotation.customer.name)}</td>
-    <td>Inquiry no.<span style="float:right">:</span></td><td>${esc(displayInquiryNo(quotation.inquiryNo))}</td>
+    <td>Inquiry no.<span style="float:right">:</span></td><td>${esc((quotation.inquiryNo || "").trim())}</td>
     <td>Quotation No.<span style="float:right">:</span></td><td class="bold">${esc(quotation.quotationNo)}</td>
   </tr>
   <tr>

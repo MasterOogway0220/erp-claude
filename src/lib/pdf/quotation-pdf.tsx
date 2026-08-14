@@ -9,7 +9,7 @@ import {
   Font,
 } from "@react-pdf/renderer";
 import { numberToWords } from "../amount-in-words";
-import { displayInquiryNo, displaySizeLabel } from "../quotations/display";
+import { displaySizeLabel } from "../quotations/display";
 
 Font.register({
   family: "Helvetica",
@@ -259,7 +259,7 @@ function StandardQuotationPage({
       {/* INFO GRID */}
       <InfoRow first cells={[
         { label: "Customer", value: quotation.customer.name, flex: 2.5, bold: true },
-        { label: "Inquiry no.", value: displayInquiryNo(quotation.inquiryNo), flex: 1.5 },
+        { label: "Inquiry no.", value: (quotation.inquiryNo || "").trim(), flex: 1.5 },
         { label: "Quotation No.", value: quotation.quotationNo, flex: 1.5, bold: true },
       ]} />
       <InfoRow cells={[
@@ -523,10 +523,14 @@ function NonStandardQuotationPage({
   const buyerDes = quotation.buyer?.designation || "";
   const buyerEmail = quotation.buyer?.email || quotation.customer.email || "";
   const buyerContact = quotation.buyer?.mobile || quotation.buyer?.telephone || quotation.customer.phone || "";
-  const prepName = quotation.preparedBy?.name || "";
-  const prepEmail = quotation.preparedBy?.email || "";
-  const prepPhone = quotation.preparedBy?.phone || "";
-  const enquiryRef = displayInquiryNo(quotation.inquiryNo);
+  // "Prepared by" block prints the Inquiry Owner (deal owner), falling back to
+  // the user who keyed the quotation in only when no owner is assigned.
+  const nsContact = quotation.dealOwner || quotation.preparedBy;
+  const prepName = nsContact?.name || "";
+  const prepEmail = nsContact?.email || "";
+  const prepPhone = nsContact?.phone || "";
+  // Printed exactly as entered — the digit filter only guards the filename.
+  const enquiryRef = (quotation.inquiryNo || "").trim();
   // Literal form identity per the client's format sheet (not the quotation's rev/date)
   const formatText = "FORMAT: QTN-Rev.2, Dated: 19/12/2012";
 

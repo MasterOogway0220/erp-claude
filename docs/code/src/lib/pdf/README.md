@@ -46,9 +46,10 @@ The cost is a Chromium dependency, with the cold-start problem documented in
   Totals come from `calc/po-totals.ts` and the amount in words is stored on the
   document at save time, so a historical document does not change if the
   formatting code does.
-- **Shared display helpers** — `displayInquiryNo` and `displaySizeLabel` from
-  `src/lib/quotations/display.ts` — so a size or inquiry reference renders
-  identically in every document.
+- **Shared display helpers** — `displaySizeLabel` from
+  `src/lib/quotations/display.ts` — so a size renders identically in every
+  document. Inquiry numbers print raw in headers; `displayInquiryNo`'s digit
+  filter applies only to PDF filenames.
 
 ## The files
 

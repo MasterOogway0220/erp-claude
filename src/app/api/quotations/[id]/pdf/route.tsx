@@ -44,6 +44,7 @@ export async function GET(
       include: {
         customer: true,
         preparedBy: { select: { name: true, email: true, phone: true } },
+        dealOwner: { select: { name: true, email: true, phone: true } },
         buyer: true,
         items: {
           orderBy: { sNo: "asc" },

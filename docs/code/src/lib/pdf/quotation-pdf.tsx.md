@@ -26,8 +26,16 @@ react-pdf primitives (`Document`, `Page`, `View`, `Text`) with a StyleSheet,
 rather than HTML and CSS. Layout is flexbox-like but not CSS — no tables, no
 `position: sticky`, a reduced property set.
 
-Shares `displayInquiryNo` and `displaySizeLabel` with the HTML templates, so
-sizes and inquiry references render identically whichever renderer runs.
+Shares `displaySizeLabel` with the HTML templates, so sizes render identically
+whichever renderer runs. The inquiry no. prints exactly as entered (above the
+inquiry date); `displayInquiryNo`'s digit filter applies only to the PDF
+filename, not to headers.
+
+The non-standard page's **"Prepared by"** block shows the **Inquiry Owner**
+(`dealOwner`), falling back to `preparedBy` (the user who keyed the quotation
+in) only when no owner is assigned — so the client contacts the salesperson
+who owns the deal, not a data-entry user. The route must include `dealOwner`
+in its Prisma query.
 
 `.tsx` because it contains JSX. Note the project convention: **an API route
 containing JSX must be `.tsx`, not `.ts`** — several PDF and email routes are

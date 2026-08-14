@@ -2,8 +2,9 @@
 // (react-pdf download + HTML email attachment).
 
 // A real inquiry reference (RFQ no., item code, mail ref) always carries at
-// least one digit; free text like "require quotation" is a placeholder the
-// customer should never see printed — or baked into the PDF filename.
+// least one digit; free text like "require quotation" is a placeholder that
+// should not be baked into the PDF filename. Headers print the inquiry no.
+// exactly as entered — this filter guards the filename only.
 export function displayInquiryNo(raw: string | null | undefined): string {
   const v = (raw || "").trim();
   return /\d/.test(v) ? v : "";

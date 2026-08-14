@@ -11,8 +11,10 @@ producing output that made it look unfinished:
 - **Inquiry No.** — sales staff type whatever the customer sent. Sometimes
   that is a real reference (`RFQ-2291`, an item code, a mail subject);
   sometimes it is free text like *"require quotation"* or *"pl quote"*. The
-  second kind was printing on the client's copy, and worse, ending up in the
-  PDF filename.
+  second kind was ending up in the PDF filename. (The printed headers
+  originally used this filter too, but that hid legitimate entries the sales
+  team expected to see — headers now print the inquiry no. exactly as entered,
+  and the filter guards the filename only.)
 - **Size** — items assembled from different sources do not all carry a
   `sizeLabel`. A missing one rendered as an empty cell, which on a printed
   table reads as a rendering fault rather than absent data.
@@ -24,7 +26,7 @@ identical behaviour, so the rules live here rather than in either.
 
 | Export | Behaviour |
 |---|---|
-| `displayInquiryNo(raw)` | Returns the trimmed value if it contains a digit, otherwise `""`. |
+| `displayInquiryNo(raw)` | Returns the trimmed value if it contains a digit, otherwise `""`. Used for the PDF **filename** only — headers print the raw value. |
 | `displaySizeLabel(item)` | `sizeLabel`, else reconstructed from NPS + schedule, else `"-"`. |
 
 ## How it works
@@ -79,4 +81,7 @@ number, or a string depending on the query path, hence the
 
 - `src/lib/quotations/display.test.ts`
 - `src/lib/pdf/quotation-pdf.tsx`, `quotation-standard-template.ts`,
-  `quotation-nonstandard-template.ts` — the two renderers this keeps in step.
+  `quotation-nonstandard-template.ts` — the renderers sharing
+  `displaySizeLabel`; they print the inquiry no. raw.
+- `src/app/api/quotations/[id]/pdf/route.tsx` — the sole remaining
+  `displayInquiryNo` caller (filename construction).

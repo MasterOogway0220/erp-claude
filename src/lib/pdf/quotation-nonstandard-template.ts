@@ -3,7 +3,6 @@
 // COMMERCIAL = with prices, TECHNICAL = prices shown as "QUOTED"
 
 import { numberToWords } from "../amount-in-words";
-import { displayInquiryNo } from "../quotations/display";
 
 interface CompanyInfo {
   companyName: string;
@@ -40,6 +39,7 @@ interface QuotationData {
     phone?: string | null;
   };
   preparedBy?: { name?: string; email?: string; phone?: string } | null;
+  dealOwner?: { name?: string; email?: string; phone?: string } | null;
   buyer?: {
     buyerName?: string | null;
     designation?: string | null;
@@ -196,14 +196,18 @@ export function generateNonStandardQuotationHtml(
   const buyerEmail = quotation.buyer?.email || quotation.customer.email || "";
   const buyerContact = quotation.buyer?.mobile || quotation.buyer?.telephone || quotation.customer.phone || "";
 
-  // Enquiry reference
-  const enquiryRef = displayInquiryNo(quotation.inquiryNo);
+  // Enquiry reference — printed exactly as entered (the digit filter in
+  // displayInquiryNo now only guards the PDF filename)
+  const enquiryRef = (quotation.inquiryNo || "").trim();
   const enquiryDate = quotation.inquiryDate;
 
-  // Prepared by
-  const preparedByName = quotation.preparedBy?.name || "";
-  const preparedByEmail = quotation.preparedBy?.email || "";
-  const preparedByPhone = quotation.preparedBy?.phone || "";
+  // "Prepared by" block prints the Inquiry Owner (the salesperson who owns the
+  // deal), not the user who keyed the quotation in; fall back to the creator
+  // only when no owner is assigned.
+  const contactPerson = quotation.dealOwner || quotation.preparedBy;
+  const preparedByName = contactPerson?.name || "";
+  const preparedByEmail = contactPerson?.email || "";
+  const preparedByPhone = contactPerson?.phone || "";
 
   const itemRows = quotation.items
     .map((item: any) => {
