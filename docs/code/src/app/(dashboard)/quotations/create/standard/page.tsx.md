@@ -15,6 +15,14 @@ Renders the `/quotations/create/standard` screen. 2295 lines.
 - Writes with `useMutation`, invalidating the affected query keys on success.
 - Reads `useSearchParams`, so it **must sit inside a `<Suspense>` boundary** — Next.js 16 fails the build otherwise.
 - Calls: `/api/masters/buyers`, `/api/masters/customers`, `/api/masters/customers/${formData.customerId}/terms`, `/api/masters/lengths`, `/api/masters/material-codes`, `/api/masters/material-codes/${dup.id}`, `/api/masters/material-codes/check-duplicate`, `/api/masters/sizes`, `/api/offer-term-templates`.
+- The per-item **Unit** dropdown is populated from Unit Master via
+  [`useUnits()`](../../../../../../hooks/use-units.ts.md)
+  (`/api/masters/units`). It used to be a module-level
+  `UOM_OPTIONS = ["Mtr","Nos","Kg","MT","Feet","Set","Lot"]`, so editing
+  Product Master → Units (UOM) had no effect here and the list had already
+  drifted from the master's 12 active codes. The per-category *defaults*
+  (`Mtr` for pipe, `Nos` for fittings/flanges, `Kg` for plate) stay in this
+  file — they are business rules, not a list of legal values.
 - The per-item **Length** dropdown is populated from Length Master (`/api/masters/lengths`), not a hardcoded list. A length is the supplied pipe length — either a fixed cut (`6.00 Mtr Fixed`), a range the mill can supply within (`5.00-7.00 Mtr`), or a non-numeric instruction (`Random`, `As Per Drg.`, `Cut Length`). The selected label is stored verbatim on `QuotationItem.length` and printed verbatim on the PDF, so the master's label text is what the customer sees.
 
 ### Edit mode must not change what it did not touch
@@ -56,7 +64,8 @@ a quotation and pressing Save must be a no-op.** The pieces:
 - Large file (2295 lines). Read the section you are changing rather than pattern-matching from a sibling.
 - Any `Select` needs a non-empty `SelectItem` value; the codebase uses a `"NONE"` sentinel mapped to `""`.
 - Role gating in the UI is cosmetic — the API is the boundary, and its role checks are currently disabled.
-- Length is stored as free text, and older rows hold values that were never in the master (`90`, `1620`, and the pre-master `5.8`/`9.0-11.8` codes). The Length select therefore injects the item's current value as an extra option when the master does not contain it — without that, editing an old quotation would render the field blank and invite the user to overwrite a real value with nothing. The **Unit (UOM)** select applies the same fallback for legacy values like `MTR`.
+- Length is stored as free text, and older rows hold values that were never in the master (`90`, `1620`, and the pre-master `5.8`/`9.0-11.8` codes). The Length select therefore injects the item's current value as an extra option when the master does not contain it — without that, editing an old quotation would render the field blank and invite the user to overwrite a real value with nothing. The **Unit (UOM)** select applies the same fallback, now against Unit Master rather than a hardcoded array — so a unit deactivated in the master still displays on quotations already saved with it.
+- **Currency and GST rate are still hardcoded** here (`CURRENCY_OPTIONS`, `GST_RATES`) even though `CurrencyMaster` (4 rows) and `TaxMaster` (9 rows) exist and are populated. Changing them in Masters does nothing to this form.
 - Rows whose length/uom were already nulled by pre-fix saves stay null — the fix stops future loss, it cannot restore past loss (the audit diff did not track `length`/`ends`/`uom` until now).
 
 ## Related

@@ -48,12 +48,10 @@ import {
 import { calculateWeightPerMeter } from "@/lib/weight-calculation";
 import { fillBlankCurrencyTerm } from "@/lib/quotations/currency";
 import { toDateInput } from "@/lib/dates";
+import { useUnits } from "@/hooks/use-units";
 
 type ItemCategory = "Pipe" | "Fitting" | "Flange" | "Plate";
 
-// Single source for the Unit dropdown — the stored-value fallback below
-// checks against this same list, so they cannot drift apart.
-const UOM_OPTIONS = ["Mtr", "Nos", "Kg", "MT", "Feet", "Set", "Lot"];
 const CURRENCY_OPTIONS = ["INR", "USD", "EUR", "AED"];
 
 interface QuotationItem {
@@ -154,6 +152,8 @@ function StandardQuotationPage() {
   const searchParams = useSearchParams();
   const editId = searchParams.get("editId");
   const { user: currentUser } = useCurrentUser();
+  // Unit dropdown options come from Unit Master (Product Master → Units).
+  const uomOptions = useUnits();
 
   const [formData, setFormData] = useState({
     customerId: "",
@@ -1839,13 +1839,13 @@ function StandardQuotationPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {/* An older row can hold a UOM not in the list
-                              (e.g. "MTR") — keep it selectable so editing
-                              shows the stored value instead of a blank. */}
-                          {item.uom && !UOM_OPTIONS.includes(item.uom) && (
+                          {/* An older row can hold a UOM since removed from
+                              Unit Master (e.g. "MTR") — keep it selectable so
+                              editing shows the stored value, not a blank. */}
+                          {item.uom && !uomOptions.includes(item.uom) && (
                             <SelectItem value={item.uom}>{item.uom}</SelectItem>
                           )}
-                          {UOM_OPTIONS.map((u) => (
+                          {uomOptions.map((u) => (
                             <SelectItem key={u} value={u}>{u}</SelectItem>
                           ))}
                         </SelectContent>

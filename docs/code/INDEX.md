@@ -4,7 +4,7 @@ Companion explainers for every code file, mirroring the source tree. See
 [CONVENTIONS.md](./CONVENTIONS.md) for structure and depth, and the repo root
 `CLAUDE.md` for the standing rule that keeps them true.
 
-## Coverage: 480 / 480 ✅
+## Coverage: 481 / 481 ✅
 
 Every `.ts`, `.tsx` and `.prisma` file under `src/`, `prisma/` and `scripts/`
 has a doc at the mirrored path. Test files are covered by the doc for what they
@@ -15,7 +15,7 @@ test.
 | `src/lib` | 53 | Hand-written throughout |
 | `prisma` + `scripts` | 10 | Hand-written |
 | `src/components` | 41 | Hand-written for shared/layout/wizard; grouped for `ui/` |
-| Root, hooks, auth, layouts | 11 | Hand-written |
+| Root, hooks, auth, layouts | 12 | Hand-written |
 | `src/app/api` | 208 | Hand-written module READMEs + per-route facts |
 | `src/app/(dashboard)` | 157 | Hand-written module READMEs + per-page facts |
 
@@ -202,3 +202,13 @@ Recorded here so they are not lost in prose:
 - **Min stock level does not exist**, so `STOCK_REPLENISHMENT` PRs are manual
   only.
 - **The e-invoice payload is generated but never submitted**; no IRN is stored.
+- **Some masters are edited but never read.** Unit Master was the first case
+  found and is now wired via
+  [`hooks/use-units.ts`](./src/hooks/use-units.ts.md). Still unwired:
+  `CurrencyMaster` (4 rows; `/api/masters/currencies` exists but no screen
+  calls it — the quotation forms hardcode `CURRENCY_OPTIONS`), `TaxMaster`
+  (9 rows; the quotation forms hardcode `GST_RATES`), and
+  `DimensionalStandardMaster` / `SizeMaster` schedules (the material-code
+  screens hardcode `STANDARDS` and `SCHEDULES`). The material-code and
+  lab-letter screens also hardcode an upper-case `UNITS` list that does not
+  match Unit Master's mixed-case codes.
