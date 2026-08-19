@@ -40,6 +40,7 @@ users faked it with quantity 1 / rate 1 / a `REGRET` remark, which put a real
 | Export | Behaviour |
 |---|---|
 | `parseRate(value)` | `""`/`null`/`undefined` → `null` (nothing entered); garbage → `NaN`; anything numeric → its number, `0` included. |
+| `normalizeItemPricing(item)` | Validates and rewrites one item's money fields **in place**, ready to store. Returns an error suffix or `null`. |
 | `findUnpricedItems(items)` | Line numbers that are neither priced nor regretted. |
 | `unpricedItemsError(items, instruction)` | A finished sentence, or `null` if every line is settled. |
 
@@ -55,6 +56,29 @@ The return type is `number | null`, and the `null` is the whole point: it is
 the only thing that separates "no price decided" from "priced at zero". Callers
 that write `parseRate(x) || 0` throw that distinction away — the API write
 paths pass the `null` straight through to the column.
+
+### `normalizeItemPricing`
+
+The write-side counterpart to the gate, called per item by both `POST
+/api/quotations` and `PUT /api/quotations/[id]`. It lives here rather than in
+the routes because it enforces the one invariant the whole regret feature rests
+on — **a regretted line stores no rate and no amount, whatever the client
+sent** — and that invariant is worth a test. It had been copy-pasted into both
+routes, where nothing covered it (every test file in this repo is pure-lib).
+
+In order: quantity must parse and be positive; the rate, if present, must be a
+finite number `>= 0`; a regretted line then has its rate set to `null` and its
+amount to `"0"` and returns early; otherwise the parsed rate is written back
+and the amount is recomputed as qty × rate *only* when the client's amount is
+missing or invalid, so a priced line cannot slip through totalling zero.
+
+Quantity is validated even on a regretted line, before the early return — the
+enquiry quantity is what identifies which line is being declined.
+
+It mutates the item rather than returning a new one because both callers go on
+to build a Prisma `create` from the same object, and the quotation subtotal is
+summed from these normalised amounts afterwards. Returning an error *suffix*
+(not a whole sentence) lets each caller prefix its own `Item N:`.
 
 ### `isSettled`
 

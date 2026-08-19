@@ -65,7 +65,7 @@ export async function GET(
         qtyQuoted,
         totalOrdered,
         balanceQty,
-        unitRate: item.unitRate == null ? 0 : Number(item.unitRate),
+        unitRate: Number(item.unitRate),
         amount: Number(item.amount),
         delivery: item.delivery,
         remark: item.remark,

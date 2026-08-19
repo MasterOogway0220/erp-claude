@@ -130,7 +130,9 @@ export async function GET(
 
     const itemCompareFields = [
       "slNo", "product", "material", "additionalSpec", "sizeLabel", "od", "wt",
-      "length", "ends", "quantity", "unitRate", "amount",
+      // isRegret belongs here: without it a revision that declines a line
+      // reads as "unitRate 250 -> null", with nothing saying it was regretted
+      "length", "ends", "quantity", "unitRate", "isRegret", "amount",
       "materialCost", "logisticsCost", "inspectionCost", "otherCosts",
       "totalCostPerUnit", "marginPercentage", "delivery", "remark",
     ];

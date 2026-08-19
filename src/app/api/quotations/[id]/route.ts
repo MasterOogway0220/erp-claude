@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
 import { numberToWords } from "@/lib/amount-in-words";
 import { checkAccess, companyFilter } from "@/lib/rbac";
-import { parseRate, unpricedItemsError } from "@/lib/quotations/pricing";
+import { normalizeItemPricing, parseRate, unpricedItemsError } from "@/lib/quotations/pricing";
 import { dealOwnerPatch } from "@/lib/quotations/deal-owner";
 import { resolveUpdateCurrency } from "@/lib/quotations/currency";
 
@@ -390,30 +390,12 @@ export async function PUT(
     // Validate numeric fields (rate optional at draft stage, blank saves as
     // NULL; a regretted line carries no rate and no amount by definition)
     for (let i = 0; i < items.length; i++) {
-      const qty = parseFloat(items[i].quantity);
-      const rate = parseRate(items[i].unitRate);
-      if (isNaN(qty) || qty <= 0) {
+      const itemError = normalizeItemPricing(items[i]);
+      if (itemError) {
         return NextResponse.json(
-          { error: `Item ${i + 1}: quantity is required and must be a positive number` },
+          { error: `Item ${i + 1}: ${itemError}` },
           { status: 400 }
         );
-      }
-      if (rate !== null && (!Number.isFinite(rate) || rate < 0)) {
-        return NextResponse.json(
-          { error: `Item ${i + 1}: unit rate must be a non-negative number` },
-          { status: 400 }
-        );
-      }
-      if (items[i].isRegret) {
-        items[i].unitRate = null;
-        items[i].amount = "0";
-        continue;
-      }
-      // Normalize amount: recompute qty × rate when the client value is
-      // missing/invalid, so a priced item can't slip through with amount 0.
-      const amt = parseFloat(items[i].amount);
-      if (!Number.isFinite(amt) || amt < 0) {
-        items[i].amount = (qty * (rate ?? 0)).toFixed(2);
       }
     }
 

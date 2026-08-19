@@ -60,9 +60,10 @@ Two places call `unpricedItemsError` (`src/lib/quotations/pricing.ts`):
 
 A line satisfies the gate by carrying a rate (**`0` counts**; a deliberately
 free line is a real price) or by being marked `isRegret`. Only `NULL`, negative
-and unparseable rates fail. The PUT write path applies the same `parseRate`
-normalisation as POST — blank becomes `NULL`, a regretted line is forced to
-`NULL` rate and `0` amount.
+and unparseable rates fail. The PUT write path runs each item through
+`normalizeItemPricing` — the same shared helper POST uses, so blank becomes
+`NULL` and a regretted line is forced to `NULL` rate and `0` amount on both
+paths, with one tested implementation instead of two copies.
 
 ## Gotchas
 

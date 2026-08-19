@@ -42,6 +42,51 @@ export function findUnpricedItems(items: RatedItem[]): number[] {
     .map(({ sNo }) => sNo);
 }
 
+export interface WritableItem {
+  quantity?: unknown;
+  unitRate?: unknown;
+  amount?: unknown;
+  isRegret?: boolean | null;
+}
+
+/**
+ * Validate and normalise one item's money fields **in place**, ready to store.
+ * Returns an error suffix (the caller prefixes "Item N: ") or null when the
+ * item is fine.
+ *
+ * This is the invariant the whole regret feature rests on, so it lives here
+ * rather than being copy-pasted into POST and PUT: a regretted line stores no
+ * rate and no amount, whatever the client sent. Without that, a line switched
+ * to Regret keeps its old price and prints it to the customer — which is the
+ * bug this replaced.
+ */
+export function normalizeItemPricing(item: WritableItem): string | null {
+  const qty = parseFloat(String(item.quantity));
+  if (!Number.isFinite(qty) || qty <= 0) {
+    return "quantity is required and must be a positive number";
+  }
+
+  const rate = parseRate(item.unitRate);
+  if (rate !== null && (!Number.isFinite(rate) || rate < 0)) {
+    return "unit rate must be a non-negative number";
+  }
+
+  if (item.isRegret) {
+    item.unitRate = null;
+    item.amount = "0";
+    return null;
+  }
+
+  item.unitRate = rate;
+  // Recompute qty × rate when the client's amount is missing or invalid, so a
+  // priced item cannot slip through totalling zero.
+  const amount = parseFloat(String(item.amount));
+  if (!Number.isFinite(amount) || amount < 0) {
+    item.amount = (qty * (rate ?? 0)).toFixed(2);
+  }
+  return null;
+}
+
 /**
  * "Item 3 has no unit rate. <instruction>" / "Items 2, 5 and 7 have no unit
  * rate. <instruction>" — or null when every item is priced or regretted.

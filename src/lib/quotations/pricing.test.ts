@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { findUnpricedItems, parseRate, unpricedItemsError } from "./pricing";
+import {
+  findUnpricedItems,
+  normalizeItemPricing,
+  parseRate,
+  unpricedItemsError,
+} from "./pricing";
 
 describe("parseRate", () => {
   it("distinguishes 'no rate entered' from a rate of zero", () => {
@@ -58,6 +63,56 @@ describe("findUnpricedItems", () => {
 
   it("falls back to 1-based position when sNo is missing", () => {
     expect(findUnpricedItems([{ unitRate: "5" }, { unitRate: "" }])).toEqual([2]);
+  });
+});
+
+describe("normalizeItemPricing", () => {
+  it("strips the rate and amount off a regretted line, whatever was sent", () => {
+    const item = { quantity: "10", unitRate: "250", amount: "2500", isRegret: true };
+    expect(normalizeItemPricing(item)).toBeNull();
+    expect(item.unitRate).toBeNull();
+    expect(item.amount).toBe("0");
+  });
+
+  it("stores a blank rate as null, not 0", () => {
+    const item = { quantity: "10", unitRate: "", amount: "" };
+    expect(normalizeItemPricing(item)).toBeNull();
+    expect(item.unitRate).toBeNull();
+    expect(item.amount).toBe("0.00");
+  });
+
+  it("keeps a deliberate zero rate as 0", () => {
+    const item = { quantity: "4", unitRate: "0", amount: "" };
+    expect(normalizeItemPricing(item)).toBeNull();
+    expect(item.unitRate).toBe(0);
+    expect(item.amount).toBe("0.00");
+  });
+
+  it("leaves a valid client amount alone", () => {
+    const item = { quantity: "10", unitRate: "250", amount: "2500.00" };
+    expect(normalizeItemPricing(item)).toBeNull();
+    expect(item.unitRate).toBe(250);
+    expect(item.amount).toBe("2500.00");
+  });
+
+  it("recomputes an invalid amount from qty x rate", () => {
+    const item = { quantity: "3", unitRate: "150", amount: "not a number" };
+    expect(normalizeItemPricing(item)).toBeNull();
+    expect(item.amount).toBe("450.00");
+  });
+
+  it("rejects a missing or non-positive quantity", () => {
+    expect(normalizeItemPricing({ quantity: "0", unitRate: "5" })).toMatch(/quantity/);
+    expect(normalizeItemPricing({ quantity: "", unitRate: "5" })).toMatch(/quantity/);
+  });
+
+  it("rejects a negative or unparseable rate", () => {
+    expect(normalizeItemPricing({ quantity: "1", unitRate: "-5" })).toMatch(/unit rate/);
+    expect(normalizeItemPricing({ quantity: "1", unitRate: "abc" })).toMatch(/unit rate/);
+  });
+
+  it("checks quantity even on a regretted line — it identifies the line", () => {
+    expect(normalizeItemPricing({ quantity: "", isRegret: true })).toMatch(/quantity/);
   });
 });
 

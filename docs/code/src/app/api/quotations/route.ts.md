@@ -25,8 +25,9 @@ Quantity is required and must be positive. The unit rate is not: a draft can be
 saved with lines still to be priced, and the gate that insists on prices lives
 on the status change to `PENDING_APPROVAL`, not here.
 
-What the route does enforce is the *shape* of a rate, via `parseRate` from
-`src/lib/quotations/pricing.ts`:
+What the route does enforce is the *shape* of a rate. Each item goes through
+`normalizeItemPricing` from `src/lib/quotations/pricing.ts` — shared with the
+PUT route and tested there, rather than duplicated in both handlers:
 
 - blank / absent → stored as `NULL`, meaning "not priced yet" — **not** `0`
 - `0` → stored as `0`, a real quoted price (free, or included in another line)
