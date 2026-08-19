@@ -105,6 +105,9 @@ authoritative, need maintaining, and teach nothing.
 - [`auth/otp.ts`](./src/lib/auth/otp.ts.md) — issue and verify.
 - [`auth/otp-client.ts`](./src/lib/auth/otp-client.ts.md) — browser step 1;
   why its failure path is a security boundary.
+- [`auth/db-down.ts`](./src/lib/auth/db-down.ts.md) — why a database outage
+  used to read as "invalid password", and how the login screen now tells them
+  apart.
 - [`validators/auth.ts`](./src/lib/validators/auth.ts.md) — password policy.
 
 ### Quotations

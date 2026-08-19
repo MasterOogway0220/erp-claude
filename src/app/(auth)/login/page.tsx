@@ -4,6 +4,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { requestLoginOtp } from "@/lib/auth/otp-client";
+import { DB_DOWN_MESSAGE, databaseIsDown } from "@/lib/auth/db-down";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -54,11 +55,20 @@ export default function LoginPage() {
     });
     if (result?.error) {
       // next-auth collapses authorize() failures to a generic code, so the
-      // specific reason (expired / too many attempts) isn't available here.
+      // specific reason (expired / too many attempts) isn't available here —
+      // and a database that cannot be reached arrives looking exactly like a
+      // wrong password. Ask the health endpoint which of the two it was before
+      // blaming the user's credentials: a DB outage here has twice been
+      // diagnosed as "everyone's password stopped working" (Hostinger drops
+      // Vercel's egress IPs on port 3306 when the Remote MySQL allowlist
+      // loses them), and the wrong message is what sent people looking in the
+      // wrong place for hours.
       setError(
-        code
-          ? "That code was not accepted. Check it, or request a new one."
-          : "Invalid email or password"
+        (await databaseIsDown())
+          ? DB_DOWN_MESSAGE
+          : code
+            ? "That code was not accepted. Check it, or request a new one."
+            : "Invalid email or password"
       );
       setLoading(false);
       return;

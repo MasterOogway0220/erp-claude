@@ -51,6 +51,15 @@ The error text after a rejected code is generic, because NextAuth collapses
 `authorize()` failures and the specific reason (expired, too many attempts) is
 not available client-side.
 
+That same collapsing means an **unreachable database also arrives as a
+credentials failure**, and this page used to report it as "Invalid email or
+password" — which has twice sent people resetting passwords during what was a
+connectivity outage. Before blaming the credentials, the failure path now asks
+`databaseIsDown()` (`src/lib/auth/db-down.ts`) and, when the database really is
+unreachable, says so and points at `/api/health?deep=1` and the hPanel Remote
+MySQL allowlist. It runs only on failure, and anything ambiguous still reports
+a bad password.
+
 ## Gotchas and constraints
 
 - **Failure must not fall through.** The early returns are the security

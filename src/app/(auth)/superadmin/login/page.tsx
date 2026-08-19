@@ -4,6 +4,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { requestLoginOtp } from "@/lib/auth/otp-client";
+import { DB_DOWN_MESSAGE, databaseIsDown } from "@/lib/auth/db-down";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -69,8 +70,14 @@ export default function SuperAdminLoginPage() {
     });
 
     if (result?.error) {
+      // Same trap as the staff login: next-auth reports an unreachable
+      // database as a credentials failure. See src/lib/auth/db-down.ts.
       setError(
-        code ? "That code was not accepted. Check it, or request a new one." : "Invalid email or password"
+        (await databaseIsDown())
+          ? DB_DOWN_MESSAGE
+          : code
+            ? "That code was not accepted. Check it, or request a new one."
+            : "Invalid email or password"
       );
       setLoading(false);
     } else {

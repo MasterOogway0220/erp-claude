@@ -31,6 +31,13 @@ role. A non-super-admin is signed out and shown "Access denied". Note this is
 **cosmetic** — it stops someone landing on the superadmin UI, but the actual
 protection is in the middleware and the API.
 
+Like the staff login, the sign-in failure path checks `databaseIsDown()`
+(`src/lib/auth/db-down.ts`) before reporting bad credentials — NextAuth reports
+an unreachable database as a credentials failure, and saying "invalid password"
+during a connectivity outage has cost hours twice. The message and the check
+are shared with the staff page rather than copied, because they had already
+drifted apart once.
+
 ## Gotchas and constraints
 
 - **Keep this in step with the staff page.** The shared `requestLoginOtp`
