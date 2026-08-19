@@ -2,7 +2,7 @@
 // format (QTN-Rev.2): S/N, Product, Specification, Dim., Add. Spec., Size,
 // Length, Ends, Qty, Unit, Unit Rate, Amount, Delivery, Remark/Material Code
 
-import { displaySizeLabel } from "../quotations/display";
+import { displaySizeLabel, priceCellWord } from "../quotations/display";
 
 interface CompanyInfo {
   companyName: string;
@@ -162,14 +162,11 @@ export function generateStandardQuotationHtml(
       const materialCode = item.materialCode?.code || item.materialCodeLabel || "";
       const uom = item.uom || defaultUom;
       const remarkCode = [item.remark, materialCode].filter(Boolean).join(" / ");
-      // A regretted line is one we declined to quote — print REGRET where the
-      // price would go rather than a blank or a token 1.00.
-      const rateDisplay = item.isRegret
-        ? '<b>REGRET</b>'
-        : isUnquoted ? '<b>QUOTED</b>' : fmtPlain(item.unitRate, 2);
-      const amountDisplay = item.isRegret
-        ? 'REGRET'
-        : isUnquoted ? 'QUOTED' : fmt(item.amount, 2);
+      // REGRET (this line declined) or QUOTED (technical copy) may stand in
+      // for the figures; priceCellWord owns that precedence for all renderers.
+      const word = priceCellWord(item, isUnquoted);
+      const rateDisplay = word ? `<b>${word}</b>` : fmtPlain(item.unitRate, 2);
+      const amountDisplay = word ?? fmt(item.amount, 2);
 
       return `<tr>
         <td class="c" style="background-color:#d9d9d9;">${item.slNo ? esc(item.slNo) : item.sNo}</td>

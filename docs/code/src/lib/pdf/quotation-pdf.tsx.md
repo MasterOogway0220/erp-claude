@@ -41,11 +41,18 @@ in its Prisma query.
 containing JSX must be `.tsx`, not `.ts`** — several PDF and email routes are
 named that way for this reason.
 
-Both the standard and non-standard layouts here print the rate and amount
-columns through the same three-way choice as the HTML templates:
-`item.isRegret ? "REGRET" : isUnquoted/isTechnical ? "QUOTED" : <number>`. See
-the standard template's doc for what the two words mean and why the order of
-the checks matters.
+Both the standard and non-standard layouts here get their rate and amount cells
+from **`priceCellWord`** (`src/lib/quotations/display.ts`), shared with the two
+HTML templates: it returns `"REGRET"`, `"QUOTED"`, or `null` meaning "print the
+figure". Called as `priceCellWord(item, isUnquoted) ?? fmt(...)` — `??` and not
+`||`, or a legitimate rate of `0` would be swallowed.
+
+This matters more here than anywhere else: **this renderer's output cannot be
+asserted in a test.** react-pdf subsets its fonts, so the words are not
+recoverable from the PDF buffer without a parser. Sharing the decision is what
+gives the downloaded PDF coverage of the part that can actually be wrong —
+`src/lib/pdf/quotation-rate-column.test.ts` pins the rule to exactly those
+three outcomes.
 
 ## Domain notes
 

@@ -10,6 +10,31 @@ export function displayInquiryNo(raw: string | null | undefined): string {
   return /\d/.test(v) ? v : "";
 }
 
+/**
+ * The word that stands in for a number in the Unit Rate / Amount cells, or
+ * null when the cell should print the figure itself.
+ *
+ * Only two words may ever appear there, and the order matters:
+ *
+ * - **REGRET** — this line was declined, per item. It wins over QUOTED,
+ *   because on a technical copy "QUOTED" would imply a price exists for a
+ *   line that deliberately has none.
+ * - **QUOTED** — the whole document is the technical (unpriced) copy, sent to
+ *   a client's engineering department while purchasing gets the commercial one.
+ *
+ * Shared by all three renderers (react-pdf download, and the two HTML email
+ * templates) so the precedence cannot drift between the copy a customer
+ * downloads and the copy they are emailed. Callers apply their own emphasis
+ * markup around the returned word.
+ */
+export function priceCellWord(
+  item: { isRegret?: boolean | null },
+  isUnquoted: boolean
+): "REGRET" | "QUOTED" | null {
+  if (item.isRegret) return "REGRET";
+  return isUnquoted ? "QUOTED" : null;
+}
+
 export interface SizeSource {
   sizeLabel?: string | null;
   sizeNPS?: unknown; // Prisma Decimal | number | string

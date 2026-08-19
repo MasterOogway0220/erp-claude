@@ -3,6 +3,7 @@
 // COMMERCIAL = with prices, TECHNICAL = prices shown as "QUOTED"
 
 import { numberToWords } from "../amount-in-words";
+import { priceCellWord } from "../quotations/display";
 
 interface CompanyInfo {
   companyName: string;
@@ -212,12 +213,15 @@ export function generateNonStandardQuotationHtml(
   const itemRows = quotation.items
     .map((item: any) => {
       const desc = buildItemDescription(item);
+      // REGRET (this line declined) or QUOTED (technical copy) may stand in
+      // for the figures; priceCellWord owns that precedence for all renderers.
+      const word = priceCellWord(item, isTechnical);
       return `<tr class="data-row">
         <td class="cell-center cell-top" style="background-color:#d9d9d9;">${item.slNo ? escapeHtml(item.slNo) : item.sNo}</td>
         <td class="cell-left cell-top cell-wrap" colspan="4">${desc}</td>
         <td class="cell-center cell-top">${uniformUom ? trimQty(item.quantity) : `${trimQty(item.quantity)} ${escapeHtml(item.uom || "")}`.trim()}</td>
-        <td class="cell-right cell-top">${item.isRegret ? '<span class="quoted-bold">REGRET</span>' : isTechnical ? '<span class="quoted-bold">QUOTED</span>' : formatNumber(item.unitRate, 2)}</td>
-        <td class="cell-right cell-top">${item.isRegret ? '<span class="quoted-normal">REGRET</span>' : isTechnical ? '<span class="quoted-normal">QUOTED</span>' : formatNumber(item.amount, 0)}</td>
+        <td class="cell-right cell-top">${word ? `<span class="quoted-bold">${word}</span>` : formatNumber(item.unitRate, 2)}</td>
+        <td class="cell-right cell-top">${word ? `<span class="quoted-normal">${word}</span>` : formatNumber(item.amount, 0)}</td>
         <td class="cell-center cell-top cell-wrap">${escapeHtml(item.delivery)}</td>
       </tr>`;
     })

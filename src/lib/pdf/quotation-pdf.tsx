@@ -9,7 +9,7 @@ import {
   Font,
 } from "@react-pdf/renderer";
 import { numberToWords } from "../amount-in-words";
-import { displaySizeLabel } from "../quotations/display";
+import { displaySizeLabel, priceCellWord } from "../quotations/display";
 
 Font.register({
   family: "Helvetica",
@@ -313,10 +313,11 @@ function StandardQuotationPage({
       {/* ITEM ROWS */}
       {quotation.items.map((item: any) => {
         const uom = item.uom || defaultUom;
-        // A regretted line is one we declined to quote — print REGRET where
-        // the price would go rather than a blank or a token 1.00.
-        const rateDisplay = item.isRegret ? "REGRET" : isUnquoted ? "QUOTED" : fmt(item.unitRate, 2);
-        const amtDisplay = item.isRegret ? "REGRET" : isUnquoted ? "QUOTED" : fmtIN(item.amount, 2);
+        // REGRET (this line declined) or QUOTED (technical copy) may stand in
+        // for the figures; priceCellWord owns that precedence for all renderers.
+        const word = priceCellWord(item, isUnquoted);
+        const rateDisplay = word ?? fmt(item.unitRate, 2);
+        const amtDisplay = word ?? fmtIN(item.amount, 2);
         const matCode = item.materialCode?.code || item.materialCodeLabel || "";
         const remarkCode = [item.remark, matCode].filter(Boolean).join(" / ");
         return (
@@ -638,10 +639,10 @@ function NonStandardQuotationPage({
             </View>
             <NsTd w={NS_COLS.qty} align="center" top>{uniformUom ? fmtQty(item.quantity) : `${fmtQty(item.quantity)} ${item.uom || ""}`.trim()}</NsTd>
             <NsTd w={NS_COLS.rate} align="right" top>
-              {item.isRegret ? "REGRET" : isTechnical ? "QUOTED" : fmt(item.unitRate, 2)}
+              {priceCellWord(item, isTechnical) ?? fmt(item.unitRate, 2)}
             </NsTd>
             <NsTd w={NS_COLS.total} align="right" top>
-              {item.isRegret ? "REGRET" : isTechnical ? "QUOTED" : fmtIN(item.amount, 0)}
+              {priceCellWord(item, isTechnical) ?? fmtIN(item.amount, 0)}
             </NsTd>
             <NsTd w={NS_COLS.del} align="center" top last>{item.delivery}</NsTd>
           </View>

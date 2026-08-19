@@ -39,9 +39,14 @@ The `variant` splits this into a **COMMERCIAL** sheet (with prices) and a
 **TECHNICAL** one (every price replaced by `QUOTED`); the label in the header
 follows. Independently of that, a line marked `isRegret` prints **`REGRET`** in
 both the rate and total columns — an item the company declines to quote, listed
-so the document still matches the client's enquiry line for line. The per-item
-check runs before the variant check, so a regretted line says `REGRET` on both
-sheets. See the standard template's doc for the fuller explanation.
+so the document still matches the client's enquiry line for line. A regretted
+line says `REGRET` on both sheets.
+
+Which of the two words applies is decided by `priceCellWord`
+(`src/lib/quotations/display.ts`), shared with the other two renderers; this
+template only supplies the markup (`quoted-bold` / `quoted-normal` spans).
+`src/lib/pdf/quotation-rate-column.test.ts` renders this template and asserts
+both columns.
 
 ## Domain notes
 

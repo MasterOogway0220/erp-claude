@@ -62,6 +62,13 @@ otherwise imply a price exists, which is the opposite of what is being said.
 A regretted line stores amount `0`, so it drops out of the total arithmetic
 with no special case in the sum.
 
+That precedence is not written here: it comes from `priceCellWord` in
+`src/lib/quotations/display.ts`, shared with the other two renderers so the
+downloaded and emailed copies cannot disagree. This template only decides the
+markup — the word is bolded in the rate cell and plain in the amount cell.
+`src/lib/pdf/quotation-rate-column.test.ts` renders this template and asserts
+what lands in those two columns.
+
 ## Domain notes
 
 - **Add. Spec.** — additional specification, e.g. `NACE MR0175`, `IBR`,

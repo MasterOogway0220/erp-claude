@@ -28,6 +28,7 @@ identical behaviour, so the rules live here rather than in either.
 |---|---|
 | `displayInquiryNo(raw)` | Returns the trimmed value if it contains a digit, otherwise `""`. Used for the PDF **filename** only — headers print the raw value. |
 | `displaySizeLabel(item)` | `sizeLabel`, else reconstructed from NPS + schedule, else `"-"`. |
+| `priceCellWord(item, isUnquoted)` | `"REGRET"`, `"QUOTED"`, or `null` when the cell should print the figure. |
 
 ## How it works
 
@@ -60,8 +61,38 @@ Three tiers:
 number, or a string depending on the query path, hence the
 `parseFloat(String(...))`.
 
+### `priceCellWord`
+
+Exactly two words may ever stand where a price should be, and this decides
+which — everything else in those columns is a number.
+
+- **REGRET** — per line. The company declines to quote this item. The client's
+  enquiry listed twelve items, we can supply nine, and the quotation still
+  lists all twelve so it matches their enquiry line for line.
+- **QUOTED** — per document. The technical copy of the offer, sent to a
+  client's engineering department with every price withheld, while purchasing
+  receives the commercial copy.
+
+**REGRET wins.** On a technical copy, printing QUOTED against a regretted line
+would tell the client a price exists for something deliberately not priced.
+
+It exists as a shared function because there are **three** renderers of the
+same document — the react-pdf download and the two HTML email templates — and
+this precedence had to be written identically in six places. The download
+renderer's output cannot be asserted in a test (react-pdf subsets its fonts, so
+the text is not recoverable from the buffer without a PDF parser), so routing
+all three through one tested rule is what gives that path coverage of the only
+part that can be wrong.
+
+Callers apply their own emphasis around the word: the standard template bolds
+it in the rate cell, the non-standard one wraps it in `quoted-bold` /
+`quoted-normal` spans, react-pdf prints it plain.
+
 ## Domain notes
 
+- **REGRET** — trade shorthand for declining a line of an enquiry. Before it
+  was a flag, staff faked it as quantity 1 / rate 1 with a "REGRET" remark,
+  which printed a real ₹1.00 to the client (NPS/26/15213).
 - **NPS / NB** — Nominal Pipe Size / Nominal Bore. The nominal internal size,
   not the outside diameter. Printed as `6"NB`.
 - **SCH** — Schedule, the wall-thickness class. `SCH 40`, `SCH 80`, `SCH STD`,
@@ -76,6 +107,12 @@ number, or a string depending on the query path, hence the
   regex.
 - `displaySizeLabel` never returns an empty string, so callers do not need
   their own fallback. Adding one would produce a double dash.
+- `priceCellWord` returning `null` means "print the number", not "print
+  nothing" — `?? fmt(...)` is the intended call shape. A truthiness check would
+  swallow a legitimate rate of `0`.
+- A third word must not be added here without checking all six call sites and
+  `src/lib/pdf/quotation-rate-column.test.ts`, which pins the set to exactly
+  REGRET, QUOTED and null.
 
 ## Related
 
