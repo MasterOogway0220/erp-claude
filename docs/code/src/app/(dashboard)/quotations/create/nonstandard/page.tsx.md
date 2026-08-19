@@ -43,6 +43,13 @@ Renders the `/quotations/create/nonstandard` screen. 1794 lines.
   zero-terms quotations do not gain template terms, dates go through
   `toDateInput`, terms loads go through `fillBlankCurrencyTerm`, and the
   tender prefill is create-only.
+- **Regret and zero rates** work exactly as on the standard page (see its doc
+  for the full explanation): a **Regret** checkbox sits beside each row's Unit
+  Rate for lines the company declines to quote, ticking it clears the rate and
+  amount and shows `REGRET` in both fields, and the populate effect preserves a
+  saved rate of `0` instead of reopening the row blank. The submit mapping here
+  lists fields explicitly rather than spreading, so `isRegret` had to be added
+  to it by name.
 - Large file (1794 lines). Read the section you are changing rather than pattern-matching from a sibling.
 - Any `Select` needs a non-empty `SelectItem` value; the codebase uses a `"NONE"` sentinel mapped to `""`.
 - Role gating in the UI is cosmetic — the API is the boundary, and its role checks are currently disabled.

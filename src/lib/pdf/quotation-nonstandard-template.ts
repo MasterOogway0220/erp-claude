@@ -216,8 +216,8 @@ export function generateNonStandardQuotationHtml(
         <td class="cell-center cell-top" style="background-color:#d9d9d9;">${item.slNo ? escapeHtml(item.slNo) : item.sNo}</td>
         <td class="cell-left cell-top cell-wrap" colspan="4">${desc}</td>
         <td class="cell-center cell-top">${uniformUom ? trimQty(item.quantity) : `${trimQty(item.quantity)} ${escapeHtml(item.uom || "")}`.trim()}</td>
-        <td class="cell-right cell-top">${isTechnical ? '<span class="quoted-bold">QUOTED</span>' : formatNumber(item.unitRate, 2)}</td>
-        <td class="cell-right cell-top">${isTechnical ? '<span class="quoted-normal">QUOTED</span>' : formatNumber(item.amount, 0)}</td>
+        <td class="cell-right cell-top">${item.isRegret ? '<span class="quoted-bold">REGRET</span>' : isTechnical ? '<span class="quoted-bold">QUOTED</span>' : formatNumber(item.unitRate, 2)}</td>
+        <td class="cell-right cell-top">${item.isRegret ? '<span class="quoted-normal">REGRET</span>' : isTechnical ? '<span class="quoted-normal">QUOTED</span>' : formatNumber(item.amount, 0)}</td>
         <td class="cell-center cell-top cell-wrap">${escapeHtml(item.delivery)}</td>
       </tr>`;
     })

@@ -41,6 +41,12 @@ in its Prisma query.
 containing JSX must be `.tsx`, not `.ts`** — several PDF and email routes are
 named that way for this reason.
 
+Both the standard and non-standard layouts here print the rate and amount
+columns through the same three-way choice as the HTML templates:
+`item.isRegret ? "REGRET" : isUnquoted/isTechnical ? "QUOTED" : <number>`. See
+the standard template's doc for what the two words mean and why the order of
+the checks matters.
+
 ## Domain notes
 
 Same document as `quotation-standard-template.ts`; see that doc for the column

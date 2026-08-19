@@ -162,7 +162,14 @@ export function generateStandardQuotationHtml(
       const materialCode = item.materialCode?.code || item.materialCodeLabel || "";
       const uom = item.uom || defaultUom;
       const remarkCode = [item.remark, materialCode].filter(Boolean).join(" / ");
-      const rateDisplay = isUnquoted ? '<b>QUOTED</b>' : fmtPlain(item.unitRate, 2);
+      // A regretted line is one we declined to quote — print REGRET where the
+      // price would go rather than a blank or a token 1.00.
+      const rateDisplay = item.isRegret
+        ? '<b>REGRET</b>'
+        : isUnquoted ? '<b>QUOTED</b>' : fmtPlain(item.unitRate, 2);
+      const amountDisplay = item.isRegret
+        ? 'REGRET'
+        : isUnquoted ? 'QUOTED' : fmt(item.amount, 2);
 
       return `<tr>
         <td class="c" style="background-color:#d9d9d9;">${item.slNo ? esc(item.slNo) : item.sNo}</td>
@@ -176,7 +183,7 @@ export function generateStandardQuotationHtml(
         <td class="r">${fmtPlain(item.quantity, 2)}</td>
         <td class="c">${esc(unitLabel(uom))}</td>
         <td class="r">${rateDisplay}</td>
-        <td class="r">${isUnquoted ? 'QUOTED' : fmt(item.amount, 2)}</td>
+        <td class="r">${amountDisplay}</td>
         <td class="c">${esc(item.delivery) || ""}</td>
         <td class="l small">${esc(remarkCode)}</td>
       </tr>`;

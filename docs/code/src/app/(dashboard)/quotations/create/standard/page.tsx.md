@@ -58,6 +58,30 @@ a quotation and pressing Save must be a no-op.** The pieces:
 - The tender prefill effect is create-only (`editId` guard) so a URL carrying
   both `tenderId` and `editId` cannot race the populate and replace saved
   items.
+- The unit rate round-trips as a **string**, and `""` is not `"0"`. The
+  populate effect uses `item.unitRate == null ? "" : String(item.unitRate)`,
+  so a line deliberately quoted at zero reopens showing `0` rather than blank.
+  (The old rule was `Number(item.unitRate) > 0 ? … : ""`, which erased a saved
+  zero on every edit.)
+
+### Regret
+
+Each item row carries a **Regret** checkbox next to the Unit Rate field, for
+lines the company declines to quote — the client asked for twelve items, we
+can supply nine, and the quotation still lists all twelve so it matches their
+enquiry line for line.
+
+Ticking it clears that row's rate and zeroes its amount, disables the rate
+input, and shows `REGRET` as the placeholder; the API forces the same values
+server-side so a stale payload cannot smuggle a price back in. The PDF prints
+`REGRET` in the Unit Rate and Amount columns, and the zeroed amount keeps the
+line out of the grand total without any special-casing in the sum.
+
+Quantity is still required on a regretted row — it is the enquiry quantity,
+and it is what identifies the line being regretted.
+
+`updateItem` therefore takes `string | boolean`; the `sizeId` branch narrows
+with `typeof value === "string"` before using it as a lookup key.
 
 ## Gotchas
 

@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
 import { numberToWords } from "@/lib/amount-in-words";
 import { checkAccess, companyFilter } from "@/lib/rbac";
-import { unpricedItemsError } from "@/lib/quotations/pricing";
+import { parseRate, unpricedItemsError } from "@/lib/quotations/pricing";
 import { dealOwnerPatch } from "@/lib/quotations/deal-owner";
 import { resolveUpdateCurrency } from "@/lib/quotations/currency";
 
@@ -116,7 +116,7 @@ export async function PATCH(
         status: true,
         quotationNo: true,
         version: true,
-        items: { select: { sNo: true, unitRate: true } },
+        items: { select: { sNo: true, unitRate: true, isRegret: true } },
       },
     });
 
@@ -326,7 +326,7 @@ export async function PUT(
         quotationType: true, quotationCategory: true, version: true,
         // Every field the audit diff below compares must be selected here —
         // a missing one reads as undefined and logs a phantom "change".
-        items: { select: { id: true, sNo: true, slNo: true, product: true, material: true, dimStandard: true, sizeLabel: true, length: true, ends: true, uom: true, quantity: true, unitRate: true, amount: true } },
+        items: { select: { id: true, sNo: true, slNo: true, product: true, material: true, dimStandard: true, sizeLabel: true, length: true, ends: true, uom: true, quantity: true, unitRate: true, isRegret: true, amount: true } },
         terms: { select: { id: true, termName: true, termValue: true, isIncluded: true } },
       },
     });
@@ -387,28 +387,33 @@ export async function PUT(
       );
     }
 
-    // Validate numeric fields (rate optional at draft stage, empty saves as 0)
+    // Validate numeric fields (rate optional at draft stage, blank saves as
+    // NULL; a regretted line carries no rate and no amount by definition)
     for (let i = 0; i < items.length; i++) {
       const qty = parseFloat(items[i].quantity);
-      const rawRate = items[i].unitRate;
-      const rate = rawRate == null || rawRate === "" ? 0 : parseFloat(rawRate);
+      const rate = parseRate(items[i].unitRate);
       if (isNaN(qty) || qty <= 0) {
         return NextResponse.json(
           { error: `Item ${i + 1}: quantity is required and must be a positive number` },
           { status: 400 }
         );
       }
-      if (isNaN(rate) || rate < 0) {
+      if (rate !== null && (!Number.isFinite(rate) || rate < 0)) {
         return NextResponse.json(
           { error: `Item ${i + 1}: unit rate must be a non-negative number` },
           { status: 400 }
         );
       }
+      if (items[i].isRegret) {
+        items[i].unitRate = null;
+        items[i].amount = "0";
+        continue;
+      }
       // Normalize amount: recompute qty × rate when the client value is
       // missing/invalid, so a priced item can't slip through with amount 0.
       const amt = parseFloat(items[i].amount);
       if (!Number.isFinite(amt) || amt < 0) {
-        items[i].amount = (qty * rate).toFixed(2);
+        items[i].amount = (qty * (rate ?? 0)).toFixed(2);
       }
     }
 
@@ -537,7 +542,9 @@ export async function PUT(
               length: item.length || null,
               ends: item.ends || null,
               quantity: parseFloat(item.quantity),
-              unitRate: parseFloat(item.unitRate) || 0,
+              // null (not 0) when no rate was entered — 0 is a real quoted price
+              unitRate: parseRate(item.unitRate),
+              isRegret: !!item.isRegret,
               amount: parseFloat(item.amount) || 0,
               delivery: item.delivery || null,
               remark: item.remark || null,
@@ -610,7 +617,7 @@ export async function PUT(
         // length/ends/uom are here because the client reported lengths
         // "disappearing" — without them in the diff the audit log could not
         // prove or disprove what an edit actually changed.
-        for (const field of ["slNo", "product", "material", "dimStandard", "sizeLabel", "length", "ends", "uom", "quantity", "unitRate", "amount"]) {
+        for (const field of ["slNo", "product", "material", "dimStandard", "sizeLabel", "length", "ends", "uom", "quantity", "unitRate", "isRegret", "amount"]) {
           const oldVal = String(oldItem[field] ?? "");
           const newVal = String(newItem[field] ?? "");
           if (oldVal !== newVal) {

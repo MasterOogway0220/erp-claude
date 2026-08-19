@@ -924,10 +924,10 @@ export default function QuotationDetailPage() {
                         </TableCell>
                         <TableCell>{item.uom || "Mtr"}</TableCell>
                         <TableCell className="text-right">
-                          {parseFloat(item.unitRate).toFixed(2)}
+                          {item.isRegret ? "REGRET" : item.unitRate == null ? "---" : parseFloat(item.unitRate).toFixed(2)}
                         </TableCell>
                         <TableCell className="text-right font-semibold">
-                          {parseFloat(item.amount).toFixed(2)}
+                          {item.isRegret ? "REGRET" : parseFloat(item.amount).toFixed(2)}
                         </TableCell>
                         <TableCell>{item.delivery || "---"}</TableCell>
                       </>
@@ -950,10 +950,10 @@ export default function QuotationDetailPage() {
                         </TableCell>
                         <TableCell>{item.uom || "Mtr"}</TableCell>
                         <TableCell className="text-right">
-                          {parseFloat(item.unitRate).toFixed(2)}
+                          {item.isRegret ? "REGRET" : item.unitRate == null ? "---" : parseFloat(item.unitRate).toFixed(2)}
                         </TableCell>
                         <TableCell className="text-right font-semibold">
-                          {parseFloat(item.amount).toFixed(2)}
+                          {item.isRegret ? "REGRET" : parseFloat(item.amount).toFixed(2)}
                         </TableCell>
                         <TableCell>{item.delivery || "---"}</TableCell>
                         <TableCell className="text-right">

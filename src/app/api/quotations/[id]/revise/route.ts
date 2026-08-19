@@ -341,6 +341,7 @@ export async function POST(
               totalCostPerUnit: item.totalCostPerUnit,
               marginPercentage: item.marginPercentage,
               unitRate: item.unitRate,
+              isRegret: item.isRegret,
               amount: item.amount,
               delivery: item.delivery,
               remark: item.remark,

@@ -43,6 +43,25 @@ team expected on the document; the filter now guards only the PDF filename.
 There are deliberately **no OD or WT columns** — the client's format identifies
 pipe by nominal bore and schedule, not by measured dimensions.
 
+### `REGRET` and `QUOTED` in the price columns
+
+Two different words replace a number in the Unit Rate and Amount columns, and
+they are not alternatives to each other:
+
+- **`QUOTED`** is document-wide. The `"UNQUOTED"` variant is the *technical*
+  copy of the offer — the same items, with every price replaced by the word
+  `QUOTED`, sent to a client's engineering department while the commercial
+  copy goes to purchasing.
+- **`REGRET`** is per line. It marks an item the company declines to quote:
+  the enquiry listed twelve items, we can supply nine, and the quotation still
+  lists all twelve so it matches the client's enquiry line for line.
+
+The per-item check runs **first**, so a regretted line reads `REGRET` on both
+the commercial and the technical copy — on the technical copy `QUOTED` would
+otherwise imply a price exists, which is the opposite of what is being said.
+A regretted line stores amount `0`, so it drops out of the total arithmetic
+with no special case in the sum.
+
 ## Domain notes
 
 - **Add. Spec.** — additional specification, e.g. `NACE MR0175`, `IBR`,
@@ -59,8 +78,10 @@ pipe by nominal bore and schedule, not by measured dimensions.
   fit one page. Adding a column risks overflow.
 - **The column order is the client's**, not a preference. Changing it changes
   their document.
-- Unpriced lines print blank rather than `0`; the price gate stops those
-  reaching approval.
+- Unpriced lines (`unitRate` `NULL`) print blank rather than `0` — the
+  formatters return `""` for a non-number — and the price gate stops those
+  reaching approval anyway. A line deliberately quoted at zero prints `0.00`,
+  which is the point of storing it as a real `0`.
 
 ## Related
 

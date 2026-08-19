@@ -41,11 +41,28 @@ Each of these exists because an ordinary edit destroyed data at least once:
   null/"" = unassign); **`preparedById` is write-once** — editing is not
   authoring.
 - The **item audit diff** tracks `slNo, product, material, dimStandard,
-  sizeLabel, length, ends, uom, quantity, unitRate, amount`, and the
+  sizeLabel, length, ends, uom, quantity, unitRate, isRegret, amount`, and the
   `existing` select fetches exactly those fields — a diffed field missing from
   the select reads as `undefined` and logs a phantom change. `length/ends/uom`
   were added after a client reported lengths "disappearing" and the audit log
   could not prove or disprove it.
+
+### The price gate
+
+Two places call `unpricedItemsError` (`src/lib/quotations/pricing.ts`):
+
+- **PATCH**, when the status moves to `PENDING_APPROVAL` or `APPROVED` — this
+  is the real gate, and it reads the *stored* items, so its `select` must
+  include `isRegret` as well as `unitRate` or every regretted line reads as
+  unpriced and approval becomes impossible.
+- **PUT**, when the quotation is already past `DRAFT` — an edit must not strip
+  the prices off a document that has been approved or sent.
+
+A line satisfies the gate by carrying a rate (**`0` counts**; a deliberately
+free line is a real price) or by being marked `isRegret`. Only `NULL`, negative
+and unparseable rates fail. The PUT write path applies the same `parseRate`
+normalisation as POST — blank becomes `NULL`, a regretted line is forced to
+`NULL` rate and `0` amount.
 
 ## Gotchas
 

@@ -122,22 +122,26 @@ function CreateSalesOrderPage() {
           customerId: selectedQuotation.customerId,
         }));
 
-        // Auto-populate items from quotation
-        const quotationItems: SOItem[] = selectedQuotation.items.map((item) => ({
-          product: item.product || "",
-          material: item.material || "",
-          additionalSpec: item.additionalSpec || "",
-          sizeLabel: item.sizeLabel || "",
-          od: parseFloat(item.od) || 0,
-          wt: parseFloat(item.wt) || 0,
-          ends: item.ends || "",
-          quantity: parseFloat(item.quantity) || 0,
-          unitRate: parseFloat(item.unitRate) || 0,
-          amount: parseFloat(item.amount) || 0,
-          deliveryDate: format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), "yyyy-MM-dd"),
-          unitWeight: parseFloat(item.unitWeight) || undefined,
-          totalWeightMT: parseFloat(item.totalWeightMT) || undefined,
-        }));
+        // Auto-populate items from quotation. Regretted lines are ones we
+        // declined to quote — they carry no price and cannot be sold, so they
+        // never belong on the sales order.
+        const quotationItems: SOItem[] = selectedQuotation.items
+          .filter((item) => !item.isRegret)
+          .map((item) => ({
+            product: item.product || "",
+            material: item.material || "",
+            additionalSpec: item.additionalSpec || "",
+            sizeLabel: item.sizeLabel || "",
+            od: parseFloat(item.od) || 0,
+            wt: parseFloat(item.wt) || 0,
+            ends: item.ends || "",
+            quantity: parseFloat(item.quantity) || 0,
+            unitRate: parseFloat(item.unitRate) || 0,
+            amount: parseFloat(item.amount) || 0,
+            deliveryDate: format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), "yyyy-MM-dd"),
+            unitWeight: parseFloat(item.unitWeight) || undefined,
+            totalWeightMT: parseFloat(item.totalWeightMT) || undefined,
+          }));
         setItems(quotationItems);
       } else {
         setFormData((prev) => ({ ...prev, quotationId }));

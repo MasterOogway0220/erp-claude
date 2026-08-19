@@ -123,6 +123,15 @@ is for lookups, not for rendering.
 `(10, 3)` for quantities, `(12, 2)` for rates, `(10, 4)` for weights. Never
 `Float`.
 
+**`QuotationItem.unitRate` is nullable, and the null is load-bearing.** `NULL`
+means nobody has priced the line yet (the price gate blocks approval); `0`
+means deliberately quoted at zero. A third state, `isRegret`, means we decline
+to quote that line at all — it prints `REGRET` on the PDF and contributes
+nothing to the total. Code that reads a quotation rate must not collapse
+`NULL` into `0`. Every other `unitRate` in the schema (`POItem`,
+`SalesOrderItem`, `InvoiceItem`, …) is still non-null: those documents only
+exist once a price is agreed. See `src/lib/quotations/pricing.ts`.
+
 ### JSON in text columns
 `EmployeeMaster.moduleAccess`, `OrderProcessingItem.ndtTests` and
 `requiredLabTests`, `Quotation.changeSnapshot` hold JSON in `LongText`. Parse

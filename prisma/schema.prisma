@@ -548,7 +548,8 @@ model QuotationItem {
   otherCosts        Decimal?            @db.Decimal(12, 2)
   totalCostPerUnit  Decimal?            @db.Decimal(12, 2)
   marginPercentage  Decimal?            @db.Decimal(5, 2)
-  unitRate          Decimal             @db.Decimal(12, 2)
+  unitRate          Decimal?            @db.Decimal(12, 2)
+  isRegret          Boolean             @default(false)
   amount            Decimal             @db.Decimal(14, 2)
   delivery          String?
   remark            String?

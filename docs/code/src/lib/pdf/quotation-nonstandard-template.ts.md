@@ -35,6 +35,14 @@ this to work.
 Portrait at **210 × 320 mm** — taller than A4 so the footer lands on the same
 page rather than orphaning onto a second sheet.
 
+The `variant` splits this into a **COMMERCIAL** sheet (with prices) and a
+**TECHNICAL** one (every price replaced by `QUOTED`); the label in the header
+follows. Independently of that, a line marked `isRegret` prints **`REGRET`** in
+both the rate and total columns — an item the company declines to quote, listed
+so the document still matches the client's enquiry line for line. The per-item
+check runs before the variant check, so a regretted line says `REGRET` on both
+sheets. See the standard template's doc for the fuller explanation.
+
 ## Domain notes
 
 `quotationCategory` is `STANDARD` or `NON_STANDARD`, chosen at creation, and it

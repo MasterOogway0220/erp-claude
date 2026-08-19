@@ -22,6 +22,12 @@ Renders the `/quotations/[id]` screen. 1719 lines.
   was once saved and printed but not shown here, and users read the gap as
   "my edit didn't save". The total row's `colSpan` is keyed to this column
   count; adding a column means bumping it.
+- **Rate and amount cells are three-way**, in both the standard and the
+  non-standard branch of the items table: `REGRET` for a line the company
+  declined to quote, `---` when `unitRate` is `NULL` (not priced yet), and the
+  number otherwise — including a real `0`. `parseFloat(null)` is `NaN`, so
+  dropping the null check prints `NaN` on screen. The internal costing table
+  further down uses `item.unitRate || 0` and is unaffected.
 - Any `Select` needs a non-empty `SelectItem` value; the codebase uses a `"NONE"` sentinel mapped to `""`.
 - Role gating in the UI is cosmetic — the API is the boundary, and its role checks are currently disabled.
 

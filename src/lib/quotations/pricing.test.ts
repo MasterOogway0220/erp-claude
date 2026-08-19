@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 import { findUnpricedItems, parseRate, unpricedItemsError } from "./pricing";
 
 describe("parseRate", () => {
-  it("treats empty values as 0", () => {
-    expect(parseRate("")).toBe(0);
-    expect(parseRate(null)).toBe(0);
-    expect(parseRate(undefined)).toBe(0);
+  it("distinguishes 'no rate entered' from a rate of zero", () => {
+    expect(parseRate("")).toBeNull();
+    expect(parseRate(null)).toBeNull();
+    expect(parseRate(undefined)).toBeNull();
+    expect(parseRate(0)).toBe(0);
+    expect(parseRate("0")).toBe(0);
   });
 
   it("parses numbers, numeric strings and Decimal-like objects", () => {
@@ -29,11 +31,24 @@ describe("findUnpricedItems", () => {
     ).toEqual([]);
   });
 
-  it("flags empty, zero, negative and invalid rates", () => {
+  it("accepts a deliberate zero rate as priced", () => {
+    expect(findUnpricedItems([{ sNo: 1, unitRate: 0 }, { sNo: 2, unitRate: "0" }])).toEqual([]);
+  });
+
+  it("accepts a regretted item with no rate at all", () => {
+    expect(
+      findUnpricedItems([
+        { sNo: 1, unitRate: null, isRegret: true },
+        { sNo: 2, unitRate: "", isRegret: true },
+      ])
+    ).toEqual([]);
+  });
+
+  it("flags missing, negative and invalid rates", () => {
     expect(
       findUnpricedItems([
         { sNo: 1, unitRate: "" },
-        { sNo: 2, unitRate: "0" },
+        { sNo: 2, unitRate: null },
         { sNo: 3, unitRate: -5 },
         { sNo: 4, unitRate: "abc" },
         { sNo: 5, unitRate: "10" },
@@ -51,6 +66,12 @@ describe("unpricedItemsError", () => {
     expect(unpricedItemsError([{ sNo: 1, unitRate: "10" }], "Do X.")).toBeNull();
   });
 
+  it("returns null when the only unpriced lines are regretted", () => {
+    expect(
+      unpricedItemsError([{ sNo: 1, unitRate: "10" }, { sNo: 2, isRegret: true }], "Do X.")
+    ).toBeNull();
+  });
+
   it("formats a single unpriced item", () => {
     expect(unpricedItemsError([{ sNo: 3, unitRate: "" }], "Add prices first.")).toBe(
       "Item 3 has no unit rate. Add prices first."
@@ -62,7 +83,7 @@ describe("unpricedItemsError", () => {
       unpricedItemsError(
         [
           { sNo: 2, unitRate: "" },
-          { sNo: 5, unitRate: 0 },
+          { sNo: 5, unitRate: undefined },
           { sNo: 7, unitRate: null },
         ],
         "Add prices before approving."

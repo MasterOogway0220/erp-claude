@@ -38,8 +38,9 @@ export async function GET(
       return NextResponse.json({ error: "Quotation not found" }, { status: 404 });
     }
 
-    // Calculate balance for each item
-    const itemsWithBalance = quotation.items.map((item) => {
+    // Calculate balance for each item. A regretted line was never quoted, so
+    // the customer cannot raise a PO against it — keep it out of the list.
+    const itemsWithBalance = quotation.items.filter((item) => !item.isRegret).map((item) => {
       // Sum qty ordered across all non-cancelled Client POs for this item
       const totalOrdered = item.clientPOItems
         .filter((cpoItem) => cpoItem.clientPurchaseOrder.status !== "CANCELLED")
@@ -64,7 +65,7 @@ export async function GET(
         qtyQuoted,
         totalOrdered,
         balanceQty,
-        unitRate: Number(item.unitRate),
+        unitRate: item.unitRate == null ? 0 : Number(item.unitRate),
         amount: Number(item.amount),
         delivery: item.delivery,
         remark: item.remark,

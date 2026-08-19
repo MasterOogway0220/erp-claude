@@ -15,6 +15,12 @@ Operates on `quotation`.
 
 - Gated by `checkAccess("clientPO", "read")`. **Authentication only** — role enforcement is disabled app-wide.
 - **Not company-scoped.** Either catalogue data (deliberately global) or scoped via a parent record — verify which before changing.
+- Returns, per quotation line, the quantity quoted, the quantity already
+  ordered across non-cancelled client POs, and the balance still orderable.
+  The client PO create page builds its item list from this.
+- **Regretted lines are filtered out.** A line marked `isRegret` was never
+  quoted — it carries no rate and prints `REGRET` — so the customer cannot
+  raise a PO against it and it must not appear as orderable balance.
 
 ## Gotchas
 

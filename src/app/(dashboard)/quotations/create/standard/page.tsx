@@ -75,6 +75,8 @@ interface QuotationItem {
   ends: string;
   quantity: string;
   unitRate: string;
+  // A line we decline to quote: no rate, no amount, prints REGRET on the PDF
+  isRegret: boolean;
   amount: string;
   uom: string;
   delivery: string;
@@ -112,6 +114,7 @@ const emptyItem: QuotationItem = {
   ends: "BE",
   quantity: "",
   unitRate: "",
+  isRegret: false,
   amount: "0.00",
   uom: "Mtr",
   delivery: "6-8 Weeks",
@@ -689,8 +692,10 @@ function StandardQuotationPage() {
           length: item.length || "",
           ends: item.ends || "",
           quantity: String(item.quantity),
-          // Unpriced items are stored as 0 — show them blank again on edit
-          unitRate: Number(item.unitRate) > 0 ? String(item.unitRate) : "",
+          // An unpriced item is stored as NULL and reopens blank; a rate of 0
+          // is a real quoted price and must survive the round trip as "0".
+          unitRate: item.unitRate == null ? "" : String(item.unitRate),
+          isRegret: !!item.isRegret,
           amount: String(item.amount),
           uom: item.uom || "Mtr",
           delivery: item.delivery || "",
@@ -915,10 +920,18 @@ function StandardQuotationPage() {
     if (items.length > 1) setItems(items.filter((_, i) => i !== index));
   };
 
-  const updateItem = (index: number, field: keyof QuotationItem, value: string) => {
+  const updateItem = (index: number, field: keyof QuotationItem, value: string | boolean) => {
     setItems((prev) => {
       const newItems = prev.map((item, i) => (i === index ? { ...item } : item));
       (newItems[index] as any)[field] = value;
+
+      // Regretting a line drops its price: there is nothing to quote, so the
+      // rate and the amount must not linger from before the toggle.
+      if (field === "isRegret" && value) {
+        newItems[index].unitRate = "";
+        newItems[index].amount = "0.00";
+        return newItems;
+      }
 
       // When product changes, reset size-related fields — and dim/ends,
       // which belong to the previous product (autofill repopulates them).
@@ -936,7 +949,7 @@ function StandardQuotationPage() {
       }
 
       // When sizeId changes, auto-fill from pipe size master
-      if (field === "sizeId" && value) {
+      if (field === "sizeId" && typeof value === "string" && value) {
         const pipeSize = findPipeSizeById(value);
         if (pipeSize) {
           // Default the dimension standard for pipes: stainless dimensions are
@@ -1852,11 +1865,24 @@ function StandardQuotationPage() {
                       </Select>
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs font-medium">Unit Rate ({curr})</Label>
+                      <div className="flex items-center justify-between gap-2">
+                        <Label className="text-xs font-medium">Unit Rate ({curr})</Label>
+                        <label className="flex items-center gap-1 text-xs text-muted-foreground cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={item.isRegret}
+                            onChange={(e) => updateItem(index, "isRegret", e.target.checked)}
+                            className="h-3 w-3"
+                          />
+                          Regret
+                        </label>
+                      </div>
                       <Input
                         type="number"
                         step="0.01"
-                        value={item.unitRate}
+                        value={item.isRegret ? "" : item.unitRate}
+                        placeholder={item.isRegret ? "REGRET" : undefined}
+                        disabled={item.isRegret}
                         onChange={(e) => updateItem(index, "unitRate", e.target.value)}
                         className="h-8"
                       />
