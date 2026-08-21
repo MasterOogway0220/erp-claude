@@ -31,7 +31,7 @@ Built by `poolConfig(databaseUrl)`, which is exported (and covered by
 `prisma.test.ts`) purely so the tuning can be asserted without opening a socket.
 
 ```
-connectionLimit: 5
+connectionLimit: Number(process.env.DB_POOL_SIZE) || 5
 minimumIdle:     1        // MUST NOT be 0 — see below
 idleTimeout:     10       // seconds
 connectTimeout:  5_000
@@ -39,10 +39,28 @@ acquireTimeout:  15_000
 socketTimeout:   30_000
 ```
 
-`connectionLimit` is low because the host is **shared hosting** with a cap on
-concurrent connections, and serverless makes that worse: every warm lambda holds
-its own pool, so the effective total is 5 × instances. Raising this is the
-fastest way to start seeing connection errors under load.
+`connectionLimit` is bounded by the host being **shared hosting** with a
+per-user cap on concurrent connections — 75, recorded as
+`SERVER_MAX_USER_CONNECTIONS` in the file and asserted in `prisma.test.ts`.
+
+The right value depends entirely on **how many processes there are**, which is
+a property of the deployment and not of the code — hence the `DB_POOL_SIZE`
+environment variable rather than a hardcoded number:
+
+- **Vercel: unset, so 5.** This is 5 *per lambda instance*, and the
+  application-wide total is 5 × however many happen to be warm — not a number
+  anyone controls. Raising it here is the fastest way to exhaust the cap.
+- **Render: `DB_POOL_SIZE=10`** (set in `render.yaml`). `numInstances` is
+  pinned to 1, so there is exactly one process and this pool is the entire
+  budget for concurrent queries. At 5, a handful of simultaneous users would
+  queue behind `acquireTimeout` and receive the same `pool timeout` error the
+  move to Render existed to eliminate — an identical-looking failure with a
+  completely different cause.
+
+**The default must stay low while both platforms are deployed**, because they
+share one 75-connection cap. Likewise, if the Render service is ever scaled
+past one instance this number becomes per-instance again. See
+`docs/deployment/render.md`.
 
 The other four exist because of a specific outage, and the reasoning matters
 more than the numbers:

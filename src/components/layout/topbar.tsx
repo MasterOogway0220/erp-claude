@@ -81,7 +81,12 @@ export function TopBar() {
 
   useEffect(() => {
     fetchAlerts();
-    const interval = setInterval(fetchAlerts, 60000);
+    // Every tick runs five separate queries in /api/alerts plus a session
+    // lookup, per open tab, forever. At 60s that was the single largest
+    // source of idle database load in the app — and connection churn is what
+    // Hostinger's firewall reacts to. Alerts are a notification badge, not a
+    // live feed; five minutes is well inside how fast anyone acts on one.
+    const interval = setInterval(fetchAlerts, 5 * 60 * 1000);
     return () => clearInterval(interval);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

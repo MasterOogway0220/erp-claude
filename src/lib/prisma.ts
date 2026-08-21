@@ -10,6 +10,12 @@ const globalForPrisma = globalThis as unknown as {
 // must let go of a socket before the server does.
 export const SERVER_WAIT_TIMEOUT_SEC = 20;
 
+// `SHOW VARIABLES LIKE 'max_user_connections'` on the same instance. This is a
+// per-database-user cap on a shared server, so it is a hard ceiling we do not
+// control, and every instance of this app shares it. Exported so the pool
+// cannot quietly be tuned past it.
+export const SERVER_MAX_USER_CONNECTIONS = 75;
+
 // Exported so the pool tuning below can be asserted without opening a socket.
 export function poolConfig(databaseUrl: string) {
   const url = new URL(databaseUrl);
@@ -19,12 +25,27 @@ export function poolConfig(databaseUrl: string) {
     user: decodeURIComponent(url.username),
     password: decodeURIComponent(url.password),
     database: url.pathname.slice(1),
-    connectionLimit: 5,
+    // The right value depends on how many processes there are, so it is set
+    // per deployment rather than hardcoded:
+    //
+    //   Vercel  - unset, so 5. This is 5 *per lambda instance* and the real
+    //             ceiling is 5 x however many are warm, which nobody controls.
+    //             Raising it here is the fastest way to exhaust the 75.
+    //   Render  - DB_POOL_SIZE=10 (see render.yaml). There is exactly one
+    //             long-lived process, so this is the whole application's
+    //             budget for concurrent queries; at 5 a handful of
+    //             simultaneous users would queue behind acquireTimeout and hit
+    //             the same "pool timeout" the move to Render existed to fix.
+    //
+    // Both platforms share one 75-connection cap, so while both are deployed
+    // the default MUST stay low.
+    connectionLimit: Number(process.env.DB_POOL_SIZE) || 5,
     // Hostinger's MySQL sets wait_timeout/interactive_timeout to 20s, and the
     // driver keeps `minimumIdle` (= connectionLimit) sockets warm by default —
     // so every Vercel instance re-opened 5 connections every ~20s forever, even
     // while completely idle (measured: 20 connects in 70s of doing nothing).
-    // Holding one instead of five cuts that churn by 80%.
+    // Holding one instead of the whole pool cuts that churn by an order of
+    // magnitude, and matters just as much on a single long-lived process.
     //
     // MUST NOT BE 0. `@prisma/adapter-mariadb` bundles its own mariadb 3.4.5
     // (not the 3.5.1 at the top level), and 3.4.5 decides whether to open a

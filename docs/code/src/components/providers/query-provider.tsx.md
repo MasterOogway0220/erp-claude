@@ -27,6 +27,14 @@ override where they need to: the quotation edit query sets `staleTime: 0` and
 `gcTime: 0` deliberately, because a cached pre-edit snapshot would repopulate
 the form and silently revert the user's saved changes.
 
+`refetchOnMount` was `"always"`, which **overrode `staleTime` entirely** — every
+route navigation refetched every query from scratch, so the 60-second
+`staleTime` declared an intent the config then ignored. It is now `true`, which
+honours it: a screen revisited within the minute renders from cache instead of
+waiting on the network. That is both fewer database queries and a faster UI,
+which is why it changed — see `docs/deployment/render.md` for why idle query
+volume mattered enough to chase.
+
 ## Gotchas and constraints
 
 - **Defaults here affect every query.** Raising the global stale time would

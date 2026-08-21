@@ -25,7 +25,14 @@ Contains a document-type→route map for search results, duplicating one in
 - **Keep the two route maps in step.**
 - The company switch takes effect on the next request; already-rendered data is
   stale until refetched.
-- The alert indicator polls; it is not pushed.
+- **The alert indicator polls; it is not pushed, and the interval is a
+  database-load decision, not a UX one.** Each tick calls `/api/alerts`, which
+  runs five separate queries plus a session lookup — per open tab, forever,
+  whether or not anyone is looking. It was 60s, which made it the largest
+  source of idle load in the app and fed the connection churn that Hostinger's
+  firewall reacts to (see `docs/deployment/render.md`). It is now **5 minutes**.
+  Before shortening it again, remember the cost is multiplied by every open tab
+  and that the database allows 75 connections in total.
 
 ## Related
 

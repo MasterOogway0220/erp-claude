@@ -4,7 +4,8 @@ import { createRequire } from "node:module";
 // Importing the module builds the real PrismaClient, which needs a URL to
 // parse — hence the env var and the dynamic import.
 process.env.DATABASE_URL ||= "mysql://user:pass@localhost:3306/erp";
-const { poolConfig, SERVER_WAIT_TIMEOUT_SEC } = await import("./prisma");
+const { poolConfig, SERVER_WAIT_TIMEOUT_SEC, SERVER_MAX_USER_CONNECTIONS } =
+  await import("./prisma");
 
 const cfg = poolConfig("mysql://u%40ser:p%40ss@db.example.com:3307/erp");
 
@@ -29,6 +30,20 @@ describe("poolConfig", () => {
 
   it("leaves room to retry a connect inside one acquire window", () => {
     expect(cfg.connectTimeout * 2).toBeLessThanOrEqual(cfg.acquireTimeout);
+  });
+
+  // Since the move to a single long-lived process, this pool is the whole
+  // application's connection budget — so it has to be big enough to serve
+  // concurrent users, and still leave room under a cap shared with anything
+  // else using these credentials (migrations, a psql session, a second deploy
+  // mid-rollout). Anyone raising it past the server's own limit has moved the
+  // outage rather than fixed it.
+  it("keeps the pool inside the server's per-user connection cap", () => {
+    expect(cfg.connectionLimit).toBeGreaterThan(1);
+    expect(cfg.connectionLimit).toBeLessThanOrEqual(
+      SERVER_MAX_USER_CONNECTIONS / 3
+    );
+    expect(cfg.minimumIdle).toBeLessThanOrEqual(cfg.connectionLimit);
   });
 });
 
