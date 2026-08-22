@@ -4,7 +4,7 @@ Companion explainers for every code file, mirroring the source tree. See
 [CONVENTIONS.md](./CONVENTIONS.md) for structure and depth, and the repo root
 `CLAUDE.md` for the standing rule that keeps them true.
 
-## Coverage: 484 / 484 ✅
+## Coverage: 486 / 486 ✅
 
 Every `.ts`, `.tsx` and `.prisma` file under `src/`, `prisma/` and `scripts/`
 has a doc at the mirrored path. Test files are covered by the doc for what they
@@ -12,7 +12,7 @@ test.
 
 | Area | Files | Depth |
 |---|---:|---|
-| `src/lib` | 55 | Hand-written throughout |
+| `src/lib` | 57 | Hand-written throughout |
 | `prisma` + `scripts` | 10 | Hand-written |
 | `src/components` | 41 | Hand-written for shared/layout/wizard; grouped for `ui/` |
 | Root, hooks, auth, layouts | 12 | Hand-written |
@@ -170,6 +170,11 @@ authoritative, need maintaining, and teach nothing.
 - [`pdf/quotation-nonstandard-template.ts`](./src/lib/pdf/quotation-nonstandard-template.ts.md)
 - [`pdf/quotation-pdf.tsx`](./src/lib/pdf/quotation-pdf.tsx.md) — the parallel
   react-pdf implementation.
+- [`pdf/primitives.tsx`](./src/lib/pdf/primitives.tsx.md) — shared react-pdf
+  building blocks: Indian digit grouping, and the cell borders that stop a
+  react-pdf table doubling its rules.
+- [`pdf/issue-slip-pdf.tsx`](./src/lib/pdf/issue-slip-pdf.tsx.md) — the first
+  document migrated off Chromium. **Written and tested, route not switched yet.**
 - [`pdf/purchase-order-template.ts`](./src/lib/pdf/purchase-order-template.ts.md)
 - [`pdf/po-acceptance-template.ts`](./src/lib/pdf/po-acceptance-template.ts.md)
 - [`pdf/invoice-template.ts`](./src/lib/pdf/invoice-template.ts.md)
