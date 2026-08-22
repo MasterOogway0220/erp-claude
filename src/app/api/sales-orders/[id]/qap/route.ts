@@ -14,6 +14,7 @@ export async function GET(
     where: { id },
     select: {
       id: true,
+      orderInspectionType: true,
       qapInspectionRequired: true,
       qapInspectionLocation: true,
       qapTpiAgencyId: true,
@@ -39,6 +40,7 @@ export async function PUT(
     const updated = await prisma.salesOrder.update({ where: { id }, data });
     return NextResponse.json({
       id: updated.id,
+      orderInspectionType: updated.orderInspectionType,
       qapInspectionRequired: updated.qapInspectionRequired,
       qapInspectionLocation: updated.qapInspectionLocation,
       qapTpiAgencyId: updated.qapTpiAgencyId,
@@ -49,7 +51,11 @@ export async function PUT(
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
     console.error("QAP save error:", detail);
-    const status = detail.startsWith("Invalid qapInspectionLocation") ? 400 : 500;
+    const status =
+      detail.startsWith("Invalid qapInspectionLocation") ||
+      detail.startsWith("Invalid orderInspectionType")
+        ? 400
+        : 500;
     return NextResponse.json({ error: "Failed to save QAP", detail }, { status });
   }
 }

@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { deliveryScheduleToDate } from "@/lib/dates";
 import { PageLoading } from "@/components/shared/page-loading";
 
 interface Customer {
@@ -70,6 +71,18 @@ interface DispatchAddress {
   isDefault: boolean;
 }
 
+// A contact held on the customer master. The order-specific contact is picked
+// from here so the acceptance letter and every follow-up have an email and a
+// phone number to use, instead of just a name typed into a box.
+interface CustomerContact {
+  id: string;
+  contactName: string;
+  designation: string | null;
+  email: string | null;
+  phone: string | null;
+  department: string;
+}
+
 interface BalanceItem {
   id: string;
   sNo: number;
@@ -98,6 +111,7 @@ interface SelectedItem extends BalanceItem {
   itemDeliveryDate: string;
   negotiatedRate: number;
   rateRemark: string;
+  qtyRemark: string;
   poSlNo: string;
   poItemCode: string;
 }
@@ -172,22 +186,40 @@ function CreateClientPOPage() {
     clientPoDate: format(new Date(), "yyyy-MM-dd"),
     projectName: "",
     contactPerson: "",
+    contactEmail: "",
+    contactPhone: "",
     paymentTerms: "",
     deliveryTerms: "",
+    // The client states delivery as a period ("10 weeks"), not a date. The CDD
+    // below is derived from it; deliveryDate is kept in step with the CDD so
+    // the existing detail screen and the per-item CDD floor keep working.
+    deliverySchedule: "",
     deliveryDate: "",
     currency: "INR",
     remarks: "",
     isDomesticDelivery: false,
     shipmentAddress: "",
     dispatchAddressId: "",
+    // Who the order is invoiced to. Empty = the customer master address.
+    billingAddressId: "",
+    clientPoDocumentPath: "",
+    clientPoDocumentName: "",
     exchangeRate: null as number | null,
     committedDeliveryDate: "",
   });
+
+  const [contacts, setContacts] = useState<CustomerContact[]>([]);
+  // Once the user edits the CDD by hand, stop overwriting it from the schedule.
+  const [cddEdited, setCddEdited] = useState(false);
+  const [uploadingPoDoc, setUploadingPoDoc] = useState(false);
 
   const [isInternational, setIsInternational] = useState(false);
   const [dispatchAddresses, setDispatchAddresses] = useState<DispatchAddress[]>([]);
   const selectedDispatchAddress = dispatchAddresses.find(
     (a) => a.id === formData.dispatchAddressId
+  );
+  const selectedBillingAddress = dispatchAddresses.find(
+    (a) => a.id === formData.billingAddressId
   );
 
   const [charges, setCharges] = useState<AdditionalCharge[]>(
@@ -269,6 +301,41 @@ function CreateClientPOPage() {
     };
   }, [formData.customerId]);
 
+  // Contacts for the selected customer. Picking one fills the name, email and
+  // phone on the order; all three stay editable for a one-off contact.
+  useEffect(() => {
+    if (!formData.customerId) {
+      setContacts([]);
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/masters/customer-contacts?customerId=${formData.customerId}`)
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => {
+        if (!cancelled) setContacts(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {
+        if (!cancelled) setContacts([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [formData.customerId]);
+
+  // CDD = P.O. date + the delivery schedule, until the user overrides it.
+  useEffect(() => {
+    if (cddEdited) return;
+    const derived = deliveryScheduleToDate(
+      formData.deliverySchedule,
+      formData.clientPoDate
+    );
+    setFormData((prev) =>
+      prev.committedDeliveryDate === derived
+        ? prev
+        : { ...prev, committedDeliveryDate: derived }
+    );
+  }, [formData.deliverySchedule, formData.clientPoDate, cddEdited]);
+
   const fetchQuotationBalance = useCallback(
     async (quotationId: string) => {
       if (!quotationId) return;
@@ -287,6 +354,7 @@ function CreateClientPOPage() {
           itemDeliveryDate: "",
           negotiatedRate: item.unitRate,
           rateRemark: "",
+          qtyRemark: "",
           poSlNo: "",
           poItemCode: "",
         }));
@@ -326,6 +394,9 @@ function CreateClientPOPage() {
           contactPerson: prev.contactPerson || q.customer.contactPerson || "",
           paymentTerms: prev.paymentTerms || q.paymentTerms || "",
           deliveryTerms: prev.deliveryTerms || q.deliveryTerms || "",
+          // The quoted delivery period is the starting point for the schedule
+          // the client actually ordered against.
+          deliverySchedule: prev.deliverySchedule || q.deliveryPeriod || "",
           currency: derivedCurrency,
           exchangeRate: derivedIntl ? prev.exchangeRate : null,
         }));
@@ -382,6 +453,9 @@ function CreateClientPOPage() {
       isDomesticDelivery: false,
       shipmentAddress: "",
       dispatchAddressId: "",
+      billingAddressId: "",
+      contactEmail: "",
+      contactPhone: "",
     }));
     setDispatchAddresses([]);
     setBalanceItems([]);
@@ -555,6 +629,19 @@ function CreateClientPOPage() {
       return;
     }
 
+    // A part-order needs the same justification a negotiated rate does —
+    // otherwise the difference between the quoted qty and the ordered qty
+    // cannot be explained once the quotation balance has moved on.
+    const itemsMissingQtyRemark = selectedItems.filter(
+      (item) => item.qtyOrdered !== item.balanceQty && !item.qtyRemark.trim()
+    );
+    if (itemsMissingQtyRemark.length > 0) {
+      toast.error(
+        `Qty remark is required for item ${itemsMissingQtyRemark[0].sNo} — the ordered qty differs from the quoted balance`
+      );
+      return;
+    }
+
     for (const item of selectedItems) {
       if (item.qtyOrdered > item.balanceQty) {
         toast.error(
@@ -581,8 +668,17 @@ function CreateClientPOPage() {
         body: JSON.stringify({
           ...formData,
           clientPoDate: formData.clientPoDate || null,
-          deliveryDate: formData.deliveryDate || null,
+          deliverySchedule: formData.deliverySchedule || null,
+          // deliveryDate is the column the detail screen shows as the CDD and
+          // the floor for per-item CDDs; keep it equal to the committed date
+          // rather than carrying two dates that can disagree.
+          deliveryDate: formData.committedDeliveryDate || null,
           committedDeliveryDate: formData.committedDeliveryDate || null,
+          contactEmail: formData.contactEmail || null,
+          contactPhone: formData.contactPhone || null,
+          billingAddressId: formData.billingAddressId || null,
+          clientPoDocumentPath: formData.clientPoDocumentPath || null,
+          clientPoDocumentName: formData.clientPoDocumentName || null,
           isDomesticDelivery: formData.isDomesticDelivery,
           shipmentAddress: formData.shipmentAddress || null,
           dispatchAddressId: formData.dispatchAddressId || null,
@@ -605,6 +701,7 @@ function CreateClientPOPage() {
             qtyOrdered: item.qtyOrdered,
             unitRate: item.negotiatedRate,
             rateRemark: item.rateRemark || null,
+            qtyRemark: item.qtyRemark || null,
             amount: item.qtyOrdered * item.negotiatedRate,
             deliveryDate: item.itemDeliveryDate || null,
             remark: item.remark,
@@ -734,9 +831,45 @@ function CreateClientPOPage() {
               </div>
             </div>
 
+            {/* The contact who owns THIS order. Picking a saved contact fills
+                all three fields; they stay editable for a one-off. Without an
+                email and a phone number the acceptance letter and every
+                follow-up have no one to go to. */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>Client Contact Person</Label>
+                {contacts.length > 0 && (
+                  <Select
+                    value={
+                      contacts.find(
+                        (c) => c.contactName === formData.contactPerson
+                      )?.id || "MANUAL"
+                    }
+                    onValueChange={(value) => {
+                      const c = contacts.find((x) => x.id === value);
+                      setFormData((prev) => ({
+                        ...prev,
+                        contactPerson: c ? c.contactName : prev.contactPerson,
+                        contactEmail: c ? c.email || "" : prev.contactEmail,
+                        contactPhone: c ? c.phone || "" : prev.contactPhone,
+                      }));
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pick a saved contact" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="MANUAL">— Enter manually —</SelectItem>
+                      {contacts.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {[c.contactName, c.designation, c.department]
+                            .filter(Boolean)
+                            .join(" — ")}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
                 <Input
                   value={formData.contactPerson}
                   onChange={(e) =>
@@ -746,6 +879,31 @@ function CreateClientPOPage() {
                 />
               </div>
 
+              <div className="space-y-2">
+                <Label>Contact Email</Label>
+                <Input
+                  type="email"
+                  value={formData.contactEmail}
+                  onChange={(e) =>
+                    setFormData({ ...formData, contactEmail: e.target.value })
+                  }
+                  placeholder="name@client.com"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Contact Number</Label>
+                <Input
+                  value={formData.contactPhone}
+                  onChange={(e) =>
+                    setFormData({ ...formData, contactPhone: e.target.value })
+                  }
+                  placeholder="e.g. +91 98200 00000"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>Payment Terms</Label>
                 <Input
@@ -770,14 +928,17 @@ function CreateClientPOPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* The client writes delivery as a period, not a date — this is
+                  free text ("10 weeks", "8-10 weeks", "ready stock") and the
+                  CDD below is counted from the P.O. date. */}
               <div className="space-y-2">
                 <Label>Delivery Schedule</Label>
                 <Input
-                  type="date"
-                  value={formData.deliveryDate}
+                  value={formData.deliverySchedule}
                   onChange={(e) =>
-                    setFormData({ ...formData, deliveryDate: e.target.value })
+                    setFormData({ ...formData, deliverySchedule: e.target.value })
                   }
+                  placeholder="e.g. 10 weeks from P.O. date"
                 />
               </div>
 
@@ -786,10 +947,16 @@ function CreateClientPOPage() {
                 <Input
                   type="date"
                   value={formData.committedDeliveryDate}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, committedDeliveryDate: e.target.value }))
-                  }
+                  onChange={(e) => {
+                    setCddEdited(true);
+                    setFormData((prev) => ({ ...prev, committedDeliveryDate: e.target.value }));
+                  }}
                 />
+                {!cddEdited && formData.committedDeliveryDate && (
+                  <p className="text-xs text-muted-foreground">
+                    Calculated from the delivery schedule — edit to override.
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -822,6 +989,103 @@ function CreateClientPOPage() {
                 </div>
               </div>
             )}
+
+            {/* Bill-to party. A client with more than one GST registration
+                invoices from a different entity than the site it ships to, so
+                the billing party is chosen here and kept separate from the
+                dispatch address below. */}
+            <div className="space-y-2">
+              <Label>Billing Address</Label>
+              <Select
+                value={formData.billingAddressId || "NONE"}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    billingAddressId: value === "NONE" ? "" : value,
+                  }))
+                }
+                disabled={!formData.customerId || dispatchAddressesLoading}
+              >
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={
+                      !formData.customerId
+                        ? "Select a customer first"
+                        : "Customer master address"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="NONE">Customer master address</SelectItem>
+                  {dispatchAddresses.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>
+                      {[a.label, a.companyName, a.city, a.state].filter(Boolean).join(" — ") ||
+                        a.addressLine1 ||
+                        "Unnamed address"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedBillingAddress && (
+                <div className="rounded-md border bg-muted/40 px-3 py-2 text-xs text-muted-foreground space-y-0.5">
+                  {selectedBillingAddress.companyName && (
+                    <div className="font-medium text-foreground">
+                      {selectedBillingAddress.companyName}
+                    </div>
+                  )}
+                  <div>
+                    {[
+                      selectedBillingAddress.addressLine1,
+                      selectedBillingAddress.city,
+                      selectedBillingAddress.state,
+                      selectedBillingAddress.pincode,
+                    ]
+                      .filter(Boolean)
+                      .join(", ")}
+                  </div>
+                  {selectedBillingAddress.gstNo && <div>GST: {selectedBillingAddress.gstNo}</div>}
+                </div>
+              )}
+            </div>
+
+            {/* The client's own signed P.O. document. Registering the order
+                without keeping the source document means the only proof of what
+                was ordered lives in somebody's inbox. */}
+            <div className="space-y-2">
+              <Label>Signed Client P.O. Copy</Label>
+              <Input
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                disabled={uploadingPoDoc}
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  setUploadingPoDoc(true);
+                  try {
+                    const fd = new FormData();
+                    fd.append("file", file);
+                    const up = await fetch("/api/upload", { method: "POST", body: fd });
+                    if (!up.ok) throw new Error("Upload failed");
+                    const r = await up.json();
+                    setFormData((prev) => ({
+                      ...prev,
+                      clientPoDocumentPath: r.filePath ?? "",
+                      clientPoDocumentName: r.fileName ?? file.name,
+                    }));
+                    toast.success("P.O. copy attached");
+                  } catch {
+                    toast.error("Failed to upload the P.O. copy");
+                  } finally {
+                    setUploadingPoDoc(false);
+                  }
+                }}
+              />
+              {formData.clientPoDocumentPath && (
+                <p className="text-xs text-muted-foreground">
+                  Attached: {formData.clientPoDocumentName || "document"}
+                </p>
+              )}
+            </div>
 
             {/* Ship-to site. A client PO routinely delivers to a project site
                 rather than the billing address, and it is picked here so the
@@ -999,6 +1263,7 @@ function CreateClientPOPage() {
                         <TableHead>Size</TableHead>
                         <TableHead className="text-right w-[130px]">Qty Ordered</TableHead>
                         <TableHead>UOM</TableHead>
+                        <TableHead className="w-[180px]">Qty Remark</TableHead>
                         <TableHead className="text-right w-[120px]">Negotiated Rate</TableHead>
                         <TableHead className="text-right">Diff</TableHead>
                         <TableHead className="w-[180px]">Rate Remark</TableHead>
@@ -1107,6 +1372,23 @@ function CreateClientPOPage() {
                             </TableCell>
                             <TableCell>{item.uom || "Mtr"}</TableCell>
 
+                            {/* Qty Remark (mandatory when the ordered qty is
+                                not the full quoted balance) */}
+                            <TableCell>
+                              {item.selected && item.qtyOrdered !== item.balanceQty ? (
+                                <Input
+                                  className="w-[180px]"
+                                  value={item.qtyRemark}
+                                  onChange={(e) => {
+                                    const updated = [...balanceItems];
+                                    updated[index] = { ...updated[index], qtyRemark: e.target.value };
+                                    setBalanceItems(updated);
+                                  }}
+                                  placeholder="Reason (required)"
+                                />
+                              ) : null}
+                            </TableCell>
+
                             {/* Negotiated Rate (editable when selected) */}
                             <TableCell className="text-right">
                               {item.selected ? (
@@ -1175,7 +1457,7 @@ function CreateClientPOPage() {
                                     updated[index] = { ...updated[index], itemDeliveryDate: e.target.value };
                                     setBalanceItems(updated);
                                   }}
-                                  min={formData.deliveryDate || undefined}
+                                  min={formData.committedDeliveryDate || undefined}
                                 />
                               )}
                             </TableCell>
@@ -1183,7 +1465,7 @@ function CreateClientPOPage() {
                           {/* §2.9 — material-code customer history sub-row */}
                           {materialHistory[item.id] && (
                             <TableRow key={`hist-${item.id}`} className="border-0">
-                              <TableCell colSpan={13} className="bg-muted/30 text-xs text-muted-foreground py-1 px-3">
+                              <TableCell colSpan={14} className="bg-muted/30 text-xs text-muted-foreground py-1 px-3">
                                 {materialHistory[item.id].lastQuote
                                   ? `Last Quote: ₹${materialHistory[item.id].lastQuote!.rate.toLocaleString("en-IN", { minimumFractionDigits: 2 })} (${materialHistory[item.id].lastQuote!.quoteNo})`
                                   : "No past quote for this customer + material"}

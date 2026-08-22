@@ -17,6 +17,14 @@ Operates on `salesOrderItem`, `testingMaster`, `labLetter`.
 - **Not company-scoped.** Either catalogue data (deliberately global) or scoped via a parent record — verify which before changing.
 - Allocates a document number with `generateDocumentNumber()` (per company, per financial year).
 
+## The "other test"
+
+Besides the eleven standard lab tests, a processing item can carry
+`otherLabTests` — free text for a test the client named that is not on the list.
+Those names are appended to `testNames` and the letter generates on them alone
+if no standard test was ticked. They have no `TestingMaster` row, so they travel
+by name only and contribute no `testIds`.
+
 ## Gotchas
 
 - `params` is a `Promise` (Next.js 16) and must be awaited.

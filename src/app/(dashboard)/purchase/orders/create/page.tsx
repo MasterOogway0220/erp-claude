@@ -191,6 +191,32 @@ function CreatePOPage() {
     const pr = prs.find((p: any) => p.id === prId);
     if (pr?.items?.length > 0) {
       setItems(mapToPOItems(pr.items));
+
+      // Carry the order-processing requirements onto the vendor PO. They are
+      // the reason the material has to be a particular one; a PO placed
+      // without them buys something the client will reject at inspection.
+      // Pre-filled, not locked — the buyer can still edit before sending.
+      const requirements: string[] = Array.from(
+        new Set(
+          pr.items
+            .map((i: any) =>
+              i.technicalRequirements
+                ? `${i.product || "Item"} ${i.sizeLabel || ""}`.trim() +
+                  `:\n${i.technicalRequirements}`
+                : null
+            )
+            .filter(Boolean) as string[]
+        )
+      );
+      if (requirements.length > 0) {
+        setFormData((prev) => ({
+          ...prev,
+          specialRequirements: prev.specialRequirements
+            ? prev.specialRequirements
+            : requirements.join("\n\n"),
+        }));
+      }
+
       toast.success(`Loaded ${pr.items.length} items from PR ${pr.prNo}`);
     }
   };

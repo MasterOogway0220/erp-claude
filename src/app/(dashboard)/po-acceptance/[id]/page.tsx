@@ -53,6 +53,8 @@ interface POAcceptanceDetail {
     clientPoDate: string | null;
     projectName: string | null;
     contactPerson: string | null;
+    contactEmail: string | null;
+    contactPhone: string | null;
     paymentTerms: string | null;
     deliveryTerms: string | null;
     currency: string;
@@ -240,7 +242,12 @@ export default function POAcceptanceDetailPage({
   const openEmailDialog = () => {
     if (!acceptance) return;
     const cpo = acceptance.clientPurchaseOrder;
-    setEmailTo(cpo.customer.email || acceptance.followUpEmail || "");
+    // The contact registered on THIS order comes first: the customer master
+    // address is often a generic inbox, and the person who placed the order is
+    // the one who has to see the acceptance.
+    setEmailTo(
+      cpo.contactEmail || cpo.customer.email || acceptance.followUpEmail || ""
+    );
     setEmailCc("");
     setEmailSubject(`PO Acceptance — ${acceptance.acceptanceNo} | NPS Piping Solutions`);
     setEmailMessage("Please find below our Purchase Order Acceptance for your reference.");

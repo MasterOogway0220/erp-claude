@@ -19,6 +19,19 @@ Operates on `clientPurchaseOrder`, `quotation`, `quotationItem`, `customerMaster
 - Allocates a document number with `generateDocumentNumber()` (per company, per financial year).
 - Writes an audit row. Audit failures are swallowed and never block the operation.
 
+## Fields worth knowing about
+
+The POST body carries, besides the commercial fields:
+`deliverySchedule` (free text — the written delivery period),
+`contactEmail` / `contactPhone` (the contact for this order, as opposed to the
+customer master default), `billingAddressId` (bill-to party, separate from
+`dispatchAddressId`; null = the customer master address),
+`clientPoDocumentPath` / `clientPoDocumentName` (the client's signed P.O. copy),
+and per item `qtyRemark` (why the ordered qty differs from the quoted balance).
+
+Quantity and rate are still validated against the quotation balance here — the
+screen's checks are convenience, this is the boundary.
+
 ## Gotchas
 
 - Errors return `error.message`, so thrown text reaches the user's toast.

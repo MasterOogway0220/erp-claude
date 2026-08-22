@@ -77,7 +77,14 @@ export async function POST(
 
     // --- Parse required lab tests ----------------------------------------
     const testValues = parseLabTests(proc.requiredLabTests);
-    if (testValues.length === 0) {
+    // A test the client named themselves, outside the eleven standard ones.
+    // It has no TestingMaster row, so it travels by name only.
+    const otherTests = (proc.otherLabTests ?? "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    if (testValues.length === 0 && otherTests.length === 0) {
       return NextResponse.json(
         { error: "No lab tests specified for this item" },
         { status: 400 },
@@ -86,9 +93,12 @@ export async function POST(
 
     // Map constant values → human-readable labels
     const labelByValue = new Map(LAB_TESTS.map((t) => [t.value, t.label]));
-    const testNames = testValues.map(
-      (v) => labelByValue.get(v as keyof typeof labelByValue extends never ? never : any) ?? v,
-    );
+    const testNames = [
+      ...testValues.map(
+        (v) => labelByValue.get(v as keyof typeof labelByValue extends never ? never : any) ?? v,
+      ),
+      ...otherTests,
+    ];
 
     // Best-effort: resolve TestingMaster ids by test name
     const matched = await prisma.testingMaster.findMany({

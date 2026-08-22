@@ -17,6 +17,13 @@ Operates on `salesOrder`.
 - Gated by `checkAccess("salesOrder", "read")`, `checkAccess("salesOrder", "write")`. **Authentication only** — role enforcement is disabled app-wide.
 - **Not company-scoped.** Either catalogue data (deliberately global) or scoped via a parent record — verify which before changing.
 
+## Order-level inspection regime
+
+The GET/PUT body carries `orderInspectionType` (`TPI_CLIENT_QA` |
+`INHOUSE_QA`) alongside the QAP fields — the PRD's "Order under TPI Inspection"
+vs "Order under NPIPE Inspection". It is validated in `normalizeQapInput`; an
+unrecognised value returns 400, not 500.
+
 ## Gotchas
 
 - `params` is a `Promise` (Next.js 16) and must be awaited.

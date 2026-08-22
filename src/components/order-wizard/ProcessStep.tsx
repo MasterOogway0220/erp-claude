@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +33,7 @@ import {
   TPI_TYPES,
   PMI_TYPES,
   COATING_SIDES,
+  ORDER_INSPECTION_TYPES,
 } from "@/lib/constants/order-processing";
 import type { WizardOrder } from "./OrderWizard";
 
@@ -43,8 +44,15 @@ import type { WizardOrder } from "./OrderWizard";
 interface SalesOrderItem {
   id: string;
   sNo: number;
+  // The client's own line number and item code, registered on the client PO and
+  // carried onto the sales order. Pre-fills the PO References below.
+  poSlNo: string | null;
+  poItemCode: string | null;
   product: string;
   material: string;
+  // Inherited read-only from the quotation. Shown next to the compliance spec
+  // the processor adds, so the two are not confused.
+  additionalSpec: string | null;
   sizeLabel: string;
   quantity: number;
   uom: string | null;
@@ -75,6 +83,8 @@ interface ProcessingRecord {
   hydroTestRequired: boolean;
   hydroWitnessPercent: number | null;
   requiredLabTests: string[] | null;
+  otherLabTests: string | null;
+  additionalSpec: string | null;
   status: string;
 }
 
@@ -106,6 +116,8 @@ interface ProcessingData {
   hydroTestRequired: boolean;
   hydroWitnessPercent: number | null;
   requiredLabTests: string[];
+  otherLabTests: string;
+  additionalSpec: string;
   status: string;
 }
 
@@ -132,6 +144,8 @@ const defaultFormData: ProcessingData = {
   hydroTestRequired: false,
   hydroWitnessPercent: null,
   requiredLabTests: [],
+  otherLabTests: "",
+  additionalSpec: "",
   status: "PENDING",
 };
 
@@ -139,11 +153,21 @@ const defaultFormData: ProcessingData = {
 // Helper — build form data from a processing record (or defaults)
 // ---------------------------------------------------------------------------
 
-function recordToFormData(rec: ProcessingRecord | null): ProcessingData {
-  if (!rec) return { ...defaultFormData };
+function recordToFormData(
+  rec: ProcessingRecord | null,
+  soItem?: SalesOrderItem | null
+): ProcessingData {
+  // Nothing processed yet: start from what the client already told us on their
+  // P.O. rather than making the processor type it a second time.
+  if (!rec)
+    return {
+      ...defaultFormData,
+      poSlNo: soItem?.poSlNo ?? "",
+      poItemCode: soItem?.poItemCode ?? "",
+    };
   return {
-    poSlNo: rec.poSlNo ?? "",
-    poItemCode: rec.poItemCode ?? "",
+    poSlNo: rec.poSlNo ?? soItem?.poSlNo ?? "",
+    poItemCode: rec.poItemCode ?? soItem?.poItemCode ?? "",
     colourCodingRequired: rec.colourCodingRequired,
     colourCode: rec.colourCode ?? "",
     additionalPipeSpec: rec.additionalPipeSpec ?? "",
@@ -166,6 +190,8 @@ function recordToFormData(rec: ProcessingRecord | null): ProcessingData {
     requiredLabTests: Array.isArray(rec.requiredLabTests)
       ? rec.requiredLabTests
       : [],
+    otherLabTests: rec.otherLabTests ?? "",
+    additionalSpec: rec.additionalSpec ?? "",
     status: rec.status,
   };
 }
@@ -203,7 +229,11 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
   const [allotmentConfirmed, setAllotmentConfirmed] = useState(false);
   const [generatingLetter, setGeneratingLetter] = useState(false);
   const [agencies, setAgencies] = useState<{ id: string; name: string }[]>([]);
+  // Items this configuration will also be written to when saved. Empty = just
+  // the item on screen.
+  const [applyTargets, setApplyTargets] = useState<string[]>([]);
   const [qap, setQap] = useState({
+    orderInspectionType: "",
     qapInspectionRequired: false,
     qapInspectionLocation: "",
     qapTpiAgencyId: "",
@@ -212,6 +242,28 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
     qapRemarks: "",
   });
   const [savingQap, setSavingQap] = useState(false);
+
+  // The order-level inspection regime, kept in a ref as well as in state: the
+  // form for an item is built inside callbacks that captured an older `qap`,
+  // and a stale read there would silently drop the default.
+  const orderInspectionTypeRef = useRef("");
+
+  /**
+   * Build the form for an item: its saved configuration if it has one, else the
+   * defaults — which include the client's own PO line references and the
+   * order-level inspection regime chosen once for the whole order.
+   */
+  const formFor = useCallback((item: ProcessingItem | undefined | null) => {
+    const data = recordToFormData(
+      item?.processing ?? null,
+      item?.salesOrderItem ?? null
+    );
+    const regime = orderInspectionTypeRef.current;
+    if (!item?.processing && regime) {
+      return { ...data, tpiRequired: true, tpiType: regime };
+    }
+    return data;
+  }, []);
 
   // -----------------------------------------------------------------------
   // Completion signal helper
@@ -250,7 +302,9 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
       if (agRes.ok) setAgencies((await agRes.json()).agencies ?? []);
       if (qapRes.ok) {
         const q = await qapRes.json();
+        orderInspectionTypeRef.current = q.orderInspectionType ?? "";
         setQap({
+          orderInspectionType: q.orderInspectionType ?? "",
           qapInspectionRequired: !!q.qapInspectionRequired,
           qapInspectionLocation: q.qapInspectionLocation ?? "",
           qapTpiAgencyId: q.qapTpiAgencyId ?? "",
@@ -278,11 +332,11 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
     }
     fetchData().then((loadedItems) => {
       if (loadedItems && loadedItems.length > 0) {
-        setFormData(recordToFormData(loadedItems[0].processing));
+        setFormData(formFor(loadedItems[0]));
       }
       setLoading(false);
     });
-  }, [fetchData, onComplete, order.processingStatus]);
+  }, [fetchData, onComplete, order.processingStatus, formFor]);
 
   // -----------------------------------------------------------------------
   // Allotment analysis
@@ -364,7 +418,7 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
     (index: number) => {
       setCurrentIndex(index);
       const item = items[index];
-      setFormData(recordToFormData(item?.processing ?? null));
+      setFormData(formFor(item));
       if (item?.processing?.status === "PROCESSED") {
         fetchAllotmentAnalysis(item.salesOrderItem.id);
       } else {
@@ -389,6 +443,8 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           salesOrderItemId: items[currentIndex].salesOrderItem.id,
+          // Other lines this same configuration applies to.
+          salesOrderItemIds: applyTargets,
           ...formData,
         }),
       });
@@ -406,7 +462,16 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
         };
         return updated;
       });
-      toast.success("Draft saved");
+      if (applyTargets.length > 0) {
+        // Several rows changed — reload so their step indicators are honest.
+        await fetchData();
+        setApplyTargets([]);
+        toast.success(
+          `Draft saved and applied to ${applyTargets.length} other item(s)`
+        );
+      } else {
+        toast.success("Draft saved");
+      }
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Failed to save draft";
@@ -414,7 +479,7 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
     } finally {
       setSaving(false);
     }
-  }, [id, currentIndex, items, formData]);
+  }, [id, currentIndex, items, formData, applyTargets, fetchData]);
 
   // -----------------------------------------------------------------------
   // Mark as processed
@@ -430,6 +495,7 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           salesOrderItemId: items[currentIndex].salesOrderItem.id,
+          salesOrderItemIds: applyTargets,
           ...formData,
         }),
       });
@@ -455,7 +521,7 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
       // Reload data
       const reloaded = await fetchData();
       if (reloaded) {
-        setFormData(recordToFormData(reloaded[currentIndex]?.processing ?? null));
+        setFormData(formFor(reloaded[currentIndex]));
       }
       toast.success("Item marked as processed");
       fetchAllotmentAnalysis(items[currentIndex].salesOrderItem.id);
@@ -466,7 +532,7 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
     } finally {
       setSaving(false);
     }
-  }, [id, currentIndex, items, formData, fetchData]);
+  }, [id, currentIndex, items, formData, fetchData, applyTargets]);
 
   // -----------------------------------------------------------------------
   // Reopen
@@ -490,9 +556,7 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
       }
       const reloaded = await fetchData();
       if (reloaded) {
-        setFormData(
-          recordToFormData(reloaded[currentIndex]?.processing ?? null)
-        );
+        setFormData(formFor(reloaded[currentIndex]));
       }
       toast.success("Item reopened for editing");
     } catch (err: unknown) {
@@ -511,9 +575,10 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
   const goNext = useCallback(async () => {
     if (currentIndex >= items.length - 1) return;
     await saveDraft();
+    setApplyTargets([]);
     const next = currentIndex + 1;
     setCurrentIndex(next);
-    setFormData(recordToFormData(items[next]?.processing ?? null));
+    setFormData(formFor(items[next]));
     if (items[next]?.processing?.status === "PROCESSED") {
       fetchAllotmentAnalysis(items[next].salesOrderItem.id);
     } else {
@@ -526,9 +591,10 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
   const goPrev = useCallback(async () => {
     if (currentIndex <= 0) return;
     await saveDraft();
+    setApplyTargets([]);
     const prev = currentIndex - 1;
     setCurrentIndex(prev);
-    setFormData(recordToFormData(items[prev]?.processing ?? null));
+    setFormData(formFor(items[prev]));
     if (items[prev]?.processing?.status === "PROCESSED") {
       fetchAllotmentAnalysis(items[prev].salesOrderItem.id);
     } else {
@@ -542,8 +608,9 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
     async (index: number) => {
       if (index === currentIndex) return;
       await saveDraft();
+      setApplyTargets([]);
       setCurrentIndex(index);
-      setFormData(recordToFormData(items[index]?.processing ?? null));
+      setFormData(formFor(items[index]));
       if (items[index]?.processing?.status === "PROCESSED") {
         fetchAllotmentAnalysis(items[index].salesOrderItem.id);
       } else {
@@ -650,6 +717,36 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
       <Card className="mb-4">
         <CardHeader><CardTitle className="text-base">Quality / QAP (order-level — PRD §7)</CardTitle></CardHeader>
         <CardContent className="space-y-3">
+          {/* Whether the ORDER is inspected by a third party / the client's QA,
+              or by NPIPE's own QA. Chosen once here; every item processed after
+              it starts on that regime and can still be switched individually. */}
+          <div className="space-y-1.5">
+            <Label>Order Inspection Option</Label>
+            <Select
+              value={qap.orderInspectionType || "NONE"}
+              onValueChange={(v) => {
+                const next = v === "NONE" ? "" : v;
+                orderInspectionTypeRef.current = next;
+                setQap({ ...qap, orderInspectionType: next });
+              }}
+            >
+              <SelectTrigger className="max-w-md">
+                <SelectValue placeholder="Not decided at order level" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="NONE">Not decided at order level</SelectItem>
+                {ORDER_INSPECTION_TYPES.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Applies as the default to items processed after it is saved.
+            </p>
+          </div>
+
           <div className="flex items-center gap-2">
             <Checkbox
               id="qapInspectionRequired"
@@ -852,22 +949,47 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
             <h4 className="mb-3 text-sm font-semibold text-muted-foreground uppercase tracking-wide">
               Additional Spec
             </h4>
-            <div className="space-y-1.5">
-              <Label htmlFor="additionalPipeSpec">
-                Additional spec to be printed/stencilled on pipe
-              </Label>
-              <Input
-                id="additionalPipeSpec"
-                value={formData.additionalPipeSpec}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    additionalPipeSpec: e.target.value,
-                  })
-                }
-                disabled={isProcessed}
-                placeholder="e.g. NACE MR0175"
-              />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {/* Two different things: what the product must COMPLY with, and
+                  what gets MARKED on it. The compliance spec drives inspection
+                  and procurement; the stencil spec drives what is painted on
+                  the pipe. */}
+              <div className="space-y-1.5">
+                <Label htmlFor="additionalSpec">
+                  Additional spec the product must meet
+                </Label>
+                <Input
+                  id="additionalSpec"
+                  value={formData.additionalSpec}
+                  onChange={(e) =>
+                    setFormData({ ...formData, additionalSpec: e.target.value })
+                  }
+                  disabled={isProcessed}
+                  placeholder="e.g. ASTM A312 + client addendum"
+                />
+                {currentItem.salesOrderItem.additionalSpec && (
+                  <p className="text-xs text-muted-foreground">
+                    From the quotation: {currentItem.salesOrderItem.additionalSpec}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="additionalPipeSpec">
+                  Additional spec to be printed/stencilled on pipe
+                </Label>
+                <Input
+                  id="additionalPipeSpec"
+                  value={formData.additionalPipeSpec}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      additionalPipeSpec: e.target.value,
+                    })
+                  }
+                  disabled={isProcessed}
+                  placeholder="e.g. NACE MR0175"
+                />
+              </div>
             </div>
           </div>
 
@@ -1235,10 +1357,30 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
                         </div>
                       ))}
                     </div>
+                    {/* A client can ask for a test that is not one of the
+                        eleven standard ones. Without this it could not be
+                        requested at all, and so could never reach the lab
+                        letter. */}
+                    <div className="space-y-1 pt-1">
+                      <Label className="text-xs" htmlFor="otherLabTests">
+                        Other test (not on the list)
+                      </Label>
+                      <Input
+                        id="otherLabTests"
+                        value={formData.otherLabTests}
+                        onChange={(e) =>
+                          setFormData({ ...formData, otherLabTests: e.target.value })
+                        }
+                        disabled={isProcessed}
+                        placeholder="Name the test as the client wrote it"
+                        className="h-8 max-w-md text-sm"
+                      />
+                    </div>
                   </div>
 
                   {/* Generate Lab Letter */}
-                  {formData.requiredLabTests.length > 0 && (
+                  {(formData.requiredLabTests.length > 0 ||
+                    formData.otherLabTests.trim().length > 0) && (
                     <div className="pt-1">
                       <Button
                         type="button"
@@ -1402,6 +1544,85 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
             </CardContent>
           </Card>
         )}
+
+      {/* Apply to other items. A multi-line order usually shares one inspection
+          and testing regime; without this the same form is filled once per
+          line, which is slow and the commonest source of a mismatch. */}
+      {!isProcessed && items.length > 1 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm uppercase tracking-wide">
+              Apply this configuration to other items
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex flex-wrap gap-x-4 gap-y-2">
+              {items.map((item, idx) => {
+                if (idx === currentIndex) return null;
+                const locked = item.processing?.status === "PROCESSED";
+                return (
+                  <div key={item.salesOrderItem.id} className="flex items-center gap-2">
+                    <Checkbox
+                      id={`apply-${item.salesOrderItem.id}`}
+                      checked={applyTargets.includes(item.salesOrderItem.id)}
+                      disabled={locked}
+                      onCheckedChange={(checked) =>
+                        setApplyTargets((prev) =>
+                          checked
+                            ? [...prev, item.salesOrderItem.id]
+                            : prev.filter((x) => x !== item.salesOrderItem.id)
+                        )
+                      }
+                    />
+                    <Label
+                      htmlFor={`apply-${item.salesOrderItem.id}`}
+                      className={locked ? "text-muted-foreground" : ""}
+                    >
+                      #{item.salesOrderItem.sNo} {item.salesOrderItem.sizeLabel}
+                      {locked ? " (processed)" : ""}
+                    </Label>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setApplyTargets(
+                    items
+                      .filter(
+                        (item, idx) =>
+                          idx !== currentIndex &&
+                          item.processing?.status !== "PROCESSED"
+                      )
+                      .map((item) => item.salesOrderItem.id)
+                  )
+                }
+              >
+                Select all pending
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setApplyTargets([])}
+                disabled={applyTargets.length === 0}
+              >
+                Clear
+              </Button>
+              {applyTargets.length > 0 && (
+                <span className="text-xs text-muted-foreground">
+                  Saving will write this configuration to {applyTargets.length}{" "}
+                  other item(s). Their own PO S.No / Item Code are left alone.
+                </span>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Footer buttons (per-item navigation) */}
       <div className="flex items-center justify-between">

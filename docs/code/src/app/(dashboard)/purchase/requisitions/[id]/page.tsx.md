@@ -13,6 +13,15 @@ Renders the `/purchase/requisitions/[id]` screen. 420 lines.
 - `"use client"` — runs in the browser.
 - Calls: `/api/purchase/requisitions/${id}`.
 
+## Notes
+
+The line-items table has a **Technical Requirements** column: the
+order-processing configuration (TPI, lab tests, NDT, PMI, coating, galvanising,
+screwed ends, colour coding, stencil spec) carried across from the sales order
+when the PR was raised. It is what the buyer has to buy against; before it
+existed an enquiry could go out for material that could not meet the client's
+inspection requirements, and it was only caught at GRN.
+
 ## Gotchas
 
 - Any `Select` needs a non-empty `SelectItem` value; the codebase uses a `"NONE"` sentinel mapped to `""`.

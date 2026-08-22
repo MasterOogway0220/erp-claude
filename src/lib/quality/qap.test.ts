@@ -67,3 +67,20 @@ describe("normalizeQapInput", () => {
 it("exposes the two valid locations", () => {
   expect(VALID_QAP_LOCATIONS).toEqual(["WAREHOUSE", "LAB"]);
 });
+
+describe("normalizeQapInput — order-level inspection regime", () => {
+  it("accepts the two regimes and leaves it null when not chosen", () => {
+    expect(
+      normalizeQapInput({ orderInspectionType: "TPI_CLIENT_QA" }).orderInspectionType
+    ).toBe("TPI_CLIENT_QA");
+    expect(
+      normalizeQapInput({ orderInspectionType: "INHOUSE_QA" }).orderInspectionType
+    ).toBe("INHOUSE_QA");
+    expect(normalizeQapInput({}).orderInspectionType).toBeNull();
+    expect(normalizeQapInput({ orderInspectionType: "" }).orderInspectionType).toBeNull();
+  });
+
+  it("rejects anything else, so a typo cannot silently become the regime", () => {
+    expect(() => normalizeQapInput({ orderInspectionType: "NPIPE" })).toThrow();
+  });
+});

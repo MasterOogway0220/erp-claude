@@ -19,6 +19,18 @@ Operates on `clientPurchaseOrder`, `salesOrder`.
 - Writes inside `$transaction`. Item updates follow the delete-and-recreate pattern, so **a field the caller omits is lost**.
 - Writes an audit row. Audit failures are swallowed and never block the operation.
 
+## What is carried across
+
+Beyond the commercial fields, the sales order inherits three things that used to
+be lost at this boundary:
+
+- `poSlNo` / `poItemCode` per line — the client's own line number and item
+  code, so Order Processing does not ask for them a second time.
+- `customerPoDocument` — the signed client P.O. copy attached at registration.
+  The column existed but nothing ever wrote it.
+- `dispatchAddressId` and `deliverySchedule` — the ship-to site and the written
+  delivery period.
+
 ## Gotchas
 
 - Confirm the company-scoping story before reusing this as a template.

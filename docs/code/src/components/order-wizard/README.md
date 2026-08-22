@@ -10,7 +10,7 @@ wizard walks that in three steps.
 
 ```
 OrderWizard.tsx      the shell — step state, navigation, submit
-  ├─ ProcessStep     per-item quality requirements (largest, 1,456 lines)
+  ├─ ProcessStep     per-item quality requirements (largest, 1,677 lines)
   ├─ AllotmentStep   assign physical stock to order lines (1,072 lines)
   └─ ReviewStep      confirm and commit (840 lines)
 ```

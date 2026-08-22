@@ -27,6 +27,7 @@ export async function GET(
           },
         },
         createdBy: { select: { name: true } },
+        billingAddress: true,
         poAcceptance: { select: { id: true, acceptanceNo: true, status: true } },
         items: {
           include: {

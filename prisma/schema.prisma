@@ -755,7 +755,8 @@ model CustomerDispatchAddress {
   dispatchNotes DispatchNote[]
   invoices      Invoice[]
   salesOrders   SalesOrder[]
-  clientPOs     ClientPurchaseOrder[]
+  clientPOs       ClientPurchaseOrder[] @relation("CPODispatchAddress")
+  billedClientPOs ClientPurchaseOrder[] @relation("CPOBillingAddress")
   purchaseRequisitions PurchaseRequisition[]
 
   @@index([customerId])
@@ -937,6 +938,11 @@ model SalesOrder {
   processingStatus          String                   @default("UNPROCESSED")
   allotmentStatus           String                   @default("PENDING")
   sourceTenderId            String?
+  // Order-level inspection regime: TPI_CLIENT_QA = the order is inspected by a
+  // third-party agency or by the client's own QA; INHOUSE_QA = inspected by
+  // NPIPE's own QA. Chosen once for the order, and used as the default for
+  // every item processed under it.
+  orderInspectionType       String?
   qapInspectionRequired     Boolean                  @default(false)
   qapInspectionLocation     String?
   qapTpiAgencyId            String?
@@ -993,6 +999,10 @@ model SalesOrderItem {
   itemStatus               String                    @default("OPEN")
   fittingId                String?
   flangeId                 String?
+  // Copied from ClientPOItem at SO creation so Order Processing does not ask
+  // for the client's own line number and item code a second time.
+  poSlNo                   String?
+  poItemCode               String?
   allotmentSource          String?
   allotmentStatus          String                    @default("PENDING")
   procurementAllocQty      Decimal?                  @db.Decimal(10, 3)
@@ -1036,6 +1046,12 @@ model ClientPurchaseOrder {
   clientPoDate              DateTime?
   projectName               String?
   contactPerson             String?
+  // Order-specific contact taken at registration. The customer master holds a
+  // contact list (CustomerContact), but the person who owns THIS order is not
+  // necessarily the master default, and the acceptance letter has to be
+  // addressed to them.
+  contactEmail              String?
+  contactPhone              String?
   paymentTerms              String?
   deliveryTerms             String?
   deliverySchedule          String?
@@ -1079,7 +1095,17 @@ model ClientPurchaseOrder {
   // delivers to a site rather than the billing address, and the sales order,
   // dispatch note and invoice all inherit it from here.
   dispatchAddressId         String?
-  dispatchAddress           CustomerDispatchAddress? @relation(fields: [dispatchAddressId], references: [id])
+  dispatchAddress           CustomerDispatchAddress? @relation("CPODispatchAddress", fields: [dispatchAddressId], references: [id])
+  // Who the order is invoiced to. A client with more than one GST registration
+  // bills from a different entity than the site it ships to, so the billing
+  // party is picked from the same saved-address collection and kept separate
+  // from dispatchAddressId. NULL = bill to the customer master address.
+  billingAddressId          String?
+  billingAddress            CustomerDispatchAddress? @relation("CPOBillingAddress", fields: [billingAddressId], references: [id])
+  // The client's own signed P.O. document, scanned in at registration. Stored
+  // via /api/upload (StoredFile) and carried onto SalesOrder.customerPoDocument.
+  clientPoDocumentPath      String?
+  clientPoDocumentName      String?
   items                     ClientPOItem[]
   company                   CompanyMaster?    @relation(fields: [companyId], references: [id])
   createdBy                 User?             @relation("CPOCreatedBy", fields: [createdById], references: [id])
@@ -1095,6 +1121,7 @@ model ClientPurchaseOrder {
   @@index([quotationId])
   @@index([createdById], map: "ClientPurchaseOrder_createdById_fkey")
   @@index([dispatchAddressId])
+  @@index([billingAddressId])
 }
 
 model ClientPOItem {
@@ -1119,6 +1146,10 @@ model ClientPOItem {
   poSlNo                String?
   poItemCode            String?
   rateRemark            String?             @db.Text
+  // Why the ordered qty differs from the quoted qty. Mandatory on the
+  // registration screen whenever qtyOrdered != the quotation balance, so a
+  // part-order can be explained after the fact the same way a rate change can.
+  qtyRemark             String?             @db.Text
   clientPurchaseOrder   ClientPurchaseOrder @relation(fields: [clientPurchaseOrderId], references: [id], onDelete: Cascade)
   quotationItem         QuotationItem       @relation(fields: [quotationItemId], references: [id])
   rateRevisions         RateRevision[]
@@ -1182,6 +1213,11 @@ model PRItem {
   quantity            Decimal             @db.Decimal(10, 3)
   uom                 String?
   remarks             String?
+  // The order-processing requirement set (TPI, lab tests, NDT, PMI, coating,
+  // galvanising, screwed ends, colour coding, stencil spec) rendered as text at
+  // PR creation, so the purchase in-charge buys material that already complies.
+  // Flows onward to the RFQ (which renders PR items) and the vendor PO.
+  technicalRequirements String?           @db.Text
   purchaseRequisition PurchaseRequisition @relation(fields: [prId], references: [id], onDelete: Cascade)
 
   @@index([prId])
@@ -2624,6 +2660,14 @@ model OrderProcessingItem {
   hydroTestRequired    Boolean        @default(false)
   hydroWitnessPercent  Int?
   requiredLabTests     String?        @db.LongText
+  // A test the client requires that is not one of the 11 standard lab tests.
+  // Free text, carried onto the lab letter alongside the fixed list.
+  otherLabTests        String?
+  // A specification the product must COMPLY with (as opposed to
+  // additionalPipeSpec, which is what gets stencilled on the pipe). Added at
+  // processing time; SalesOrderItem.additionalSpec is inherited read-only from
+  // the quotation and cannot be amended there.
+  additionalSpec       String?
   status               String         @default("PENDING")
   processedAt          DateTime?
   processedById        String?

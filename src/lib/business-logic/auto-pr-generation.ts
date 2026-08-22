@@ -7,6 +7,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { logCreate, AuditModule, getIpAddress, getUserAgent } from '@/lib/audit/audit-logger';
+import { formatTechnicalRequirements } from '@/lib/business-logic/technical-requirements';
 
 export interface ShortfallItem {
   productSpecId: string;
@@ -20,6 +21,13 @@ export interface ShortfallItem {
   od?: number;
   wt?: number;
   additionalSpec?: string;
+  /**
+   * The order-processing requirement set for this line, rendered as text.
+   * Without it the PR tells the purchase in-charge only what the material is,
+   * not what it has to pass — so material that cannot meet the client's
+   * inspection, testing or coating requirements can be bought in good faith.
+   */
+  technicalRequirements?: string | null;
 }
 
 export interface ShortfallAnalysis {
@@ -41,7 +49,7 @@ export async function analyzeSalesOrderShortfall(
     where: { id: salesOrderId },
     include: {
       customer: { select: { name: true } },
-      items: true,
+      items: { include: { orderProcessing: true } },
     },
   });
 
@@ -104,6 +112,7 @@ export async function analyzeSalesOrderShortfall(
         od: Number(item.od) || undefined,
         wt: Number(item.wt) || undefined,
         additionalSpec: item.additionalSpec || undefined,
+        technicalRequirements: formatTechnicalRequirements(item.orderProcessing),
       });
     }
   }
@@ -187,6 +196,7 @@ export async function autoGeneratePRFromShortfall(
             quantity: item.shortfallQty,
             uom: 'MTR',
             remarks: `For SO ${analysis.salesOrderNo}`,
+            technicalRequirements: item.technicalRequirements ?? null,
           })),
         },
       },

@@ -374,13 +374,16 @@ export default function RFQDetailPage() {
                   <TableHead>Specification</TableHead>
                   <TableHead className="text-right">Quantity</TableHead>
                   <TableHead>Unit</TableHead>
+                  {/* Carried from Order Processing via the PR. The vendor is
+                      being asked to quote against these, not just the size. */}
+                  <TableHead className="min-w-[220px]">Technical Requirements</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {prItems.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={5}
+                      colSpan={6}
                       className="text-center text-muted-foreground py-6"
                     >
                       No items found
@@ -402,6 +405,11 @@ export default function RFQDetailPage() {
                         {item.quantity}
                       </TableCell>
                       <TableCell>{item.unit}</TableCell>
+                      <TableCell className="text-xs whitespace-pre-line">
+                        {item.technicalRequirements || (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))
                 )}

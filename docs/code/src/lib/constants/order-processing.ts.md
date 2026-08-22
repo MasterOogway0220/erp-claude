@@ -20,7 +20,8 @@ name propagates onto a certificate sent to a client.
 |---|---|
 | `LAB_TESTS` | 11 destructive/metallurgical tests. |
 | `NDT_TESTS` | DP, MP, UT, Radiography. |
-| `TPI_TYPES` | Third-party/client QA vs in-house QA. |
+| `TPI_TYPES` | Third-party/client QA vs in-house QA — the **per-item** choice. |
+| `ORDER_INSPECTION_TYPES` | The same two values as the **order-level** choice ("Option 1 — under TPI / Client QA", "Option 2 — under NPIPE in-house QA"). Stored on `SalesOrder.orderInspectionType` and used as the default for every item under it. |
 | `PMI_TYPES` | Internal, under witness, both. |
 | `COATING_SIDES` | Inside, outside, both. |
 | `PROCESSING_STATUS` | `UNPROCESSED` → `PROCESSING` → `PROCESSED`. |

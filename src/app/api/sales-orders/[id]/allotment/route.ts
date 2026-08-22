@@ -4,6 +4,10 @@ import { checkAccess } from "@/lib/rbac";
 import { generateDocumentNumber } from "@/lib/document-numbering";
 import { createAuditLog } from "@/lib/audit";
 import { deriveWarehouseStatuses } from "@/lib/quality/qap";
+import {
+  formatTechnicalRequirements,
+  TECHNICAL_REQUIREMENT_SELECT,
+} from "@/lib/business-logic/technical-requirements";
 
 export async function POST(
   request: NextRequest,
@@ -33,6 +37,10 @@ export async function POST(
       return NextResponse.json({ error: "Sales Order not found" }, { status: 404 });
     }
 
+    // The processing configuration is needed twice here: to derive the
+    // warehouse inspection/testing statuses, and — since the purchase in-charge
+    // was previously told nothing beyond product/material/size — to stamp the
+    // technical requirements onto every PR line raised for procurement.
     const qapMeta = await prisma.salesOrder.findUnique({
       where: { id },
       select: {
@@ -40,15 +48,7 @@ export async function POST(
         items: {
           select: {
             id: true,
-            orderProcessing: {
-              select: {
-                labTestingRequired: true,
-                pmiRequired: true,
-                ndtRequired: true,
-                vdiRequired: true,
-                hydroTestRequired: true,
-              },
-            },
+            orderProcessing: { select: TECHNICAL_REQUIREMENT_SELECT },
           },
         },
       },
@@ -114,6 +114,8 @@ export async function POST(
       }
 
       if (procQty > 0) {
+        const processing =
+          qapMeta?.items.find((i) => i.id === soItem.id)?.orderProcessing ?? null;
         procurementItems.push({
           sNo: soItem.sNo,
           product: soItem.product,
@@ -123,6 +125,7 @@ export async function POST(
           quantity: procQty,
           uom: "MTR",
           remarks: `For SO ${salesOrder.soNo}`,
+          technicalRequirements: formatTechnicalRequirements(processing),
         });
       }
     }
@@ -206,6 +209,7 @@ export async function POST(
               quantity: item.quantity,
               uom: item.uom,
               remarks: item.remarks,
+              technicalRequirements: item.technicalRequirements,
             })),
           },
         },

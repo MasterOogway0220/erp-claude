@@ -84,6 +84,18 @@ can act on.
 - `qapDocumentPath` now holds an `/api/files/<id>` path; previously it pointed
   at a filesystem path that never existed in production.
 
+## Order-level inspection regime
+
+`VALID_ORDER_INSPECTION_TYPES` = `TPI_CLIENT_QA | INHOUSE_QA`, validated by
+`normalizeQapInput` and stored on `SalesOrder.orderInspectionType`. It answers
+the PRD's "Option 1# Order under TPI Inspection / Option 2# Order under NPIPE
+Inspection", which previously existed only as a per-item dropdown — there was no
+way to say the *order* was inspected one way. It is only a default: an item can
+still be switched individually in the order wizard.
+
+An unrecognised value throws, and the route turns that into a 400 rather than a
+500, so a typo cannot silently become the inspection regime for an order.
+
 ## Related
 
 - `src/lib/quality/qap.test.ts`

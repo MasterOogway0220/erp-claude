@@ -17,6 +17,12 @@ Operates on `clientPurchaseOrder`, `clientPOItem`, `rateRevision`.
 - Gated by `checkAccess("clientPO", "read")`, `checkAccess("clientPO", "write")`. **Authentication only** — role enforcement is disabled app-wide.
 - **Not company-scoped.** Either catalogue data (deliberately global) or scoped via a parent record — verify which before changing.
 
+## Notes
+
+GET includes `billingAddress` (the bill-to party chosen at registration, which
+may differ from the ship-to address) and spreads each item, so `qtyRemark`
+reaches the detail screen along with the rate-revision history.
+
 ## Gotchas
 
 - `params` is a `Promise` (Next.js 16) and must be awaited.

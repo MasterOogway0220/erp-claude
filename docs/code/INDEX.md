@@ -4,7 +4,7 @@ Companion explainers for every code file, mirroring the source tree. See
 [CONVENTIONS.md](./CONVENTIONS.md) for structure and depth, and the repo root
 `CLAUDE.md` for the standing rule that keeps them true.
 
-## Coverage: 481 / 481 ✅
+## Coverage: 482 / 482 ✅
 
 Every `.ts`, `.tsx` and `.prisma` file under `src/`, `prisma/` and `scripts/`
 has a doc at the mirrored path. Test files are covered by the doc for what they
@@ -12,7 +12,7 @@ test.
 
 | Area | Files | Depth |
 |---|---:|---|
-| `src/lib` | 53 | Hand-written throughout |
+| `src/lib` | 54 | Hand-written throughout |
 | `prisma` + `scripts` | 10 | Hand-written |
 | `src/components` | 41 | Hand-written for shared/layout/wizard; grouped for `ui/` |
 | Root, hooks, auth, layouts | 12 | Hand-written |
@@ -145,6 +145,9 @@ authoritative, need maintaining, and teach nothing.
 - [`purchase/rfq-reminders.ts`](./src/lib/purchase/rfq-reminders.ts.md)
 - [`po-acceptance/advance-cpo.ts`](./src/lib/po-acceptance/advance-cpo.ts.md)
 - [`business-logic/auto-pr-generation.ts`](./src/lib/business-logic/auto-pr-generation.ts.md)
+- [`business-logic/technical-requirements.ts`](./src/lib/business-logic/technical-requirements.ts.md)
+  — carries the client's inspection/testing requirements from Order Processing
+  to the PR, the RFQ and the vendor PO.
 - [`business-logic/po-variance-detection.ts`](./src/lib/business-logic/po-variance-detection.ts.md)
 - [`business-logic/e-invoice-generator.ts`](./src/lib/business-logic/e-invoice-generator.ts.md)
 - [`validators/business-rules.ts`](./src/lib/validators/business-rules.ts.md)

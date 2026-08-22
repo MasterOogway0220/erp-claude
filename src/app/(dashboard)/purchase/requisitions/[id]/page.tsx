@@ -257,6 +257,11 @@ export default function PRDetailPage({
                   <TableHead>Size</TableHead>
                   <TableHead className="text-right">Quantity</TableHead>
                   <TableHead>UOM</TableHead>
+                  {/* What the material has to pass, carried across from Order
+                      Processing. Without it an enquiry can go out for material
+                      that cannot meet the client's inspection or coating
+                      requirements, and it is only caught at GRN. */}
+                  <TableHead className="min-w-[220px]">Technical Requirements</TableHead>
                   <TableHead>Remarks</TableHead>
                 </TableRow>
               </TableHeader>
@@ -275,6 +280,11 @@ export default function PRDetailPage({
                       {Number(item.quantity).toFixed(3)}
                     </TableCell>
                     <TableCell>{item.uom || "MTR"}</TableCell>
+                    <TableCell className="text-xs whitespace-pre-line">
+                      {item.technicalRequirements || (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {item.remarks || "—"}
                     </TableCell>

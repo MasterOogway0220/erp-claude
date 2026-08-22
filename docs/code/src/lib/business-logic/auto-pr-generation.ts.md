@@ -18,6 +18,13 @@ Takes a set of `ShortfallItem`s — product, material, size, required quantity,
 available quantity, shortfall — and creates a `PurchaseRequisition` of type
 `AGAINST_SO` with a line per shortfall, writing an audit entry.
 
+Each PR line also carries `technicalRequirements` — the order-processing
+configuration for that sales-order line, rendered as text by
+`src/lib/business-logic/technical-requirements.ts`. Without it a PR told the
+purchase in-charge only what the material *is*, never what it has to *pass*, so
+an enquiry could go out for material that cannot meet the client's inspection,
+testing, coating or marking requirements; the non-compliance surfaced at GRN.
+
 Also exports configuration around when a shortfall is worth acting on
 (`minShortfallQty`).
 
@@ -63,5 +70,7 @@ manually. Do not assume min-level reordering works.
 - `src/app/api/sales-orders/[id]/generate-pr/route.ts` — the caller.
 - `src/app/api/sales-orders/[id]/allotment/route.ts` — reservation, where the
   shortfall is computed.
+- `src/lib/business-logic/technical-requirements.ts` — what goes into
+  `PRItem.technicalRequirements`.
 - `prisma/schema.prisma` → `PurchaseRequisition`, `RequisitionType`.
 - `src/lib/purchase/rfq-reminders.ts` — the next step in the chain.

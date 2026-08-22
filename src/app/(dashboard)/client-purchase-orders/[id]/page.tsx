@@ -29,6 +29,8 @@ interface ClientPODetail {
   clientPoDate: string | null;
   projectName: string | null;
   contactPerson: string | null;
+  contactEmail: string | null;
+  contactPhone: string | null;
   paymentTerms: string | null;
   deliveryTerms: string | null;
   deliverySchedule: string | null;
@@ -61,6 +63,17 @@ interface ClientPODetail {
   roundOff: number | null;
   grandTotal: number | null;
   remarks: string | null;
+  clientPoDocumentPath: string | null;
+  clientPoDocumentName: string | null;
+  billingAddress: {
+    label: string | null;
+    companyName: string | null;
+    addressLine1: string | null;
+    city: string | null;
+    state: string | null;
+    pincode: string | null;
+    gstNo: string | null;
+  } | null;
   status: string;
   createdAt: string;
   poAcceptance: { id: string; acceptanceNo: string; status: string } | null;
@@ -91,6 +104,7 @@ interface ClientPODetail {
     amount: number;
     deliveryDate: string | null;
     remark: string | null;
+    qtyRemark: string | null;
     rateRevisions: { id: string; oldRate: number; newRate: number; remark: string; overallRemark: string | null; changedBy: string; changedAt: string; }[];
     totalOrderedAllCPOs: number;
     balanceQty: number;
@@ -262,6 +276,8 @@ export default function ClientPODetailPage({
             <DetailRow label="Client Name" value={clientPO.customer.name} />
             <DetailRow label="City" value={clientPO.customer.city} />
             <DetailRow label="Contact Person" value={clientPO.contactPerson} />
+            <DetailRow label="Contact Email" value={clientPO.contactEmail} />
+            <DetailRow label="Contact Number" value={clientPO.contactPhone} />
             <DetailRow
               label="Client P.O. Number"
               value={clientPO.clientPoNumber}
@@ -276,6 +292,38 @@ export default function ClientPODetailPage({
               }
             />
             <DetailRow label="Project Name" value={clientPO.projectName} />
+            {/* Bill-to party — only shown when it differs from the customer
+                master address, which is the default. */}
+            {clientPO.billingAddress && (
+              <DetailRow
+                label="Billing Address"
+                value={[
+                  clientPO.billingAddress.companyName || clientPO.billingAddress.label,
+                  clientPO.billingAddress.city,
+                  clientPO.billingAddress.state,
+                  clientPO.billingAddress.gstNo
+                    ? `GST: ${clientPO.billingAddress.gstNo}`
+                    : null,
+                ]
+                  .filter(Boolean)
+                  .join(", ")}
+              />
+            )}
+            {clientPO.clientPoDocumentPath && (
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">
+                  Signed P.O. Copy
+                </span>
+                <a
+                  href={clientPO.clientPoDocumentPath}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-sm text-primary underline"
+                >
+                  {clientPO.clientPoDocumentName || "Open"}
+                </a>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -375,6 +423,14 @@ export default function ClientPODetailPage({
                     <TableCell className="text-right">{item.qtyQuoted}</TableCell>
                     <TableCell className="text-right font-semibold">
                       {item.qtyOrdered}
+                      {/* Why this line was part-ordered. Captured at
+                          registration; without it the gap between the quoted
+                          qty and the ordered qty has no explanation. */}
+                      {item.qtyRemark && (
+                        <div className="text-[10px] font-normal text-muted-foreground mt-0.5 whitespace-normal">
+                          {item.qtyRemark}
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       {item.balanceQty > 0 ? (

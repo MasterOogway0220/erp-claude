@@ -1,8 +1,16 @@
 export const VALID_QAP_LOCATIONS = ["WAREHOUSE", "LAB"] as const;
+/**
+ * The order-level inspection regime: TPI_CLIENT_QA = inspected by a third-party
+ * agency or the client's own QA; INHOUSE_QA = inspected by NPIPE's own QA.
+ * Same two values as the per-item TPI type, because the order-level choice is
+ * only the default for the items under it.
+ */
+export const VALID_ORDER_INSPECTION_TYPES = ["TPI_CLIENT_QA", "INHOUSE_QA"] as const;
 export type QapLocation = (typeof VALID_QAP_LOCATIONS)[number];
 export type MprCheckStatus = "PENDING" | "IN_PROGRESS" | "COMPLETED" | "NA";
 
 export interface QapHeader {
+  orderInspectionType?: string | null;
   qapInspectionRequired: boolean;
   qapInspectionLocation: string | null;
   qapTpiAgencyId: string | null;
@@ -61,6 +69,7 @@ const blankToNull = (v: unknown): string | null => {
 
 /** Validate + normalize the QAP PUT body. Throws on invalid location. */
 export function normalizeQapInput(body: Record<string, unknown>): {
+  orderInspectionType: string | null;
   qapInspectionRequired: boolean;
   qapInspectionLocation: string | null;
   qapTpiAgencyId: string | null;
@@ -72,8 +81,18 @@ export function normalizeQapInput(body: Record<string, unknown>): {
   if (location !== null && !VALID_QAP_LOCATIONS.includes(location as QapLocation)) {
     throw new Error(`Invalid qapInspectionLocation: ${location}`);
   }
+  const inspectionType = blankToNull(body.orderInspectionType);
+  if (
+    inspectionType !== null &&
+    !VALID_ORDER_INSPECTION_TYPES.includes(
+      inspectionType as (typeof VALID_ORDER_INSPECTION_TYPES)[number]
+    )
+  ) {
+    throw new Error(`Invalid orderInspectionType: ${inspectionType}`);
+  }
   const rawDate = blankToNull(body.qapProposedInspectionDate);
   return {
+    orderInspectionType: inspectionType,
     qapInspectionRequired: !!body.qapInspectionRequired,
     qapInspectionLocation: location,
     qapTpiAgencyId: blankToNull(body.qapTpiAgencyId),

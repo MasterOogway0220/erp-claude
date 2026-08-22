@@ -13,6 +13,13 @@ Renders the `/purchase/rfq/[id]` screen. 755 lines.
 - `"use client"` — runs in the browser.
 - Calls: `/api/purchase/comparative-statement`, `/api/purchase/rfq/${id}`, `/api/purchase/rfq/${id}/quotations`.
 
+## Notes
+
+The PR Items table shows each line's **Technical Requirements**, taken straight
+from `PRItem` — an RFQ has no items of its own, it renders the requisition's.
+The vendor is being asked to quote against those requirements, not just the
+size.
+
 ## Gotchas
 
 - Large file (755 lines). Read the section you are changing rather than pattern-matching from a sibling.

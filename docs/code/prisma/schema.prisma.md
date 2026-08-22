@@ -132,6 +132,48 @@ nothing to the total. Code that reads a quotation rate must not collapse
 `SalesOrderItem`, `InvoiceItem`, …) is still non-null: those documents only
 exist once a price is agreed. See `src/lib/quotations/pricing.ts`.
 
+### The order-processing chain (what the client asked for, and who hears it)
+
+`OrderProcessingItem` hangs off a `SalesOrderItem` and records what must be
+done to that line beyond supplying the right pipe: TPI, VDI/hydro witness
+percentages, lab tests, NDT, PMI, coating, hot-dip galvanising, screwed ends,
+colour coding, `additionalPipeSpec` (what is stencilled ON the pipe) and
+`additionalSpec` (what the product must COMPLY with — a different thing, and
+routinely a different value). `otherLabTests` is free text for a test outside
+the eleven standard ones.
+
+Those requirements reach the warehouse through `WarehouseIntimation`. They now
+also reach procurement: `PRItem.technicalRequirements` holds them rendered as
+text, written when the requisition is raised, and shown on the PR, the RFQ and
+the vendor PO. Before that column existed, purchase saw only product / material
+/ size and could buy material that could not pass the client's inspection.
+
+`SalesOrder.orderInspectionType` is the order-level version of the same choice
+(TPI/client QA vs NPIPE's own QA) and acts as the default for its items.
+
+`SalesOrderItem.poSlNo` / `poItemCode` are the client's own line number and
+item code, copied from `ClientPOItem` when the sales order is created, so
+Order Processing does not ask for them a second time.
+
+### Client PO registration
+
+`ClientPurchaseOrder.deliverySchedule` is the client's written delivery period
+("10 weeks"), not a date; `committedDeliveryDate` is what we commit to, derived
+from it at registration. `contactEmail` / `contactPhone` are the contact for
+**this order**, which is not necessarily the customer master's default.
+
+`dispatchAddressId` and `billingAddressId` both point at
+`CustomerDispatchAddress` under different relation names
+(`CPODispatchAddress`, `CPOBillingAddress`): a client with more than one GST
+registration invoices from a different entity than the site it ships to. Null
+billing address = the customer master address.
+
+`clientPoDocumentPath` holds the client's signed P.O. copy (a `StoredFile`
+path), carried onto `SalesOrder.customerPoDocument`.
+
+`ClientPOItem.qtyRemark` explains a part-order, the way `rateRemark` and
+`RateRevision` explain a negotiated price.
+
 ### JSON in text columns
 `EmployeeMaster.moduleAccess`, `OrderProcessingItem.ndtTests` and
 `requiredLabTests`, `Quotation.changeSnapshot` hold JSON in `LongText`. Parse
@@ -183,6 +225,10 @@ financial year.
 ## Related
 
 - `docs/code/prisma/migrations.md` — the hand-written migration procedure.
+- `prisma/migrations/20260822090000_order_processing_gaps` — the columns
+  described under "the order-processing chain" and "client PO registration".
+- `src/lib/business-logic/technical-requirements.ts` — what
+  `PRItem.technicalRequirements` contains.
 - `src/lib/prisma.ts` — the client and its pool limits.
 - `src/lib/rbac.ts` — `companyFilter`.
 - `src/lib/soft-delete.ts`

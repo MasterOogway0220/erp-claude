@@ -1,6 +1,6 @@
 # prisma/migrations/
 
-> 29 hand-written SQL migrations. **`prisma migrate dev` does not work on this
+> 30 hand-written SQL migrations. **`prisma migrate dev` does not work on this
 > host** — read this before adding one.
 
 ## Why they are hand-written
@@ -45,6 +45,7 @@ Naming: `YYYYMMDDHHMMSS_snake_case_description`.
 
 | Migration | What and why |
 |---|---|
+| `20260822090000_order_processing_gaps` | Nine additive columns closing the order-processing gaps: the client PO's own contact (email/phone), its billing party and signed P.O. copy, a per-line qty remark, the client's line references on `SalesOrderItem`, the order-level inspection regime, `otherLabTests` + `additionalSpec` on `OrderProcessingItem`, and `PRItem.technicalRequirements` — the column that finally carries the client's technical requirements to purchase. |
 | `20260819103000_quotation_item_regret_and_nullable_rate` | `QuotationItem.unitRate` made nullable + `isRegret` added. **The one migration here that is not purely additive** — it also rewrites existing `0` rates to `NULL`, because before this change a stored `0` could only ever have meant "unpriced". |
 | `20260802140000_add_stored_file` | `StoredFile` (LONGBLOB). Uploads were being written to a filesystem Vercel wipes. |
 | `20260802160000_add_po_vendor_milestones` | Three vendor stages on `POStatus`. |

@@ -13,6 +13,14 @@ Renders the `/po-acceptance/[id]` screen. 733 lines.
 - `"use client"` — runs in the browser.
 - Calls: `/api/po-acceptance/${id}`, `/api/po-acceptance/${id}/email`, `/api/po-acceptance/${id}/emails`, `/api/upload`.
 
+## Notes
+
+The email dialog defaults its recipient to the contact registered on **this
+order** (`ClientPurchaseOrder.contactEmail`), falling back to the customer
+master email and then the acceptance's follow-up email. The master address is
+often a generic inbox, and the person who placed the order is the one who has to
+see the acceptance.
+
 ## Gotchas
 
 - Large file (733 lines). Read the section you are changing rather than pattern-matching from a sibling.

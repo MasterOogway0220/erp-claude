@@ -69,6 +69,8 @@ export async function POST(request: NextRequest) {
 
       return {
         sNo: idx + 1,
+        poSlNo: cpoItem.poSlNo,
+        poItemCode: cpoItem.poItemCode,
         product: cpoItem.product,
         material: cpoItem.material,
         additionalSpec: cpoItem.additionalSpec,
@@ -102,6 +104,10 @@ export async function POST(request: NextRequest) {
           clientPurchaseOrderId,
           customerPoNo: cpo.clientPoNumber,
           customerPoDate: cpo.clientPoDate,
+          // The client's signed P.O. copy, attached at registration. The column
+          // existed but nothing ever wrote it, so the source document was never
+          // reachable from the order it created.
+          customerPoDocument: cpo.clientPoDocumentPath,
           projectName: cpo.projectName,
           paymentTerms: cpo.paymentTerms,
           deliverySchedule: cpo.deliverySchedule,

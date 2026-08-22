@@ -46,3 +46,16 @@ export const ITEM_PROCESSING_STATUS = {
   PENDING: "PENDING",
   PROCESSED: "PROCESSED",
 } as const;
+
+/**
+ * Order-level inspection regime — the PRD's "Option 1# Order under TPI
+ * Inspection / Option 2# Order under NPIPE Inspection". NPIPE is the company's
+ * own QA, so option 2 is in-house inspection.
+ *
+ * Deliberately the same two values as TPI_TYPES: the order-level choice is the
+ * default for every item, and an item can still be switched individually.
+ */
+export const ORDER_INSPECTION_TYPES = [
+  { value: "TPI_CLIENT_QA", label: "Option 1 — Order under TPI / Client QA Inspection" },
+  { value: "INHOUSE_QA", label: "Option 2 — Order under NPIPE (In-house QA) Inspection" },
+] as const;
