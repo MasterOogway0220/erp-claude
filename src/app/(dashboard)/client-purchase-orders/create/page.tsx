@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense, useCallback, useMemo } from "react";
+import { useState, useEffect, Suspense, useCallback, useMemo, Fragment } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -1275,9 +1275,8 @@ function CreateClientPOPage() {
                       {balanceItems.map((item, index) => {
                         const isFullyOrdered = item.balanceQty <= 0;
                         return (
-                          <>
+                          <Fragment key={item.id}>
                           <TableRow
-                            key={item.id}
                             className={
                               isFullyOrdered
                                 ? "opacity-50 bg-muted/30"
@@ -1464,7 +1463,7 @@ function CreateClientPOPage() {
                           </TableRow>
                           {/* §2.9 — material-code customer history sub-row */}
                           {materialHistory[item.id] && (
-                            <TableRow key={`hist-${item.id}`} className="border-0">
+                            <TableRow className="border-0">
                               <TableCell colSpan={14} className="bg-muted/30 text-xs text-muted-foreground py-1 px-3">
                                 {materialHistory[item.id].lastQuote
                                   ? `Last Quote: ₹${materialHistory[item.id].lastQuote!.rate.toLocaleString("en-IN", { minimumFractionDigits: 2 })} (${materialHistory[item.id].lastQuote!.quoteNo})`
@@ -1476,7 +1475,7 @@ function CreateClientPOPage() {
                               </TableCell>
                             </TableRow>
                           )}
-                          </>
+                          </Fragment>
                         );
                       })}
                     </TableBody>

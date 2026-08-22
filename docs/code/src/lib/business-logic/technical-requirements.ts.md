@@ -99,4 +99,6 @@ half-filled configuration look like no requirement at all.
   `src/app/(dashboard)/purchase/orders/create/page.tsx`.
 - Source model: `OrderProcessingItem` in `prisma/schema.prisma`.
 - Test: `src/lib/business-logic/technical-requirements.test.ts`.
+- `parseStringArray` is also the reader for `LabLetter.testIds` / `testNames`,
+  which are stored the same way.
 - Migration: `prisma/migrations/20260822090000_order_processing_gaps`.

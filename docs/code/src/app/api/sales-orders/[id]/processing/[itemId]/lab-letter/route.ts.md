@@ -17,6 +17,21 @@ Operates on `salesOrderItem`, `testingMaster`, `labLetter`.
 - **Not company-scoped.** Either catalogue data (deliberately global) or scoped via a parent record — verify which before changing.
 - Allocates a document number with `generateDocumentNumber()` (per company, per financial year).
 
+## testIds / testNames are JSON strings, not arrays
+
+Both are `String?` (`@db.LongText`). This route used to hand Prisma a bare JS
+array with an `as any` and a comment claiming Prisma would serialise it; under
+Prisma 7 with the MariaDB adapter it does not — every call died with
+`Argument \`testIds\`: Invalid value provided. Expected String or Null, provided
+(String)` and the screen showed only "Failed to generate lab letter". Lab letter
+generation was broken for every item, found by walking the flow in a test
+environment.
+
+They are now `JSON.stringify`d on write, and every reader goes through
+`parseStringArray`. The readers previously used `Array.isArray(...)`, which is
+false for a JSON string — so a fix on the write side alone would have produced
+letters that saved and then displayed no tests at all.
+
 ## The "other test"
 
 Besides the eleven standard lab tests, a processing item can carry

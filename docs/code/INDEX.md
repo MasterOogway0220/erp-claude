@@ -4,7 +4,7 @@ Companion explainers for every code file, mirroring the source tree. See
 [CONVENTIONS.md](./CONVENTIONS.md) for structure and depth, and the repo root
 `CLAUDE.md` for the standing rule that keeps them true.
 
-## Coverage: 482 / 482 ✅
+## Coverage: 484 / 484 ✅
 
 Every `.ts`, `.tsx` and `.prisma` file under `src/`, `prisma/` and `scripts/`
 has a doc at the mirrored path. Test files are covered by the doc for what they
@@ -12,12 +12,12 @@ test.
 
 | Area | Files | Depth |
 |---|---:|---|
-| `src/lib` | 54 | Hand-written throughout |
+| `src/lib` | 55 | Hand-written throughout |
 | `prisma` + `scripts` | 10 | Hand-written |
 | `src/components` | 41 | Hand-written for shared/layout/wizard; grouped for `ui/` |
 | Root, hooks, auth, layouts | 12 | Hand-written |
 | `src/app/api` | 208 | Hand-written module READMEs + per-route facts |
-| `src/app/(dashboard)` | 157 | Hand-written module READMEs + per-page facts |
+| `src/app/(dashboard)` | 158 | Hand-written module READMEs + per-page facts |
 
 ### Two levels of depth, deliberately
 
@@ -142,6 +142,9 @@ authoritative, need maintaining, and teach nothing.
 
 ### Purchase and orders
 - [`purchase/po-milestones.ts`](./src/lib/purchase/po-milestones.ts.md)
+- [`purchase/pr-item-fields.ts`](./src/lib/purchase/pr-item-fields.ts.md) — the
+  one reader for a requisition line, after the RFQ screens spent a while reading
+  field names `PRItem` does not have.
 - [`purchase/rfq-reminders.ts`](./src/lib/purchase/rfq-reminders.ts.md)
 - [`po-acceptance/advance-cpo.ts`](./src/lib/po-acceptance/advance-cpo.ts.md)
 - [`business-logic/auto-pr-generation.ts`](./src/lib/business-logic/auto-pr-generation.ts.md)

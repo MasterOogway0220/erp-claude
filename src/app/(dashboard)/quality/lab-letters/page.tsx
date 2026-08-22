@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { parseStringArray } from "@/lib/business-logic/technical-requirements";
 import { PageHeader } from "@/components/shared/page-header";
 import { DataTable, Column } from "@/components/shared/data-table";
 import { PageLoading } from "@/components/shared/page-loading";
@@ -79,8 +80,8 @@ export default function LabLettersPage() {
       key: "testNames",
       header: "Tests",
       cell: (row) => {
-        const tests = row.testNames as string[] | null;
-        if (!tests || tests.length === 0) return "—";
+        const tests = parseStringArray(row.testNames);
+        if (tests.length === 0) return "—";
         return (
           <div className="flex flex-wrap gap-1">
             {tests.map((test: string, i: number) => (

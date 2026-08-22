@@ -14,6 +14,12 @@ Renders the `/quality/lab-letters` screen. 151 lines.
 - Fetches with TanStack Query (`useQuery`); server state is not duplicated into local state.
 - Calls: `/api/quality/lab-letters`.
 
+## testNames is a JSON string, not an array
+
+`LabLetter.testNames` is `String?` (`@db.LongText`) holding JSON. An
+`Array.isArray` check on it is always false, which showed as a letter with no
+tests at all; it is read through `parseStringArray`.
+
 ## Gotchas
 
 - Any `Select` needs a non-empty `SelectItem` value; the codebase uses a `"NONE"` sentinel mapped to `""`.

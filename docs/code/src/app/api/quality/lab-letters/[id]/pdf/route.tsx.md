@@ -17,6 +17,12 @@ Operates on `labLetter`.
 - Company-scoped with `companyFilter(companyId)`.
 - Renders a PDF via headless Chromium. Cold starts routinely fail; the client retries once. `maxDuration` and `memory` are raised in `vercel.json`.
 
+## testNames is a JSON string, not an array
+
+`LabLetter.testNames` is `String?` (`@db.LongText`) holding JSON. An
+`Array.isArray` check on it is always false, which showed as a letter with no
+tests at all; it is read through `parseStringArray`.
+
 ## Gotchas
 
 - `params` is a `Promise` (Next.js 16) and must be awaited.

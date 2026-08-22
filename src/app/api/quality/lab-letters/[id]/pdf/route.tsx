@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkAccess, companyFilter } from "@/lib/rbac";
 import { renderHtmlToPdf } from "@/lib/pdf/render-pdf";
+import { parseStringArray } from "@/lib/business-logic/technical-requirements";
 
 function formatDate(date: string | Date | null | undefined): string {
   if (!date) return "";
@@ -50,7 +51,7 @@ export async function GET(
     }
 
     const company = labLetter.company;
-    const testNames: string[] = Array.isArray(labLetter.testNames) ? labLetter.testNames as string[] : [];
+    const testNames: string[] = parseStringArray(labLetter.testNames);
 
     const html = `<!DOCTYPE html>
 <html>

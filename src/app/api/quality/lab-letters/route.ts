@@ -114,8 +114,10 @@ export async function POST(request: NextRequest) {
         sizeLabel: body.sizeLabel || null,
         quantity: body.quantity || null,
         unit: body.unit || null,
-        testIds: body.testIds || null,
-        testNames: testNames.length > 0 ? (testNames as any) : null,
+        // JSON in a LongText column — see the note in the processing
+        // lab-letter route; a bare array is rejected by the adapter.
+        testIds: body.testIds?.length > 0 ? JSON.stringify(body.testIds) : null,
+        testNames: testNames.length > 0 ? JSON.stringify(testNames) : null,
         witnessRequired: body.witnessRequired ?? false,
         tpiAgencyId: body.tpiAgencyId || null,
         tpiAgencyName,

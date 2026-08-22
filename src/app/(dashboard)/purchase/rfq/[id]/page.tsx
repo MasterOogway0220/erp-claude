@@ -4,26 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -32,17 +14,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Separator } from "@/components/ui/separator";
 import { PageLoading } from "@/components/shared/page-loading";
-import {
-  ArrowLeft,
-  Send,
-  FileText,
-  BarChart3,
-  ClipboardEdit,
-} from "lucide-react";
+import { ArrowLeft, Send, BarChart3, ClipboardEdit } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { prItemFields } from "@/lib/purchase/pr-item-fields";
 
 const statusColors: Record<string, string> = {
   DRAFT: "bg-gray-500",
@@ -65,17 +41,6 @@ interface RFQVendor {
   quotation?: any;
 }
 
-interface QuotationItem {
-  prItemId: string;
-  itemName: string;
-  quantity: number;
-  unit: string;
-  unitRate: number;
-  amount: number;
-  deliveryDays: number;
-  remarks: string;
-}
-
 export default function RFQDetailPage() {
   const router = useRouter();
   const params = useParams();
@@ -85,22 +50,6 @@ export default function RFQDetailPage() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
 
-  // Quotation dialog state
-  const [showQuoteDialog, setShowQuoteDialog] = useState(false);
-  const [selectedVendorId, setSelectedVendorId] = useState("");
-  const [quotationRef, setQuotationRef] = useState("");
-  const [quotationDate, setQuotationDate] = useState("");
-  const [validUntil, setValidUntil] = useState("");
-  const [priceBasis, setPriceBasis] = useState("EX_WORKS");
-  const [deliveryDays, setDeliveryDays] = useState("");
-  const [paymentTerms, setPaymentTerms] = useState("");
-  const [freight, setFreight] = useState("0");
-  const [testingCharges, setTestingCharges] = useState("0");
-  const [tpiCharges, setTpiCharges] = useState("0");
-  const [packingForwarding, setPackingForwarding] = useState("0");
-  const [gstRate, setGstRate] = useState("18");
-  const [quoteItems, setQuoteItems] = useState<QuotationItem[]>([]);
-  const [savingQuote, setSavingQuote] = useState(false);
 
   useEffect(() => {
     if (id) fetchRFQ();
@@ -166,98 +115,6 @@ export default function RFQDetailPage() {
       toast.error("Failed to generate Comparative Statement");
     } finally {
       setUpdating(false);
-    }
-  };
-
-  const openQuoteDialog = (vendorId?: string) => {
-    const prItems = rfq?.purchaseRequisition?.items || rfq?.items || [];
-    setQuoteItems(
-      prItems.map((item: any) => ({
-        prItemId: item.id,
-        itemName: item.itemName || item.name || "",
-        quantity: item.quantity,
-        unit: item.unit,
-        unitRate: 0,
-        amount: 0,
-        deliveryDays: 0,
-        remarks: "",
-      }))
-    );
-    setSelectedVendorId(vendorId || "");
-    setQuotationRef("");
-    setQuotationDate("");
-    setValidUntil("");
-    setPriceBasis("");
-    setDeliveryDays("");
-    setPaymentTerms("");
-    setFreight("0");
-    setTestingCharges("0");
-    setTpiCharges("0");
-    setPackingForwarding("0");
-    setGstRate("18");
-    setShowQuoteDialog(true);
-  };
-
-  const updateQuoteItem = (
-    index: number,
-    field: keyof QuotationItem,
-    value: string | number
-  ) => {
-    setQuoteItems((prev) => {
-      const updated = [...prev];
-      updated[index] = { ...updated[index], [field]: value };
-      if (field === "unitRate") {
-        updated[index].amount =
-          Number(value) * updated[index].quantity;
-      }
-      return updated;
-    });
-  };
-
-  const handleSaveQuotation = async () => {
-    if (!selectedVendorId) {
-      toast.error("Please select a vendor");
-      return;
-    }
-    if (!quotationDate) {
-      toast.error("Please enter quotation date");
-      return;
-    }
-
-    setSavingQuote(true);
-    try {
-      const response = await fetch(`/api/purchase/rfq/${id}/quotations`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          vendorId: selectedVendorId,
-          quotationRef,
-          quotationDate,
-          validUntil,
-          priceBasis,
-          deliveryDays: Number(deliveryDays),
-          paymentTerms,
-          freight: Number(freight),
-          testingCharges: Number(testingCharges),
-          tpiCharges: Number(tpiCharges),
-          packingForwarding: Number(packingForwarding),
-          gstRate: Number(gstRate),
-          items: quoteItems,
-        }),
-      });
-
-      if (response.ok) {
-        toast.success("Quotation saved successfully");
-        setShowQuoteDialog(false);
-        fetchRFQ();
-      } else {
-        const error = await response.json();
-        toast.error(error.error || "Failed to save quotation");
-      }
-    } catch (error) {
-      toast.error("Failed to save quotation");
-    } finally {
-      setSavingQuote(false);
     }
   };
 
@@ -396,15 +253,15 @@ export default function RFQDetailPage() {
                         {index + 1}
                       </TableCell>
                       <TableCell className="font-medium">
-                        {item.itemName || item.name}
+                        {prItemFields(item).name || "—"}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {item.specification || item.description || "—"}
+                        {prItemFields(item).spec || "—"}
                       </TableCell>
                       <TableCell className="text-right">
                         {item.quantity}
                       </TableCell>
-                      <TableCell>{item.unit}</TableCell>
+                      <TableCell>{prItemFields(item).unit || "—"}</TableCell>
                       <TableCell className="text-xs whitespace-pre-line">
                         {item.technicalRequirements || (
                           <span className="text-muted-foreground">—</span>
@@ -424,12 +281,7 @@ export default function RFQDetailPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg">Vendor Response Status</CardTitle>
-            {rfq.status !== "DRAFT" && (
-              <Button size="sm" onClick={() => openQuoteDialog()}>
-                <ClipboardEdit className="w-4 h-4 mr-2" />
-                Enter Quotation
-              </Button>
-            )}
+            {/* Quoting is per vendor — the button lives on each vendor row. */}
           </div>
         </CardHeader>
         <CardContent>
@@ -491,7 +343,9 @@ export default function RFQDetailPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => openQuoteDialog(rv.vendor?.id)}
+                          onClick={() =>
+                            router.push(`/purchase/rfq/${id}/quote/${rv.id}`)
+                          }
                           disabled={rfq.status === "DRAFT"}
                         >
                           <ClipboardEdit className="w-4 h-4 mr-1" />
@@ -507,256 +361,6 @@ export default function RFQDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Enter Quotation Dialog */}
-      <Dialog open={showQuoteDialog} onOpenChange={setShowQuoteDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Enter Vendor Quotation</DialogTitle>
-            <DialogDescription>
-              Record the quotation received from a vendor for this RFQ.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-6">
-            {/* Vendor Selection */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label>Vendor</Label>
-                <Select
-                  value={selectedVendorId}
-                  onValueChange={setSelectedVendorId}
-                >
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Select vendor..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {rfqVendors.map((rv) => (
-                      <SelectItem key={rv.vendor?.id} value={rv.vendor?.id}>
-                        {rv.vendor?.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Quotation Reference</Label>
-                <Input
-                  value={quotationRef}
-                  onChange={(e) => setQuotationRef(e.target.value)}
-                  placeholder="Vendor's quote ref no."
-                  className="mt-1"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label>Quotation Date</Label>
-                <Input
-                  type="date"
-                  value={quotationDate}
-                  onChange={(e) => setQuotationDate(e.target.value)}
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label>Valid Until</Label>
-                <Input
-                  type="date"
-                  value={validUntil}
-                  onChange={(e) => setValidUntil(e.target.value)}
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label>Price Basis</Label>
-                <Select value={priceBasis} onValueChange={setPriceBasis}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Select..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="EX_WORKS">Ex-Works</SelectItem>
-                    <SelectItem value="FOR">FOR</SelectItem>
-                    <SelectItem value="CIF">CIF</SelectItem>
-                    <SelectItem value="FOB">FOB</SelectItem>
-                    <SelectItem value="DELIVERED">Delivered</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label>Delivery Days</Label>
-                <Input
-                  type="number"
-                  value={deliveryDays}
-                  onChange={(e) => setDeliveryDays(e.target.value)}
-                  placeholder="e.g. 30"
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label>Payment Terms</Label>
-                <Input
-                  value={paymentTerms}
-                  onChange={(e) => setPaymentTerms(e.target.value)}
-                  placeholder="e.g. 30 days from invoice"
-                  className="mt-1"
-                />
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Commercial Terms */}
-            <div>
-              <h4 className="font-medium mb-3">Commercial Terms</h4>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                <div>
-                  <Label>Freight</Label>
-                  <Input
-                    type="number"
-                    value={freight}
-                    onChange={(e) => setFreight(e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label>Testing Charges</Label>
-                  <Input
-                    type="number"
-                    value={testingCharges}
-                    onChange={(e) => setTestingCharges(e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label>TPI Charges</Label>
-                  <Input
-                    type="number"
-                    value={tpiCharges}
-                    onChange={(e) => setTpiCharges(e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label>Packing & Forwarding</Label>
-                  <Input
-                    type="number"
-                    value={packingForwarding}
-                    onChange={(e) => setPackingForwarding(e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label>GST Rate %</Label>
-                  <Input
-                    type="number"
-                    value={gstRate}
-                    onChange={(e) => setGstRate(e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Items */}
-            <div>
-              <h4 className="font-medium mb-3">Item-wise Pricing</h4>
-              <div className="border rounded-md overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Item</TableHead>
-                      <TableHead className="text-right">Qty</TableHead>
-                      <TableHead>Unit</TableHead>
-                      <TableHead className="text-right">Unit Rate</TableHead>
-                      <TableHead className="text-right">Amount</TableHead>
-                      <TableHead className="text-right">
-                        Delivery Days
-                      </TableHead>
-                      <TableHead>Remarks</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {quoteItems.map((item, index) => (
-                      <TableRow key={index}>
-                        <TableCell className="font-medium min-w-[150px]">
-                          {item.itemName}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {item.quantity}
-                        </TableCell>
-                        <TableCell>{item.unit}</TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            value={item.unitRate || ""}
-                            onChange={(e) =>
-                              updateQuoteItem(
-                                index,
-                                "unitRate",
-                                Number(e.target.value)
-                              )
-                            }
-                            className="w-28 text-right"
-                            placeholder="0.00"
-                          />
-                        </TableCell>
-                        <TableCell className="text-right font-medium">
-                          {item.amount > 0
-                            ? `₹${item.amount.toFixed(2)}`
-                            : "—"}
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            value={item.deliveryDays || ""}
-                            onChange={(e) =>
-                              updateQuoteItem(
-                                index,
-                                "deliveryDays",
-                                Number(e.target.value)
-                              )
-                            }
-                            className="w-20 text-right"
-                            placeholder="0"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            value={item.remarks}
-                            onChange={(e) =>
-                              updateQuoteItem(index, "remarks", e.target.value)
-                            }
-                            className="w-32"
-                            placeholder="—"
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowQuoteDialog(false)}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleSaveQuotation} disabled={savingQuote}>
-              {savingQuote ? "Saving..." : "Save Quotation"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

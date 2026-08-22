@@ -130,9 +130,10 @@ export async function POST(
         itemCode: proc.poItemCode ?? null,
         // witness required when TPI type involves client/QA witness
         witnessRequired: proc.tpiType === "TPI_CLIENT_QA",
-        // store as native arrays — Prisma serialises to JSON in LongText
-        testIds: testIds.length > 0 ? (testIds as any) : null,
-        testNames: testNames as any,
+        // JSON in a LongText column: the adapter rejects a bare array, and
+        // every reader goes through parseStringArray.
+        testIds: testIds.length > 0 ? JSON.stringify(testIds) : null,
+        testNames: testNames.length > 0 ? JSON.stringify(testNames) : null,
         generatedById: session.user.id,
       },
     });

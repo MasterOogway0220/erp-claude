@@ -2,6 +2,7 @@
 
 import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
+import { parseStringArray } from "@/lib/business-logic/technical-requirements";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -115,7 +116,7 @@ export default function LabLetterDetailPage({
 
   if (!letter) return null;
 
-  const testNames: string[] = Array.isArray(letter.testNames) ? letter.testNames : [];
+  const testNames: string[] = parseStringArray(letter.testNames);
   const statusInfo = STATUS_CONFIG[letter.status] || { label: letter.status, variant: "secondary" as const };
 
   return (

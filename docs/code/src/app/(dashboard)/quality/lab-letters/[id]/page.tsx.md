@@ -13,6 +13,12 @@ Renders the `/quality/lab-letters/[id]` screen. 282 lines.
 - `"use client"` — runs in the browser.
 - Calls: `/api/quality/lab-letters/${id}`, `/api/quality/lab-letters/${id}/pdf`.
 
+## testNames is a JSON string, not an array
+
+`LabLetter.testNames` is `String?` (`@db.LongText`) holding JSON. An
+`Array.isArray` check on it is always false, which showed as a letter with no
+tests at all; it is read through `parseStringArray`.
+
 ## Gotchas
 
 - Any `Select` needs a non-empty `SelectItem` value; the codebase uses a `"NONE"` sentinel mapped to `""`.
