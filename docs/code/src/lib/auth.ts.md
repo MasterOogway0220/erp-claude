@@ -11,7 +11,7 @@ middleware, the sidebar — reads what this file puts in the token.
 ## What it does
 
 Exports `authOptions`. Credentials provider (email, password, optional `otp`),
-JWT session strategy, 24-hour `maxAge`, sign-in page `/login`. Augments the
+JWT session strategy, one-year `maxAge`, sign-in page `/login`. Augments the
 NextAuth types so `session.user` carries `id`, `role`, `companyId` and
 `moduleAccess`.
 
@@ -50,9 +50,15 @@ the anchor for the absolute session cap.
 if (otpEnabled() && sessionExpired(token.loginAt, Date.now())) return {} as typeof token;
 ```
 
-NextAuth's own `maxAge` looks like a 24-hour session but is a **sliding
-window** — the token is re-issued on every session poll, so an open tab never
-expires. This check makes it a hard stop. Returning `{}` blanks the token,
+NextAuth's own `maxAge` is a **sliding window** — the token is re-issued on
+every session poll, so an active user never expires. It was 24 hours, which
+still logged out anyone idle for a day; it is now a year, which means a session
+ends only when the user signs out.
+
+This OTP check is therefore the single remaining expiry in the system, and it
+applies to two-factor logins only. With `OTP_ENABLED` unset — the default —
+this branch never runs. Turning 2FA on deliberately buys back a daily
+re-authentication for the roles that need one. Returning `{}` blanks the token,
 which reads as signed out to `getServerSession` and to the client poller, and
 middleware then redirects to `/login`. Same mechanism as the deactivated-user
 path below it.
@@ -60,6 +66,15 @@ path below it.
 **Periodic re-verification:** every 5 minutes, re-read the user to catch
 deactivation, role changes and grant changes mid-session. Throttled because it
 was previously a database query on *every* request.
+
+Since sessions became year-long this is **the only way a session ends other
+than signing out**. These are JWTs: there is no server-side session table, so a
+token cannot be revoked — deactivating someone in Employee Master takes effect
+when this check next runs and sees `isActive: false`. Lengthening
+`REVERIFY_INTERVAL_MS` directly lengthens how long a deactivated account keeps
+working, and removing the `isActive` check would mean nothing ends a session at
+all. The accepted trade for permanent sessions is that a lost laptop keeps its
+session until the account is deactivated and one re-verify lands.
 
 The `catch` around that query is important: a transient database failure —
 Hostinger's connection caps make these real — must not kill the session.

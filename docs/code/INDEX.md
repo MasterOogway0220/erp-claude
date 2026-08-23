@@ -4,7 +4,7 @@ Companion explainers for every code file, mirroring the source tree. See
 [CONVENTIONS.md](./CONVENTIONS.md) for structure and depth, and the repo root
 `CLAUDE.md` for the standing rule that keeps them true.
 
-## Coverage: 493 / 493 ✅
+## Coverage: 497 / 497 ✅
 
 Every `.ts`, `.tsx` and `.prisma` file under `src/`, `prisma/` and `scripts/`
 has a doc at the mirrored path. Test files are covered by the doc for what they
@@ -15,7 +15,7 @@ test.
 | `src/lib` | 57 | Hand-written throughout |
 | `prisma` + `scripts` | 10 | Hand-written |
 | `src/components` | 41 | Hand-written for shared/layout/wizard; grouped for `ui/` |
-| Root, hooks, auth, layouts | 12 | Hand-written |
+| Root, hooks, auth, layouts | 13 | Hand-written |
 | `src/app/api` | 208 | Hand-written module READMEs + per-route facts |
 | `src/app/(dashboard)` | 158 | Hand-written module READMEs + per-page facts |
 
@@ -212,6 +212,9 @@ binary in the deployment any more.
   customer master alone was being fetched from fourteen screens.
 - [`hooks/use-units.ts`](./src/hooks/use-units.ts.md) — UOM codes, now
   sharing the Unit Master screen's cache entry.
+- [`hooks/use-logout.ts`](./src/hooks/use-logout.ts.md) — empties the cache
+  before signing out. Sessions last a year and end only here, and the
+  terminals are shared.
 
 ### Infrastructure
 - [`prisma.ts`](./src/lib/prisma.ts.md) — the client, pool limits, and why

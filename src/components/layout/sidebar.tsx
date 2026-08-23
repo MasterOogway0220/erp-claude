@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { useLogout } from "@/hooks/use-logout";
 import { UserRole } from "@prisma/client";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useSidebarStore } from "@/stores/sidebar-store";
@@ -256,6 +256,7 @@ function filterSections(
 
 export function Sidebar() {
   const pathname = usePathname();
+  const logout = useLogout();
   const { user } = useCurrentUser();
   const { isCollapsed, isMobileOpen, toggle, setMobileOpen } =
     useSidebarStore();
@@ -422,7 +423,7 @@ export function Sidebar() {
                 variant="ghost"
                 size="icon"
                 className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
-                onClick={() => signOut({ callbackUrl: "/login" })}
+                onClick={logout}
               >
                 <LogOut className="h-3.5 w-3.5" />
               </Button>
@@ -471,7 +472,7 @@ export function Sidebar() {
                 variant="ghost"
                 size="icon"
                 className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                onClick={() => signOut({ callbackUrl: "/login" })}
+                onClick={logout}
               >
                 <LogOut className="h-3 w-3" />
               </Button>

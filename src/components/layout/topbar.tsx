@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { signOut } from "next-auth/react";
+import { useLogout } from "@/hooks/use-logout";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useSidebarStore } from "@/stores/sidebar-store";
 import { Button } from "@/components/ui/button";
@@ -43,6 +43,7 @@ interface Company {
 
 export function TopBar() {
   const { user } = useCurrentUser();
+  const logout = useLogout();
   const { setMobileOpen } = useSidebarStore();
   const [pwDialogOpen, setPwDialogOpen] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
@@ -379,7 +380,7 @@ export function TopBar() {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={() => signOut({ callbackUrl: "/login" })}
+                onClick={logout}
                 className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20"
               >
                 <LogOut className="mr-2 h-4 w-4" />

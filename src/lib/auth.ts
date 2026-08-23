@@ -44,6 +44,12 @@ declare module "next-auth/jwt" {
 
 // How often to re-check the user row (isActive, role, grants) against the DB.
 // Every request paid a DB round trip before; 5 min bounds the staleness instead.
+//
+// This is now the ONLY way a session ends other than signing out — sessions
+// last a year (see `session.maxAge`) and a JWT cannot be revoked, so
+// deactivating someone in Employee Master takes effect when this next runs and
+// finds `isActive: false`. Lengthening this interval directly lengthens how
+// long a deactivated account keeps working.
 const REVERIFY_INTERVAL_MS = 5 * 60 * 1000;
 
 export const authOptions: NextAuthOptions = {
@@ -119,7 +125,25 @@ export const authOptions: NextAuthOptions = {
   ],
   session: {
     strategy: "jwt",
-    maxAge: 24 * 60 * 60, // 24 hours
+    // Effectively "signed in until you sign out". next-auth treats maxAge as a
+    // sliding window and re-issues the token on every session poll, so an
+    // active user was already never forced to re-authenticate; what the old
+    // 24h did was log out anyone idle for a day — the Monday-morning problem.
+    // A year is long enough that only an explicit sign-out ends a session.
+    //
+    // Understand what this leans on before changing anything below it. These
+    // are JWT sessions: there is no server-side session table, so a token
+    // cannot be revoked. The ONLY thing that ends someone's access early is
+    // the periodic re-verify in the jwt callback noticing `isActive: false`
+    // and blanking the token. That check was previously backstopped by this
+    // expiry; now it is load-bearing on its own. Do not lengthen
+    // REVERIFY_INTERVAL_MS, and do not remove the isActive check.
+    //
+    // The accepted trade: a laptop lost with a live session keeps that session
+    // until the account is deactivated and one re-verify lands (minutes), or
+    // the user signs out. Deliberate, and the reason the deactivate path in
+    // Employee Master matters more than it looks.
+    maxAge: 365 * 24 * 60 * 60,
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -135,11 +159,16 @@ export const authOptions: NextAuthOptions = {
         return token;
       }
 
-      // Hard 24h cap from sign-in. next-auth's own maxAge re-issues the token
-      // on every session poll, so an open tab would otherwise stay logged in
-      // indefinitely. Blanking the token is the same mechanism the deactivated
-      // -user path below uses: the session reads as signed out and middleware
-      // sends them to /login.
+      // Hard 24h cap from sign-in, and the only expiry left in the system:
+      // `session.maxAge` is now a year, so without this a session ends only at
+      // sign-out. It applies to 2FA logins alone — when OTP is off (the
+      // default) this branch never runs, which is the intended "stay signed in
+      // until you sign out" behaviour. Turning OTP on deliberately buys back a
+      // daily re-authentication for the roles that need one.
+      //
+      // Blanking the token is the same mechanism the deactivated-user path
+      // below uses: the session reads as signed out and middleware sends them
+      // to /login.
       if (otpEnabled() && sessionExpired(token.loginAt, Date.now())) {
         return {} as typeof token;
       }
