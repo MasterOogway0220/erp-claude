@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, Suspense } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
+import { useReferenceQuery } from "@/hooks/use-api-query";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/shared/page-header";
@@ -711,24 +712,12 @@ interface Unit {
 
 function UnitsPanel() {
   const router = useRouter();
-  const [units, setUnits] = useState<Unit[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchUnits = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await fetch("/api/masters/units");
-      if (!res.ok) throw new Error("Failed to fetch units");
-      const data = await res.json();
-      setUnits(data.units || []);
-    } catch {
-      toast.error("Failed to load units");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { fetchUnits(); }, [fetchUnits]);
+  // Same list the Unit Master screen and the quotation forms' useUnits read.
+  const { data: unitData, isLoading: loading } = useReferenceQuery<{ units: Unit[] }>(
+    ["units-master"],
+    "/api/masters/units"
+  );
+  const units = unitData?.units ?? [];
 
   const columns: Column<Unit>[] = [
     { key: "code", header: "Code", sortable: true, cell: (row) => <span className="font-medium">{row.code}</span> },

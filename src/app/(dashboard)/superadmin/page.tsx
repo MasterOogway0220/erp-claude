@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
+import { useApiQuery, useInvalidate } from "@/hooks/use-api-query";
 import { useRouter } from "next/navigation";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { Button } from "@/components/ui/button";
@@ -54,8 +55,14 @@ export default function SuperAdminCompanyPicker() {
   const { user, isLoading } = useCurrentUser();
   const isSuperAdmin = (user?.role as string) === "SUPER_ADMIN";
 
-  const [companies, setCompanies] = useState<Company[]>([]);
-  const [loadingCompanies, setLoadingCompanies] = useState(true);
+  // Same endpoint as the company master screen, so they share one entry.
+  // `enabled` keeps the gate the effect used to apply: a non-superadmin is
+  // redirected away and must not issue this request at all.
+  const { data: companyData, isLoading: loadingCompanies } = useApiQuery<{
+    companies: Company[];
+  }>(["companies"], "/api/masters/company", { enabled: isSuperAdmin });
+  const companies = companyData?.companies ?? [];
+  const invalidate = useInvalidate();
   const [switching, setSwitching] = useState<string | null>(null);
 
   // Add Company dialog
@@ -82,24 +89,6 @@ export default function SuperAdminCompanyPicker() {
       router.push("/");
     }
   }, [isLoading, isSuperAdmin, router]);
-
-  const fetchCompanies = useCallback(async () => {
-    try {
-      const res = await fetch("/api/masters/company");
-      if (res.ok) {
-        const data = await res.json();
-        setCompanies(data.companies || []);
-      }
-    } catch {
-      toast.error("Failed to fetch companies");
-    } finally {
-      setLoadingCompanies(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (isSuperAdmin) fetchCompanies();
-  }, [isSuperAdmin, fetchCompanies]);
 
   const handleSelectCompany = async (company: Company) => {
     setSwitching(company.id);
@@ -137,7 +126,7 @@ export default function SuperAdminCompanyPicker() {
       toast.success("Company created");
       setCompanyDialogOpen(false);
       setCompanyForm({ companyName: "", companyType: "Trading", regCity: "", regState: "", gstNo: "", email: "", telephoneNo: "" });
-      fetchCompanies();
+      invalidate(["companies"]);
     } catch (error: any) {
       toast.error(error.message);
     } finally {

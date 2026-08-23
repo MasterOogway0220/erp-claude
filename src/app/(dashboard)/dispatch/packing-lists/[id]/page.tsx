@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useApiQuery } from "@/hooks/use-api-query";
 import { useRouter, useParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -25,26 +26,22 @@ import { PageLoading } from "@/components/shared/page-loading";
 export default function PackingListDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const [packingList, setPackingList] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    if (params.id) fetchPackingList(params.id as string);
-  }, [params.id]);
+  const { data, isLoading: loading, isError } = useApiQuery<{ packingList: any }>(
+    ["packing-list", params.id],
+    `/api/dispatch/packing-lists/${params.id}`,
+    { enabled: !!params.id }
+  );
+  const packingList = data?.packingList ?? null;
 
-  const fetchPackingList = async (id: string) => {
-    try {
-      const response = await fetch(`/api/dispatch/packing-lists/${id}`);
-      if (!response.ok) throw new Error("Failed to fetch");
-      const data = await response.json();
-      setPackingList(data.packingList);
-    } catch (error) {
+  // The hand-written fetcher redirected away when the record could not
+  // be loaded; React Query reports that as isError, so the redirect
+  // lives here rather than being lost.
+  useEffect(() => {
+    if (isError) {
       toast.error("Failed to load packing list");
       router.push("/dispatch");
-    } finally {
-      setLoading(false);
     }
-  };
-
+  }, [isError, router]);
   const downloadPdf = async () => {
     if (!packingList) return;
     try {

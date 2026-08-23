@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import { useApiQuery, useInvalidate } from "@/hooks/use-api-query";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -155,8 +156,12 @@ const emptyFormData: UserFormData = {
 
 export default function AdminPage() {
   // User management state
-  const [users, setUsers] = useState<User[]>([]);
-  const [usersLoading, setUsersLoading] = useState(true);
+  const { data: usersData, isLoading: usersLoading } = useApiQuery<{ users: User[] }>(
+    ["admin-users"],
+    "/api/admin/users"
+  );
+  const users = usersData?.users ?? [];
+  const invalidate = useInvalidate();
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deactivateDialogOpen, setDeactivateDialogOpen] = useState(false);
@@ -167,10 +172,6 @@ export default function AdminPage() {
   const [showPassword, setShowPassword] = useState(false);
 
   // Audit log state
-  const [logs, setLogs] = useState<AuditLog[]>([]);
-  const [logsLoading, setLogsLoading] = useState(true);
-  const [logsTotal, setLogsTotal] = useState(0);
-  const [logsTotalPages, setLogsTotalPages] = useState(1);
   const [logsPage, setLogsPage] = useState(1);
   const [logsPageSize] = useState(20);
   const [actionFilter, setActionFilter] = useState<string>("all");
@@ -180,59 +181,29 @@ export default function AdminPage() {
 
   // ==================== Data fetching ====================
 
-  const fetchUsers = useCallback(async () => {
-    setUsersLoading(true);
-    try {
-      const response = await fetch("/api/admin/users");
-      if (response.ok) {
-        const data = await response.json();
-        setUsers(data.users || []);
-      } else {
-        toast.error("Failed to load users");
-      }
-    } catch (error) {
-      console.error("Failed to fetch users:", error);
-      toast.error("Failed to load users");
-    } finally {
-      setUsersLoading(false);
-    }
-  }, []);
+  // Page and every filter belong in the key. The paging totals arrive in the
+  // same response as the rows, so they are read off the cache entry rather
+  // than mirrored into their own state — that is also what stops the count
+  // and the rows ever disagreeing.
+  const logParams = new URLSearchParams({
+    page: String(logsPage),
+    pageSize: String(logsPageSize),
+  });
+  if (actionFilter !== "all") logParams.append("action", actionFilter);
+  if (dateFrom) logParams.append("dateFrom", dateFrom);
+  if (dateTo) logParams.append("dateTo", dateTo);
 
-  const fetchAuditLogs = useCallback(async () => {
-    setLogsLoading(true);
-    try {
-      const params = new URLSearchParams({
-        page: String(logsPage),
-        pageSize: String(logsPageSize),
-      });
-      if (actionFilter !== "all") params.append("action", actionFilter);
-      if (dateFrom) params.append("dateFrom", dateFrom);
-      if (dateTo) params.append("dateTo", dateTo);
-
-      const response = await fetch(`/api/admin/audit-logs?${params}`);
-      if (response.ok) {
-        const data = await response.json();
-        setLogs(data.logs || []);
-        setLogsTotal(data.total || 0);
-        setLogsTotalPages(data.totalPages || 1);
-      } else {
-        toast.error("Failed to load audit logs");
-      }
-    } catch (error) {
-      console.error("Failed to fetch audit logs:", error);
-      toast.error("Failed to load audit logs");
-    } finally {
-      setLogsLoading(false);
-    }
-  }, [logsPage, logsPageSize, actionFilter, dateFrom, dateTo]);
-
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
-
-  useEffect(() => {
-    fetchAuditLogs();
-  }, [fetchAuditLogs]);
+  const { data: logsData, isLoading: logsLoading } = useApiQuery<{
+    logs: AuditLog[];
+    total: number;
+    totalPages: number;
+  }>(
+    ["audit-logs", logsPage, logsPageSize, actionFilter, dateFrom, dateTo],
+    `/api/admin/audit-logs?${logParams}`
+  );
+  const logs = logsData?.logs ?? [];
+  const logsTotal = logsData?.total ?? 0;
+  const logsTotalPages = logsData?.totalPages ?? 1;
 
   // ==================== User CRUD ====================
 
@@ -254,7 +225,7 @@ export default function AdminPage() {
         toast.success("User created successfully");
         setAddDialogOpen(false);
         setFormData(emptyFormData);
-        fetchUsers();
+        invalidate(["admin-users"]);
       } else {
         const data = await response.json();
         toast.error(data.error || "Failed to create user");
@@ -296,7 +267,7 @@ export default function AdminPage() {
         setEditDialogOpen(false);
         setEditingUser(null);
         setFormData(emptyFormData);
-        fetchUsers();
+        invalidate(["admin-users"]);
       } else {
         const data = await response.json();
         toast.error(data.error || "Failed to update user");
@@ -327,7 +298,7 @@ export default function AdminPage() {
         );
         setDeactivateDialogOpen(false);
         setDeactivatingUser(null);
-        fetchUsers();
+        invalidate(["admin-users"]);
       } else {
         const data = await response.json();
         toast.error(data.error || "Failed to update user status");

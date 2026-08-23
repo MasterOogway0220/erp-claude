@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
+import { useApiQuery } from "@/hooks/use-api-query";
 import { useVendors } from "@/hooks/use-masters";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
@@ -58,7 +59,11 @@ function CreatePRPage() {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const vendors = useVendors<Vendor>();
-  const [salesOrders, setSalesOrders] = useState<SalesOrder[]>([]);
+  const { data: salesOrdersData } = useApiQuery<{ salesOrders: SalesOrder[] }>(
+    ["sales-orders", "OPEN"],
+    "/api/sales-orders?status=OPEN"
+  );
+  const salesOrders = salesOrdersData?.salesOrders ?? [];
 
   const [formData, setFormData] = useState({
     salesOrderId: searchParams.get("salesOrderId") || "",
@@ -87,7 +92,6 @@ function CreatePRPage() {
   ]);
 
   useEffect(() => {
-    fetchSalesOrders();
     fetchDepartments();
   }, []);
 
@@ -99,18 +103,6 @@ function CreatePRPage() {
       setDepartments(data.departments || data || []);
     } catch {
       // Department is optional on a PR — a failed lookup must not block it.
-    }
-  };
-
-  const fetchSalesOrders = async () => {
-    try {
-      const response = await fetch("/api/sales-orders?status=OPEN");
-      if (response.ok) {
-        const data = await response.json();
-        setSalesOrders(data.salesOrders || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch sales orders:", error);
     }
   };
 

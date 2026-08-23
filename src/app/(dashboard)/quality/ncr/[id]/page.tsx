@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useApiQuery, useInvalidate } from "@/hooks/use-api-query";
 import { useRouter, useParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -51,56 +52,40 @@ export default function NCRDetailPage() {
   const router = useRouter();
   const params = useParams();
   const { user } = useCurrentUser();
-  const [ncr, setNcr] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading: loading, isError } = useApiQuery<{ ncr: any }>(
+    ["ncr", params.id],
+    `/api/quality/ncr/${params.id}`,
+    { enabled: !!params.id }
+  );
+  const ncr = data?.ncr ?? null;
+  const invalidate = useInvalidate();
+
+  // The hand-written fetcher redirected away when the record could not
+  // be loaded; React Query reports that as isError, so the redirect
+  // lives here rather than being lost.
+  useEffect(() => {
+    if (isError) {
+      toast.error("Failed to load NCR");
+      router.push("/quality");
+    }
+  }, [isError, router]);
   const [investigateDialogOpen, setInvestigateDialogOpen] = useState(false);
   const [correctiveDialogOpen, setCorrectiveDialogOpen] = useState(false);
   const [closeDialogOpen, setCloseDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [targetClosureDate, setTargetClosureDate] = useState("");
   const [responsiblePersonId, setResponsiblePersonId] = useState("");
-  const [users, setUsers] = useState<any[]>([]);
+  const { data: usersData } = useApiQuery<{ users: any[] }>(
+    ["users"],
+    "/api/users"
+  );
+  const users = usersData?.users ?? [];
   const [capaData, setCAPAData] = useState({
     rootCause: "",
     correctiveAction: "",
     preventiveAction: "",
     disposition: "",
   });
-
-  useEffect(() => {
-    if (params.id) fetchNCR(params.id as string);
-    fetchUsers();
-  }, [params.id]);
-
-  const fetchUsers = async () => {
-    try {
-      const res = await fetch("/api/users");
-      if (res.ok) {
-        const data = await res.json();
-        setUsers(data.users || []);
-      }
-    } catch {}
-  };
-
-  const fetchNCR = async (id: string) => {
-    try {
-      const response = await fetch(`/api/quality/ncr/${id}`);
-      if (!response.ok) throw new Error("Failed to fetch");
-      const data = await response.json();
-      setNcr(data.ncr);
-      setCAPAData({
-        rootCause: data.ncr.rootCause || "",
-        correctiveAction: data.ncr.correctiveAction || "",
-        preventiveAction: data.ncr.preventiveAction || "",
-        disposition: data.ncr.disposition || "",
-      });
-    } catch (error) {
-      toast.error("Failed to load NCR");
-      router.push("/quality");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleMoveToInvestigation = async () => {
     setSubmitting(true);
@@ -118,7 +103,7 @@ export default function NCRDetailPage() {
 
       toast.success("NCR moved to investigation");
       setInvestigateDialogOpen(false);
-      fetchNCR(params.id as string);
+      invalidate(["ncr", params.id]);
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -144,7 +129,7 @@ export default function NCRDetailPage() {
       }
       toast.success("NCR moved to corrective action phase");
       setCorrectiveDialogOpen(false);
-      fetchNCR(params.id as string);
+      invalidate(["ncr", params.id]);
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -165,7 +150,7 @@ export default function NCRDetailPage() {
         throw new Error(error.error || "Failed to verify NCR");
       }
       toast.success("NCR verified by management");
-      fetchNCR(params.id as string);
+      invalidate(["ncr", params.id]);
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -214,7 +199,7 @@ export default function NCRDetailPage() {
 
       toast.success("NCR closed successfully");
       setCloseDialogOpen(false);
-      fetchNCR(params.id as string);
+      invalidate(["ncr", params.id]);
     } catch (error: any) {
       toast.error(error.message);
     } finally {

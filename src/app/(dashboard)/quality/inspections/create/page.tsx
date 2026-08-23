@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
+import { useApiQuery } from "@/hooks/use-api-query";
 import { useInspectionAgencies } from "@/hooks/use-masters";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
@@ -244,7 +245,13 @@ function CreateInspectionForm() {
   const offerId = searchParams.get("offerId");
 
   const [loading, setLoading] = useState(false);
-  const [stocks, setStocks] = useState<any[]>([]);
+  // Keyed by the query string, so the screens reading the unfiltered list
+  // share one cache entry and the filtered ones get their own.
+  const { data: stockData } = useApiQuery<{ stocks: any[] }>(
+    ["inventory-stock", "status=UNDER_INSPECTION"],
+    "/api/inventory/stock?status=UNDER_INSPECTION"
+  );
+  const stocks = stockData?.stocks ?? [];
   const [selectedStockId, setSelectedStockId] = useState("");
   const [selectedStock, setSelectedStock] = useState<any>(null);
   const [inspectionType, setInspectionType] = useState("");
@@ -264,7 +271,6 @@ function CreateInspectionForm() {
   const { uploading, uploadFile } = useFileUploader();
 
   useEffect(() => {
-    fetchStocks();
   }, []);
 
   useEffect(() => {
@@ -272,18 +278,6 @@ function CreateInspectionForm() {
       fetchFromOffer(offerId);
     }
   }, [offerId]);
-
-  const fetchStocks = async () => {
-    try {
-      const response = await fetch("/api/inventory/stock?status=UNDER_INSPECTION");
-      if (response.ok) {
-        const data = await response.json();
-        setStocks(data.stocks || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch stocks:", error);
-    }
-  };
 
   const fetchFromOffer = async (id: string) => {
     try {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
+import { useApiQuery } from "@/hooks/use-api-query";
 import { useVendors } from "@/hooks/use-masters";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
@@ -70,8 +71,16 @@ function CreatePOPage() {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const vendors = useVendors<Vendor>();
-  const [prs, setPRs] = useState<any[]>([]);
-  const [salesOrders, setSalesOrders] = useState<SalesOrder[]>([]);
+  const { data: prsData } = useApiQuery<{ purchaseRequisitions: any[] }>(
+    ["purchase-requisitions", "APPROVED"],
+    "/api/purchase/requisitions?status=APPROVED"
+  );
+  const prs = prsData?.purchaseRequisitions ?? [];
+  const { data: salesOrdersData } = useApiQuery<{ salesOrders: SalesOrder[] }>(
+    ["sales-orders", "OPEN"],
+    "/api/sales-orders?status=OPEN"
+  );
+  const salesOrders = salesOrdersData?.salesOrders ?? [];
 
   const [formData, setFormData] = useState({
     vendorId: "",
@@ -109,8 +118,6 @@ function CreatePOPage() {
   ]);
 
   useEffect(() => {
-    fetchPRs();
-    fetchSalesOrders();
   }, []);
 
   // Load PR items when prId changes AND prs are loaded
@@ -126,30 +133,6 @@ function CreatePOPage() {
       loadSOItems(formData.salesOrderId);
     }
   }, [formData.salesOrderId]);
-
-  const fetchPRs = async () => {
-    try {
-      const response = await fetch("/api/purchase/requisitions?status=APPROVED");
-      if (response.ok) {
-        const data = await response.json();
-        setPRs(data.purchaseRequisitions || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch PRs:", error);
-    }
-  };
-
-  const fetchSalesOrders = async () => {
-    try {
-      const response = await fetch("/api/sales-orders?status=OPEN");
-      if (response.ok) {
-        const data = await response.json();
-        setSalesOrders(data.salesOrders || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch sales orders:", error);
-    }
-  };
 
   const mapToPOItems = (sourceItems: any[]): POItem[] => {
     return sourceItems.map((item: any) => ({

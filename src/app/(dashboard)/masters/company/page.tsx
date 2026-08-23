@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useApiQuery, useInvalidate } from "@/hooks/use-api-query";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -42,28 +43,17 @@ export default function CompanyMasterPage() {
   const router = useRouter();
   const { user } = useCurrentUser();
   const isSuperAdmin = user?.role === "SUPER_ADMIN";
-  const [loading, setLoading] = useState(true);
-  const [companies, setCompanies] = useState<CompanyData[]>([]);
+  const { data: companiesData, isLoading: loading } = useApiQuery<{ companies: CompanyData[] }>(
+    ["companies"],
+    "/api/masters/company"
+  );
+  const companies = companiesData?.companies ?? [];
+  const invalidate = useInvalidate();
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchCompanies();
+    invalidate(["companies"]);
   }, []);
-
-  const fetchCompanies = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/masters/company");
-      if (res.ok) {
-        const data = await res.json();
-        setCompanies(data.companies || []);
-      }
-    } catch {
-      toast.error("Failed to load companies");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -73,7 +63,7 @@ export default function CompanyMasterPage() {
       });
       if (!res.ok) throw new Error("Failed to delete");
       toast.success("Company deleted");
-      fetchCompanies();
+      invalidate(["companies"]);
     } catch {
       toast.error("Failed to delete company");
     } finally {

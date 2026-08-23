@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useApiQuery } from "@/hooks/use-api-query";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -30,8 +31,18 @@ export default function CreateLabReportPage() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [stocks, setStocks] = useState<any[]>([]);
-  const [purchaseOrders, setPurchaseOrders] = useState<any[]>([]);
+  // Keyed by the query string, so the screens reading the unfiltered list
+  // share one cache entry and the filtered ones get their own.
+  const { data: stockData } = useApiQuery<{ stocks: any[] }>(
+    ["inventory-stock", "pageSize=500"],
+    "/api/inventory/stock?pageSize=500"
+  );
+  const stocks = stockData?.stocks ?? [];
+  const { data: purchaseOrdersData } = useApiQuery<{ purchaseOrders: any[] }>(
+    ["purchase-orders", "pageSize=200"],
+    "/api/purchase/orders?pageSize=200"
+  );
+  const purchaseOrders = purchaseOrdersData?.purchaseOrders ?? [];
   const [formData, setFormData] = useState({
     reportType: "",
     heatNo: "",
@@ -48,33 +59,7 @@ export default function CreateLabReportPage() {
   });
 
   useEffect(() => {
-    fetchStocks();
-    fetchPurchaseOrders();
   }, []);
-
-  const fetchStocks = async () => {
-    try {
-      const response = await fetch("/api/inventory/stock?pageSize=500");
-      if (response.ok) {
-        const data = await response.json();
-        setStocks(data.stocks || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch stocks:", error);
-    }
-  };
-
-  const fetchPurchaseOrders = async () => {
-    try {
-      const response = await fetch("/api/purchase/orders?pageSize=200");
-      if (response.ok) {
-        const data = await response.json();
-        setPurchaseOrders(data.purchaseOrders || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch POs:", error);
-    }
-  };
 
   const handleStockSelect = (stockId: string) => {
     if (stockId === "NONE") {

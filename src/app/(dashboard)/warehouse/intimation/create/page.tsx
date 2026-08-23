@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useWarehouses } from "@/hooks/use-masters";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -48,7 +49,7 @@ interface Warehouse {
 export default function CreateWarehouseIntimationPage() {
   const router = useRouter();
   const [salesOrders, setSalesOrders] = useState<SalesOrder[]>([]);
-  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  const warehouses = useWarehouses<Warehouse>();
   const [users, setUsers] = useState<any[]>([]);
   const [selectedSO, setSelectedSO] = useState("");
   const [soDetail, setSODetail] = useState<SalesOrder | null>(null);
@@ -62,7 +63,6 @@ export default function CreateWarehouseIntimationPage() {
 
   useEffect(() => {
     fetchSalesOrders();
-    fetchWarehouses();
     fetchUsers();
   }, []);
 
@@ -89,18 +89,6 @@ export default function CreateWarehouseIntimationPage() {
       }
     } catch (error) {
       console.error("Failed to fetch SOs:", error);
-    }
-  };
-
-  const fetchWarehouses = async () => {
-    try {
-      const res = await fetch("/api/masters/warehouses");
-      if (res.ok) {
-        const data = await res.json();
-        setWarehouses(data.warehouses || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch warehouses:", error);
     }
   };
 

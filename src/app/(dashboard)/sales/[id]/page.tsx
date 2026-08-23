@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useApiQuery, useInvalidate } from "@/hooks/use-api-query";
 import { useRouter, useParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -90,29 +91,23 @@ const poAcceptanceColors: Record<string, string> = {
 export default function SalesOrderDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const [salesOrder, setSalesOrder] = useState<SalesOrder | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [cancelling, setCancelling] = useState(false);
+  const { data, isLoading: loading, isError } = useApiQuery<{ salesOrder: SalesOrder }>(
+    ["sales-order", params.id],
+    `/api/sales-orders/${params.id}`,
+    { enabled: !!params.id }
+  );
+  const salesOrder = data?.salesOrder ?? null;
+  const invalidate = useInvalidate();
 
+  // The hand-written fetcher redirected away when the record could not be
+  // loaded; React Query reports that as isError, so the redirect lives here.
   useEffect(() => {
-    if (params.id) {
-      fetchSalesOrder(params.id as string);
-    }
-  }, [params.id]);
-
-  const fetchSalesOrder = async (id: string) => {
-    try {
-      const response = await fetch(`/api/sales-orders/${id}`);
-      if (!response.ok) throw new Error("Failed to fetch");
-      const data = await response.json();
-      setSalesOrder(data.salesOrder);
-    } catch (error) {
+    if (isError) {
       toast.error("Failed to load sales order");
       router.push("/sales");
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [isError, router]);
+  const [cancelling, setCancelling] = useState(false);
 
   const handleCancelSO = async () => {
     if (!salesOrder) return;
@@ -132,7 +127,7 @@ export default function SalesOrderDetailPage() {
       }
 
       toast.success(`Order ${salesOrder.soNo} cancelled`);
-      fetchSalesOrder(salesOrder.id);
+      invalidate(["sales-order", params.id]);
     } catch (error: any) {
       toast.error(error.message);
     } finally {

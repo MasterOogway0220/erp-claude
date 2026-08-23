@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useApiQuery } from "@/hooks/use-api-query";
 import { useRouter, useParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -22,26 +23,22 @@ const stockStatusColors: Record<string, string> = {
 export default function GRNDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const [grn, setGrn] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading: loading, isError } = useApiQuery<{ grn: any }>(
+    ["grn", params.id],
+    `/api/inventory/grn/${params.id}`,
+    { enabled: !!params.id }
+  );
+  const grn = data?.grn ?? null;
 
+  // The hand-written fetcher redirected away when the record could not
+  // be loaded; React Query reports that as isError, so the redirect
+  // lives here rather than being lost.
   useEffect(() => {
-    if (params.id) fetchGRN(params.id as string);
-  }, [params.id]);
-
-  const fetchGRN = async (id: string) => {
-    try {
-      const response = await fetch(`/api/inventory/grn/${id}`);
-      if (!response.ok) throw new Error("Failed to fetch");
-      const data = await response.json();
-      setGrn(data.grn);
-    } catch (error) {
+    if (isError) {
       toast.error("Failed to load GRN");
       router.push("/inventory");
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [isError, router]);
 
   if (loading) return <PageLoading />;
   if (!grn) return null;

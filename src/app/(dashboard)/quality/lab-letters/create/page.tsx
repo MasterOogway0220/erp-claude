@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useApiQuery } from "@/hooks/use-api-query";
 import { useInspectionAgencies } from "@/hooks/use-masters";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
@@ -53,7 +54,13 @@ const UNITS = ["MTR", "NOS", "KG", "PCS", "TON", "SET", "LOT"];
 export default function CreateLabLetterPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [stocks, setStocks] = useState<StockItem[]>([]);
+  // Keyed by the query string, so the screens reading the unfiltered list
+  // share one cache entry and the filtered ones get their own.
+  const { data: stockData } = useApiQuery<{ stocks: StockItem[] }>(
+    ["inventory-stock", ""],
+    "/api/inventory/stock"
+  );
+  const stocks = stockData?.stocks ?? [];
   const [tests, setTests] = useState<TestingItem[]>([]);
   const agencies = useInspectionAgencies<InspectionAgency>();
 
@@ -80,21 +87,8 @@ export default function CreateLabLetterPage() {
   });
 
   useEffect(() => {
-    fetchStocks();
     fetchTests();
   }, []);
-
-  const fetchStocks = async () => {
-    try {
-      const res = await fetch("/api/inventory/stock");
-      if (res.ok) {
-        const data = await res.json();
-        setStocks(data.stocks || []);
-      }
-    } catch {
-      console.error("Failed to fetch stocks");
-    }
-  };
 
   const fetchTests = async () => {
     try {

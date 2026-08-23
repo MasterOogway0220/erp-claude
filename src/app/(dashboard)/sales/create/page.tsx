@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense, useCallback } from "react";
+import { useApiQuery } from "@/hooks/use-api-query";
 import { useCustomers } from "@/hooks/use-masters";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
@@ -68,7 +69,12 @@ function CreateSalesOrderPage() {
   const preselectedQuotationId = searchParams.get("quotationId");
   const [loading, setLoading] = useState(false);
   const customers = useCustomers<Customer>();
-  const [quotations, setQuotations] = useState<Quotation[]>([]);
+  // Keyed by the status filter, so each form's slice is its own entry.
+  const { data: quotationData } = useApiQuery<{ quotations: Quotation[] }>(
+    ["quotations-list", "APPROVED,SENT"],
+    "/api/quotations?status=APPROVED,SENT"
+  );
+  const quotations = quotationData?.quotations ?? [];
 
   const [formData, setFormData] = useState({
     customerId: "",
@@ -85,20 +91,7 @@ function CreateSalesOrderPage() {
   const [items, setItems] = useState<SOItem[]>([]);
 
   useEffect(() => {
-    fetchQuotations();
   }, []);
-
-  const fetchQuotations = async () => {
-    try {
-      const response = await fetch("/api/quotations?status=APPROVED,SENT");
-      if (response.ok) {
-        const data = await response.json();
-        setQuotations(data.quotations || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch quotations:", error);
-    }
-  };
 
   const handleQuotationChange = useCallback(
     (quotationId: string) => {

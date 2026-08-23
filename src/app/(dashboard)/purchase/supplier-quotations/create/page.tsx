@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useVendors } from "@/hooks/use-masters";
+import { useApiQuery } from "@/hooks/use-api-query";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -98,9 +100,13 @@ export default function CreateSupplierQuotationPage() {
   const router = useRouter();
 
   // Data
-  const [vendors, setVendors] = useState<Vendor[]>([]);
-  const [rfqs, setRfqs] = useState<RFQ[]>([]);
-  const [loading, setLoading] = useState(true);
+  const vendors = useVendors<Vendor>();
+  const { data: rfqData, isLoading: rfqLoading } = useApiQuery<{ rfqs: RFQ[] }>(
+    ["rfqs", "open"],
+    "/api/purchase/rfq?status=SENT,PARTIALLY_RESPONDED,ALL_RESPONDED"
+  );
+  const rfqs = rfqData?.rfqs ?? [];
+  const loading = rfqLoading;
   const [submitting, setSubmitting] = useState(false);
 
   // Form fields
@@ -120,31 +126,7 @@ export default function CreateSupplierQuotationPage() {
   const [charges, setCharges] = useState<ChargeRow[]>(buildInitialCharges());
 
   useEffect(() => {
-    fetchData();
   }, []);
-
-  const fetchData = async () => {
-    try {
-      const [vendorRes, rfqRes] = await Promise.all([
-        fetch("/api/masters/vendors"),
-        fetch("/api/purchase/rfq?status=SENT,PARTIALLY_RESPONDED,ALL_RESPONDED"),
-      ]);
-
-      if (vendorRes.ok) {
-        const data = await vendorRes.json();
-        setVendors(data.vendors || []);
-      }
-
-      if (rfqRes.ok) {
-        const data = await rfqRes.json();
-        setRfqs(data.rfqs || data || []);
-      }
-    } catch {
-      toast.error("Failed to load data");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Item helpers
   const updateItem = (id: string, field: keyof LineItem, value: string) => {

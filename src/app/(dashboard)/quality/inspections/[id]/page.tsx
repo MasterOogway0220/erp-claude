@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useApiQuery } from "@/hooks/use-api-query";
 import { useRouter, useParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -115,26 +116,22 @@ function DocumentList({
 export default function InspectionDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const [inspection, setInspection] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading: loading, isError } = useApiQuery<{ inspection: any }>(
+    ["inspection", params.id],
+    `/api/quality/inspections/${params.id}`,
+    { enabled: !!params.id }
+  );
+  const inspection = data?.inspection ?? null;
 
+  // The hand-written fetcher redirected away when the record could not
+  // be loaded; React Query reports that as isError, so the redirect
+  // lives here rather than being lost.
   useEffect(() => {
-    if (params.id) fetchInspection(params.id as string);
-  }, [params.id]);
-
-  const fetchInspection = async (id: string) => {
-    try {
-      const response = await fetch(`/api/quality/inspections/${id}`);
-      if (!response.ok) throw new Error("Failed to fetch");
-      const data = await response.json();
-      setInspection(data.inspection);
-    } catch (error) {
+    if (isError) {
       toast.error("Failed to load inspection");
       router.push("/quality");
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [isError, router]);
 
   if (loading) {
     return <PageLoading />;

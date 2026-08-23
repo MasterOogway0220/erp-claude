@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useApiQuery } from "@/hooks/use-api-query";
 import { useCustomers } from "@/hooks/use-masters";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,8 +27,6 @@ interface BuyerPerformance {
 }
 
 export default function BuyerPerformancePage() {
-  const [data, setData] = useState<BuyerPerformance[]>([]);
-  const [loading, setLoading] = useState(false);
   const customers = useCustomers<any>();
   const [filters, setFilters] = useState({
     customerId: "",
@@ -35,29 +34,24 @@ export default function BuyerPerformancePage() {
     dateTo: "",
   });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  // Filters are applied on a button press, not as they are edited, so the
+  // key follows the applied set. Re-running a report you already ran — a
+  // common thing to do when comparing periods — is then served from cache.
+  const [applied, setApplied] = useState(filters);
+  const fetchData = () => setApplied(filters);
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (filters.customerId) params.set("customerId", filters.customerId);
-      if (filters.dateFrom) params.set("dateFrom", filters.dateFrom);
-      if (filters.dateTo) params.set("dateTo", filters.dateTo);
+  const reportParams = new URLSearchParams();
+  if (applied.customerId) reportParams.set("customerId", applied.customerId);
+  if (applied.dateFrom) reportParams.set("dateFrom", applied.dateFrom);
+  if (applied.dateTo) reportParams.set("dateTo", applied.dateTo);
 
-      const res = await fetch(`/api/reports/buyer-performance?${params}`);
-      if (res.ok) {
-        const d = await res.json();
-        setData(d.data || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: reportData, isLoading: loading } = useApiQuery<{
+    data: BuyerPerformance[];
+  }>(
+    ["buyer-performance", applied.customerId, applied.dateFrom, applied.dateTo],
+    `/api/reports/buyer-performance?${reportParams}`
+  );
+  const data = reportData?.data ?? [];
 
   const columns: Column<BuyerPerformance>[] = [
     { key: "customerName", header: "Customer Name" },

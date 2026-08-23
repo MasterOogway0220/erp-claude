@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useApiQuery, useInvalidate } from "@/hooks/use-api-query";
 import { useRouter, useParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -47,8 +48,23 @@ const resultColors: Record<string, string> = {
 export default function LabReportDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const [report, setReport] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading: loading, isError } = useApiQuery<{ labReport: any }>(
+    ["lab-report", params.id],
+    `/api/quality/lab-reports/${params.id}`,
+    { enabled: !!params.id }
+  );
+  const report = data?.labReport ?? null;
+  const invalidate = useInvalidate();
+
+  // The hand-written fetcher redirected away when the record could not
+  // be loaded; React Query reports that as isError, so the redirect
+  // lives here rather than being lost.
+  useEffect(() => {
+    if (isError) {
+      toast.error("Failed to load lab report");
+      router.push("/quality/lab-reports");
+    }
+  }, [isError, router]);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -60,32 +76,6 @@ export default function LabReportDetailPage() {
     filePath: "",
     fileName: "",
   });
-
-  useEffect(() => {
-    if (params.id) fetchReport(params.id as string);
-  }, [params.id]);
-
-  const fetchReport = async (id: string) => {
-    try {
-      const response = await fetch(`/api/quality/lab-reports/${id}`);
-      if (!response.ok) throw new Error("Failed to fetch");
-      const data = await response.json();
-      setReport(data.labReport);
-      setEditData({
-        result: data.labReport.result || "PENDING",
-        labName: data.labReport.labName || "",
-        testDate: data.labReport.testDate ? data.labReport.testDate.split("T")[0] : "",
-        remarks: data.labReport.remarks || "",
-        filePath: data.labReport.filePath || "",
-        fileName: data.labReport.fileName || "",
-      });
-    } catch (error) {
-      toast.error("Failed to load lab report");
-      router.push("/quality/lab-reports");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -124,7 +114,7 @@ export default function LabReportDetailPage() {
       }
       toast.success("Lab report updated");
       setEditDialogOpen(false);
-      fetchReport(params.id as string);
+      invalidate(["lab-report", params.id]);
     } catch (error: any) {
       toast.error(error.message);
     } finally {

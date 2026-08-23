@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
+import { useApiQuery } from "@/hooks/use-api-query";
 import { useCustomersQuery } from "@/hooks/use-masters";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
@@ -77,11 +78,25 @@ function CreateMTCPage() {
   const [issuedAgainst, setIssuedAgainst] = useState<
     "PURCHASE_ORDER" | "QUOTATION"
   >("PURCHASE_ORDER");
-  const [purchaseOrders, setPurchaseOrders] = useState<any[]>([]);
-  const [quotations, setQuotations] = useState<any[]>([]);
+  const { data: poData, isLoading: loadingPOs } = useApiQuery<{ purchaseOrders: any[] }>(
+    ["purchase-orders", ""],
+    "/api/purchase/orders"
+  );
+  const purchaseOrders = poData?.purchaseOrders ?? [];
+  // Keyed by the status filter, so each form's slice is its own entry.
+  const { data: quotationData, isLoading: loadingQuotations } = useApiQuery<{ quotations: any[] }>(
+    ["quotations-list", ""],
+    "/api/quotations"
+  );
+  const quotations = quotationData?.quotations ?? [];
   const { data: customerData, isLoading: loadingCustomers } = useCustomersQuery<any>();
   const customers = customerData?.customers ?? [];
-  const [materialSpecs, setMaterialSpecs] = useState<any[]>([]);
+  // Shares the material-spec list screen's cache entry.
+  const { data: specData, isLoading: loadingSpecs } = useApiQuery<{ materialSpecs: any[] }>(
+    ["material-specs"],
+    "/api/mtc/material-specs"
+  );
+  const materialSpecs = specData?.materialSpecs ?? [];
   const [selectedPO, setSelectedPO] = useState<any>(null);
   const [selectedQuotation, setSelectedQuotation] = useState<any>(null);
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
@@ -106,9 +121,6 @@ function CreateMTCPage() {
   const [items, setItems] = useState<MTCItem[]>([]);
 
   // Loading states
-  const [loadingPOs, setLoadingPOs] = useState(false);
-  const [loadingQuotations, setLoadingQuotations] = useState(false);
-  const [loadingSpecs, setLoadingSpecs] = useState(false);
   const [loadingPODetail, setLoadingPODetail] = useState(false);
   const [loadingQuotationDetail, setLoadingQuotationDetail] = useState(false);
 
@@ -117,55 +129,7 @@ function CreateMTCPage() {
 
   // Fetch initial data on mount
   useEffect(() => {
-    fetchPurchaseOrders();
-    fetchQuotations();
-    fetchMaterialSpecs();
   }, []);
-
-  const fetchPurchaseOrders = async () => {
-    setLoadingPOs(true);
-    try {
-      const res = await fetch("/api/purchase/orders");
-      if (res.ok) {
-        const data = await res.json();
-        setPurchaseOrders(data.orders || data.purchaseOrders || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch POs:", error);
-    } finally {
-      setLoadingPOs(false);
-    }
-  };
-
-  const fetchQuotations = async () => {
-    setLoadingQuotations(true);
-    try {
-      const res = await fetch("/api/quotations");
-      if (res.ok) {
-        const data = await res.json();
-        setQuotations(data.quotations || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch quotations:", error);
-    } finally {
-      setLoadingQuotations(false);
-    }
-  };
-
-  const fetchMaterialSpecs = async () => {
-    setLoadingSpecs(true);
-    try {
-      const res = await fetch("/api/mtc/material-specs");
-      if (res.ok) {
-        const data = await res.json();
-        setMaterialSpecs(data.materialSpecs || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch material specs:", error);
-    } finally {
-      setLoadingSpecs(false);
-    }
-  };
 
   // When a PO is selected, fetch full details
   const handlePOSelect = async (poId: string) => {

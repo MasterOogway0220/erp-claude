@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
+import { useApiQuery } from "@/hooks/use-api-query";
 import { useWarehouses } from "@/hooks/use-masters";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
@@ -73,8 +74,19 @@ function CreateDispatchNotePage() {
   const preselectedPlId = searchParams.get("plId") || "";
 
   const [loading, setLoading] = useState(false);
-  const [packingLists, setPackingLists] = useState<PackingList[]>([]);
-  const [transporters, setTransporters] = useState<Transporter[]>([]);
+  const { data: packingListsData } = useApiQuery<{ packingLists: PackingList[] }>(
+    ["packing-lists"],
+    "/api/dispatch/packing-lists"
+  );
+  // Only packing lists that have not been dispatched yet are selectable.
+  const packingLists = (packingListsData?.packingLists ?? []).filter(
+    (pl: PackingList) => !pl.dispatchNotes || pl.dispatchNotes.length === 0
+  );
+  const { data: transportersData } = useApiQuery<{ transporters: Transporter[] }>(
+    ["transporters"],
+    "/api/masters/other?type=transporters"
+  );
+  const transporters = transportersData?.transporters ?? [];
   const allWarehouses = useWarehouses<WarehouseOption>();
   const warehouses = allWarehouses.filter((w) => (w as { isActive?: boolean }).isActive);
   const [selectedPL, setSelectedPL] = useState<PackingList | null>(null);
@@ -93,8 +105,6 @@ function CreateDispatchNotePage() {
   });
 
   useEffect(() => {
-    fetchPackingLists();
-    fetchTransporters();
   }, []);
 
   useEffect(() => {
@@ -105,34 +115,6 @@ function CreateDispatchNotePage() {
       setSelectedPL(null);
     }
   }, [formData.packingListId, packingLists]);
-
-  const fetchPackingLists = async () => {
-    try {
-      const response = await fetch("/api/dispatch/packing-lists");
-      if (response.ok) {
-        const data = await response.json();
-        // Filter to only show PLs without dispatch notes
-        const eligible = (data.packingLists || []).filter(
-          (pl: PackingList) => !pl.dispatchNotes || pl.dispatchNotes.length === 0
-        );
-        setPackingLists(eligible);
-      }
-    } catch (error) {
-      console.error("Failed to fetch packing lists:", error);
-    }
-  };
-
-  const fetchTransporters = async () => {
-    try {
-      const response = await fetch("/api/masters/other?type=transporters");
-      if (response.ok) {
-        const data = await response.json();
-        setTransporters(data.transporters || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch transporters:", error);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useApiQuery } from "@/hooks/use-api-query";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -30,7 +31,13 @@ const NCR_TYPES = [
 export default function CreateNCRPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [stocks, setStocks] = useState<any[]>([]);
+  // Keyed by the query string, so the screens reading the unfiltered list
+  // share one cache entry and the filtered ones get their own.
+  const { data: stockData } = useApiQuery<{ stocks: any[] }>(
+    ["inventory-stock", ""],
+    "/api/inventory/stock"
+  );
+  const stocks = stockData?.stocks ?? [];
   const [selectedStockId, setSelectedStockId] = useState("");
   const [selectedStock, setSelectedStock] = useState<any>(null);
   const [formData, setFormData] = useState({
@@ -39,20 +46,7 @@ export default function CreateNCRPage() {
   });
 
   useEffect(() => {
-    fetchStocks();
   }, []);
-
-  const fetchStocks = async () => {
-    try {
-      const response = await fetch("/api/inventory/stock");
-      if (response.ok) {
-        const data = await response.json();
-        setStocks(data.stocks || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch stocks:", error);
-    }
-  };
 
   const handleStockSelect = (stockId: string) => {
     setSelectedStockId(stockId);

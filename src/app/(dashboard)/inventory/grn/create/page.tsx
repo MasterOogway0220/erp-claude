@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
+import { useApiQuery } from "@/hooks/use-api-query";
 import { useWarehouses } from "@/hooks/use-masters";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
@@ -89,7 +90,13 @@ function CreateGRNPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
-  const [purchaseOrders, setPurchaseOrders] = useState<any[]>([]);
+  const { data: purchaseOrdersRawData } = useApiQuery<{ purchaseOrders: any[] }>(
+    ["purchase-orders", ""],
+    "/api/purchase/orders"
+  );
+  const purchaseOrdersRaw = purchaseOrdersRawData?.purchaseOrders ?? [];
+  // Only orders that can still receive material are selectable here.
+  const purchaseOrders = purchaseOrdersRaw.filter((po: any) => po.status === "OPEN" || po.status === "PARTIALLY_RECEIVED" || po.status === "DRAFT");
   const [selectedPO, setSelectedPO] = useState<any>(null);
   const [formData, setFormData] = useState({
     poId: searchParams.get("poId") || "",
@@ -99,7 +106,6 @@ function CreateGRNPage() {
   const warehouses = useWarehouses<Warehouse>();
 
   useEffect(() => {
-    fetchPurchaseOrders();
   }, []);
 
   useEffect(() => {
@@ -107,21 +113,6 @@ function CreateGRNPage() {
       loadPOItems(formData.poId);
     }
   }, [formData.poId]);
-
-  const fetchPurchaseOrders = async () => {
-    try {
-      const response = await fetch("/api/purchase/orders");
-      if (response.ok) {
-        const data = await response.json();
-        const eligible = (data.purchaseOrders || []).filter(
-          (po: any) => po.status === "OPEN" || po.status === "PARTIALLY_RECEIVED" || po.status === "DRAFT"
-        );
-        setPurchaseOrders(eligible);
-      }
-    } catch (error) {
-      console.error("Failed to fetch POs:", error);
-    }
-  };
 
   // Build a flat list of warehouse location options for the dropdown
   const warehouseLocationOptions = warehouses.flatMap((wh) =>

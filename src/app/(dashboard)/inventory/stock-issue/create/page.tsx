@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useApiQuery } from "@/hooks/use-api-query";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -22,64 +23,32 @@ import { format } from "date-fns";
 
 export default function CreateStockIssuePage() {
   const router = useRouter();
-  const [salesOrders, setSalesOrders] = useState<any[]>([]);
+  const { data: soData } = useApiQuery<{ salesOrders: any[] }>(
+    ["sales-list"],
+    "/api/sales"
+  );
+  // Only orders that can still be issued against are selectable.
+  const salesOrders = (soData?.salesOrders ?? []).filter(
+    (so: any) => so.status === "OPEN" || so.status === "PARTIALLY_DISPATCHED"
+  );
   const [selectedSO, setSelectedSO] = useState("");
-  const [availableStock, setAvailableStock] = useState<any[]>([]);
+  const { data: stockData } = useApiQuery<{ stocks: any[] }>(
+    ["inventory-stock", "status=ACCEPTED"],
+    "/api/inventory/stock?status=ACCEPTED",
+    // Loaded only once a sales order is chosen, as the effect used to do —
+    // opening this form issues no stock query on its own.
+    { enabled: !!selectedSO }
+  );
+  const availableStock = stockData?.stocks ?? [];
   const [selectedItems, setSelectedItems] = useState<any[]>([]);
-  const [users, setUsers] = useState<any[]>([]);
+  const { data: usersData } = useApiQuery<{ users: any[] }>(
+    ["admin-users"],
+    "/api/admin/users"
+  );
+  const users = usersData?.users ?? [];
   const [authorizedById, setAuthorizedById] = useState("");
   const [remarks, setRemarks] = useState("");
   const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    fetchSalesOrders();
-    fetchUsers();
-  }, []);
-
-  useEffect(() => {
-    if (selectedSO) {
-      fetchAvailableStock();
-    }
-  }, [selectedSO]);
-
-  const fetchSalesOrders = async () => {
-    try {
-      const res = await fetch("/api/sales");
-      if (res.ok) {
-        const data = await res.json();
-        const openSOs = (data.salesOrders || []).filter(
-          (so: any) => so.status === "OPEN" || so.status === "PARTIALLY_DISPATCHED"
-        );
-        setSalesOrders(openSOs);
-      }
-    } catch (error) {
-      console.error("Failed to fetch SOs:", error);
-    }
-  };
-
-  const fetchAvailableStock = async () => {
-    try {
-      const res = await fetch("/api/inventory/stock?status=ACCEPTED");
-      if (res.ok) {
-        const data = await res.json();
-        setAvailableStock(data.stocks || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch stock:", error);
-    }
-  };
-
-  const fetchUsers = async () => {
-    try {
-      const res = await fetch("/api/admin/users");
-      if (res.ok) {
-        const data = await res.json();
-        setUsers(data.users || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch users:", error);
-    }
-  };
 
   const toggleItem = (stock: any) => {
     const exists = selectedItems.find((i) => i.inventoryStockId === stock.id);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useApiQuery } from "@/hooks/use-api-query";
 import { useRouter } from "next/navigation";
 import { use } from "react";
 import { useSession } from "next-auth/react";
@@ -111,7 +112,13 @@ export default function InspectionPrepDetailPage({
 
   // Generate offer dialog
   const [offerDialogOpen, setOfferDialogOpen] = useState(false);
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  // Loaded only once the offer dialog opens, as the handler used to do.
+  const { data: customerData } = useApiQuery<{ customers: Customer[] }>(
+    ["customers-offer-picker"],
+    "/api/customers?limit=500",
+    { enabled: offerDialogOpen }
+  );
+  const customers = customerData?.customers ?? [];
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [generating, setGenerating] = useState(false);
 
@@ -148,16 +155,6 @@ export default function InspectionPrepDetailPage({
   // Offer dialog helpers
   // -------------------------------------------------------------------------
   const openOfferDialog = async () => {
-    try {
-      const res = await fetch("/api/customers?limit=500");
-      if (res.ok) {
-        const data = await res.json();
-        setCustomers(data.customers || []);
-      }
-    } catch {
-      toast.error("Failed to load customers");
-    }
-
     // Initialise selection with all heats selected at their full piece count
     if (prep) {
       const sel: Record<string, Record<string, { selected: boolean; pieces: number }>> = {};

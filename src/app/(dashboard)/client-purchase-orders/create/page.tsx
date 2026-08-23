@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense, useCallback, useMemo, Fragment } from "react";
+import { useApiQuery } from "@/hooks/use-api-query";
 import { useCustomers } from "@/hooks/use-masters";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
@@ -168,7 +169,12 @@ function CreateClientPOPage() {
 
   const [loading, setLoading] = useState(false);
   const customers = useCustomers<Customer>();
-  const [quotations, setQuotations] = useState<Quotation[]>([]);
+  // Keyed by the status filter, so each form's slice is its own entry.
+  const { data: quotationData } = useApiQuery<{ quotations: Quotation[] }>(
+    ["quotations-list", "APPROVED,SENT,WON"],
+    "/api/quotations?status=APPROVED,SENT,WON"
+  );
+  const quotations = quotationData?.quotations ?? [];
   const [filteredQuotations, setFilteredQuotations] = useState<Quotation[]>([]);
   const [quotationMeta, setQuotationMeta] = useState<QuotationMeta | null>(null);
   const [balanceItems, setBalanceItems] = useState<SelectedItem[]>([]);
@@ -234,20 +240,7 @@ function CreateClientPOPage() {
   const [showNegotiationSection, setShowNegotiationSection] = useState(false);
 
   useEffect(() => {
-    fetchQuotations();
   }, []);
-
-  const fetchQuotations = async () => {
-    try {
-      const response = await fetch("/api/quotations?status=APPROVED,SENT,WON");
-      if (response.ok) {
-        const data = await response.json();
-        setQuotations(data.quotations || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch quotations:", error);
-    }
-  };
 
   // Filter quotations when customer changes
   useEffect(() => {

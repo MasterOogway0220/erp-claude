@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useApiQuery, useInvalidate } from "@/hooks/use-api-query";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import {
@@ -121,8 +122,12 @@ function formatCurrency(value: number): string {
 
 export default function BankReconciliationPage() {
   // Data
-  const [receipts, setReceipts] = useState<PaymentReceipt[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: receiptsData, isLoading: loading } = useApiQuery<{ paymentReceipts: PaymentReceipt[] }>(
+    ["payment-receipts"],
+    "/api/dispatch/payments"
+  );
+  const receipts = receiptsData?.paymentReceipts ?? [];
+  const invalidate = useInvalidate();
   const [reconMap, setReconMap] = useState<ReconciliationMap>({});
 
   // Filters & search
@@ -151,23 +156,8 @@ export default function BankReconciliationPage() {
   // Load data on mount
   useEffect(() => {
     setReconMap(loadReconciliationMap());
-    fetchReceipts();
+    invalidate(["payment-receipts"]);
   }, []);
-
-  const fetchReceipts = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch("/api/dispatch/payments");
-      if (!response.ok) throw new Error("Failed to fetch");
-      const data = await response.json();
-      setReceipts(data.paymentReceipts || []);
-    } catch (error) {
-      console.error("Failed to fetch payment receipts:", error);
-      toast.error("Failed to load payment receipts");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Persist reconciliation map whenever it changes
   const updateReconMap = useCallback((newMap: ReconciliationMap) => {

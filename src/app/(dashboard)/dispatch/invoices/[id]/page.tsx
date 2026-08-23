@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useApiQuery, useInvalidate } from "@/hooks/use-api-query";
 import { useRouter, useParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -60,8 +61,23 @@ const invoiceStatusColors: Record<string, string> = {
 export default function InvoiceDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const [invoice, setInvoice] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading: loading, isError } = useApiQuery<{ invoice: any }>(
+    ["invoice", params.id],
+    `/api/dispatch/invoices/${params.id}`,
+    { enabled: !!params.id }
+  );
+  const invoice = data?.invoice ?? null;
+  const invalidate = useInvalidate();
+
+  // The hand-written fetcher redirected away when the record could not
+  // be loaded; React Query reports that as isError, so the redirect
+  // lives here rather than being lost.
+  useEffect(() => {
+    if (isError) {
+      toast.error("Failed to load invoice");
+      router.push("/dispatch");
+    }
+  }, [isError, router]);
   const [updating, setUpdating] = useState(false);
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
@@ -71,40 +87,14 @@ export default function InvoiceDetailPage() {
     subject: "",
     message: "",
   });
-  const [emailLogs, setEmailLogs] = useState<any[]>([]);
+  // Keyed by invoice id so each invoice's send history is its own entry.
+  const { data: emailLogData } = useApiQuery<{ emailLogs: any[] }>(
+    ["invoice-email-logs", params.id],
+    `/api/dispatch/invoices/${params.id}/emails`,
+    { enabled: !!params.id }
+  );
+  const emailLogs = emailLogData?.emailLogs ?? [];
 
-  useEffect(() => {
-    if (params.id) {
-      fetchInvoice(params.id as string);
-      fetchEmailLogs(params.id as string);
-    }
-  }, [params.id]);
-
-  const fetchInvoice = async (id: string) => {
-    try {
-      const response = await fetch(`/api/dispatch/invoices/${id}`);
-      if (!response.ok) throw new Error("Failed to fetch");
-      const data = await response.json();
-      setInvoice(data.invoice);
-    } catch (error) {
-      toast.error("Failed to load invoice");
-      router.push("/dispatch");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchEmailLogs = async (id: string) => {
-    try {
-      const response = await fetch(`/api/dispatch/invoices/${id}/emails`);
-      if (response.ok) {
-        const data = await response.json();
-        setEmailLogs(data.emailLogs || []);
-      }
-    } catch {
-      // Non-critical
-    }
-  };
 
   const markAsSent = async () => {
     if (!invoice) return;
@@ -117,7 +107,7 @@ export default function InvoiceDetailPage() {
       });
       if (!response.ok) throw new Error("Failed to update");
       toast.success("Invoice marked as Sent");
-      fetchInvoice(invoice.id);
+      invalidate(["invoice", params.id]);
     } catch (error) {
       toast.error("Failed to update invoice status");
     } finally {
@@ -189,8 +179,8 @@ export default function InvoiceDetailPage() {
       }
       toast.success("Invoice emailed successfully");
       setEmailDialogOpen(false);
-      fetchInvoice(invoice.id);
-      fetchEmailLogs(invoice.id);
+      invalidate(["invoice", params.id]);
+      invalidate(["invoice-email-logs", params.id]);
     } catch (error: any) {
       toast.error(error.message || "Failed to send email");
     } finally {

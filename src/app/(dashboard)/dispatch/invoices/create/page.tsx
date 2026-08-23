@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
+import { useApiQuery } from "@/hooks/use-api-query";
 import { useWarehouses } from "@/hooks/use-masters";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
@@ -74,7 +75,11 @@ function CreateInvoicePage() {
   const preselectedDnId = searchParams.get("dnId") || "";
 
   const [loading, setLoading] = useState(false);
-  const [dispatchNotes, setDispatchNotes] = useState<any[]>([]);
+  const { data: dispatchNotesData } = useApiQuery<{ dispatchNotes: any[] }>(
+    ["dispatch-notes"],
+    "/api/dispatch/dispatch-notes"
+  );
+  const dispatchNotes = dispatchNotesData?.dispatchNotes ?? [];
   const [selectedDN, setSelectedDN] = useState<any>(null);
   const [customer, setCustomer] = useState<any>(null);
   const [taxRates, setTaxRates] = useState<TaxRateOption[]>([]);
@@ -96,7 +101,6 @@ function CreateInvoicePage() {
   const [items, setItems] = useState<InvoiceItem[]>([]);
 
   useEffect(() => {
-    fetchDispatchNotes();
     fetchTaxRates();
   }, []);
 
@@ -135,18 +139,6 @@ function CreateInvoicePage() {
       setItems([]);
     }
   }, [formData.dispatchNoteId, dispatchNotes]);
-
-  const fetchDispatchNotes = async () => {
-    try {
-      const response = await fetch("/api/dispatch/dispatch-notes");
-      if (response.ok) {
-        const data = await response.json();
-        setDispatchNotes(data.dispatchNotes || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch dispatch notes:", error);
-    }
-  };
 
   const loadDispatchNote = async (dnId: string) => {
     const dn = dispatchNotes.find((d) => d.id === dnId);

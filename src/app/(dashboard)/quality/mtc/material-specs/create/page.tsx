@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
+import { useApiQuery } from "@/hooks/use-api-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { ArrowLeft, Plus, Trash2, Beaker, Gauge } from "lucide-react";
@@ -104,7 +105,12 @@ function MaterialSpecCreateContent() {
 
   const [loading, setLoading] = useState(!!editId);
   const [submitting, setSubmitting] = useState(false);
-  const [allSpecs, setAllSpecs] = useState<any[]>([]);
+  // The "Copy from" picker reads the same list as the material-spec screen.
+  const { data: allSpecsData } = useApiQuery<{ materialSpecs: any[] }>(
+    ["material-specs"],
+    "/api/mtc/material-specs"
+  );
+  const allSpecs = allSpecsData?.materialSpecs ?? [];
 
   const [form, setForm] = useState({
     materialSpec: "",
@@ -127,14 +133,6 @@ function MaterialSpecCreateContent() {
     resultMin: "",
     resultMax: "",
   });
-
-  // Fetch all existing specs for "Copy from" feature
-  useEffect(() => {
-    fetch("/api/mtc/material-specs")
-      .then((r) => r.ok ? r.json() : { materialSpecs: [] })
-      .then((d) => setAllSpecs(d.materialSpecs || []))
-      .catch(() => {});
-  }, []);
 
   const handleCopyFrom = (specId: string) => {
     const spec = allSpecs.find((s: any) => s.id === specId);

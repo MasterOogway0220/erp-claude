@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useApiQuery } from "@/hooks/use-api-query";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -21,9 +22,23 @@ import { toast } from "sonner";
 export default function CreateMTCPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [stocks, setStocks] = useState<any[]>([]);
-  const [purchaseOrders, setPurchaseOrders] = useState<any[]>([]);
-  const [grns, setGrns] = useState<any[]>([]);
+  // Keyed by the query string, so the screens reading the unfiltered list
+  // share one cache entry and the filtered ones get their own.
+  const { data: stockData } = useApiQuery<{ stocks: any[] }>(
+    ["inventory-stock", ""],
+    "/api/inventory/stock"
+  );
+  const stocks = stockData?.stocks ?? [];
+  const { data: purchaseOrdersData } = useApiQuery<{ purchaseOrders: any[] }>(
+    ["purchase-orders", ""],
+    "/api/purchase/orders"
+  );
+  const purchaseOrders = purchaseOrdersData?.purchaseOrders ?? [];
+  const { data: grnsData } = useApiQuery<{ grns: any[] }>(
+    ["grns"],
+    "/api/inventory/grn"
+  );
+  const grns = grnsData?.grns ?? [];
   const [formData, setFormData] = useState({
     mtcNo: "",
     heatNo: "",
@@ -35,46 +50,7 @@ export default function CreateMTCPage() {
   });
 
   useEffect(() => {
-    fetchStocks();
-    fetchPurchaseOrders();
-    fetchGRNs();
   }, []);
-
-  const fetchStocks = async () => {
-    try {
-      const response = await fetch("/api/inventory/stock");
-      if (response.ok) {
-        const data = await response.json();
-        setStocks(data.stocks || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch stocks:", error);
-    }
-  };
-
-  const fetchPurchaseOrders = async () => {
-    try {
-      const response = await fetch("/api/purchase/orders");
-      if (response.ok) {
-        const data = await response.json();
-        setPurchaseOrders(data.purchaseOrders || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch purchase orders:", error);
-    }
-  };
-
-  const fetchGRNs = async () => {
-    try {
-      const response = await fetch("/api/inventory/grn");
-      if (response.ok) {
-        const data = await response.json();
-        setGrns(data.grns || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch GRNs:", error);
-    }
-  };
 
   const handleStockSelect = (stockId: string) => {
     setFormData({ ...formData, inventoryStockId: stockId });
