@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { invalidateMasters } from "@/lib/cache/master-cache";
 import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 
@@ -53,6 +54,7 @@ export async function PATCH(
       companyId,
     }).catch(console.error);
 
+    invalidateMasters("delivery-terms");
     return NextResponse.json(updated);
   } catch (error: any) {
     if (error?.code === "P2002") {
@@ -117,6 +119,7 @@ export async function DELETE(
       companyId,
     }).catch(console.error);
 
+    invalidateMasters("delivery-terms");
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting delivery term:", error);

@@ -1,16 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAccess } from "@/lib/rbac";
+import { cachedMasterRead } from "@/lib/cache/master-cache";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
+import { invalidateMasters } from "@/lib/cache/master-cache";
 
 export async function GET() {
   try {
     const { authorized, response } = await checkAccess("masters", "read");
     if (!authorized) return response!;
 
-    const units = await prisma.uomMaster.findMany({
-      where: { isActive: true },
-      orderBy: { name: "asc" },
+    // No companyFilter on this query — the UOM list is global, so every
+    // company shares one cache entry rather than each holding a copy.
+    const units = await cachedMasterRead({
+      tag: "units",
+      companyId: null,
+      read: () =>
+        prisma.uomMaster.findMany({
+          where: { isActive: true },
+          orderBy: { name: "asc" },
+        }),
     });
 
     return NextResponse.json({ units });
@@ -51,6 +60,7 @@ export async function POST(request: NextRequest) {
       action: "CREATE",
       userId: session.user?.id,
     });
+invalidateMasters("units");
 
     return NextResponse.json(unit, { status: 201 });
   } catch (error: any) {

@@ -1,16 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAccess, companyFilter } from "@/lib/rbac";
+import { cachedMasterRead } from "@/lib/cache/master-cache";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
+import { invalidateMasters } from "@/lib/cache/master-cache";
 
 export async function GET() {
   try {
     const { authorized, response, companyId } = await checkAccess("masters", "read");
     if (!authorized) return response!;
 
-    const deliveryTerms = await prisma.deliveryTermsMaster.findMany({
-      where: { isActive: true, ...companyFilter(companyId) },
-      orderBy: { name: "asc" },
+    const deliveryTerms = await cachedMasterRead({
+      tag: "delivery-terms",
+      companyId,
+      read: () =>
+        prisma.deliveryTermsMaster.findMany({
+          where: { isActive: true, ...companyFilter(companyId) },
+          orderBy: { name: "asc" },
+        }),
     });
 
     return NextResponse.json({ deliveryTerms });
@@ -55,6 +62,7 @@ export async function POST(request: NextRequest) {
       userId: session.user?.id,
       companyId,
     });
+invalidateMasters("delivery-terms");
 
     return NextResponse.json(deliveryTerm, { status: 201 });
   } catch (error: any) {

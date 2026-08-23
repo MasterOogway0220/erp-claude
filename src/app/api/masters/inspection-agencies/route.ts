@@ -1,16 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAccess, companyFilter } from "@/lib/rbac";
+import { cachedMasterRead } from "@/lib/cache/master-cache";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
+import { invalidateMasters } from "@/lib/cache/master-cache";
 
 export async function GET() {
   try {
     const { authorized, response, companyId } = await checkAccess("masters", "read");
     if (!authorized) return response!;
 
-    const agencies = await prisma.inspectionAgencyMaster.findMany({
-      where: { isActive: true, ...companyFilter(companyId) },
-      orderBy: { name: "asc" },
+    const agencies = await cachedMasterRead({
+      tag: "inspection-agencies",
+      companyId,
+      read: () =>
+        prisma.inspectionAgencyMaster.findMany({
+          where: { isActive: true, ...companyFilter(companyId) },
+          orderBy: { name: "asc" },
+        }),
     });
 
     return NextResponse.json({ agencies });
@@ -59,6 +66,7 @@ export async function POST(request: NextRequest) {
       userId: session.user?.id,
       companyId,
     });
+invalidateMasters("inspection-agencies");
 
     return NextResponse.json(agency, { status: 201 });
   } catch (error: any) {

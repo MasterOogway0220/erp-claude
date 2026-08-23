@@ -4,7 +4,7 @@ Companion explainers for every code file, mirroring the source tree. See
 [CONVENTIONS.md](./CONVENTIONS.md) for structure and depth, and the repo root
 `CLAUDE.md` for the standing rule that keeps them true.
 
-## Coverage: 497 / 497 ✅
+## Coverage: 498 / 498 ✅
 
 Every `.ts`, `.tsx` and `.prisma` file under `src/`, `prisma/` and `scripts/`
 has a doc at the mirrored path. Test files are covered by the doc for what they
@@ -217,6 +217,9 @@ binary in the deployment any more.
   and the terminals are shared.
 
 ### Infrastructure
+- [`cache/master-cache.ts`](./src/lib/cache/master-cache.ts.md) — server-side
+  caching for the master lists, keyed so one company cannot be served
+  another's rows. The multiplier the browser cache cannot be.
 - [`prisma.ts`](./src/lib/prisma.ts.md) — the client, pool limits, and why
   `migrate dev` does not work here.
 - [`mailer.ts`](./src/lib/mailer.ts.md) — the one SMTP transport.

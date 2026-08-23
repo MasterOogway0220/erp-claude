@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkAccess } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
+import { invalidateMasters } from "@/lib/cache/master-cache";
 
 export async function GET(
   request: NextRequest,
@@ -57,6 +58,7 @@ export async function PATCH(
       action: "UPDATE",
       userId: session.user?.id,
     });
+invalidateMasters("units");
 
     return NextResponse.json(unit);
   } catch (error: any) {
@@ -114,6 +116,7 @@ export async function DELETE(
       action: "DELETE",
       userId: session.user?.id,
     });
+invalidateMasters("units");
 
     return NextResponse.json({ message: "Unit deleted successfully" });
   } catch (error: any) {

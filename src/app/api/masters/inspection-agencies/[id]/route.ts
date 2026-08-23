@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { invalidateMasters } from "@/lib/cache/master-cache";
 import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 
@@ -40,6 +41,7 @@ export async function PATCH(
 
     createAuditLog({ userId: session.user.id, action: "UPDATE", tableName: "InspectionAgencyMaster", recordId: id, oldValue: existing.name, newValue: updated.name, companyId }).catch(console.error);
 
+    invalidateMasters("inspection-agencies");
     return NextResponse.json(updated);
   } catch (error: any) {
     if (error?.code === "P2002") {
@@ -71,6 +73,7 @@ export async function DELETE(
 
     createAuditLog({ userId: session.user.id, action: "DELETE", tableName: "InspectionAgencyMaster", recordId: id, oldValue: existing.name, companyId }).catch(console.error);
 
+    invalidateMasters("inspection-agencies");
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting inspection agency:", error);

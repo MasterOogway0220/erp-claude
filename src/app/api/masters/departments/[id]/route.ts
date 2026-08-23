@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
+import { invalidateMasters } from "@/lib/cache/master-cache";
 
 export async function PATCH(
   request: NextRequest,
@@ -27,6 +28,7 @@ export async function PATCH(
     });
 
     await createAuditLog({ tableName: "DepartmentMaster", recordId: id, action: "UPDATE", userId: session.user?.id, companyId });
+    invalidateMasters("departments");
     return NextResponse.json(updated);
   } catch (error: any) {
     if (error?.code === "P2002") return NextResponse.json({ error: "Department already exists" }, { status: 400 });
@@ -45,6 +47,7 @@ export async function DELETE(
 
     await prisma.departmentMaster.delete({ where: { id } });
     await createAuditLog({ tableName: "DepartmentMaster", recordId: id, action: "DELETE", userId: session.user?.id, companyId });
+    invalidateMasters("departments");
     return NextResponse.json({ message: "Deleted" });
   } catch {
     return NextResponse.json({ error: "Failed to delete" }, { status: 500 });

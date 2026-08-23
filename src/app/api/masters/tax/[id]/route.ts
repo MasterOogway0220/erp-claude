@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { invalidateMasters } from "@/lib/cache/master-cache";
 import { checkAccess } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 
@@ -39,6 +40,7 @@ export async function PATCH(
 
     createAuditLog({ userId: session.user.id, action: "UPDATE", tableName: "TaxMaster", recordId: id, oldValue: existing.name, newValue: updated.name }).catch(console.error);
 
+    invalidateMasters("tax-rates");
     return NextResponse.json(updated);
   } catch (error) {
     console.error("Error updating tax rate:", error);
@@ -78,6 +80,7 @@ export async function DELETE(
 
     createAuditLog({ userId: session.user.id, action: "DELETE", tableName: "TaxMaster", recordId: id, oldValue: existing.name }).catch(console.error);
 
+    invalidateMasters("tax-rates");
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting tax rate:", error);

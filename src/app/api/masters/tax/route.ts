@@ -1,16 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAccess } from "@/lib/rbac";
+import { cachedMasterRead } from "@/lib/cache/master-cache";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
+import { invalidateMasters } from "@/lib/cache/master-cache";
 
 export async function GET() {
   try {
     const { authorized, response } = await checkAccess("masters", "read");
     if (!authorized) return response!;
 
-    const taxRates = await prisma.taxMaster.findMany({
-      where: { isActive: true },
-      orderBy: { name: "asc" },
+    // No companyFilter on this query — GST rates are global, so every
+    // company shares one cache entry.
+    const taxRates = await cachedMasterRead({
+      tag: "tax-rates",
+      companyId: null,
+      read: () =>
+        prisma.taxMaster.findMany({
+          where: { isActive: true },
+          orderBy: { name: "asc" },
+        }),
     });
 
     return NextResponse.json({ taxRates });
@@ -56,6 +65,7 @@ export async function POST(request: NextRequest) {
       action: "CREATE",
       userId: session.user?.id,
     });
+invalidateMasters("tax-rates");
 
     return NextResponse.json(taxRate, { status: 201 });
   } catch (error: any) {
