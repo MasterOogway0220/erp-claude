@@ -441,7 +441,15 @@ function NsField({ label, value }: { label: string; value: string }) {
   return (
     <View style={nsStyles.row}>
       <T style={{ width: 54, fontFamily: "Helvetica", fontWeight: "bold" }}>{label}</T>
-      <T>: {value}</T>
+      {/* `flex: 1` is load-bearing, not tidying. react-pdf lays out with Yoga,
+          where flexShrink defaults to 0 — unlike CSS, where it is 1. Without a
+          width or a flex, this Text keeps its intrinsic width, wraps at *that*
+          width rather than the cell's, and spills past the right border where
+          the page clips it mid-word. A customer inquiry reference that is a
+          sentence rather than a number ("...LAYING AND CONSTRUCTION OF STEEL
+          GAS PIPELINE...") went out to the client cut off exactly that way.
+          Taking the remaining width of the row makes it wrap inside the box. */}
+      <T style={{ flex: 1 }}>: {value}</T>
     </View>
   );
 }
