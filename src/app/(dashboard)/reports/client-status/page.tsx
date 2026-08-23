@@ -109,8 +109,10 @@ const STATUS_COLORS: Record<string, string> = {
 export default function ClientStatusReportPage() {
   // Same list the sales screen reads, under the same key.
   const { data: soData, isLoading: loadingSOs } = useApiQuery<{ salesOrders: SalesOrder[] }>(
-    ["sales-orders"],
-    "/api/sales-orders"
+    // All three screens sharing this key must request the same shape, or
+    // whichever loads first fills the cache and the others read the wrong one.
+    ["sales-orders", "list"],
+    "/api/sales-orders?view=list"
   );
   const salesOrders = soData?.salesOrders ?? [];
   const [selectedSOId, setSelectedSOId] = useState("");

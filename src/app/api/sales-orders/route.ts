@@ -29,6 +29,24 @@ export async function GET(request: NextRequest) {
       where.status = status;
     }
 
+    // `view=list` asks for the summary shape the three list screens need.
+    //
+    // Eight screens read this endpoint. Three of them — the sales list, the
+    // client-status report and the packing-list picker — only pick a sales
+    // order out of a dropdown or a table: between them they use the customer's
+    // name, city and email, the quotation number, and how many lines there
+    // are. The rest copy the lines into a document they are building and need
+    // every field.
+    //
+    // Those three also share one React Query key (["sales-orders"]), so they
+    // must agree: if one asked for the summary shape and another for the full
+    // one, whichever loaded first would populate the cache and the other would
+    // read the wrong shape out of it. All three send this flag.
+    //
+    // Opt-in, so a caller that forgets it is merely slow rather than silently
+    // handed less data than it needs.
+    const summaryOnly = searchParams.get("view") === "list";
+
     const clientPurchaseOrderId = searchParams.get("clientPurchaseOrderId");
     if (clientPurchaseOrderId) {
       where.clientPurchaseOrderId = clientPurchaseOrderId;
@@ -37,9 +55,12 @@ export async function GET(request: NextRequest) {
     const salesOrders = await prisma.salesOrder.findMany({
       where,
       include: {
-        customer: true,
+        customer: summaryOnly
+          ? { select: { id: true, name: true, city: true, email: true } }
+          : true,
         quotation: { select: { quotationNo: true } },
-        items: true,
+        // Only the count is shown, so the ids are enough to give it a length.
+        items: summaryOnly ? { select: { id: true } } : true,
       },
       orderBy: { soDate: "desc" },
     });

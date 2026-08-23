@@ -57,8 +57,8 @@ function DispatchPageContent() {
   const dispatchNotes = dnData?.dispatchNotes ?? [];
 
   const { data: invData } = useApiQuery<{ invoices: any[] }>(
-    ["invoices"],
-    "/api/dispatch/invoices"
+    ["invoices", "list"],
+    "/api/dispatch/invoices?view=list"
   );
   const invoices = invData?.invoices ?? [];
 
@@ -169,7 +169,10 @@ function DispatchPageContent() {
     {
       key: "customer",
       header: "Customer",
-      cell: (row) => (row.salesOrder as any)?.customer?.name || "---",
+      // Reads the invoice's own customer. This used to reach through
+      // row.salesOrder.customer, which the API never selects — salesOrder
+      // comes back as { id, soNo } — so the column showed "---" for every row.
+      cell: (row) => (row.customer as any)?.name || "---",
     },
     {
       key: "vehicleNo",

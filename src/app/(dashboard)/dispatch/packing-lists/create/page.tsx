@@ -85,8 +85,10 @@ export default function CreatePackingListPage() {
 
   // Same list, same key, as the sales screen — one cache entry serves both.
   const { data: soData } = useApiQuery<{ salesOrders: SalesOrder[] }>(
-    ["sales-orders"],
-    "/api/sales-orders"
+    // All three screens sharing this key must request the same shape, or
+    // whichever loads first fills the cache and the others read the wrong one.
+    ["sales-orders", "list"],
+    "/api/sales-orders?view=list"
   );
   // Only orders still open for dispatch can be packed against.
   const salesOrders = (soData?.salesOrders ?? []).filter(

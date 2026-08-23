@@ -137,8 +137,10 @@ const poAcceptanceColors: Record<string, string> = {
 export default function SalesOrdersPage() {
   const router = useRouter();
   const { data: soData, isLoading: loading } = useApiQuery<{ salesOrders: SalesOrder[] }>(
-    ["sales-orders"],
-    "/api/sales-orders"
+    // All three screens sharing this key must request the same shape, or
+    // whichever loads first fills the cache and the others read the wrong one.
+    ["sales-orders", "list"],
+    "/api/sales-orders?view=list"
   );
   const salesOrders = soData?.salesOrders ?? [];
 

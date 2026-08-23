@@ -33,6 +33,17 @@ export async function GET(request: NextRequest) {
       where.invoiceType = invoiceType;
     }
 
+    // `view=list` asks for the summary shape the dispatch list needs.
+    //
+    // The credit-note and debit-note screens read this endpoint to price a
+    // note against an invoice's lines, and the payment screen reads it to see
+    // what has already been received — so items and paymentReceipts have to
+    // stay available. The dispatch list shows neither: it draws the invoice
+    // number, date, type, vehicle, status, total and the customer's name.
+    //
+    // Opt-in, so a caller that forgets the flag is slow rather than broken.
+    const summaryOnly = searchParams.get("view") === "list";
+
     const invoices = await prisma.invoice.findMany({
       where,
       include: {
@@ -42,15 +53,18 @@ export async function GET(request: NextRequest) {
         salesOrder: {
           select: { id: true, soNo: true },
         },
-        customer: true,
+        customer: summaryOnly
+          ? { select: { id: true, name: true } }
+          : true,
         originalInvoice: {
           select: { id: true, invoiceNo: true, totalAmount: true },
         },
         linkedNotes: {
           select: { id: true, invoiceNo: true, invoiceType: true, totalAmount: true, status: true },
         },
-        items: true,
-        paymentReceipts: true,
+        // The dispatch list shows no line detail and no receipts, so the
+        // summary shape omits both entirely rather than narrowing them.
+        ...(summaryOnly ? {} : { items: true, paymentReceipts: true }),
       },
       orderBy: { invoiceDate: "desc" },
     });
