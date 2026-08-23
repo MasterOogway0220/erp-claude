@@ -181,13 +181,17 @@ caller, so it is not one shared list) and `units` (covered by `use-units.ts`).
   than `{ contacts: [...] }`. Guessing produces an empty dropdown with no
   error; the third test in `use-masters.test.ts` checks each unwrap against its
   route.
-- **`useBuyers` and `useMaterialCodes` are typed as having `.name`, and their
-  rows do not have it.** `BuyerMaster` has `buyerName`; `MaterialCodeMaster`
-  has `code` and `description`. The `MasterOption` default declares
-  `name: string`, TypeScript accepts it because the response is cast rather
-  than parsed, and at runtime every dropdown label renders blank. Pass an
-  explicit type parameter for those two, or fix the defaults. Nothing catches
-  this at build time.
+- **Eight of these lists have no `name` column, and each hook now defaults to
+  the shape its table really has** — `MasterBuyer` (`buyerName`),
+  `MasterMaterialCode` (`code`), `MasterCompany` (`companyName`), `MasterSize`
+  (`sizeLabel`), `MasterLength` (`label`), `MasterTesting` (`testName`),
+  `MasterAdditionalSpec` (`specName`), `MasterCustomerContact`
+  (`contactName`). This used to be a live bug on `useBuyers` and
+  `useMaterialCodes`: they declared `MasterOption`, TypeScript accepted it
+  because the response is **cast, not parsed**, and every dropdown label
+  rendered blank at runtime with nothing failing at build time. When adding a
+  list, check the column before reaching for `MasterOption` — a wrong guess
+  here is silent.
 - **A filter added to a URL without being added to the key serves the wrong
   rows.** These keys are global and shared across the whole app, so getting it
   wrong here mis-feeds every dropdown at once, not one screen. If you need a

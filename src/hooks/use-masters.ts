@@ -41,6 +41,65 @@ export interface MasterOption {
 }
 
 /**
+ * Several masters do not have a `name` column at all.
+ *
+ * The response is cast, never parsed, so declaring `MasterOption` on one of
+ * these type-checks perfectly and then renders an empty label in every
+ * dropdown — there is no error, no warning, and nothing to grep for. Each hook
+ * below therefore defaults to the shape its table actually has.
+ *
+ *   BuyerMaster            buyerName
+ *   MaterialCodeMaster     code, description
+ *   CompanyMaster          companyName
+ *   SizeMaster             sizeLabel
+ *   LengthMaster           label
+ *   TestingMaster          testName
+ *   AdditionalSpecOption   specName
+ *   CustomerContact        contactName
+ */
+export interface MasterBuyer {
+  id: string;
+  buyerName: string;
+  [key: string]: unknown;
+}
+export interface MasterMaterialCode {
+  id: string;
+  code: string;
+  description?: string | null;
+  [key: string]: unknown;
+}
+export interface MasterCompany {
+  id: string;
+  companyName: string;
+  [key: string]: unknown;
+}
+export interface MasterSize {
+  id: string;
+  sizeLabel: string;
+  [key: string]: unknown;
+}
+export interface MasterLength {
+  id: string;
+  label: string;
+  [key: string]: unknown;
+}
+export interface MasterTesting {
+  id: string;
+  testName: string;
+  [key: string]: unknown;
+}
+export interface MasterAdditionalSpec {
+  id: string;
+  specName: string;
+  [key: string]: unknown;
+}
+export interface MasterCustomerContact {
+  id: string;
+  contactName: string;
+  [key: string]: unknown;
+}
+
+/**
  * Customer master. The most-shared list in the app.
  *
  * The key is `["customers"]` deliberately: the quotation forms already cache
@@ -112,24 +171,24 @@ export function useDepartments<T = MasterOption>(): T[] {
  * Item codes — the internal catalogue number for a product/size/spec
  * combination, used to line quotations up with inventory.
  */
-export function useMaterialCodesQuery<T = MasterOption>() {
+export function useMaterialCodesQuery<T = MasterMaterialCode>() {
   return useReferenceQuery<{ materialCodes: T[] }>(
     ["material-codes"],
     "/api/masters/material-codes"
   );
 }
-export function useMaterialCodes<T = MasterOption>(): T[] {
+export function useMaterialCodes<T = MasterMaterialCode>(): T[] {
   return useMaterialCodesQuery<T>().data?.materialCodes ?? [];
 }
 
 /** Buyers — the customer-side contacts a quotation is addressed to. */
-export function useBuyersQuery<T = MasterOption>() {
+export function useBuyersQuery<T = MasterBuyer>() {
   return useReferenceQuery<{ buyers: T[] }>(
     ["buyers"],
     "/api/masters/buyers"
   );
 }
-export function useBuyers<T = MasterOption>(): T[] {
+export function useBuyers<T = MasterBuyer>(): T[] {
   return useBuyersQuery<T>().data?.buyers ?? [];
 }
 
@@ -181,13 +240,13 @@ export function useTaxRates<T = MasterOption>(): T[] {
  * Keyed `["companies"]` to match the Company Master and super-admin screens,
  * which already cache this URL under that key.
  */
-export function useCompaniesQuery<T = MasterOption>() {
+export function useCompaniesQuery<T = MasterCompany>() {
   return useReferenceQuery<{ companies: T[] }>(
     ["companies"],
     "/api/masters/company"
   );
 }
-export function useCompanies<T = MasterOption>(): T[] {
+export function useCompanies<T = MasterCompany>(): T[] {
   return useCompaniesQuery<T>().data?.companies ?? [];
 }
 
@@ -221,10 +280,10 @@ export function usePaymentTerms<T = MasterOption>(): T[] {
 }
 
 /** Pipe sizes (NB/OD). */
-export function useSizesQuery<T = MasterOption>() {
+export function useSizesQuery<T = MasterSize>() {
   return useReferenceQuery<{ sizes: T[] }>(["sizes"], "/api/masters/sizes");
 }
-export function useSizes<T = MasterOption>(): T[] {
+export function useSizes<T = MasterSize>(): T[] {
   return useSizesQuery<T>().data?.sizes ?? [];
 }
 
@@ -240,10 +299,10 @@ export function useIndustrySegments<T = MasterOption>(): T[] {
 }
 
 /** Standard pipe lengths. */
-export function useLengthsQuery<T = MasterOption>() {
+export function useLengthsQuery<T = MasterLength>() {
   return useReferenceQuery<{ lengths: T[] }>(["lengths"], "/api/masters/lengths");
 }
-export function useLengths<T = MasterOption>(): T[] {
+export function useLengths<T = MasterLength>(): T[] {
   return useLengthsQuery<T>().data?.lengths ?? [];
 }
 
@@ -253,24 +312,24 @@ export function useLengths<T = MasterOption>(): T[] {
  * The route sends the same array twice, as `tests` and as `testingMasters`.
  * `tests` is the one read here; the alias exists for older callers.
  */
-export function useTestingQuery<T = MasterOption>() {
+export function useTestingQuery<T = MasterTesting>() {
   return useReferenceQuery<{ tests: T[]; testingMasters: T[] }>(
     ["testing"],
     "/api/masters/testing"
   );
 }
-export function useTesting<T = MasterOption>(): T[] {
+export function useTesting<T = MasterTesting>(): T[] {
   return useTestingQuery<T>().data?.tests ?? [];
 }
 
 /** Additional specifications. Response key is `specs`. */
-export function useAdditionalSpecsQuery<T = MasterOption>() {
+export function useAdditionalSpecsQuery<T = MasterAdditionalSpec>() {
   return useReferenceQuery<{ specs: T[] }>(
     ["additional-specs"],
     "/api/masters/additional-specs"
   );
 }
-export function useAdditionalSpecs<T = MasterOption>(): T[] {
+export function useAdditionalSpecs<T = MasterAdditionalSpec>(): T[] {
   return useAdditionalSpecsQuery<T>().data?.specs ?? [];
 }
 
@@ -294,12 +353,12 @@ export function useDimensionalStandards<T = MasterOption>(): T[] {
  * Only the unfiltered read belongs here. The per-customer variant
  * (`?customerId=`) is a different list and keeps its own key.
  */
-export function useCustomerContactsQuery<T = MasterOption>() {
+export function useCustomerContactsQuery<T = MasterCustomerContact>() {
   return useReferenceQuery<T[]>(
     ["customer-contacts"],
     "/api/masters/customer-contacts"
   );
 }
-export function useCustomerContacts<T = MasterOption>(): T[] {
+export function useCustomerContacts<T = MasterCustomerContact>(): T[] {
   return useCustomerContactsQuery<T>().data ?? [];
 }
