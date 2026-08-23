@@ -30,18 +30,36 @@ export default withAuth(
 );
 
 export const config = {
+  // Every top-level folder under src/app/(dashboard) must be listed here.
+  //
+  // There used to be a `"/(dashboard)(.*)"` entry, which protected nothing:
+  // `(dashboard)` is a Next.js *route group*, so it never appears in a URL and
+  // that pattern could not match a real request. It read as "all dashboard
+  // routes are covered", and six of them were not — alerts,
+  // client-purchase-orders, po-acceptance, po-tracking, tenders and warehouse
+  // all returned 200 to a signed-out visitor instead of redirecting to /login.
+  //
+  // Nothing leaked, because those pages are client components whose data comes
+  // from API routes that return 401 on their own. The danger was the next
+  // server component added under one of those paths, which would have read the
+  // database with no session check and nothing to flag it.
   matcher: [
     "/",
-    "/(dashboard)(.*)",
-    "/masters/:path*",
-    "/quotations/:path*",
-    "/sales/:path*",
-    "/purchase/:path*",
-    "/inventory/:path*",
-    "/quality/:path*",
-    "/dispatch/:path*",
-    "/reports/:path*",
     "/admin/:path*",
+    "/alerts/:path*",
+    "/client-purchase-orders/:path*",
+    "/dispatch/:path*",
+    "/inventory/:path*",
+    "/masters/:path*",
+    "/po-acceptance/:path*",
+    "/po-tracking/:path*",
+    "/purchase/:path*",
+    "/quality/:path*",
+    "/quotations/:path*",
+    "/reports/:path*",
+    "/sales/:path*",
     "/superadmin/:path*",
+    "/tenders/:path*",
+    "/warehouse/:path*",
   ],
 };

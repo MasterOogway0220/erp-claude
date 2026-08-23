@@ -31,16 +31,42 @@ query would run unscoped across all three companies.
 
 ### The matcher
 
-Lists route trees explicitly — `/`, `(dashboard)`, `/masters`, `/quotations`,
-`/sales`, `/purchase`, `/inventory` and so on. `/login`, `/api/auth/**` and
-static assets are deliberately outside it.
+Lists every top-level folder under `src/app/(dashboard)` explicitly, plus `/`.
+`/login`, `/api/auth/**` and static assets are deliberately outside it.
+
+**It used to carry a `"/(dashboard)(.*)"` entry that protected nothing.**
+`(dashboard)` is a Next.js *route group*: it organises files without appearing
+in any URL, so no request path can ever contain `/(dashboard)` and that pattern
+could not match. It read as "every dashboard route is covered", and six were
+not — `/alerts`, `/client-purchase-orders`, `/po-acceptance`, `/po-tracking`,
+`/tenders` and `/warehouse` all answered a signed-out visitor with 200 instead
+of redirecting.
+
+Nothing leaked: those are client components whose data comes from API routes
+that return 401 independently. The exposure was the *next* server component
+added under one of those paths, which would have queried the database with no
+session check and nothing to flag it.
+
+Found by curling every dashboard route unauthenticated against a local copy of
+the database. That check is worth repeating whenever a route tree is added —
+it needs no login and takes seconds:
+
+```sh
+for p in alerts client-purchase-orders quotations ... ; do
+  curl -s -o /dev/null -w "%{http_code} /$p\n" --max-redirs 0 localhost:3000/$p
+done
+# 307 = protected. 200 = open.
+```
 
 ## Gotchas and constraints
 
 - **Authentication only, not authorisation.** It does not check roles. API
   routes call `checkAccess`, and role enforcement there is currently disabled.
 - **The matcher is a list, so a new top-level route is unprotected until added
-  to it.** This is the most likely way to ship an open page.
+  to it.** This is the most likely way to ship an open page — and it is not
+  hypothetical: six routes were open this way, while a dead route-group pattern
+  made the list look exhaustive. Add the folder to the matcher in the same
+  commit that creates it, and never trust a pattern containing a route group.
 - Next.js warns that `middleware` is deprecated in favour of `proxy`. It still
   works; migrating is a separate job.
 
