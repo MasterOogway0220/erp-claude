@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useApiQuery } from "@/hooks/use-api-query";
+import { useWarehouses } from "@/hooks/use-masters";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -26,7 +28,6 @@ import {
 } from "@/components/ui/table";
 import { ArrowLeft, Save, Check } from "lucide-react";
 import { toast } from "sonner";
-import { format } from "date-fns";
 
 interface SalesOrder {
   id: string;
@@ -71,104 +72,55 @@ interface WarehouseOption {
   id: string;
   code: string;
   name: string;
+  isActive?: boolean;
 }
 
 export default function CreatePackingListPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [salesOrders, setSalesOrders] = useState<SalesOrder[]>([]);
   const [selectedSOId, setSelectedSOId] = useState("");
-  const [selectedSO, setSelectedSO] = useState<SalesOrder | null>(null);
-  const [availableStock, setAvailableStock] = useState<StockItem[]>([]);
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
   const [remarks, setRemarks] = useState("");
-  const [warehouses, setWarehouses] = useState<WarehouseOption[]>([]);
   const [warehouseId, setWarehouseId] = useState("");
 
-  useEffect(() => {
-    fetchSalesOrders();
-    fetchWarehouses();
-  }, []);
+  // Same list, same key, as the sales screen — one cache entry serves both.
+  const { data: soData } = useApiQuery<{ salesOrders: SalesOrder[] }>(
+    ["sales-orders"],
+    "/api/sales-orders"
+  );
+  // Only orders still open for dispatch can be packed against.
+  const salesOrders = (soData?.salesOrders ?? []).filter(
+    (so) => so.status === "OPEN" || so.status === "PARTIALLY_DISPATCHED"
+  );
 
-  useEffect(() => {
-    if (selectedSOId) {
-      fetchSODetails(selectedSOId);
-      fetchAvailableStock(selectedSOId);
-    } else {
-      setSelectedSO(null);
-      setAvailableStock([]);
-      setSelectedItems([]);
-    }
-  }, [selectedSOId]);
+  const warehouses = useWarehouses<WarehouseOption>().filter((w) => w.isActive);
 
-  const fetchWarehouses = async () => {
-    try {
-      const response = await fetch("/api/masters/warehouses");
-      if (response.ok) {
-        const data = await response.json();
-        setWarehouses((data.warehouses || []).filter((w: any) => w.isActive));
-      }
-    } catch (error) {
-      console.error("Failed to fetch warehouses:", error);
-    }
-  };
+  // Deferred exactly as the effect was: nothing is read until an order is picked.
+  const { data: soDetail } = useApiQuery<{ salesOrder: SalesOrder }>(
+    ["sales-order", selectedSOId],
+    `/api/sales-orders/${selectedSOId}`,
+    { enabled: !!selectedSOId }
+  );
+  const selectedSO = soDetail?.salesOrder ?? null;
 
-  const fetchSalesOrders = async () => {
-    try {
-      const response = await fetch("/api/sales-orders");
-      if (response.ok) {
-        const data = await response.json();
-        const eligible = (data.salesOrders || []).filter(
-          (so: any) =>
-            so.status === "OPEN" || so.status === "PARTIALLY_DISPATCHED"
-        );
-        setSalesOrders(eligible);
-      }
-    } catch (error) {
-      console.error("Failed to fetch sales orders:", error);
-    }
-  };
-
-  const fetchSODetails = async (soId: string) => {
-    try {
-      const response = await fetch(`/api/sales-orders/${soId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setSelectedSO(data.salesOrder);
-      }
-    } catch (error) {
-      console.error("Failed to fetch SO details:", error);
-    }
-  };
-
-  const fetchAvailableStock = async (soId: string) => {
-    try {
-      // Fetch ACCEPTED and RESERVED stock
-      const [acceptedRes, reservedRes] = await Promise.all([
-        fetch("/api/inventory/stock?status=ACCEPTED"),
-        fetch("/api/inventory/stock?status=RESERVED"),
-      ]);
-
-      let allStock: StockItem[] = [];
-
-      if (acceptedRes.ok) {
-        const data = await acceptedRes.json();
-        allStock = [...allStock, ...(data.stocks || [])];
-      }
-      if (reservedRes.ok) {
-        const data = await reservedRes.json();
-        // Only include stock reserved for this SO
-        const reserved = (data.stocks || []).filter(
-          (s: any) => s.reservedForSO === soId
-        );
-        allStock = [...allStock, ...reserved];
-      }
-
-      setAvailableStock(allStock);
-    } catch (error) {
-      console.error("Failed to fetch available stock:", error);
-    }
-  };
+  const { data: acceptedData } = useApiQuery<{ stocks: StockItem[] }>(
+    ["inventory-stock", "status=ACCEPTED"],
+    "/api/inventory/stock?status=ACCEPTED",
+    { enabled: !!selectedSOId }
+  );
+  const { data: reservedData } = useApiQuery<{ stocks: StockItem[] }>(
+    ["inventory-stock", "status=RESERVED"],
+    "/api/inventory/stock?status=RESERVED",
+    { enabled: !!selectedSOId }
+  );
+  // Accepted stock is packable by anyone; reserved stock only by the order it
+  // was set aside for. That filter is client-side, so it stays out of the key.
+  const availableStock = [
+    ...(acceptedData?.stocks ?? []),
+    ...(reservedData?.stocks ?? []).filter(
+      (s) => s.reservedForSO === selectedSOId
+    ),
+  ];
 
   const toggleStockSelection = (stock: StockItem) => {
     const existing = selectedItems.find(
@@ -291,7 +243,15 @@ export default function CreatePackingListPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Order *</Label>
-                <Select value={selectedSOId || "NONE"} onValueChange={(v) => setSelectedSOId(v === "NONE" ? "" : v)}>
+                <Select
+                  value={selectedSOId || "NONE"}
+                  onValueChange={(v) => {
+                    const id = v === "NONE" ? "" : v;
+                    setSelectedSOId(id);
+                    // Clearing the order drops the picks made against it.
+                    if (!id) setSelectedItems([]);
+                  }}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select Order" />
                   </SelectTrigger>

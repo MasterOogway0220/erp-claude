@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, Suspense } from "react";
+import { useApiQuery, useReferenceQuery } from "@/hooks/use-api-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -67,6 +68,37 @@ interface CpoItem {
   amount: number;
 }
 
+/**
+ * The CPO detail response. Only the fields this wizard reads are listed: the
+ * line items it prices, and the charge/GST fields it seeds the form from.
+ */
+interface CpoDetail {
+  currency?: string | null;
+  isDomesticDelivery?: boolean | null;
+  gstRate?: number | null;
+  isInterState?: boolean | null;
+  freight?: number | null;
+  freightTaxApplicable?: boolean | null;
+  packingForwarding?: number | null;
+  packingTaxApplicable?: boolean | null;
+  insurance?: number | null;
+  insuranceTaxApplicable?: boolean | null;
+  otherCharges?: number | null;
+  otherChargesTaxApplicable?: boolean | null;
+  testingCharges?: number | null;
+  testingTaxApplicable?: boolean | null;
+  tpiCharges?: number | null;
+  tpiTaxApplicable?: boolean | null;
+  items?: Array<{
+    id: string;
+    sNo: number;
+    description: string | null;
+    qtyOrdered: number | null;
+    unitRate: number | null;
+    amount: number | null;
+  }>;
+}
+
 /** Step labels for the 3-step wizard */
 const STEP_LABELS = [
   "Details & Contacts",
@@ -79,16 +111,7 @@ function CreatePOAcceptanceContent() {
   const searchParams = useSearchParams();
   const preselectedCpoId = searchParams.get("cpoId");
 
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [clientPOs, setClientPOs] = useState<ClientPO[]>([]);
-  const [selectedCPO, setSelectedCPO] = useState<ClientPO | null>(null);
-  const [contacts, setContacts] = useState<CustomerContact[]>([]);
-
-  /** CPO detail — seeded from the CPO when it is selected */
-  const [cpoItems, setCpoItems] = useState<CpoItem[]>([]);
-  const [cpoCurrency, setCpoCurrency] = useState<string>("INR");
-  const [cpoIsDomesticDelivery, setCpoIsDomesticDelivery] = useState<boolean>(false);
 
   /** Wizard step (1-indexed) */
   const [step, setStep] = useState(1);
@@ -143,105 +166,95 @@ function CreatePOAcceptanceContent() {
     grandTotal: 0,
   });
 
-  useEffect(() => {
-    fetchClientPOs();
-  }, []);
+  /**
+   * Registered CPOs available for acceptance. Same key *and* URL as the CPO
+   * register screen, so the two share one cache entry instead of each issuing
+   * its own query.
+   */
+  const { data: cpoListData, isLoading } = useApiQuery<{ clientPOs: ClientPO[] }>(
+    ["client-purchase-orders", "", "REGISTERED"],
+    "/api/client-purchase-orders?status=REGISTERED"
+  );
+  const clientPOs = useMemo(
+    () => (cpoListData?.clientPOs ?? []).filter((c) => c.status === "REGISTERED"),
+    [cpoListData]
+  );
 
+  /** The selection lives in the form; the row itself is looked up from it. */
+  const selectedCPO =
+    clientPOs.find((c) => c.id === form.clientPurchaseOrderId) ?? null;
+
+  /** Seed the selection from ?cpoId= once the list has arrived. */
   useEffect(() => {
-    if (preselectedCpoId && clientPOs.length > 0) {
-      const cpo = clientPOs.find((c) => c.id === preselectedCpoId);
-      if (cpo) {
-        setSelectedCPO(cpo);
-        setForm((prev) => ({ ...prev, clientPurchaseOrderId: cpo.id }));
-        fetchContacts(cpo.customer.id);
-        fetchCpoDetail(cpo.id);
-      }
-    }
+    if (!preselectedCpoId) return;
+    if (!clientPOs.some((c) => c.id === preselectedCpoId)) return;
+    setForm((prev) =>
+      prev.clientPurchaseOrderId
+        ? prev
+        : { ...prev, clientPurchaseOrderId: preselectedCpoId }
+    );
   }, [preselectedCpoId, clientPOs]);
 
-  const fetchClientPOs = async () => {
-    try {
-      const response = await fetch("/api/client-purchase-orders?status=REGISTERED");
-      if (response.ok) {
-        const data = await response.json();
-        // Filter out CPOs that already have acceptance
-        const cpos = (data.clientPOs || data || []).filter(
-          (c: any) => c.status === "REGISTERED"
-        );
-        setClientPOs(cpos);
-      }
-    } catch (error) {
-      console.error("Failed to fetch CPOs:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  /**
+   * Contact directory and CPO detail were both deferred until a CPO was
+   * picked, and stay deferred — `enabled` keeps them from firing on mount.
+   */
+  const customerId = selectedCPO?.customer.id;
+  const { data: contacts = [] } = useReferenceQuery<CustomerContact[]>(
+    ["customer-contacts", customerId],
+    `/api/masters/customer-contacts?customerId=${customerId}`,
+    { enabled: !!customerId }
+  );
 
-  const fetchContacts = async (customerId: string) => {
-    try {
-      const response = await fetch(
-        `/api/masters/customer-contacts?customerId=${customerId}`
-      );
-      if (response.ok) {
-        setContacts(await response.json());
-      }
-    } catch (error) {
-      console.error("Failed to fetch contacts:", error);
-    }
-  };
+  const { data: cpoDetail } = useApiQuery<CpoDetail>(
+    ["client-purchase-order", form.clientPurchaseOrderId],
+    `/api/client-purchase-orders/${form.clientPurchaseOrderId}`,
+    { enabled: !!form.clientPurchaseOrderId }
+  );
 
-  const fetchCpoDetail = async (cpoId: string) => {
-    try {
-      const res = await fetch(`/api/client-purchase-orders/${cpoId}`);
-      if (!res.ok) return;
-      const data = await res.json();
+  /**
+   * Items, currency and the delivery flag all arrive in that one response, so
+   * they are read straight off it rather than mirrored into three useStates
+   * that could drift. Memoised because `totals` below keys off the identity.
+   */
+  const cpoItems = useMemo<CpoItem[]>(
+    () =>
+      (cpoDetail?.items ?? []).map((item) => ({
+        id: item.id,
+        sNo: item.sNo,
+        description: item.description ?? "",
+        qtyOrdered: Number(item.qtyOrdered ?? 0),
+        unitRate: Number(item.unitRate ?? 0),
+        amount: Number(item.amount ?? 0),
+      })),
+    [cpoDetail]
+  );
+  const cpoCurrency = cpoDetail?.currency ?? "INR";
+  const cpoIsDomesticDelivery = Boolean(cpoDetail?.isDomesticDelivery);
 
-      // Store CPO context for totals computation
-      setCpoItems(
-        (data.items ?? []).map((item: any) => ({
-          id: item.id,
-          sNo: item.sNo,
-          description: item.description ?? "",
-          qtyOrdered: Number(item.qtyOrdered ?? 0),
-          unitRate: Number(item.unitRate ?? 0),
-          amount: Number(item.amount ?? 0),
-        }))
-      );
-      setCpoCurrency(data.currency ?? "INR");
-      setCpoIsDomesticDelivery(Boolean(data.isDomesticDelivery));
-
-      // Seed charge fields from CPO values
-      setForm((prev) => ({
-        ...prev,
-        gstRate: data.gstRate !== null && data.gstRate !== undefined ? Number(data.gstRate) : prev.gstRate,
-        isInterState: Boolean(data.isInterState ?? prev.isInterState),
-        freight: data.freight !== null && data.freight !== undefined ? Number(data.freight) : prev.freight,
-        freightTaxApplicable: Boolean(data.freightTaxApplicable ?? prev.freightTaxApplicable),
-        packingForwarding: data.packingForwarding !== null && data.packingForwarding !== undefined ? Number(data.packingForwarding) : prev.packingForwarding,
-        packingTaxApplicable: Boolean(data.packingTaxApplicable ?? prev.packingTaxApplicable),
-        insurance: data.insurance !== null && data.insurance !== undefined ? Number(data.insurance) : prev.insurance,
-        insuranceTaxApplicable: Boolean(data.insuranceTaxApplicable ?? prev.insuranceTaxApplicable),
-        otherCharges: data.otherCharges !== null && data.otherCharges !== undefined ? Number(data.otherCharges) : prev.otherCharges,
-        otherChargesTaxApplicable: Boolean(data.otherChargesTaxApplicable ?? prev.otherChargesTaxApplicable),
-        testingCharges: data.testingCharges !== null && data.testingCharges !== undefined ? Number(data.testingCharges) : prev.testingCharges,
-        testingTaxApplicable: Boolean(data.testingTaxApplicable ?? prev.testingTaxApplicable),
-        tpiCharges: data.tpiCharges !== null && data.tpiCharges !== undefined ? Number(data.tpiCharges) : prev.tpiCharges,
-        tpiTaxApplicable: Boolean(data.tpiTaxApplicable ?? prev.tpiTaxApplicable),
-      }));
-    } catch (error) {
-      console.error("Failed to fetch CPO detail:", error);
-    }
-  };
-
-  const handleCPOSelect = (cpoId: string) => {
-    const cpo = clientPOs.find((c) => c.id === cpoId);
-    if (cpo) {
-      setSelectedCPO(cpo);
-      setForm((prev) => ({ ...prev, clientPurchaseOrderId: cpo.id }));
-      fetchContacts(cpo.customer.id);
-      fetchCpoDetail(cpo.id);
-    }
-  };
+  /** Charges stay editable form state — the CPO only seeds them once. */
+  useEffect(() => {
+    if (!cpoDetail) return;
+    const num = (v: number | null | undefined, fallback: number) =>
+      v !== null && v !== undefined ? Number(v) : fallback;
+    setForm((prev) => ({
+      ...prev,
+      gstRate: num(cpoDetail.gstRate, prev.gstRate),
+      isInterState: Boolean(cpoDetail.isInterState ?? prev.isInterState),
+      freight: num(cpoDetail.freight, prev.freight),
+      freightTaxApplicable: Boolean(cpoDetail.freightTaxApplicable ?? prev.freightTaxApplicable),
+      packingForwarding: num(cpoDetail.packingForwarding, prev.packingForwarding),
+      packingTaxApplicable: Boolean(cpoDetail.packingTaxApplicable ?? prev.packingTaxApplicable),
+      insurance: num(cpoDetail.insurance, prev.insurance),
+      insuranceTaxApplicable: Boolean(cpoDetail.insuranceTaxApplicable ?? prev.insuranceTaxApplicable),
+      otherCharges: num(cpoDetail.otherCharges, prev.otherCharges),
+      otherChargesTaxApplicable: Boolean(cpoDetail.otherChargesTaxApplicable ?? prev.otherChargesTaxApplicable),
+      testingCharges: num(cpoDetail.testingCharges, prev.testingCharges),
+      testingTaxApplicable: Boolean(cpoDetail.testingTaxApplicable ?? prev.testingTaxApplicable),
+      tpiCharges: num(cpoDetail.tpiCharges, prev.tpiCharges),
+      tpiTaxApplicable: Boolean(cpoDetail.tpiTaxApplicable ?? prev.tpiTaxApplicable),
+    }));
+  }, [cpoDetail]);
 
   const fillContactFromDirectory = (
     department: string,
@@ -446,7 +459,7 @@ function CreatePOAcceptanceContent() {
     !!form.acceptanceDate &&
     !!form.committedDeliveryDate;
 
-  if (loading) return <PageLoading />;
+  if (isLoading) return <PageLoading />;
 
   return (
     <div className="space-y-6">
@@ -524,7 +537,9 @@ function CreatePOAcceptanceContent() {
                   <Label>Client Purchase Order *</Label>
                   <Select
                     value={form.clientPurchaseOrderId}
-                    onValueChange={handleCPOSelect}
+                    onValueChange={(cpoId) =>
+                      setForm((prev) => ({ ...prev, clientPurchaseOrderId: cpoId }))
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select a registered Client P.O." />

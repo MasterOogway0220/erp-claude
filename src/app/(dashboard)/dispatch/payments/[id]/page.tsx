@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useEffect, use } from "react";
+import { useApiQuery } from "@/hooks/use-api-query";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -18,29 +19,20 @@ export default function PaymentDetailPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
-  const [payment, setPayment] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading: loading, isError } = useApiQuery<{ paymentReceipt: any }>(
+    ["payment-receipt", id],
+    `/api/dispatch/payments/${id}`
+  );
+  const payment = data?.paymentReceipt ?? null;
 
+  // The hand-written fetcher redirected away when the receipt could not be
+  // loaded; React Query reports that as isError, so the redirect lives here.
   useEffect(() => {
-    fetchPayment();
-  }, [id]);
-
-  const fetchPayment = async () => {
-    try {
-      const response = await fetch(`/api/dispatch/payments/${id}`);
-      if (response.ok) {
-        const data = await response.json();
-        setPayment(data.paymentReceipt);
-      } else {
-        toast.error("Failed to load payment receipt");
-        router.push("/dispatch");
-      }
-    } catch (error) {
+    if (isError) {
       toast.error("Failed to load payment receipt");
-    } finally {
-      setLoading(false);
+      router.push("/dispatch");
     }
-  };
+  }, [isError, router]);
 
   if (loading) {
     return (

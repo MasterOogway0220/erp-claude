@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { use } from "react";
+import { useApiQuery, useInvalidate } from "@/hooks/use-api-query";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -70,35 +71,34 @@ export default function PrepareMaterialPage({
   const { id } = use(params);
   const router = useRouter();
 
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [mprNo, setMprNo] = useState("");
-  const [mprStatus, setMprStatus] = useState("");
-  const [items, setItems] = useState<MprItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [editRows, setEditRows] = useState<DetailRow[]>([]);
 
-  // Fetch data
+  const { data, isLoading, isError } = useApiQuery<{
+    mprNo: string;
+    status: string;
+    items: MprItem[];
+  }>(["warehouse-intimation-details", id], `/api/warehouse/intimation/${id}/details`);
+  const invalidate = useInvalidate();
+
+  const mprNo = data?.mprNo ?? "";
+  const items = data?.items ?? [];
+
   useEffect(() => {
-    async function fetchData() {
-      try {
-        const res = await fetch(`/api/warehouse/intimation/${id}/details`);
-        if (!res.ok) throw new Error("Failed to fetch");
-        const data = await res.json();
-        setMprNo(data.mprNo);
-        setMprStatus(data.status);
-        setItems(data.items);
-        if (data.items.length > 0) {
-          loadEditRows(data.items[0]);
-        }
-      } catch {
-        toast.error("Failed to load intimation details");
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchData();
-  }, [id]);
+    if (isError) toast.error("Failed to load intimation details");
+  }, [isError]);
+
+  // Seed the editable grid from the first item, once, when the data lands.
+  // Later refetches (after a save) must not clobber what is being typed.
+  const seeded = useRef(false);
+  useEffect(() => {
+    const first = data?.items?.[0];
+    if (seeded.current || !first) return;
+    seeded.current = true;
+    loadEditRows(first);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
 
   // Load edit rows from an item
   function loadEditRows(item: MprItem) {
@@ -210,16 +210,10 @@ export default function PrepareMaterialPage({
       });
 
       if (!res.ok) throw new Error("Failed to save");
-      const result = await res.json();
 
-      // Update local item state
-      const updatedItems = [...items];
-      updatedItems[currentIndex] = {
-        ...updatedItems[currentIndex],
-        preparedQty: result.preparedQty ?? updatedItems[currentIndex].preparedQty,
-        itemStatus: result.itemStatus ?? updatedItems[currentIndex].itemStatus,
-      };
-      setItems(updatedItems);
+      // The server recomputes preparedQty/itemStatus; re-read rather than
+      // patching the cached copy by hand.
+      invalidate(["warehouse-intimation-details", id]);
 
       toast.success("Details saved successfully");
       return true;
@@ -245,7 +239,7 @@ export default function PrepareMaterialPage({
     loadEditRows(items[index]);
   }
 
-  if (loading) return <PageLoading />;
+  if (isLoading) return <PageLoading />;
 
   const currentItem = items[currentIndex];
   const progress = getProgress();

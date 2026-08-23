@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
+import { useApiQuery } from "@/hooks/use-api-query";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
@@ -31,28 +32,23 @@ export default function MaterialSpecDetailPage() {
   const params = useParams();
   const id = params.id as string;
   const router = useRouter();
-  const [spec, setSpec] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading: loading, isError } = useApiQuery<{ materialSpec: any }>(
+    ["material-spec", id],
+    `/api/mtc/material-specs/${id}`,
+    { enabled: !!id }
+  );
+  const spec = data?.materialSpec ?? null;
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const fetchSpec = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/mtc/material-specs/${id}`);
-      if (!res.ok) throw new Error("Failed to fetch");
-      const data = await res.json();
-      setSpec(data.materialSpec);
-    } catch {
+  // The hand-written fetcher redirected away when the record could not be
+  // loaded; React Query reports that as isError, so the redirect lives here.
+  useEffect(() => {
+    if (isError) {
       toast.error("Failed to load material specification");
       router.push("/quality/mtc/material-specs");
-    } finally {
-      setLoading(false);
     }
-  }, [id, router]);
-
-  useEffect(() => {
-    if (id) fetchSpec();
-  }, [id, fetchSpec]);
+  }, [isError, router]);
 
   const handleDelete = async () => {
     setDeleting(true);

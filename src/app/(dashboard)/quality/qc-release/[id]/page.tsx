@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { use } from "react";
+import { useApiQuery } from "@/hooks/use-api-query";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,28 +10,15 @@ import Link from "next/link";
 
 export default function QCReleaseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const [qcRelease, setQcRelease] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading } = useApiQuery<{ qcRelease: any }>(
+    ["qc-release", id],
+    `/api/quality/qc-release/${id}`
+  );
+  // A failed read left qcRelease null before, which renders the not-found
+  // panel below — React Query's error case lands in the same place.
+  const qcRelease = data?.qcRelease ?? null;
 
-  useEffect(() => {
-    fetchQCRelease();
-  }, [id]);
-
-  const fetchQCRelease = async () => {
-    try {
-      const res = await fetch(`/api/quality/qc-release/${id}`);
-      if (res.ok) {
-        const data = await res.json();
-        setQcRelease(data.qcRelease);
-      }
-    } catch (error) {
-      console.error("Failed to fetch QC release:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="space-y-6">
         <PageHeader title="QC Release Detail" description="Loading..." />

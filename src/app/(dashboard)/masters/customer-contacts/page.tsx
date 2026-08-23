@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useApiQuery, useDebouncedValue, useInvalidate } from "@/hooks/use-api-query";
 import { useDepartments } from "@/hooks/use-masters";
 import { useCustomers } from "@/hooks/use-masters";
 import { PageHeader } from "@/components/shared/page-header";
@@ -53,10 +54,9 @@ interface CustomerContact {
 }
 
 export default function CustomerContactsPage() {
-  const [contacts, setContacts] = useState<CustomerContact[]>([]);
   const customers = useCustomers<Customer>();
   const departments = useDepartments<{ id: string; name: string }>();
-  const [loading, setLoading] = useState(true);
+  const invalidate = useInvalidate();
   const [search, setSearch] = useState("");
   const [filterCustomer, setFilterCustomer] = useState("");
   const [filterDepartment, setFilterDepartment] = useState("");
@@ -74,36 +74,17 @@ export default function CustomerContactsPage() {
     department: "",
   });
 
-  useEffect(() => {
-    fetchContacts();
-  }, []);
+  const debouncedSearch = useDebouncedValue(search);
 
+  const params = new URLSearchParams();
+  if (debouncedSearch) params.set("search", debouncedSearch);
+  if (filterCustomer) params.set("customerId", filterCustomer);
+  if (filterDepartment) params.set("department", filterDepartment);
 
-  const fetchContacts = async () => {
-    try {
-      const params = new URLSearchParams();
-      if (search) params.set("search", search);
-      if (filterCustomer) params.set("customerId", filterCustomer);
-      if (filterDepartment) params.set("department", filterDepartment);
-
-      const response = await fetch(`/api/masters/customer-contacts?${params}`);
-      if (response.ok) {
-        setContacts(await response.json());
-      }
-    } catch (error) {
-      console.error("Failed to fetch contacts:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchContacts();
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [search, filterCustomer, filterDepartment]);
+  const { data: contacts = [], isLoading: loading } = useApiQuery<CustomerContact[]>(
+    ["customer-contacts", debouncedSearch, filterCustomer, filterDepartment],
+    `/api/masters/customer-contacts?${params}`
+  );
 
   const openCreateDialog = () => {
     setEditingContact(null);
@@ -153,7 +134,7 @@ export default function CustomerContactsPage() {
       if (response.ok) {
         toast.success(editingContact ? "Contact updated" : "Contact created");
         setDialogOpen(false);
-        fetchContacts();
+        invalidate(["customer-contacts"]);
       } else {
         const data = await response.json();
         toast.error(data.error || "Failed to save contact");
@@ -174,7 +155,7 @@ export default function CustomerContactsPage() {
       });
       if (response.ok) {
         toast.success("Contact deleted");
-        fetchContacts();
+        invalidate(["customer-contacts"]);
       } else {
         toast.error("Failed to delete contact");
       }

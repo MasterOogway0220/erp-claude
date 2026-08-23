@@ -16,7 +16,12 @@ Operates on `dispatchNote`, `clientPurchaseOrder`, `pOAcceptance`.
 - Gated by `checkAccess("dispatch", "write")`. **Authentication only** — role enforcement is disabled app-wide.
 - **Not company-scoped.** Either catalogue data (deliberately global) or scoped via a parent record — verify which before changing.
 - Sends mail through `mailer()`. **SMTP is not configured in production**, so this currently fails with a message naming the missing variables.
-- Renders a PDF via headless Chromium. Cold starts routinely fail; the client retries once. `maxDuration` and `memory` are raised in `vercel.json`.
+- Renders the PDF in-process with `@react-pdf/renderer`. There is no browser
+  binary involved: Puppeteer and `@sparticuz/chromium` were removed once the
+  last route was migrated, which took roughly 50MB out of the lambda bundle
+  and removed the cold-start failures the Chromium launch used to cause.
+  `maxDuration` and `memory` are still raised in `vercel.json` for the
+  heaviest documents.
 
 ## Gotchas
 

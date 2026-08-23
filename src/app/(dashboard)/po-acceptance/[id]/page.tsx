@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useApiQuery, useInvalidate } from "@/hooks/use-api-query";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -115,8 +116,17 @@ export default function POAcceptanceDetailPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
-  const [acceptance, setAcceptance] = useState<POAcceptanceDetail | null>(null);
-  const [loading, setLoading] = useState(true);
+  const invalidate = useInvalidate();
+  const { data: acceptance, isLoading } = useApiQuery<POAcceptanceDetail>(
+    ["po-acceptance", id],
+    `/api/po-acceptance/${id}`
+  );
+  // Sent-mail history for this acceptance; its own key so a status change does
+  // not drag the log along with it.
+  const { data: emailLogs = [] } = useApiQuery<EmailLog[]>(
+    ["po-acceptance-emails", id],
+    `/api/po-acceptance/${id}/emails`
+  );
   const [updating, setUpdating] = useState(false);
   const [uploadingSigned, setUploadingSigned] = useState(false);
   const [showEmailDialog, setShowEmailDialog] = useState(false);
@@ -125,25 +135,6 @@ export default function POAcceptanceDetailPage({
   const [emailSubject, setEmailSubject] = useState("");
   const [emailMessage, setEmailMessage] = useState("");
   const [sendingEmail, setSendingEmail] = useState(false);
-  const [emailLogs, setEmailLogs] = useState<EmailLog[]>([]);
-
-  useEffect(() => {
-    fetchAcceptance();
-    fetchEmailLogs();
-  }, [id]);
-
-  const fetchAcceptance = async () => {
-    try {
-      const response = await fetch(`/api/po-acceptance/${id}`);
-      if (response.ok) {
-        setAcceptance(await response.json());
-      }
-    } catch (error) {
-      console.error("Failed to fetch:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // The client's countersigned copy comes back by email and gets scanned in.
   // Goes through /api/upload, so it lands in the database like every other
@@ -167,7 +158,7 @@ export default function POAcceptanceDetailPage({
       });
       if (!res.ok) throw new Error("Could not attach the signed copy");
       toast.success("Signed copy attached");
-      fetchAcceptance();
+      invalidate(["po-acceptance", id]);
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -185,22 +176,11 @@ export default function POAcceptanceDetailPage({
       });
       if (!res.ok) throw new Error("Could not remove the signed copy");
       toast.success("Signed copy removed");
-      fetchAcceptance();
+      invalidate(["po-acceptance", id]);
     } catch (error: any) {
       toast.error(error.message);
     } finally {
       setUploadingSigned(false);
-    }
-  };
-
-  const fetchEmailLogs = async () => {
-    try {
-      const res = await fetch(`/api/po-acceptance/${id}/emails`);
-      if (res.ok) {
-        setEmailLogs(await res.json());
-      }
-    } catch (error) {
-      console.error("Failed to fetch email logs:", error);
     }
   };
 
@@ -227,7 +207,7 @@ export default function POAcceptanceDetailPage({
             ? "PO Acceptance issued — order moved to execution stage"
             : "PO Acceptance cancelled"
         );
-        fetchAcceptance();
+        invalidate(["po-acceptance", id]);
       } else {
         const data = await response.json();
         toast.error(data.error || "Failed to update status");
@@ -270,7 +250,7 @@ export default function POAcceptanceDetailPage({
       if (res.ok) {
         toast.success("Email sent successfully");
         setShowEmailDialog(false);
-        fetchEmailLogs();
+        invalidate(["po-acceptance-emails", id]);
       } else {
         toast.error(data.error || "Failed to send email");
       }
@@ -281,7 +261,7 @@ export default function POAcceptanceDetailPage({
     }
   };
 
-  if (loading) return <PageLoading />;
+  if (isLoading) return <PageLoading />;
   if (!acceptance) {
     return (
       <div className="text-center py-12 text-muted-foreground">

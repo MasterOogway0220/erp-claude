@@ -15,7 +15,12 @@ Operates on `dispatchNote`.
 
 - Gated by `checkAccess("dispatch", "read")`. **Authentication only** — role enforcement is disabled app-wide.
 - **Not company-scoped.** Either catalogue data (deliberately global) or scoped via a parent record — verify which before changing.
-- Renders a PDF via headless Chromium. Cold starts routinely fail; the client retries once. `maxDuration` and `memory` are raised in `vercel.json`.
+- Renders the PDF in-process with `@react-pdf/renderer`. There is no browser
+  binary involved: Puppeteer and `@sparticuz/chromium` were removed once the
+  last route was migrated, which took roughly 50MB out of the lambda bundle
+  and removed the cold-start failures the Chromium launch used to cause.
+  `maxDuration` and `memory` are still raised in `vercel.json` for the
+  heaviest documents.
 
 ## Gotchas
 

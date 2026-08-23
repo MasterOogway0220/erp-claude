@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useApiQuery, useInvalidate } from "@/hooks/use-api-query";
 import { useRouter, useParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -28,8 +29,13 @@ const stockStatusColors: Record<string, string> = {
 export default function StockDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const [stock, setStock] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading: loading, isError } = useApiQuery<{ stock: any }>(
+    ["stock", params.id],
+    `/api/inventory/stock/${params.id}`,
+    { enabled: !!params.id }
+  );
+  const stock = data?.stock ?? null;
+  const invalidate = useInvalidate();
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [partialDialogOpen, setPartialDialogOpen] = useState(false);
   const [updateData, setUpdateData] = useState({ status: "", location: "", rackNo: "", notes: "" });
@@ -39,20 +45,21 @@ export default function StockDetailPage() {
   const [pipeEditing, setPipeEditing] = useState(false);
   const [pipeSaving, setPipeSaving] = useState(false);
 
-  useEffect(() => { if (params.id) fetchStock(params.id as string); }, [params.id]);
-
-  const fetchStock = async (id: string) => {
-    try {
-      const response = await fetch(`/api/inventory/stock/${id}`);
-      if (!response.ok) throw new Error("Failed to fetch");
-      const data = await response.json();
-      setStock(data.stock);
-      setUpdateData({ status: data.stock.status, location: data.stock.location || "", rackNo: data.stock.rackNo || "", notes: data.stock.notes || "" });
-    } catch (error) {
+  // The hand-written fetcher redirected away when the record could not be
+  // loaded; React Query reports that as isError, so the redirect lives here.
+  useEffect(() => {
+    if (isError) {
       toast.error("Failed to load stock details");
       router.push("/inventory");
-    } finally { setLoading(false); }
-  };
+    }
+  }, [isError, router]);
+
+  // The fetcher also seeded the update form from the record it loaded; the
+  // cached record arrives asynchronously, so seed it whenever it changes.
+  useEffect(() => {
+    if (!stock) return;
+    setUpdateData({ status: stock.status, location: stock.location || "", rackNo: stock.rackNo || "", notes: stock.notes || "" });
+  }, [stock]);
 
   const handleUpdateStock = async () => {
     setSubmitting(true);
@@ -61,7 +68,7 @@ export default function StockDetailPage() {
       if (!response.ok) { const error = await response.json(); throw new Error(error.error || "Failed to update"); }
       toast.success("Stock updated successfully");
       setStatusDialogOpen(false);
-      fetchStock(params.id as string);
+      invalidate(["stock", params.id], ["inventory-stock"]);
     } catch (error: any) { toast.error(error.message); } finally { setSubmitting(false); }
   };
 
@@ -83,7 +90,7 @@ export default function StockDetailPage() {
       if (!response.ok) { const error = await response.json(); throw new Error(error.error || "Failed to process"); }
       toast.success("Partial acceptance completed. Rejected portion split into separate stock with NCR.");
       setPartialDialogOpen(false);
-      fetchStock(params.id as string);
+      invalidate(["stock", params.id], ["inventory-stock"]);
     } catch (error: any) { toast.error(error.message); } finally { setSubmitting(false); }
   };
 
@@ -154,10 +161,10 @@ export default function StockDetailPage() {
         const err = await response.json();
         throw new Error(err.error || "Failed to save");
       }
-      const data = await response.json();
-      initPipeRows(data.pipeDetails);
-      toast.success(`Saved ${data.pipeDetails.length} pipe detail(s)`);
-      fetchStock(params.id as string);
+      const saved = await response.json();
+      initPipeRows(saved.pipeDetails);
+      toast.success(`Saved ${saved.pipeDetails.length} pipe detail(s)`);
+      invalidate(["stock", params.id]);
     } catch (error: any) {
       toast.error(error.message);
     } finally {

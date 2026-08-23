@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useApiQuery, useInvalidate } from "@/hooks/use-api-query";
 import { useRouter } from "next/navigation";
 import { use } from "react";
 import { PageHeader } from "@/components/shared/page-header";
@@ -171,31 +172,29 @@ export default function SupplierQuotationDetailPage({
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [sq, setSQ] = useState<SupplierQuotation | null>(null);
-  const [loading, setLoading] = useState(true);
+  const {
+    data: sq,
+    isLoading: loading,
+    isError,
+  } = useApiQuery<SupplierQuotation>(
+    ["supplier-quotation", id],
+    `/api/purchase/supplier-quotations/${id}`,
+    { enabled: !!id }
+  );
+  const invalidate = useInvalidate();
+
   const [uploading, setUploading] = useState(false);
   const [selectedDocIndex, setSelectedDocIndex] = useState(0);
+  // Empty until the user picks something; the quote's own status is the
+  // fallback, so the dropdown reads off the cache entry instead of mirroring it.
   const [newStatus, setNewStatus] = useState("");
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
-  const fetchSQ = async () => {
-    try {
-      const res = await fetch(`/api/purchase/supplier-quotations/${id}`);
-      if (!res.ok) throw new Error("Failed to fetch");
-      const data = await res.json();
-      setSQ(data);
-      setNewStatus(data.status);
-    } catch {
-      toast.error("Failed to load supplier quotation");
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // The hand-written fetcher toasted when the record could not be loaded;
+  // React Query reports that as isError, so the toast lives here.
   useEffect(() => {
-    fetchSQ();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+    if (isError) toast.error("Failed to load supplier quotation");
+  }, [isError]);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -214,7 +213,7 @@ export default function SupplierQuotationDetailPage({
         throw new Error(err.error || "Upload failed");
       }
       toast.success("Document uploaded");
-      await fetchSQ();
+      invalidate(["supplier-quotation", id]);
       setSelectedDocIndex(0);
     } catch (err: any) {
       toast.error(err.message || "Upload failed");
@@ -234,7 +233,7 @@ export default function SupplierQuotationDetailPage({
       if (!res.ok) throw new Error("Delete failed");
       toast.success("Document deleted");
       setSelectedDocIndex(0);
-      await fetchSQ();
+      invalidate(["supplier-quotation", id]);
     } catch {
       toast.error("Failed to delete document");
     }
@@ -251,7 +250,7 @@ export default function SupplierQuotationDetailPage({
       });
       if (!res.ok) throw new Error("Update failed");
       toast.success("Status updated");
-      await fetchSQ();
+      invalidate(["supplier-quotation", id], ["supplier-quotations"]);
     } catch {
       toast.error("Failed to update status");
     } finally {
@@ -442,7 +441,7 @@ export default function SupplierQuotationDetailPage({
                 <span className="text-sm text-muted-foreground shrink-0">
                   Change Status:
                 </span>
-                <Select value={newStatus} onValueChange={setNewStatus}>
+                <Select value={newStatus || sq.status} onValueChange={setNewStatus}>
                   <SelectTrigger className="w-[180px] h-8 text-sm">
                     <SelectValue />
                   </SelectTrigger>
@@ -457,7 +456,7 @@ export default function SupplierQuotationDetailPage({
                 <Button
                   size="sm"
                   onClick={handleStatusUpdate}
-                  disabled={updatingStatus || newStatus === sq.status}
+                  disabled={updatingStatus || !newStatus || newStatus === sq.status}
                 >
                   {updatingStatus ? "Updating..." : "Update"}
                 </Button>

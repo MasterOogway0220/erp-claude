@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, use } from "react";
+import { useApiQuery, useInvalidate } from "@/hooks/use-api-query";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,27 +21,13 @@ const statusColors: Record<string, string> = {
 
 export default function StockIssueDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const [stockIssue, setStockIssue] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading: loading } = useApiQuery<{ stockIssue: any }>(
+    ["stock-issue", id],
+    `/api/inventory/stock-issue/${id}`
+  );
+  const stockIssue = data?.stockIssue ?? null;
+  const invalidate = useInvalidate();
   const [updating, setUpdating] = useState(false);
-
-  useEffect(() => {
-    fetchStockIssue();
-  }, [id]);
-
-  const fetchStockIssue = async () => {
-    try {
-      const res = await fetch(`/api/inventory/stock-issue/${id}`);
-      if (res.ok) {
-        const data = await res.json();
-        setStockIssue(data.stockIssue);
-      }
-    } catch (error) {
-      console.error("Failed to fetch stock issue:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleStatusChange = async (newStatus: string) => {
     setUpdating(true);
@@ -55,8 +42,9 @@ export default function StockIssueDetailPage({ params }: { params: Promise<{ id:
         toast.error(err.error || "Failed to update status");
         return;
       }
-      const data = await res.json();
-      setStockIssue(data.stockIssue);
+      // The PATCH answers with the updated record, but the list screen caches
+      // this issue's status too — invalidating both keeps them in step.
+      invalidate(["stock-issue", id], ["stock-issues"]);
       toast.success(`Status updated to ${newStatus.replace(/_/g, " ")}`);
     } catch (error) {
       toast.error("Failed to update status");

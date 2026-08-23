@@ -72,9 +72,13 @@ export async function fetchJson<T>(url: string): Promise<T> {
  * Retry a 401 once. A screen mounting before the session cookie is readable
  * gets one 401 that resolves itself; anything else is a real failure and is
  * surfaced immediately rather than retried against a struggling database.
+ *
+ * `failureCount` is 0 the first time this is asked, so `< 1` is exactly one
+ * retry — two attempts in total. `< 2` would be two retries, which is three
+ * requests at a moment when the database may already be refusing connections.
  */
 export function retryUnauthorizedOnce(failureCount: number, error: unknown) {
-  return error instanceof ApiError && error.status === 401 && failureCount < 2;
+  return error instanceof ApiError && error.status === 401 && failureCount < 1;
 }
 
 export interface ApiQueryOptions {
@@ -103,9 +107,18 @@ export function useApiQuery<T>(
   return useQuery({
     queryKey: key,
     queryFn: () => fetchJson<T>(url),
-    staleTime: options.staleTime,
-    enabled: options.enabled,
-    retry: options.retry,
+    // Only the options actually supplied are spread in. React Query merges
+    // options over the provider's defaults with a plain object spread, and a
+    // key present with the value `undefined` still wins that spread — so
+    // writing `staleTime: options.staleTime` unconditionally overwrote the
+    // provider's 60s default with `undefined`, which React Query reads as 0.
+    // Every caller that did not pass its own staleTime was therefore
+    // refetching on each mount, i.e. not caching at all. Same for `retry`,
+    // which fell back to the library default of 3 rather than the 1 the
+    // provider sets to avoid hammering a database that bans connection churn.
+    ...(options.staleTime !== undefined && { staleTime: options.staleTime }),
+    ...(options.enabled !== undefined && { enabled: options.enabled }),
+    ...(options.retry !== undefined && { retry: options.retry }),
   });
 }
 

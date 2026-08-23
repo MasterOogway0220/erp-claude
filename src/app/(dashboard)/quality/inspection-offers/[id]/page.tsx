@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useApiQuery, useInvalidate } from "@/hooks/use-api-query";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { PageHeader } from "@/components/shared/page-header";
@@ -85,27 +86,17 @@ export default function InspectionOfferDetailPage({
   const isManager = ["MANAGEMENT", "ADMIN", "SUPER_ADMIN"].includes(userRole);
   const isQA = ["QC", "MANAGEMENT", "ADMIN", "SUPER_ADMIN"].includes(userRole);
 
-  const [offer, setOffer] = useState<InspectionOfferDetail | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: offer, isLoading } = useApiQuery<InspectionOfferDetail>(
+    ["inspection-offer", id],
+    `/api/quality/inspection-offers/${id}`,
+    { enabled: !!id }
+  );
+  const invalidate = useInvalidate();
+
   const [downloading, setDownloading] = useState<string | null>(null);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectionRemarks, setRejectionRemarks] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
-
-  useEffect(() => {
-    fetchOffer();
-  }, [id]);
-
-  const fetchOffer = async () => {
-    try {
-      const res = await fetch(`/api/quality/inspection-offers/${id}`);
-      if (res.ok) setOffer(await res.json());
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const downloadPdf = async (type: string, label: string) => {
     setDownloading(type);
@@ -140,7 +131,7 @@ export default function InspectionOfferDetailPage({
         throw new Error(e.error || "Action failed");
       }
       toast.success("Status updated");
-      await fetchOffer();
+      invalidate(["inspection-offer", id], ["inspection-offers"]);
     } catch (err: any) {
       toast.error(err.message);
     } finally {
@@ -148,7 +139,7 @@ export default function InspectionOfferDetailPage({
     }
   };
 
-  if (loading) return <PageLoading />;
+  if (isLoading) return <PageLoading />;
   if (!offer) return <div className="text-center py-12 text-muted-foreground">Not found</div>;
 
   return (

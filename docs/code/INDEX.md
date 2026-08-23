@@ -4,18 +4,11 @@ Companion explainers for every code file, mirroring the source tree. See
 [CONVENTIONS.md](./CONVENTIONS.md) for structure and depth, and the repo root
 `CLAUDE.md` for the standing rule that keeps them true.
 
-## Coverage: 481 / 493 — 12 pending
+## Coverage: 493 / 493 ✅
 
 Every `.ts`, `.tsx` and `.prisma` file under `src/`, `prisma/` and `scripts/`
-should have a doc at the mirrored path. Test files are covered by the doc for
-what they test.
-
-**Outstanding:** the twelve files added by the Chromium removal and the query
-caching work are listed below marked **Doc pending** — the ten react-pdf
-documents and `dossier-data.ts` under PDF, plus `hooks/use-api-query.ts` and
-`hooks/use-masters.ts`. Their source carries full header comments; what is
-missing is the mirrored explainer. Five docs were deleted along with the files
-they described (`render-pdf.ts` and four HTML templates).
+has a doc at the mirrored path. Test files are covered by the doc for what they
+test.
 
 | Area | Files | Depth |
 |---|---:|---|
@@ -178,25 +171,28 @@ binary in the deployment any more.
 - [`pdf/primitives.tsx`](./src/lib/pdf/primitives.tsx.md) — shared react-pdf
   building blocks: Indian digit grouping, and the cell borders that stop a
   react-pdf table doubling its rules.
-- `pdf/bordered-doc.tsx` — chrome for the "bordered form" family (inspection
+- [`pdf/bordered-doc.tsx`](./src/lib/pdf/bordered-doc.tsx.md) — chrome for the "bordered form" family (inspection
   offers, packing lists): outer box, title bar, reference grid, generic typed
-  table with a repeating header, totals row, signature blocks. **Doc pending.**
+  table with a repeating header, totals row, signature blocks.
 
 **Documents**
 - [`pdf/quotation-pdf.tsx`](./src/lib/pdf/quotation-pdf.tsx.md)
 - [`pdf/issue-slip-pdf.tsx`](./src/lib/pdf/issue-slip-pdf.tsx.md)
-- `pdf/lab-letter-pdf.tsx` — **Doc pending.**
-- `pdf/client-status-report-pdf.tsx` — **Doc pending.**
-- `pdf/inspection-offer-pdf.tsx` — offer, length tally, colour code and
-  criteria checklist. **Doc pending.**
-- `pdf/packing-list-pdf.tsx` — **Doc pending.**
-- `pdf/invoice-pdf.tsx` — GST tax invoice. **Doc pending.**
-- `pdf/purchase-order-pdf.tsx` — **Doc pending.**
-- `pdf/mtc-certificate-pdf.tsx` — mill test certificate. **Doc pending.**
-- `pdf/dossier-pdf.tsx` — the dispatch dossier, and the dispatch-note bundle
-  rendered from a narrower section list. **Doc pending.**
-- `pdf/dossier-data.ts` — the one traversal both dossier routes share.
-  **Doc pending.**
+- [`pdf/lab-letter-pdf.tsx`](./src/lib/pdf/lab-letter-pdf.tsx.md) — the covering letter sent to an
+  external testing lab with a batch of material.
+- [`pdf/client-status-report-pdf.tsx`](./src/lib/pdf/client-status-report-pdf.tsx.md) — order progress per line,
+  on the 297x230mm sheet customers already receive.
+- [`pdf/inspection-offer-pdf.tsx`](./src/lib/pdf/inspection-offer-pdf.tsx.md) — offer, length tally, colour code and
+  criteria checklist.
+- [`pdf/packing-list-pdf.tsx`](./src/lib/pdf/packing-list-pdf.tsx.md) — travels with a consignment for
+  physical verification at dispatch.
+- [`pdf/invoice-pdf.tsx`](./src/lib/pdf/invoice-pdf.tsx.md) — GST tax invoice.
+- [`pdf/purchase-order-pdf.tsx`](./src/lib/pdf/purchase-order-pdf.tsx.md) — the buying-side mirror of a
+  quotation, including its revision banner.
+- [`pdf/mtc-certificate-pdf.tsx`](./src/lib/pdf/mtc-certificate-pdf.tsx.md) — mill test certificate.
+- [`pdf/dossier-pdf.tsx`](./src/lib/pdf/dossier-pdf.tsx.md) — the dispatch dossier, and the dispatch-note bundle
+  rendered from a narrower section list.
+- [`pdf/dossier-data.ts`](./src/lib/pdf/dossier-data.ts.md) — the one traversal both dossier routes share.
 
 **HTML templates still in use** (browser preview / print, no Chromium)
 - [`pdf/print-wrapper.ts`](./src/lib/pdf/print-wrapper.ts.md)
@@ -208,12 +204,12 @@ binary in the deployment any more.
   now only the HTML preview route and the `ClientStatusReportData` type.
 
 ### Data fetching (src/hooks)
-- `hooks/use-api-query.ts` — the one way screens read from this app's API:
+- [`hooks/use-api-query.ts`](./src/hooks/use-api-query.ts.md) — the one way screens read from this app's API:
   a cached `useQuery` wrapper, `ApiError` carrying the HTTP status, a
   debounce helper for search keys, and `useInvalidate` for post-write
-  refreshes. **Doc pending.**
-- `hooks/use-masters.ts` — one shared, cached read per master list. The
-  customer master alone was being fetched from fourteen screens. **Doc pending.**
+  refreshes.
+- [`hooks/use-masters.ts`](./src/hooks/use-masters.ts.md) — one shared, cached read per master list. The
+  customer master alone was being fetched from fourteen screens.
 - [`hooks/use-units.ts`](./src/hooks/use-units.ts.md) — UOM codes, now
   sharing the Unit Master screen's cache entry.
 

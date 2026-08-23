@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, use } from "react";
+import { useApiQuery, useInvalidate } from "@/hooks/use-api-query";
 import { useRouter } from "next/navigation";
 import { parseStringArray } from "@/lib/business-logic/technical-requirements";
 import { PageHeader } from "@/components/shared/page-header";
@@ -32,31 +33,23 @@ export default function LabLetterDetailPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
-  const [letter, setLetter] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading: loading, isError } = useApiQuery<{ labLetter: any }>(
+    ["lab-letter", id],
+    `/api/quality/lab-letters/${id}`
+  );
+  const letter = data?.labLetter ?? null;
+  const invalidate = useInvalidate();
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
 
+  // The hand-written fetcher redirected away when the letter could not be
+  // loaded; React Query reports that as isError, so the redirect lives here.
   useEffect(() => {
-    fetchLabLetter();
-  }, [id]);
-
-  const fetchLabLetter = async () => {
-    try {
-      const res = await fetch(`/api/quality/lab-letters/${id}`);
-      if (res.ok) {
-        const data = await res.json();
-        setLetter(data.labLetter);
-      } else {
-        toast.error("Failed to load lab letter");
-        router.push("/quality/lab-letters");
-      }
-    } catch {
+    if (isError) {
       toast.error("Failed to load lab letter");
-    } finally {
-      setLoading(false);
+      router.push("/quality/lab-letters");
     }
-  };
+  }, [isError, router]);
 
   const handleStatusChange = async (newStatus: string) => {
     setUpdatingStatus(true);
@@ -67,7 +60,9 @@ export default function LabLetterDetailPage({
         body: JSON.stringify({ status: newStatus }),
       });
       if (res.ok) {
-        setLetter((prev: any) => ({ ...prev, status: newStatus }));
+        // Show only what the server stored — and the quality list caches this
+        // letter's status too, so invalidate both.
+        invalidate(["lab-letter", id], ["lab-letters"]);
         toast.success(`Status updated to ${STATUS_CONFIG[newStatus]?.label || newStatus}`);
       } else {
         toast.error("Failed to update status");

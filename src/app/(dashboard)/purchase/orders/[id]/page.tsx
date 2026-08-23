@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useApiQuery, useInvalidate } from "@/hooks/use-api-query";
 import { useRouter, useParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -130,8 +131,23 @@ export default function PurchaseOrderDetailPage() {
   const router = useRouter();
   const params = useParams();
   const { user } = useCurrentUser();
-  const [po, setPO] = useState<PO | null>(null);
-  const [loading, setLoading] = useState(true);
+  const invalidate = useInvalidate();
+
+  const { data, isLoading, isError } = useApiQuery<{ purchaseOrder: PO }>(
+    ["purchase-order", params.id],
+    `/api/purchase/orders/${params.id}`,
+    { enabled: !!params.id }
+  );
+  const po = data?.purchaseOrder ?? null;
+
+  // The variance report is only meaningful for a PO raised against a sales
+  // order, so it stays deferred until the PO itself says there is one.
+  const { data: varianceReport } = useApiQuery<any>(
+    ["purchase-order", params.id, "variance"],
+    `/api/purchase/orders/${params.id}/variance`,
+    { enabled: !!po?.salesOrder?.id }
+  );
+
   const [amendDialogOpen, setAmendDialogOpen] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [approvalRemarks, setApprovalRemarks] = useState("");
@@ -142,50 +158,28 @@ export default function PurchaseOrderDetailPage() {
     changeReason: "",
   });
   const [submitting, setSubmitting] = useState(false);
-  const [varianceReport, setVarianceReport] = useState<any>(null);
 
+  // The hand-written fetcher redirected away when the PO could not be loaded;
+  // React Query reports that as isError, so the redirect lives here.
   useEffect(() => {
-    if (params.id) {
-      fetchPO(params.id as string);
-    }
-  }, [params.id]);
-
-  const fetchPO = async (id: string) => {
-    try {
-      const response = await fetch(`/api/purchase/orders/${id}`);
-      if (!response.ok) throw new Error("Failed to fetch");
-      const data = await response.json();
-      setPO(data.purchaseOrder);
-      setAmendmentData({
-        deliveryDate: data.purchaseOrder.deliveryDate
-          ? format(new Date(data.purchaseOrder.deliveryDate), "yyyy-MM-dd")
-          : "",
-        specialRequirements: data.purchaseOrder.specialRequirements || "",
-        changeReason: "",
-      });
-      // Fetch variance report if PO has a linked SO
-      if (data.purchaseOrder.salesOrder?.id) {
-        fetchVariance(id);
-      }
-    } catch (error) {
+    if (isError) {
       toast.error("Failed to load purchase order");
       router.push("/purchase");
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [isError, router]);
 
-  const fetchVariance = async (poId: string) => {
-    try {
-      const response = await fetch(`/api/purchase/orders/${poId}/variance`);
-      if (response.ok) {
-        const data = await response.json();
-        setVarianceReport(data);
-      }
-    } catch {
-      // Variance is non-critical — silently ignore errors
-    }
-  };
+  // The amendment dialog opens pre-filled with the PO's current values, so
+  // re-seed it whenever a fresh copy arrives.
+  useEffect(() => {
+    if (!po) return;
+    setAmendmentData({
+      deliveryDate: po.deliveryDate
+        ? format(new Date(po.deliveryDate), "yyyy-MM-dd")
+        : "",
+      specialRequirements: po.specialRequirements || "",
+      changeReason: "",
+    });
+  }, [po]);
 
   const handleDownloadPDF = async () => {
     if (!po) return;
@@ -274,7 +268,7 @@ export default function PurchaseOrderDetailPage() {
       setApprovalRemarks("");
       setRejectionRemarks("");
       setRejectDialogOpen(false);
-      fetchPO(po.id);
+      invalidate(["purchase-order", params.id], ["purchase-orders"]);
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -304,7 +298,7 @@ export default function PurchaseOrderDetailPage() {
         throw new Error(error.error || "Failed to update status");
       }
       toast.success(label.replace("Mark ", "Marked "));
-      fetchPO(po.id);
+      invalidate(["purchase-order", params.id], ["purchase-orders"]);
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -315,7 +309,7 @@ export default function PurchaseOrderDetailPage() {
   const canApprove = user?.role === "MANAGEMENT" || user?.role === "ADMIN" || user?.role === "SUPER_ADMIN";
   const canSubmitForApproval = user?.role === "PURCHASE" || user?.role === "SUPER_ADMIN" || user?.role === "MANAGEMENT";
 
-  if (loading) {
+  if (isLoading) {
     return <PageLoading />;
   }
 

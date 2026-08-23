@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, use } from "react";
+import { useApiQuery, useInvalidate } from "@/hooks/use-api-query";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -49,31 +50,27 @@ export default function PRDetailPage({
   const { id } = use(params);
   const router = useRouter();
   const { user } = useCurrentUser();
-  const [pr, setPr] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const {
+    data,
+    isLoading: loading,
+    isError,
+  } = useApiQuery<{ purchaseRequisition: any }>(
+    ["purchase-requisition", id],
+    `/api/purchase/requisitions/${id}`
+  );
+  const pr = data?.purchaseRequisition ?? null;
+  const invalidate = useInvalidate();
   const [updating, setUpdating] = useState(false);
   const [approvalRemarks, setApprovalRemarks] = useState("");
 
+  // The hand-written fetcher redirected away when the PR could not be loaded;
+  // React Query reports that as isError, so the redirect lives here.
   useEffect(() => {
-    fetchPR();
-  }, [id]);
-
-  const fetchPR = async () => {
-    try {
-      const response = await fetch(`/api/purchase/requisitions/${id}`);
-      if (response.ok) {
-        const data = await response.json();
-        setPr(data.purchaseRequisition);
-      } else {
-        toast.error("Failed to load purchase requisition");
-        router.push("/purchase");
-      }
-    } catch (error) {
+    if (isError) {
       toast.error("Failed to load purchase requisition");
-    } finally {
-      setLoading(false);
+      router.push("/purchase");
     }
-  };
+  }, [isError, router]);
 
   const isApprover = user?.role === "MANAGEMENT" || user?.role === "ADMIN" || user?.role === "SUPER_ADMIN";
 
@@ -90,8 +87,9 @@ export default function PRDetailPage({
       });
 
       if (response.ok) {
-        const data = await response.json();
-        setPr(data.purchaseRequisition);
+        // Show what the server stored, not the body we posted — and the
+        // approved-PR list on the PO create screen changes with the status too.
+        invalidate(["purchase-requisition", id], ["purchase-requisitions"]);
         toast.success(`PR status updated to ${newStatus.replace(/_/g, " ")}`);
       } else {
         const error = await response.json();
