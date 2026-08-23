@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { invalidateMasters } from "@/lib/cache/master-cache";
 import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 
@@ -85,6 +86,8 @@ export async function PATCH(
           companyId,
         }).catch(console.error);
 
+        invalidateMasters("vendors");
+
         return NextResponse.json(updated);
       }
 
@@ -116,6 +119,8 @@ export async function PATCH(
         newValue: "false",
         companyId,
       }).catch(console.error);
+
+      invalidateMasters("vendors");
 
       return NextResponse.json(updated);
     }
@@ -187,6 +192,8 @@ export async function PATCH(
       companyId,
     }).catch(console.error);
 
+    invalidateMasters("vendors");
+
     return NextResponse.json(updated);
   } catch (error) {
     console.error("Error updating vendor:", error);
@@ -246,6 +253,7 @@ export async function DELETE(
       companyId,
     }).catch(console.error);
 
+    invalidateMasters("vendors");
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting vendor:", error);

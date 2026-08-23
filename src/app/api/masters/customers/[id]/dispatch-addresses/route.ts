@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { invalidateMasters } from "@/lib/cache/master-cache";
 import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 
@@ -73,6 +74,7 @@ export async function POST(
       userId: session.user?.id,
       companyId,
     }).catch(console.error);
+    invalidateMasters("customers");
 
     return NextResponse.json(address, { status: 201 });
   } catch (error) {

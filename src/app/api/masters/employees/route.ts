@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAccess, companyFilter } from "@/lib/rbac";
+import { cachedMasterRead } from "@/lib/cache/master-cache";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
+import { invalidateMasters } from "@/lib/cache/master-cache";
 import bcrypt from "bcryptjs";
 
 export async function GET(request: NextRequest) {
@@ -21,12 +23,18 @@ export async function GET(request: NextRequest) {
       ];
     }
 
-    const raw = await prisma.employeeMaster.findMany({
-      where,
-      include: {
-        linkedUser: { select: { id: true, name: true, email: true, role: true } },
-      },
-      orderBy: { name: "asc" },
+    const raw = await cachedMasterRead({
+      tag: "employees",
+      companyId,
+      skipCache: Boolean(search),
+      read: () =>
+        prisma.employeeMaster.findMany({
+          where,
+          include: {
+            linkedUser: { select: { id: true, name: true, email: true, role: true } },
+          },
+          orderBy: { name: "asc" },
+        }),
     });
 
     const employees = raw.map((e) => ({
@@ -137,6 +145,7 @@ export async function POST(request: NextRequest) {
       userId: session.user?.id,
       companyId,
     });
+invalidateMasters("employees");
 
     return NextResponse.json(employee, { status: 201 });
   } catch (error) {

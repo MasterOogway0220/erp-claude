@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { invalidateMasters } from "@/lib/cache/master-cache";
 import { checkAccess, companyFilter } from "@/lib/rbac";
+import { cachedMasterRead } from "@/lib/cache/master-cache";
 import { createAuditLog } from "@/lib/audit";
 
 export async function GET(request: NextRequest) {
@@ -38,15 +40,23 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const customers = await prisma.customerMaster.findMany({
-      where,
-      include: {
-        tags: { include: { tag: true } },
-        buyers: { where: { isActive: true }, select: { id: true, buyerName: true } },
-        dispatchAddresses: true,
-        defaultPaymentTerms: true,
-      },
-      orderBy: { name: "asc" },
+    const customers = await cachedMasterRead({
+      tag: "customers",
+      companyId,
+      key: [companyType, includeInactive],
+      // A search term in the key would mint an entry per string typed.
+      skipCache: Boolean(search),
+      read: () =>
+        prisma.customerMaster.findMany({
+          where,
+          include: {
+            tags: { include: { tag: true } },
+            buyers: { where: { isActive: true }, select: { id: true, buyerName: true } },
+            dispatchAddresses: true,
+            defaultPaymentTerms: true,
+          },
+          orderBy: { name: "asc" },
+        }),
     });
 
     return NextResponse.json({ customers });
@@ -234,6 +244,7 @@ export async function POST(request: NextRequest) {
       companyId,
     }).catch(console.error);
 
+    invalidateMasters("customers");
     return NextResponse.json(newCustomer, { status: 201 });
   } catch (error) {
     console.error("Error creating customer:", error);

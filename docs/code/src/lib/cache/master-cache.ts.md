@@ -41,15 +41,20 @@ const departments = await cachedMasterRead({
 
 | Export | Purpose |
 |---|---|
-| `cachedMasterRead({ tag, companyId, key?, ttlSeconds?, read })` | Runs `read` through the shared cache, or returns the cached result. |
+| `cachedMasterRead({ tag, companyId, key?, ttlSeconds?, skipCache?, read })` | Runs `read` through the shared cache, or returns the cached result. `skipCache` reads straight through. |
 | `invalidateMasters(...tags)` | Purges those lists. Call in the same request as a write that changed them. |
 | `MASTER_TAGS` / `MasterTag` | The tag vocabulary — one per master list. |
 | `MASTER_TTL_SECONDS` | 300. The backstop window. |
 
-Currently applied to the six master lists whose reads take no query parameters:
-departments, inspection agencies, units, payment terms, delivery terms and tax
-rates. Their `POST`, `PATCH` and `DELETE` handlers all call
-`invalidateMasters`.
+Applied to all twelve master lists: customers, vendors, warehouses, buyers,
+employees, item codes, departments, inspection agencies, units, payment terms,
+delivery terms and tax rates. Every write handler that touches one calls
+`invalidateMasters` — checked by counting write handlers against invalidation
+calls per master, not by assuming.
+
+The six that accept a free-text `search` pass `skipCache: Boolean(search)`, so
+a search reads straight through and only the no-search case — which is what the
+shared hooks actually request — is cached.
 
 ## How it works
 

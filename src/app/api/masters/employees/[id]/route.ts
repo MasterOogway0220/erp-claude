@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
+import { invalidateMasters } from "@/lib/cache/master-cache";
 import bcrypt from "bcryptjs";
 
 export async function GET(
@@ -98,6 +99,7 @@ export async function PATCH(
       userId: session.user?.id,
       companyId,
     });
+invalidateMasters("employees");
 
     return NextResponse.json(employee);
   } catch (error) {
@@ -163,6 +165,7 @@ export async function DELETE(
       userId: session.user?.id,
       companyId,
     });
+invalidateMasters("employees");
 
     return NextResponse.json({ message: "Employee deleted successfully" });
   } catch (error) {

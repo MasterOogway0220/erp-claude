@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
+import { invalidateMasters } from "@/lib/cache/master-cache";
 
 export async function GET(
   request: NextRequest,
@@ -71,6 +72,7 @@ export async function PATCH(
       userId: session.user?.id,
       companyId,
     });
+invalidateMasters("material-codes");
 
     return NextResponse.json(materialCode);
   } catch (error: any) {
@@ -126,6 +128,7 @@ export async function DELETE(
       userId: session.user?.id,
       companyId,
     });
+invalidateMasters("material-codes");
 
     return NextResponse.json({
       message: "Material code deleted successfully",

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
+import { invalidateMasters } from "@/lib/cache/master-cache";
+import { cachedMasterRead } from "@/lib/cache/master-cache";
 
 export async function GET(request: NextRequest) {
   try {
@@ -35,10 +37,18 @@ export async function GET(request: NextRequest) {
       };
     }
 
-    const materialCodes = await prisma.materialCodeMaster.findMany({
-      where,
-      orderBy: { updatedAt: "desc" },
-      take: 200,
+    const materialCodes = await cachedMasterRead({
+      tag: "material-codes",
+      companyId,
+      key: [customerId, quotationCategory],
+      // A search term in the key would mint an entry per string typed.
+      skipCache: Boolean(search),
+      read: () =>
+        prisma.materialCodeMaster.findMany({
+          where,
+          orderBy: { updatedAt: "desc" },
+          take: 200,
+        }),
     });
 
     return NextResponse.json({ materialCodes });
@@ -91,6 +101,7 @@ export async function POST(request: NextRequest) {
       userId: session.user?.id,
       companyId,
     });
+invalidateMasters("material-codes");
 
     return NextResponse.json(materialCode, { status: 201 });
   } catch (error: any) {

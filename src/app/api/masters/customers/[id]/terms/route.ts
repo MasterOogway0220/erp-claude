@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { invalidateMasters } from "@/lib/cache/master-cache";
 import { checkAccess, companyFilter } from "@/lib/rbac";
 
 export async function GET(
@@ -107,6 +108,7 @@ export async function PUT(
       orderBy: { sortOrder: "asc" },
     });
 
+    invalidateMasters("customers");
     return NextResponse.json({ terms: updated });
   } catch (error) {
     console.error("Error saving customer terms:", error);

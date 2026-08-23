@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { invalidateMasters } from "@/lib/cache/master-cache";
 import { checkAccess } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 
@@ -57,6 +58,7 @@ export async function PATCH(
       userId: session.user?.id,
       companyId,
     }).catch(console.error);
+    invalidateMasters("customers");
 
     return NextResponse.json(address);
   } catch (error) {
@@ -110,6 +112,7 @@ export async function DELETE(
       userId: session.user?.id,
       companyId,
     }).catch(console.error);
+    invalidateMasters("customers");
 
     return NextResponse.json({ message: "Address deleted" });
   } catch (error) {

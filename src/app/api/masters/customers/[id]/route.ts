@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { invalidateMasters } from "@/lib/cache/master-cache";
 import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 
@@ -248,6 +249,8 @@ export async function PATCH(
       companyId,
     }).catch(console.error);
 
+    invalidateMasters("customers");
+
     return NextResponse.json(updated);
   } catch (error) {
     console.error("Error updating customer:", error);
@@ -308,6 +311,8 @@ export async function DELETE(
       oldValue: customer.name,
       companyId,
     }).catch(console.error);
+
+    invalidateMasters("customers");
 
     return NextResponse.json({ success: true });
   } catch (error) {

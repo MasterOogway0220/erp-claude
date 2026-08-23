@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
+import { invalidateMasters } from "@/lib/cache/master-cache";
+import { cachedMasterRead } from "@/lib/cache/master-cache";
 
 export async function GET(request: NextRequest) {
   try {
@@ -21,48 +23,61 @@ export async function GET(request: NextRequest) {
       ];
     }
 
-    const buyers = await prisma.buyerMaster.findMany({
-      where,
-      include: { customer: { select: { id: true, name: true } } },
-      orderBy: { buyerName: "asc" },
+    // Both queries and the merge are cached as one unit — the result the
+    // caller actually consumes — rather than caching each query separately.
+    const merged = await cachedMasterRead({
+      tag: "buyers",
+      companyId,
+      key: [customerId],
+      // A search term in the key would mint an entry per string typed.
+      skipCache: Boolean(search),
+      read: async () => {
+        const buyers = await prisma.buyerMaster.findMany({
+          where,
+          include: { customer: { select: { id: true, name: true } } },
+          orderBy: { buyerName: "asc" },
+        });
+
+        // Also include CustomerContact records so contacts added in the Buyer Contact master appear here
+        const contactWhere: any = {};
+        if (customerId) contactWhere.customerId = customerId;
+        // Scope contacts to the current company via the customer relation
+        if (companyId) {
+          contactWhere.customer = { companyId };
+        }
+        if (search) {
+          contactWhere.OR = [
+            { contactName: { contains: search } },
+            { email: { contains: search } },
+          ];
+        }
+        const contacts = await prisma.customerContact.findMany({
+          where: contactWhere,
+          include: { customer: { select: { id: true, name: true } } },
+          orderBy: { contactName: "asc" },
+        });
+
+        // Merge: skip contacts whose name already exists as a BuyerMaster entry for that customer
+        const buyerKeys = new Set(buyers.map((b) => `${b.customerId}:${b.buyerName.toLowerCase()}`));
+        const contactBuyers = contacts
+          .filter((c) => !buyerKeys.has(`${c.customerId}:${c.contactName.toLowerCase()}`))
+          .map((c) => ({
+            id: `cc_${c.id}`,
+            customerId: c.customerId,
+            buyerName: c.contactName,
+            designation: c.designation,
+            email: c.email,
+            mobile: null,
+            telephone: null,
+            isActive: c.isActive,
+            customer: c.customer,
+          }));
+
+        return [...buyers, ...contactBuyers];
+      },
     });
 
-    // Also include CustomerContact records so contacts added in the Buyer Contact master appear here
-    const contactWhere: any = {};
-    if (customerId) contactWhere.customerId = customerId;
-    // Scope contacts to the current company via the customer relation
-    if (companyId) {
-      contactWhere.customer = { companyId };
-    }
-    if (search) {
-      contactWhere.OR = [
-        { contactName: { contains: search } },
-        { email: { contains: search } },
-      ];
-    }
-    const contacts = await prisma.customerContact.findMany({
-      where: contactWhere,
-      include: { customer: { select: { id: true, name: true } } },
-      orderBy: { contactName: "asc" },
-    });
-
-    // Merge: skip contacts whose name already exists as a BuyerMaster entry for that customer
-    const buyerKeys = new Set(buyers.map((b) => `${b.customerId}:${b.buyerName.toLowerCase()}`));
-    const contactBuyers = contacts
-      .filter((c) => !buyerKeys.has(`${c.customerId}:${c.contactName.toLowerCase()}`))
-      .map((c) => ({
-        id: `cc_${c.id}`,
-        customerId: c.customerId,
-        buyerName: c.contactName,
-        designation: c.designation,
-        email: c.email,
-        mobile: null,
-        telephone: null,
-        isActive: c.isActive,
-        customer: c.customer,
-      }));
-
-    return NextResponse.json({ buyers: [...buyers, ...contactBuyers] });
+    return NextResponse.json({ buyers: merged });
   } catch (error) {
     console.error("Error fetching buyers:", error);
     return NextResponse.json({ error: "Failed to fetch buyers" }, { status: 500 });
@@ -106,6 +121,7 @@ export async function POST(request: NextRequest) {
       userId: session.user?.id,
       companyId,
     });
+invalidateMasters("buyers");
 
     return NextResponse.json(buyer, { status: 201 });
   } catch (error) {

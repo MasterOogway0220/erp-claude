@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { invalidateMasters } from "@/lib/cache/master-cache";
 import { checkAccess, companyFilter } from "@/lib/rbac";
+import { cachedMasterRead } from "@/lib/cache/master-cache";
 import { createAuditLog } from "@/lib/audit";
 
 export async function GET(request: NextRequest) {
@@ -29,12 +31,19 @@ export async function GET(request: NextRequest) {
       where.isActive = true;
     }
 
-    const vendors = await prisma.vendorMaster.findMany({
-      where,
-      orderBy: { name: "asc" },
-      include: {
-        approvedBy: { select: { id: true, name: true } },
-      },
+    const vendors = await cachedMasterRead({
+      tag: "vendors",
+      companyId,
+      key: [includeInactive],
+      skipCache: Boolean(search),
+      read: () =>
+        prisma.vendorMaster.findMany({
+          where,
+          orderBy: { name: "asc" },
+          include: {
+            approvedBy: { select: { id: true, name: true } },
+          },
+        }),
     });
 
     return NextResponse.json({ vendors });
@@ -128,6 +137,7 @@ export async function POST(request: NextRequest) {
       companyId,
     }).catch(console.error);
 
+    invalidateMasters("vendors");
     return NextResponse.json(newVendor, { status: 201 });
   } catch (error) {
     console.error("Error creating vendor:", error);

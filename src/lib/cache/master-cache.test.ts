@@ -106,6 +106,21 @@ describe("cache options", () => {
     expect(calls[0].options.revalidate).toBe(MASTER_TTL_SECONDS);
   });
 
+  it("skipCache reads straight through without minting an entry", async () => {
+    // A search term in the key would create an entry per distinct string typed
+    // by any user: unbounded growth, near-zero hit rate.
+    const rows = [{ id: "1" }];
+    const out = await cachedMasterRead({
+      tag: "customers",
+      companyId: "c",
+      key: ["ignored"],
+      skipCache: true,
+      read: async () => rows,
+    });
+    expect(out).toBe(rows);
+    expect(calls).toHaveLength(0);
+  });
+
   it("returns whatever the read returned", async () => {
     const rows = [{ id: "1", name: "Larsen & Toubro" }];
     const out = await cachedMasterRead({

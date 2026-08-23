@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
+import { invalidateMasters } from "@/lib/cache/master-cache";
 import { generateLocationTag } from "@/lib/location-tag";
 
 export async function GET(
@@ -79,6 +80,7 @@ export async function POST(
       userId: session.user?.id,
       companyId,
     });
+invalidateMasters("warehouses");
 
     return NextResponse.json(location, { status: 201 });
   } catch (error) {

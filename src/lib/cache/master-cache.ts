@@ -81,6 +81,7 @@ export async function cachedMasterRead<T>({
   companyId,
   key = [],
   ttlSeconds = MASTER_TTL_SECONDS,
+  skipCache = false,
   read,
 }: {
   tag: MasterTag;
@@ -89,8 +90,21 @@ export async function cachedMasterRead<T>({
   /** Every other value `read` varies by. */
   key?: readonly (string | number | boolean | null | undefined)[];
   ttlSeconds?: number;
+  /**
+   * Bypass the cache and read straight through.
+   *
+   * The case this exists for is free-text search. A search term in the key
+   * would mint a cache entry per distinct string typed by any user — unbounded
+   * key growth, and a hit rate near zero because two people rarely search the
+   * same thing. Searches are a small share of traffic (the shared hooks in
+   * `use-masters.ts` fetch with no parameters at all), so they read directly
+   * and the cache keeps serving the case that actually repeats.
+   */
+  skipCache?: boolean;
   read: () => Promise<T>;
 }): Promise<T> {
+  if (skipCache) return read();
+
   // A null companyId means "not company-scoped" for this deployment, which is
   // a different result set from any real company's — so it gets its own slot
   // rather than sharing one.

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { invalidateMasters } from "@/lib/cache/master-cache";
 import { checkAccess, companyFilter } from "@/lib/rbac";
+import { cachedMasterRead } from "@/lib/cache/master-cache";
 import { createAuditLog } from "@/lib/audit";
 
 export async function GET(request: NextRequest) {
@@ -19,17 +21,23 @@ export async function GET(request: NextRequest) {
       ];
     }
 
-    const warehouses = await prisma.warehouseMaster.findMany({
-      where,
-      include: {
-        addresses: { orderBy: { isDefault: "desc" } },
-        locations: {
-          select: { id: true, zone: true, rack: true, bay: true, shelf: true, locationType: true, isActive: true, locationTag: true, capacity: true, preservationMethod: true, storageConditions: true },
-          orderBy: { zone: "asc" },
-        },
-        _count: { select: { locations: true } },
-      },
-      orderBy: { name: "asc" },
+    const warehouses = await cachedMasterRead({
+      tag: "warehouses",
+      companyId,
+      skipCache: Boolean(search),
+      read: () =>
+        prisma.warehouseMaster.findMany({
+          where,
+          include: {
+            addresses: { orderBy: { isDefault: "desc" } },
+            locations: {
+              select: { id: true, zone: true, rack: true, bay: true, shelf: true, locationType: true, isActive: true, locationTag: true, capacity: true, preservationMethod: true, storageConditions: true },
+              orderBy: { zone: "asc" },
+            },
+            _count: { select: { locations: true } },
+          },
+          orderBy: { name: "asc" },
+        }),
     });
 
     return NextResponse.json({ warehouses });
@@ -90,6 +98,7 @@ export async function POST(request: NextRequest) {
     });
 
     await createAuditLog({ tableName: "WAREHOUSE", recordId: warehouse.id, action: "CREATE", userId: session!.user.id, companyId });
+invalidateMasters("warehouses");
 
     return NextResponse.json(warehouse, { status: 201 });
   } catch (error) {
