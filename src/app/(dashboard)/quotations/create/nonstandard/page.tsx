@@ -40,6 +40,7 @@ import { useCurrentUser } from "@/hooks/use-current-user";
 import { useUnits } from "@/hooks/use-units";
 import { fillBlankCurrencyTerm } from "@/lib/quotations/currency";
 import { toDateInput } from "@/lib/dates";
+import { useReferenceQuery } from "@/hooks/use-api-query";
 
 interface NonStdItem {
   // Printed serial as per the client's inquiry; blank = auto (position).
@@ -198,25 +199,10 @@ function NonStandardQuotationPage() {
   useEffect(() => { currenciesRef.current = liveRatesData?.rates || {}; }, [liveRatesData]);
 
   // Fetch customers
-  const { data: customersData } = useQuery({
-    queryKey: ["customers"],
-    queryFn: async () => {
-      const res = await fetch("/api/masters/customers");
-      if (!res.ok) throw new Error("Failed to fetch customers");
-      return res.json();
-    },
-  });
+  const { data: customersData } = useReferenceQuery<Record<string, any>>(["customers"], "/api/masters/customers");
 
   // Fetch buyers filtered by customer
-  const { data: buyersData } = useQuery({
-    queryKey: ["buyers", formData.customerId],
-    enabled: !!formData.customerId,
-    queryFn: async () => {
-      const res = await fetch(`/api/masters/buyers?customerId=${formData.customerId}`);
-      if (!res.ok) throw new Error("Failed to fetch buyers");
-      return res.json();
-    },
-  });
+  const { data: buyersData } = useReferenceQuery<Record<string, any>>(["buyers", formData.customerId], `/api/masters/buyers?customerId=${formData.customerId}`, { enabled: !!formData.customerId });
 
   // Customer the edit data was loaded with — set by the populate effect
   const loadedCustomerIdRef = useRef<string | null>(null);
@@ -244,15 +230,7 @@ function NonStandardQuotationPage() {
   });
 
   // Fetch material codes for autocomplete — scoped to customer + NON_STANDARD quotations only
-  const { data: materialCodesData } = useQuery({
-    queryKey: ["material-codes", formData.customerId, "NON_STANDARD"],
-    enabled: !!formData.customerId,
-    queryFn: async () => {
-      const res = await fetch(`/api/masters/material-codes?customerId=${formData.customerId}&quotationCategory=NON_STANDARD`);
-      if (!res.ok) throw new Error("Failed to fetch material codes");
-      return res.json();
-    },
-  });
+  const { data: materialCodesData } = useReferenceQuery<Record<string, any>>(["material-codes", formData.customerId, "NON_STANDARD"], `/api/masters/material-codes?customerId=${formData.customerId}&quotationCategory=NON_STANDARD`, { enabled: !!formData.customerId });
 
   const materialCodes = materialCodesData?.materialCodes || [];
 

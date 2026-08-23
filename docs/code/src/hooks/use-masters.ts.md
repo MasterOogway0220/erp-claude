@@ -52,7 +52,7 @@ Nineteen master lists, each with two exports:
 | Sizes | `useSizesQuery` | `useSizes` | `["sizes"]` | `/api/masters/sizes` |
 | Industry segments | `useIndustrySegmentsQuery` | `useIndustrySegments` | `["industry-segments"]` | `/api/masters/industry-segments` |
 | Lengths | `useLengthsQuery` | `useLengths` | `["lengths"]` | `/api/masters/lengths` |
-| Testing types | `useTestingQuery` | `useTesting` | `["testing"]` | `/api/masters/testing` |
+| Testing types | `useTestingQuery` | `useTesting` | `["testing-masters"]` | `/api/masters/testing` |
 | Additional specs | `useAdditionalSpecsQuery` | `useAdditionalSpecs` | `["additional-specs"]` | `/api/masters/additional-specs` |
 | Dimensional stds | `useDimensionalStandardsQuery` | `useDimensionalStandards` | `["dimensional-standards"]` | `/api/masters/dimensional-standards` |
 | Customer contacts | `useCustomerContactsQuery` | `useCustomerContacts` | `["customer-contacts"]` | `/api/masters/customer-contacts` |
@@ -63,10 +63,11 @@ fallback, and caches under `["units-master"]` — the key the Unit Master and
 Product Master screens already share. A hook here would have been a same-named
 export returning a different type on a second cache entry for one URL.
 
-**Two keys do not match their endpoint name**, because the screens that already
-cached those URLs got there first and the key has to match theirs:
-`/api/masters/tax` → `["tax-rates"]`, `/api/masters/company` → `["companies"]`.
-Inventing the tidier name would have split each list across two cache entries.
+**Three keys do not match their endpoint name**, because the screens that
+already cached those URLs got there first and the key has to match theirs:
+`/api/masters/tax` → `["tax-rates"]`, `/api/masters/company` → `["companies"]`,
+`/api/masters/testing` → `["testing-masters"]`. Inventing the tidier name would
+have split each list across two cache entries.
 
 The plain hook returns the array directly — **`[]` while loading** — so a call
 site reads exactly like the `useState<T[]>([])` it replaced and conversion is a
@@ -102,9 +103,13 @@ Several keys are shared on purpose with code outside this file, and the sharing
 only works because both sides fetch the **same URL and read the same response
 field**:
 
-- `["customers"]` is also used by a hand-rolled `useQuery` in both quotation
-  forms (`quotations/create/standard` and `.../nonstandard`, which fetch
-  `/api/masters/customers` directly). One fetch serves both.
+- `["customers"]` is also used by both quotation forms
+  (`quotations/create/standard` and `.../nonstandard`), which fetch
+  `/api/masters/customers` directly. One fetch serves both. Those forms used a
+  hand-rolled `useQuery`, which meant the provider's **60-second** window
+  rather than this file's ten minutes — and since the two share a key, the
+  60-second observer was the one driving refetches for everybody. They now call
+  `useReferenceQuery`, so the window is ten minutes on both sides.
 - `["material-codes"]`, `["warehouses"]` and `["departments"]` are the same
   entries their own master-list screens use.
 - Invalidation is prefix-based, so the customers master screen's

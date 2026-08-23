@@ -14,6 +14,7 @@ Renders the `/masters/industry-segments` screen. 191 lines.
 - Fetches with TanStack Query (`useQuery`); server state is not duplicated into local state.
 - Writes with `useMutation`, invalidating the affected query keys on success.
 - Calls: `/api/masters/industry-segments`, `/api/masters/industry-segments/${id}`.
+- Reads the segment master through `useReferenceQuery` (ten-minute window, shared `["industry-segments"]` entry). Note the endpoint returns `segments`, not `industrySegments`.
 
 ## Gotchas
 

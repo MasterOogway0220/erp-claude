@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/table";
 import { Search, Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useReferenceQuery } from "@/hooks/use-api-query";
 
 interface TestingMaster {
   id: string;
@@ -42,14 +43,7 @@ export default function TestingMasterPage() {
   const [editingTest, setEditingTest] = useState<TestingMaster | null>(null);
   const [form, setForm] = useState({ testName: "", applicableFor: "", isMandatory: false });
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["testing-masters"],
-    queryFn: async () => {
-      const res = await fetch(`/api/masters/testing`);
-      if (!res.ok) throw new Error("Failed to fetch testing masters");
-      return res.json();
-    },
-  });
+  const { data, isLoading } = useReferenceQuery<Record<string, any>>(["testing-masters"], `/api/masters/testing`);
 
   const testingMasters: TestingMaster[] = data?.tests || [];
 

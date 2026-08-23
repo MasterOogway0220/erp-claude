@@ -15,6 +15,7 @@ Renders the `/masters/products` screen. 929 lines.
 - Writes with `useMutation`, invalidating the affected query keys on success.
 - Reads `useSearchParams`, so it **must sit inside a `<Suspense>` boundary** — Next.js 16 fails the build otherwise.
 - Calls: `/api/masters/additional-specs`, `/api/masters/additional-specs/seed`, `/api/masters/dimensional-standards`, `/api/masters/lengths`, `/api/masters/lengths/${id}`, `/api/masters/products`, `/api/masters/products/${id}`, `/api/masters/sizes`.
+- The dimensional-standards and product-spec lists read through `useReferenceQuery`, holding their entries for ten minutes instead of 60 seconds. The paginated product and size lists keep their filter values in the key and are unaffected.
 
 ## Gotchas
 

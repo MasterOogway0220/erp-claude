@@ -14,6 +14,7 @@ Renders the `/masters/departments` screen. 150 lines.
 - Fetches with TanStack Query (`useQuery`); server state is not duplicated into local state.
 - Writes with `useMutation`, invalidating the affected query keys on success.
 - Calls: `/api/masters/departments`, `/api/masters/departments/${id}`.
+- Reads the department master through `useReferenceQuery`, so it shares the `["departments"]` cache entry with every dropdown that needs it and holds it for ten minutes rather than the 60-second default.
 
 ## Gotchas
 

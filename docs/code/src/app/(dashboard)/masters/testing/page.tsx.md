@@ -14,6 +14,7 @@ Renders the `/masters/testing` screen. 260 lines.
 - Fetches with TanStack Query (`useQuery`); server state is not duplicated into local state.
 - Writes with `useMutation`, invalidating the affected query keys on success.
 - Calls: `/api/masters/testing`, `/api/masters/testing/${id}`.
+- Reads through `useReferenceQuery` under `["testing-masters"]` — **not** `["testing"]`. This screen named the key first, so the shared hook adopted it; two keys on one URL would mean two cache entries and a write clearing only one.
 
 ## Gotchas
 

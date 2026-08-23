@@ -19,6 +19,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useReferenceQuery } from "@/hooks/use-api-query";
 
 const VENDOR_PRESETS = [
   "Manufacturer", "Trader", "Stockist", "Laboratory", "TPI",
@@ -32,14 +33,7 @@ export default function IndustrySegmentPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", category: "CUSTOMER" });
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["industry-segments"],
-    queryFn: async () => {
-      const res = await fetch("/api/masters/industry-segments");
-      if (!res.ok) throw new Error("Failed");
-      return res.json();
-    },
-  });
+  const { data, isLoading } = useReferenceQuery<Record<string, any>>(["industry-segments"], "/api/masters/industry-segments");
 
   const segments = (data?.segments || []).filter((s: any) => s.category === tab);
 

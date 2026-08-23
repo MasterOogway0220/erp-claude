@@ -15,6 +15,7 @@ Renders the `/quotations/create/nonstandard` screen. 1794 lines.
 - Writes with `useMutation`, invalidating the affected query keys on success.
 - Reads `useSearchParams`, so it **must sit inside a `<Suspense>` boundary** — Next.js 16 fails the build otherwise.
 - Calls: `/api/masters/buyers`, `/api/masters/customers`, `/api/masters/customers/${formData.customerId}/terms`, `/api/masters/material-codes`, `/api/masters/material-codes/${dup.id}`, `/api/masters/material-codes/check-duplicate`, `/api/masters/units` (via `useUnits`), `/api/offer-term-templates`, `/api/quotations/${editId}`.
+- Master dropdowns read through `useReferenceQuery` (ten minutes) rather than a hand-rolled `useQuery` (60 seconds). This mattered more than it looks: the form shares `["customers"]` with the app-wide hook, and the shorter window was the one driving refetches for every other screen too. Buyers and item codes keep the customer id in their key, so they stay a per-customer list — only the window widened.
 - The per-item **Unit** dropdown is populated from Unit Master via
   [`useUnits()`](../../../../../../hooks/use-units.ts.md). It used to be a
   module-level `UOM_OPTIONS` array, identical to and separate from the

@@ -15,6 +15,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useReferenceQuery } from "@/hooks/use-api-query";
 
 export default function DepartmentMasterPage() {
   const queryClient = useQueryClient();
@@ -22,14 +23,7 @@ export default function DepartmentMasterPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["departments"],
-    queryFn: async () => {
-      const res = await fetch("/api/masters/departments");
-      if (!res.ok) throw new Error("Failed");
-      return res.json();
-    },
-  });
+  const { data, isLoading } = useReferenceQuery<Record<string, any>>(["departments"], "/api/masters/departments");
 
   const departments = data?.departments || [];
 

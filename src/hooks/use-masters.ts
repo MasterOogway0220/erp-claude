@@ -314,7 +314,9 @@ export function useLengths<T = MasterLength>(): T[] {
  */
 export function useTestingQuery<T = MasterTesting>() {
   return useReferenceQuery<{ tests: T[]; testingMasters: T[] }>(
-    ["testing"],
+    // ["testing-masters"], not ["testing"], to match the Testing Master screen
+    // which already cached this URL under that key.
+    ["testing-masters"],
     "/api/masters/testing"
   );
 }

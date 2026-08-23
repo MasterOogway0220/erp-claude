@@ -209,14 +209,7 @@ function PipesPanel() {
     },
   });
 
-  const { data: dimStdData } = useQuery({
-    queryKey: ["dimensional-standards"],
-    queryFn: async () => {
-      const res = await fetch("/api/masters/dimensional-standards");
-      if (!res.ok) throw new Error("Failed to fetch dimensional standards");
-      return res.json();
-    },
-  });
+  const { data: dimStdData } = useReferenceQuery<Record<string, any>>(["dimensional-standards"], "/api/masters/dimensional-standards");
 
   const dimensionalStandards = dimStdData?.dimensionalStandards || [];
 
@@ -786,14 +779,7 @@ function AdditionalSpecsPanel() {
     },
   });
 
-  const { data: productsData } = useQuery({
-    queryKey: ["products-list-for-specs"],
-    queryFn: async () => {
-      const res = await fetch("/api/masters/products?limit=500");
-      if (!res.ok) throw new Error("Failed");
-      return res.json();
-    },
-  });
+  const { data: productsData } = useReferenceQuery<Record<string, any>>(["products-list-for-specs"], "/api/masters/products?limit=500");
 
   const uniqueProducts = Array.from(
     new Set((productsData?.products || []).map((p: any) => p.product))

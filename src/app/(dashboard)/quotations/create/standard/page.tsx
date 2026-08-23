@@ -49,6 +49,7 @@ import { calculateWeightPerMeter } from "@/lib/weight-calculation";
 import { fillBlankCurrencyTerm } from "@/lib/quotations/currency";
 import { toDateInput } from "@/lib/dates";
 import { useUnits } from "@/hooks/use-units";
+import { useReferenceQuery } from "@/hooks/use-api-query";
 
 type ItemCategory = "Pipe" | "Fitting" | "Flange" | "Plate";
 
@@ -242,14 +243,7 @@ function StandardQuotationPage() {
   useEffect(() => { currenciesRef.current = liveRatesData?.rates || {}; }, [liveRatesData]);
 
   // Fetch customers
-  const { data: customersData } = useQuery({
-    queryKey: ["customers"],
-    queryFn: async () => {
-      const res = await fetch("/api/masters/customers");
-      if (!res.ok) throw new Error("Failed to fetch customers");
-      return res.json();
-    },
-  });
+  const { data: customersData } = useReferenceQuery<Record<string, any>>(["customers"], "/api/masters/customers");
 
   // Fetch users for Deal Owner select
   const { data: usersData } = useQuery({
@@ -262,15 +256,7 @@ function StandardQuotationPage() {
   });
 
   // Fetch buyers filtered by customer
-  const { data: buyersData } = useQuery({
-    queryKey: ["buyers", formData.customerId],
-    enabled: !!formData.customerId,
-    queryFn: async () => {
-      const res = await fetch(`/api/masters/buyers?customerId=${formData.customerId}`);
-      if (!res.ok) throw new Error("Failed to fetch buyers");
-      return res.json();
-    },
-  });
+  const { data: buyersData } = useReferenceQuery<Record<string, any>>(["buyers", formData.customerId], `/api/masters/buyers?customerId=${formData.customerId}`, { enabled: !!formData.customerId });
 
   // Customer the edit data was loaded with — set by the populate effect
   const loadedCustomerIdRef = useRef<string | null>(null);
@@ -288,38 +274,16 @@ function StandardQuotationPage() {
   }, [buyersData, formData.buyerId]);
 
   // Fetch sizes for Size dropdown
-  const { data: sizesData } = useQuery({
-    queryKey: ["sizes"],
-    queryFn: async () => {
-      const res = await fetch("/api/masters/sizes");
-      if (!res.ok) throw new Error("Failed to fetch sizes");
-      return res.json();
-    },
-  });
+  const { data: sizesData } = useReferenceQuery<Record<string, any>>(["sizes"], "/api/masters/sizes");
 
   // Fetch lengths for the Length dropdown — driven by Length Master so entries
   // added under Masters > Products > Lengths show up here without a code change
-  const { data: lengthsData } = useQuery({
-    queryKey: ["lengths"],
-    queryFn: async () => {
-      const res = await fetch("/api/masters/lengths");
-      if (!res.ok) throw new Error("Failed to fetch lengths");
-      return res.json();
-    },
-  });
+  const { data: lengthsData } = useReferenceQuery<Record<string, any>>(["lengths"], "/api/masters/lengths");
 
   const lengthOptions: string[] = (lengthsData?.lengths || []).map((l: { label: string }) => l.label);
 
   // Fetch material codes for autocomplete — scoped to selected customer (only codes used in their past quotations)
-  const { data: materialCodesData } = useQuery({
-    queryKey: ["material-codes", formData.customerId, "STANDARD"],
-    enabled: !!formData.customerId,
-    queryFn: async () => {
-      const res = await fetch(`/api/masters/material-codes?customerId=${formData.customerId}&quotationCategory=STANDARD`);
-      if (!res.ok) throw new Error("Failed to fetch material codes");
-      return res.json();
-    },
-  });
+  const { data: materialCodesData } = useReferenceQuery<Record<string, any>>(["material-codes", formData.customerId, "STANDARD"], `/api/masters/material-codes?customerId=${formData.customerId}&quotationCategory=STANDARD`, { enabled: !!formData.customerId });
 
   const materialCodes = materialCodesData?.materialCodes || [];
 
