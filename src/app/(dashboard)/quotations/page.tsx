@@ -119,6 +119,12 @@ export default function QuotationsPage() {
     queryFn: async () => {
       const params = new URLSearchParams({
         search,
+        // Ask for the summary shape: this screen shows a line count and a
+        // total, so it needs `amount` off each item and the customer's name —
+        // not whole item rows and whole customer records for every quotation.
+        // The order-creation flows read the same endpoint without this and
+        // still get everything, because they copy each line into a document.
+        view: "list",
         ...(statusFilter !== "all" && { status: statusFilter }),
         ...(conversionFilter !== "all" && { conversionStatus: conversionFilter }),
         ...(categoryFilter !== "all" && { category: categoryFilter }),

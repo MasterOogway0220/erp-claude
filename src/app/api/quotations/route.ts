@@ -21,6 +21,24 @@ export async function GET(request: NextRequest) {
     const conversionStatus = searchParams.get("conversionStatus") || ""; // "pending" | "converted"
     const category = searchParams.get("category") || ""; // "STANDARD" | "NON_STANDARD" | "TENDER"
 
+    // `view=list` asks for the summary shape the quotations list screen needs,
+    // rather than whole records.
+    //
+    // This endpoint is read by four screens, and only one of them is a list.
+    // The order-creation flows (sales, client PO, MTC certificate) copy every
+    // field of every quotation line into the document they are building, so
+    // they genuinely need the full items. The list screen uses exactly two
+    // things from them — how many there are, and the sum of `amount` — and one
+    // field from the customer. Sending whole item rows and whole customer
+    // records to draw that is the single largest payload in the module, and
+    // this query has no pagination, so it is every quotation every time.
+    //
+    // Opt-in rather than opt-out on purpose: a caller that forgets the flag
+    // gets more data than it needs, which is slow. A caller that is silently
+    // given less than it needs is broken, and the breakage is a sales order
+    // created with empty lines.
+    const summaryOnly = searchParams.get("view") === "list";
+
     const where: any = { ...companyFilter(companyId) };
 
     // TENDER is not a QuotationCategory — it means the quotation was raised
@@ -69,10 +87,12 @@ export async function GET(request: NextRequest) {
     const allRevisions = await prisma.quotation.findMany({
       where,
       include: {
-        customer: true,
+        customer: summaryOnly ? { select: { id: true, name: true } } : true,
         preparedBy: { select: { name: true } },
         dealOwner: { select: { name: true } },
-        items: true,
+        // `amount` alone still gives the list both numbers it shows: the line
+        // count is the array length, the value is their sum.
+        items: summaryOnly ? { select: { amount: true } } : true,
         salesOrders: { select: { id: true, soNo: true } },
       },
       orderBy: [{ quotationNo: "desc" }, { version: "desc" }],
