@@ -33,7 +33,7 @@ and cache what the screens read"*.
 
 ## What it does
 
-Eight master lists, each with two exports:
+Nineteen master lists, each with two exports:
 
 | List | `...Query` hook | Plain hook | Key | Endpoint |
 |---|---|---|---|---|
@@ -45,6 +45,28 @@ Eight master lists, each with two exports:
 | Item codes | `useMaterialCodesQuery` | `useMaterialCodes` | `["material-codes"]` | `/api/masters/material-codes` |
 | Buyers | `useBuyersQuery` | `useBuyers` | `["buyers"]` | `/api/masters/buyers` |
 | Employees | `useEmployeesQuery` | `useEmployees` | `["employees"]` | `/api/masters/employees` |
+| Tax rates | `useTaxRatesQuery` | `useTaxRates` | `["tax-rates"]` | `/api/masters/tax` |
+| Companies | `useCompaniesQuery` | `useCompanies` | `["companies"]` | `/api/masters/company` |
+| Delivery terms | `useDeliveryTermsQuery` | `useDeliveryTerms` | `["delivery-terms"]` | `/api/masters/delivery-terms` |
+| Payment terms | `usePaymentTermsQuery` | `usePaymentTerms` | `["payment-terms"]` | `/api/masters/payment-terms` |
+| Sizes | `useSizesQuery` | `useSizes` | `["sizes"]` | `/api/masters/sizes` |
+| Industry segments | `useIndustrySegmentsQuery` | `useIndustrySegments` | `["industry-segments"]` | `/api/masters/industry-segments` |
+| Lengths | `useLengthsQuery` | `useLengths` | `["lengths"]` | `/api/masters/lengths` |
+| Testing types | `useTestingQuery` | `useTesting` | `["testing"]` | `/api/masters/testing` |
+| Additional specs | `useAdditionalSpecsQuery` | `useAdditionalSpecs` | `["additional-specs"]` | `/api/masters/additional-specs` |
+| Dimensional stds | `useDimensionalStandardsQuery` | `useDimensionalStandards` | `["dimensional-standards"]` | `/api/masters/dimensional-standards` |
+| Customer contacts | `useCustomerContactsQuery` | `useCustomerContacts` | `["customer-contacts"]` | `/api/masters/customer-contacts` |
+
+**Units are deliberately absent.** `useUnits` already lives in
+[`use-units.ts`](use-units.ts.md), returns `string[]` of codes with a hardcoded
+fallback, and caches under `["units-master"]` — the key the Unit Master and
+Product Master screens already share. A hook here would have been a same-named
+export returning a different type on a second cache entry for one URL.
+
+**Two keys do not match their endpoint name**, because the screens that already
+cached those URLs got there first and the key has to match theirs:
+`/api/masters/tax` → `["tax-rates"]`, `/api/masters/company` → `["companies"]`.
+Inventing the tidier name would have split each list across two cache entries.
 
 The plain hook returns the array directly — **`[]` while loading** — so a call
 site reads exactly like the `useState<T[]>([])` it replaced and conversion is a
@@ -99,13 +121,40 @@ cache. So the hooks fetch the unfiltered list and callers filter in memory —
 which is the right trade at these row counts and the wrong one if a master ever
 grows large.
 
+### The key rules are enforced by a test, not by care
+
+`use-masters.test.ts` asserts three things across the whole of `src`:
+
+1. **One query key per master URL.** Two keys on one URL is invisible in
+   review — both fetch, and a write that invalidates one leaves the other
+   stale for its full window. The symptom ("I added a vendor and it is still
+   missing from that other dropdown") reads like a backend bug and is not one.
+2. **Every hook points at a route that exists.**
+3. **Every hook unwraps the key its route actually returns.** The response key
+   is often not the endpoint name — `/industry-segments` returns `segments`,
+   `/tax` returns `taxRates`, `/customer-contacts` returns a **bare array**
+   with no wrapper. Reading the wrong one yields an empty dropdown and no
+   error.
+
+The test exists because rule 1 was broken three times in the single sitting
+that added these hooks (`["tax"]` vs `["tax-rates"]`, `["company"]` vs
+`["companies"]`, `["units"]` vs `["units-master"]`), and all three were caught
+by an audit rather than by review.
+
 ### Growth rule
 
 The header states it and it is worth keeping: add a list here **once a second
-screen needs it**. A one-off read should call `useApiQuery` directly. Three of
-the eight (`useBuyers`, `useEmployees`, `useMaterialCodes`) currently have zero
-callers — they were added speculatively and are the ones most likely to be
-wrong (see below), which is the argument for the rule.
+screen needs it**. A one-off read should call `useApiQuery` directly.
+
+The eleven lists added after the original eight were *not* added speculatively:
+each one was picked from a survey of the raw `fetch` calls still in the app, and
+each already had between two and five call sites reading it uncached. **Those
+call sites have not been converted yet** — the hooks exist, the conversion is a
+separate pass — so until that lands these hooks have no callers and no effect
+on request volume. A hook nobody imports saves nothing.
+
+The lists left out on purpose: `products` (paginated, `?limit=` varies per
+caller, so it is not one shared list) and `units` (covered by `use-units.ts`).
 
 ## Domain notes
 
@@ -125,6 +174,13 @@ wrong (see below), which is the argument for the rule.
 
 ## Gotchas and constraints
 
+- **The response key is frequently not the endpoint name.** `/tax` returns
+  `taxRates`, `/industry-segments` returns `segments`, `/additional-specs`
+  returns `specs`, `/testing` returns the same array twice as `tests` and
+  `testingMasters`, and `/customer-contacts` returns a **bare array** rather
+  than `{ contacts: [...] }`. Guessing produces an empty dropdown with no
+  error; the third test in `use-masters.test.ts` checks each unwrap against its
+  route.
 - **`useBuyers` and `useMaterialCodes` are typed as having `.name`, and their
   rows do not have it.** `BuyerMaster` has `buyerName`; `MaterialCodeMaster`
   has `code` and `description`. The `MasterOption` default declares

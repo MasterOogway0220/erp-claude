@@ -143,3 +143,163 @@ export function useEmployeesQuery<T = MasterOption>() {
 export function useEmployees<T = MasterOption>(): T[] {
   return useEmployeesQuery<T>().data?.employees ?? [];
 }
+
+// ---------------------------------------------------------------------------
+// The rest of the master lists.
+//
+// These were each being read with a bare `useState` + `useEffect` + `fetch`
+// from every screen that needed the dropdown — seventy-odd call sites, none of
+// them cached, all re-running on every mount. The response key is NOT always
+// the endpoint name (`industry-segments` returns `segments`, `tax` returns
+// `taxRates`, `customer-contacts` returns a bare array), so each hook below
+// unwraps what its route actually sends rather than what its name suggests.
+//
+// IMPORTANT: only unfiltered reads belong here. A dropdown narrowed by another
+// field — `buyers?customerId=`, `material-codes?customerId=&quotationCategory=`
+// — is a different list per customer and must keep that value in its own query
+// key. Pointing one of those at the hooks here would offer another customer's
+// buyers on a quotation, and nothing would report it.
+// ---------------------------------------------------------------------------
+
+/**
+ * GST/tax rates. Unscoped — every company shares one list.
+ *
+ * Keyed `["tax-rates"]`, not `["tax"]`, because the Tax Master and Terms &
+ * Conditions screens already cache this URL under that key. A second key would
+ * mean two cache entries for one list and an invalidation that clears only one.
+ */
+export function useTaxRatesQuery<T = MasterOption>() {
+  return useReferenceQuery<{ taxRates: T[] }>(["tax-rates"], "/api/masters/tax");
+}
+export function useTaxRates<T = MasterOption>(): T[] {
+  return useTaxRatesQuery<T>().data?.taxRates ?? [];
+}
+
+/**
+ * Companies (the tenant list itself).
+ *
+ * Keyed `["companies"]` to match the Company Master and super-admin screens,
+ * which already cache this URL under that key.
+ */
+export function useCompaniesQuery<T = MasterOption>() {
+  return useReferenceQuery<{ companies: T[] }>(
+    ["companies"],
+    "/api/masters/company"
+  );
+}
+export function useCompanies<T = MasterOption>(): T[] {
+  return useCompaniesQuery<T>().data?.companies ?? [];
+}
+
+// Units of measure deliberately do NOT get a hook here: `useUnits` already
+// exists in `use-units.ts`, returning the codes with a hardcoded fallback so a
+// network blip cannot block quotation entry. It caches under ["units-master"],
+// which is the key the Unit Master and Product Master screens already share.
+// A second hook here would be a same-named export returning a different type,
+// on a second cache entry for the same URL.
+
+/** Delivery terms, for quotation and P.O. headers. */
+export function useDeliveryTermsQuery<T = MasterOption>() {
+  return useReferenceQuery<{ deliveryTerms: T[] }>(
+    ["delivery-terms"],
+    "/api/masters/delivery-terms"
+  );
+}
+export function useDeliveryTerms<T = MasterOption>(): T[] {
+  return useDeliveryTermsQuery<T>().data?.deliveryTerms ?? [];
+}
+
+/** Payment terms, for quotation and P.O. headers. */
+export function usePaymentTermsQuery<T = MasterOption>() {
+  return useReferenceQuery<{ paymentTerms: T[] }>(
+    ["payment-terms"],
+    "/api/masters/payment-terms"
+  );
+}
+export function usePaymentTerms<T = MasterOption>(): T[] {
+  return usePaymentTermsQuery<T>().data?.paymentTerms ?? [];
+}
+
+/** Pipe sizes (NB/OD). */
+export function useSizesQuery<T = MasterOption>() {
+  return useReferenceQuery<{ sizes: T[] }>(["sizes"], "/api/masters/sizes");
+}
+export function useSizes<T = MasterOption>(): T[] {
+  return useSizesQuery<T>().data?.sizes ?? [];
+}
+
+/** Industry segments. Note the response key is `segments`, not the path. */
+export function useIndustrySegmentsQuery<T = MasterOption>() {
+  return useReferenceQuery<{ segments: T[] }>(
+    ["industry-segments"],
+    "/api/masters/industry-segments"
+  );
+}
+export function useIndustrySegments<T = MasterOption>(): T[] {
+  return useIndustrySegmentsQuery<T>().data?.segments ?? [];
+}
+
+/** Standard pipe lengths. */
+export function useLengthsQuery<T = MasterOption>() {
+  return useReferenceQuery<{ lengths: T[] }>(["lengths"], "/api/masters/lengths");
+}
+export function useLengths<T = MasterOption>(): T[] {
+  return useLengthsQuery<T>().data?.lengths ?? [];
+}
+
+/**
+ * Testing/inspection types.
+ *
+ * The route sends the same array twice, as `tests` and as `testingMasters`.
+ * `tests` is the one read here; the alias exists for older callers.
+ */
+export function useTestingQuery<T = MasterOption>() {
+  return useReferenceQuery<{ tests: T[]; testingMasters: T[] }>(
+    ["testing"],
+    "/api/masters/testing"
+  );
+}
+export function useTesting<T = MasterOption>(): T[] {
+  return useTestingQuery<T>().data?.tests ?? [];
+}
+
+/** Additional specifications. Response key is `specs`. */
+export function useAdditionalSpecsQuery<T = MasterOption>() {
+  return useReferenceQuery<{ specs: T[] }>(
+    ["additional-specs"],
+    "/api/masters/additional-specs"
+  );
+}
+export function useAdditionalSpecs<T = MasterOption>(): T[] {
+  return useAdditionalSpecsQuery<T>().data?.specs ?? [];
+}
+
+/** Dimensional standards (ASTM/API and friends). */
+export function useDimensionalStandardsQuery<T = MasterOption>() {
+  return useReferenceQuery<{ dimensionalStandards: T[] }>(
+    ["dimensional-standards"],
+    "/api/masters/dimensional-standards"
+  );
+}
+export function useDimensionalStandards<T = MasterOption>(): T[] {
+  return useDimensionalStandardsQuery<T>().data?.dimensionalStandards ?? [];
+}
+
+/**
+ * Customer contacts.
+ *
+ * This route returns a BARE ARRAY, not `{ contacts: [...] }` like every other
+ * master — so this hook unwraps `data` itself rather than a named key.
+ *
+ * Only the unfiltered read belongs here. The per-customer variant
+ * (`?customerId=`) is a different list and keeps its own key.
+ */
+export function useCustomerContactsQuery<T = MasterOption>() {
+  return useReferenceQuery<T[]>(
+    ["customer-contacts"],
+    "/api/masters/customer-contacts"
+  );
+}
+export function useCustomerContacts<T = MasterOption>(): T[] {
+  return useCustomerContactsQuery<T>().data ?? [];
+}
