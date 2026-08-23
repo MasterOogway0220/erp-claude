@@ -7,11 +7,12 @@ import { signOut } from "next-auth/react";
 /**
  * Signs the user out and drops everything cached about them.
  *
- * Sessions now last a year and end only here (see `session.maxAge` in
- * `src/lib/auth.ts`), so this is the one moment the app can be sure the person
- * in front of the screen is finished. On a shared machine — a stores or
- * warehouse terminal — the next person must not be able to see the previous
- * user's rows, and those rows include customer pricing and margins.
+ * Sessions run for 30 idle days and, in day-to-day use, end here (see
+ * `session.maxAge` in `src/lib/auth.ts`) — so this is the one moment the app
+ * can be sure the person in front of the screen is finished. On a shared
+ * machine — a stores or warehouse terminal — the next person must not be able
+ * to see the previous user's rows, and those rows include customer pricing and
+ * margins.
  *
  * Today `signOut({ callbackUrl })` sets `window.location.href`, a full page
  * navigation, which throws away the in-memory `QueryClient` on its own. The

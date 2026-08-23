@@ -4,7 +4,8 @@
 
 ## Why this exists
 
-Sessions in this app last a year and end only at an explicit sign-out (see
+Sessions in this app run for 30 idle days and, in normal use, end at an
+explicit sign-out (see
 [`src/lib/auth.ts`](../lib/auth.ts.md)). That makes the logout button the one
 moment the application can be certain the person at the keyboard is finished —
 and the one moment it must forget what it knows about them.
@@ -82,8 +83,9 @@ browser is one person's" is not a safe assumption anywhere in this application.
 
 ## Related
 
-- [`src/lib/auth.ts`](../lib/auth.ts.md) — session lifetime, and the
-  re-verification that is now the only other way a session ends.
+- [`src/lib/auth.ts`](../lib/auth.ts.md) — session lifetime, the 30-day idle
+  expiry behind it, and the re-verification that ends a session promptly when
+  an account is deactivated.
 - [`src/components/providers/query-provider.tsx`](../components/providers/query-provider.tsx.md)
   — the cache being cleared, and its defaults.
 - [`src/hooks/use-api-query.ts`](./use-api-query.ts.md) — how screens read

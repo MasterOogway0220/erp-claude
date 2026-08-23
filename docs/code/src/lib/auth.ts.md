@@ -11,7 +11,7 @@ middleware, the sidebar — reads what this file puts in the token.
 ## What it does
 
 Exports `authOptions`. Credentials provider (email, password, optional `otp`),
-JWT session strategy, one-year `maxAge`, sign-in page `/login`. Augments the
+JWT session strategy, 30-day sliding `maxAge`, sign-in page `/login`. Augments the
 NextAuth types so `session.user` carries `id`, `role`, `companyId` and
 `moduleAccess`.
 
@@ -52,8 +52,10 @@ if (otpEnabled() && sessionExpired(token.loginAt, Date.now())) return {} as type
 
 NextAuth's own `maxAge` is a **sliding window** — the token is re-issued on
 every session poll, so an active user never expires. It was 24 hours, which
-still logged out anyone idle for a day; it is now a year, which means a session
-ends only when the user signs out.
+still logged out anyone idle for a day; it is now 30 days, which covers a
+weekend, a holiday or a rep out on site, so in day-to-day use a session ends
+when the user signs out. The bound is deliberate: it is the only thing standing
+behind the re-verify on a machine shared between shifts.
 
 This OTP check is therefore the single remaining expiry in the system, and it
 applies to two-factor logins only. With `OTP_ENABLED` unset — the default —
@@ -67,14 +69,14 @@ path below it.
 deactivation, role changes and grant changes mid-session. Throttled because it
 was previously a database query on *every* request.
 
-Since sessions became year-long this is **the only way a session ends other
-than signing out**. These are JWTs: there is no server-side session table, so a
+With sessions running 30 idle days this is **the only thing that ends a
+session promptly**. These are JWTs: there is no server-side session table, so a
 token cannot be revoked — deactivating someone in Employee Master takes effect
 when this check next runs and sees `isActive: false`. Lengthening
 `REVERIFY_INTERVAL_MS` directly lengthens how long a deactivated account keeps
-working, and removing the `isActive` check would mean nothing ends a session at
-all. The accepted trade for permanent sessions is that a lost laptop keeps its
-session until the account is deactivated and one re-verify lands.
+working, and removing the `isActive` check would leave only the 30-day expiry.
+A laptop lost with a live session keeps it until the account is deactivated and
+one re-verify lands, and failing that until the expiry.
 
 The `catch` around that query is important: a transient database failure —
 Hostinger's connection caps make these real — must not kill the session.

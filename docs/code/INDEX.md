@@ -213,8 +213,8 @@ binary in the deployment any more.
 - [`hooks/use-units.ts`](./src/hooks/use-units.ts.md) — UOM codes, now
   sharing the Unit Master screen's cache entry.
 - [`hooks/use-logout.ts`](./src/hooks/use-logout.ts.md) — empties the cache
-  before signing out. Sessions last a year and end only here, and the
-  terminals are shared.
+  before signing out. Sessions run 30 idle days and in practice end here,
+  and the terminals are shared.
 
 ### Infrastructure
 - [`prisma.ts`](./src/lib/prisma.ts.md) — the client, pool limits, and why
