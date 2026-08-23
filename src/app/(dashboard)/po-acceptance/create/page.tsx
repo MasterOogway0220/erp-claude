@@ -32,6 +32,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { PageLoading } from "@/components/shared/page-loading";
 import { computePOTotals } from "@/lib/calc/po-totals";
+import { formatDate } from "@/lib/dates";
 
 interface ClientPO {
   id: string;
@@ -1325,7 +1326,7 @@ function CreatePOAcceptanceContent() {
                   <dt className="text-muted-foreground">Committed Delivery Date</dt>
                   <dd className="font-medium">
                     {form.committedDeliveryDate
-                      ? format(new Date(form.committedDeliveryDate), "dd/MM/yyyy")
+                      ? formatDate(form.committedDeliveryDate, "dd/MM/yyyy")
                       : "—"}
                   </dd>
                 </div>

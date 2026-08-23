@@ -34,6 +34,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
 import type { WizardOrder } from "./OrderWizard";
+import { formatDate, toDateInput } from "@/lib/dates";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -181,7 +182,7 @@ export function ReviewStep({ order, onComplete, readOnly = false }: ReviewStepPr
     setFormData({
       customerPoNo: so.customerPoNo || "",
       customerPoDate: so.customerPoDate
-        ? format(new Date(so.customerPoDate), "yyyy-MM-dd")
+        ? toDateInput(so.customerPoDate)
         : "",
       customerPoDocument: so.customerPoDocument || "",
       projectName: so.projectName || "",
@@ -202,7 +203,7 @@ export function ReviewStep({ order, onComplete, readOnly = false }: ReviewStepPr
         unitRate: Number(item.unitRate) || 0,
         amount: Number(item.amount) || 0,
         deliveryDate: item.deliveryDate
-          ? format(new Date(item.deliveryDate), "yyyy-MM-dd")
+          ? toDateInput(item.deliveryDate)
           : "",
       }))
     );
@@ -617,7 +618,7 @@ export function ReviewStep({ order, onComplete, readOnly = false }: ReviewStepPr
               {detail.customerPoDate && (
                 <div>
                   <div className="text-sm text-muted-foreground">Customer PO Date</div>
-                  <div>{format(new Date(detail.customerPoDate), "dd MMM yyyy")}</div>
+                  <div>{formatDate(detail.customerPoDate, "dd MMM yyyy")}</div>
                 </div>
               )}
             </div>

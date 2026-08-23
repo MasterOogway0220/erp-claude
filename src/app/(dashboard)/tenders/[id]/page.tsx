@@ -42,6 +42,7 @@ import {
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
+import { formatDate } from "@/lib/dates";
 
 interface TenderItem {
   id: string;
@@ -479,13 +480,13 @@ export default function TenderDetailPage({
               <div>
                 <dt className="text-muted-foreground">Closing Date</dt>
                 <dd className="font-medium">
-                  {tender.closingDate ? format(new Date(tender.closingDate), "dd MMM yyyy") : "-"}
+                  {tender.closingDate ? formatDate(tender.closingDate, "dd MMM yyyy") : "-"}
                 </dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">Opening Date</dt>
                 <dd className="font-medium">
-                  {tender.openingDate ? format(new Date(tender.openingDate), "dd MMM yyyy") : "-"}
+                  {tender.openingDate ? formatDate(tender.openingDate, "dd MMM yyyy") : "-"}
                 </dd>
               </div>
               <div>
@@ -566,7 +567,7 @@ export default function TenderDetailPage({
                     <dt className="text-muted-foreground">EMD Return Date</dt>
                     <dd className="font-medium">
                       {tender.emdReturnDate
-                        ? format(new Date(tender.emdReturnDate), "dd MMM yyyy")
+                        ? formatDate(tender.emdReturnDate, "dd MMM yyyy")
                         : "-"}
                     </dd>
                   </div>

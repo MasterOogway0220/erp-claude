@@ -46,6 +46,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PageLoading } from "@/components/shared/page-loading";
+import { toDateInput } from "@/lib/dates";
 
 interface MTCItem {
   itemNo: string;
@@ -147,7 +148,7 @@ function CreateMTCPage() {
       customerName:
         po.customer?.name || po.salesOrder?.customer?.name || po.vendorName || "",
       poNo: po.poNo || "",
-      poDate: po.poDate ? format(new Date(po.poDate), "yyyy-MM-dd") : "",
+      poDate: po.poDate ? toDateInput(po.poDate) : "",
       projectName: po.projectName || po.subject || "",
       quotationId: "",
       quotationNo: "",

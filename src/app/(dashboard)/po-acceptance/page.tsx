@@ -26,6 +26,7 @@ import {
 import { Search, FileCheck, Eye } from "lucide-react";
 import { format } from "date-fns";
 import { PageLoading } from "@/components/shared/page-loading";
+import { formatDate } from "@/lib/dates";
 
 interface POAcceptanceItem {
   id: string;
@@ -167,7 +168,7 @@ export default function POAcceptanceListPage() {
                         {format(new Date(a.acceptanceDate), "dd/MM/yyyy")}
                       </TableCell>
                       <TableCell className="text-sm">
-                        {format(new Date(a.committedDeliveryDate), "dd/MM/yyyy")}
+                        {formatDate(a.committedDeliveryDate, "dd/MM/yyyy")}
                       </TableCell>
                       <TableCell className="text-sm font-medium">
                         {cpo.grandTotal

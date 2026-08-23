@@ -47,6 +47,7 @@ import { useCurrentUser } from "@/hooks/use-current-user";
 import { downloadFile } from "@/lib/download-file";
 import { PageLoading } from "@/components/shared/page-loading";
 import { VENDOR_MILESTONES, isMilestoneAhead } from "@/lib/purchase/po-milestones";
+import { formatDate, toDateInput } from "@/lib/dates";
 
 interface PO {
   id: string;
@@ -174,7 +175,7 @@ export default function PurchaseOrderDetailPage() {
     if (!po) return;
     setAmendmentData({
       deliveryDate: po.deliveryDate
-        ? format(new Date(po.deliveryDate), "yyyy-MM-dd")
+        ? toDateInput(po.deliveryDate)
         : "",
       specialRequirements: po.specialRequirements || "",
       changeReason: "",
@@ -333,11 +334,8 @@ export default function PurchaseOrderDetailPage() {
         title={`Purchase Order: ${po.poNo}`}
         description={
           po.version > 0
-            ? `Revision ${po.version} | Created on ${format(
-                new Date(po.poDate),
-                "dd MMM yyyy"
-              )}`
-            : `Created on ${format(new Date(po.poDate), "dd MMM yyyy")}`
+            ? `Revision ${po.version} | Created on ${formatDate(po.poDate, "dd MMM yyyy")}`
+            : `Created on ${formatDate(po.poDate, "dd MMM yyyy")}`
         }
       >
         <div className="flex gap-2">
@@ -678,7 +676,7 @@ export default function PurchaseOrderDetailPage() {
               </div>
               <div>
                 <div className="text-sm text-muted-foreground">PO Date</div>
-                <div>{format(new Date(po.poDate), "dd MMM yyyy")}</div>
+                <div>{formatDate(po.poDate, "dd MMM yyyy")}</div>
               </div>
               <div>
                 <div className="text-sm text-muted-foreground">Status</div>
@@ -715,7 +713,7 @@ export default function PurchaseOrderDetailPage() {
                   <div className="text-sm text-muted-foreground">Expected Delivery</div>
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4" />
-                    {format(new Date(po.deliveryDate), "dd MMM yyyy")}
+                    {formatDate(po.deliveryDate, "dd MMM yyyy")}
                   </div>
                 </div>
                 {po.goodsReceiptNotes && po.goodsReceiptNotes.length > 0 && (
@@ -759,7 +757,7 @@ export default function PurchaseOrderDetailPage() {
                     {po.approvalDate && (
                       <div>
                         <div className="text-sm text-muted-foreground">Approval Date</div>
-                        <div>{format(new Date(po.approvalDate), "dd MMM yyyy, HH:mm")}</div>
+                        <div>{formatDate(po.approvalDate, "dd MMM yyyy, HH:mm")}</div>
                       </div>
                     )}
                     {po.approvalRemarks && (
@@ -849,7 +847,7 @@ export default function PurchaseOrderDetailPage() {
                       </TableCell>
                       <TableCell>
                         {item.deliveryDate
-                          ? format(new Date(item.deliveryDate), "dd MMM yyyy")
+                          ? formatDate(item.deliveryDate, "dd MMM yyyy")
                           : "—"}
                       </TableCell>
                     </TableRow>

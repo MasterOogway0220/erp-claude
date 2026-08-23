@@ -20,6 +20,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import Link from "next/link";
 import { PageLoading } from "@/components/shared/page-loading";
+import { formatDate } from "@/lib/dates";
 
 const stockStatusColors: Record<string, string> = {
   UNDER_INSPECTION: "bg-yellow-500", ACCEPTED: "bg-green-500", REJECTED: "bg-red-500",
@@ -385,7 +386,7 @@ export default function StockDetailPage() {
                           <TableCell>
                             {pipeEditing ? (
                               <Input type="date" value={row.mtcDate} onChange={(e) => updatePipeRow(idx, "mtcDate", e.target.value)} className="h-8" />
-                            ) : <span>{row.mtcDate ? format(new Date(row.mtcDate), "dd MMM yyyy") : "—"}</span>}
+                            ) : <span>{row.mtcDate ? formatDate(row.mtcDate, "dd MMM yyyy") : "—"}</span>}
                           </TableCell>
                           <TableCell>
                             {pipeEditing ? (

@@ -13,8 +13,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { FileText, Percent, Clock, CheckCircle } from "lucide-react";
-import { format } from "date-fns";
 import Link from "next/link";
+import { formatDate } from "@/lib/dates";
 
 interface QuotationAnalysis {
   statusCounts: {
@@ -247,7 +247,7 @@ export default function QuotationAnalysisPage() {
                       </Link>
                     </TableCell>
                     <TableCell>
-                      {format(new Date(q.quotationDate), "dd MMM yyyy")}
+                      {formatDate(q.quotationDate, "dd MMM yyyy")}
                     </TableCell>
                     <TableCell className="font-medium">{q.customerName}</TableCell>
                     <TableCell className="text-right font-mono">

@@ -1,5 +1,36 @@
 import { describe, expect, it } from "vitest";
-import { deliveryScheduleToDate, toDateInput } from "./dates";
+import { deliveryScheduleToDate, formatDate, toDateInput } from "./dates";
+
+describe("formatDate", () => {
+  it("does not throw on the values that crashed the page", () => {
+    // These are the two that make date-fns `format` raise RangeError, taking
+    // the whole screen down through the error boundary. `undefined` is what a
+    // nullable column becomes when a route's `select` omits it.
+    expect(() => formatDate(undefined)).not.toThrow();
+    expect(() => formatDate("")).not.toThrow();
+    expect(formatDate(undefined)).toBe("—");
+    expect(formatDate("")).toBe("—");
+  });
+
+  it("does not render an unset date as the epoch", () => {
+    // The regression: `new Date(null)` is 01 Jan 1970, so a NULL column used
+    // to display as though someone had really entered that date.
+    expect(formatDate(null)).toBe("—");
+  });
+
+  it("formats a real date, honouring the pattern", () => {
+    expect(formatDate(new Date(2026, 7, 23), "dd MMM yyyy")).toBe("23 Aug 2026");
+    expect(formatDate(new Date(2026, 7, 23), "dd MMM")).toBe("23 Aug");
+  });
+
+  it("rejects an unparseable string rather than throwing", () => {
+    expect(formatDate("not a date")).toBe("—");
+  });
+
+  it("takes a caller-supplied fallback", () => {
+    expect(formatDate(null, "dd MMM yyyy", "Not set")).toBe("Not set");
+  });
+});
 
 describe("toDateInput", () => {
   it("formats the LOCAL calendar date, not the UTC one", () => {

@@ -43,6 +43,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { formatDate } from "@/lib/dates";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -917,7 +918,7 @@ function MtcHeatBlock({ heat, prepId, itemId, isQA, onRefresh }: MtcHeatBlockPro
                 <TableCell className="py-1.5 font-mono text-sm">{mtc.mtcNo}</TableCell>
                 <TableCell className="py-1.5 text-sm">
                   {mtc.mtcDate
-                    ? format(new Date(mtc.mtcDate), "dd/MM/yyyy")
+                    ? formatDate(mtc.mtcDate, "dd/MM/yyyy")
                     : "—"}
                 </TableCell>
                 {isQA && (

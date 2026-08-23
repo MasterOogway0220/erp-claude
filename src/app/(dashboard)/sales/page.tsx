@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
+import { formatDate } from "@/lib/dates";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -188,7 +189,7 @@ export default function SalesOrdersPage() {
           <div className="font-mono text-sm">{row.customerPoNo || "—"}</div>
           {row.customerPoDate && (
             <div className="text-xs text-muted-foreground">
-              {format(new Date(row.customerPoDate), "dd MMM yyyy")}
+              {formatDate(row.customerPoDate, "dd MMM yyyy")}
             </div>
           )}
         </div>
@@ -265,7 +266,7 @@ export default function SalesOrdersPage() {
           <div className="font-mono text-sm">{row.customerPoNo || "—"}</div>
           {row.customerPoDate && (
             <div className="text-xs text-muted-foreground">
-              {format(new Date(row.customerPoDate), "dd MMM yyyy")}
+              {formatDate(row.customerPoDate, "dd MMM yyyy")}
             </div>
           )}
         </div>

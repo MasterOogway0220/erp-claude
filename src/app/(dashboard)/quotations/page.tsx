@@ -33,6 +33,7 @@ import { Plus, Search, Eye, Download, FileText, FileX, CalendarClock, CheckCircl
 import { toast } from "sonner";
 import { downloadFile } from "@/lib/download";
 import { format } from "date-fns";
+import { formatDate } from "@/lib/dates";
 
 
 interface Quotation {
@@ -316,7 +317,7 @@ export default function QuotationsPage() {
                     {tender.closingDate ? (
                       <div className={`flex items-center gap-1 ${isOverdue(tender.closingDate) ? "text-destructive" : ""}`}>
                         <CalendarClock className="h-3.5 w-3.5" />
-                        {format(new Date(tender.closingDate), "dd MMM")}
+                        {formatDate(tender.closingDate, "dd MMM")}
                       </div>
                     ) : (
                       <span className="text-muted-foreground">—</span>
@@ -364,7 +365,7 @@ export default function QuotationsPage() {
                     )}
                   </TableCell>
                   <TableCell>
-                    {format(new Date(quotation.quotationDate), "dd MMM yyyy")}
+                    {formatDate(quotation.quotationDate, "dd MMM yyyy")}
                   </TableCell>
                   <TableCell>{quotation.customer.name}</TableCell>
                   <TableCell>
@@ -392,7 +393,7 @@ export default function QuotationsPage() {
                     {quotation.nextActionDate ? (
                       <div className={`flex items-center gap-1 ${isOverdue(quotation.nextActionDate) ? "text-destructive" : ""}`}>
                         <CalendarClock className="h-3.5 w-3.5" />
-                        {format(new Date(quotation.nextActionDate), "dd MMM")}
+                        {formatDate(quotation.nextActionDate, "dd MMM")}
                       </div>
                     ) : (
                       <span className="text-muted-foreground">—</span>

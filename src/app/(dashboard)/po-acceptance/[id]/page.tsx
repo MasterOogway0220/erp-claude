@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
 import { downloadFile } from "@/lib/download-file";
 import { use } from "react";
+import { formatDate } from "@/lib/dates";
 
 interface POAcceptanceDetail {
   id: string;
@@ -344,7 +345,7 @@ export default function POAcceptanceDetailPage({
             />
             <DetailRow
               label="Committed Delivery Date"
-              value={format(new Date(acceptance.committedDeliveryDate), "dd/MM/yyyy")}
+              value={formatDate(acceptance.committedDeliveryDate, "dd/MM/yyyy")}
               highlight
             />
             <DetailRow
@@ -369,7 +370,7 @@ export default function POAcceptanceDetailPage({
                   </a>
                   {acceptance.signedCopyAt && (
                     <span className="text-xs text-muted-foreground">
-                      received {format(new Date(acceptance.signedCopyAt), "dd/MM/yyyy")}
+                      received {formatDate(acceptance.signedCopyAt, "dd/MM/yyyy")}
                     </span>
                   )}
                   <Button
@@ -644,7 +645,7 @@ export default function POAcceptanceDetailPage({
                     <TableCell>{log.sentTo}</TableCell>
                     <TableCell className="max-w-[200px] truncate">{log.subject}</TableCell>
                     <TableCell>{log.sentBy || "-"}</TableCell>
-                    <TableCell>{format(new Date(log.sentAt), "dd MMM yyyy, HH:mm")}</TableCell>
+                    <TableCell>{formatDate(log.sentAt, "dd MMM yyyy, HH:mm")}</TableCell>
                     <TableCell>
                       <Badge variant={log.status === "SUCCESS" ? "default" : "destructive"}>
                         {log.status}

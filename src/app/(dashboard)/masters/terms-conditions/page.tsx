@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { format } from "date-fns";
+import { toDateInput } from "@/lib/dates";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -325,8 +325,8 @@ function TaxRatesTab() {
     setForm({
       code: item.code || "", name: item.name, percentage: String(item.percentage),
       taxType: item.taxType || "", hsnCode: item.hsnCode || "",
-      effectiveFrom: item.effectiveFrom ? format(new Date(item.effectiveFrom), "yyyy-MM-dd") : "",
-      effectiveTo: item.effectiveTo ? format(new Date(item.effectiveTo), "yyyy-MM-dd") : "",
+      effectiveFrom: item.effectiveFrom ? toDateInput(item.effectiveFrom) : "",
+      effectiveTo: item.effectiveTo ? toDateInput(item.effectiveTo) : "",
       isActive: item.isActive,
     });
     setOpen(true);

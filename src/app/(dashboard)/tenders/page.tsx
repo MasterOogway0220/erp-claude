@@ -9,8 +9,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, Eye, Clock, AlertTriangle, Trophy, FileText } from "lucide-react";
-import { format } from "date-fns";
 import { PageLoading } from "@/components/shared/page-loading";
+import { formatDate } from "@/lib/dates";
 
 interface Tender {
   id: string;
@@ -250,7 +250,7 @@ export default function TendersPage() {
                     <TableCell>{tender.tenderSource ?? "-"}</TableCell>
                     <TableCell>
                       {tender.closingDate
-                        ? format(new Date(tender.closingDate), "dd MMM yyyy")
+                        ? formatDate(tender.closingDate, "dd MMM yyyy")
                         : "-"}
                     </TableCell>
                     <TableCell>

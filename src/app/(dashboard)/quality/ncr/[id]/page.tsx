@@ -32,6 +32,7 @@ import { toast } from "sonner";
 import Link from "next/link";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { PageLoading } from "@/components/shared/page-loading";
+import { formatDate } from "@/lib/dates";
 
 const ncrStatusColors: Record<string, string> = {
   OPEN: "bg-red-500",
@@ -484,7 +485,7 @@ export default function NCRDetailPage() {
                     <div className="text-sm text-muted-foreground">Target Closure Date</div>
                     <div>
                       {ncr.targetClosureDate
-                        ? format(new Date(ncr.targetClosureDate), "dd MMM yyyy")
+                        ? formatDate(ncr.targetClosureDate, "dd MMM yyyy")
                         : "—"}
                     </div>
                   </div>
@@ -502,7 +503,7 @@ export default function NCRDetailPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <div className="text-sm text-muted-foreground">Closed Date</div>
-                    <div>{format(new Date(ncr.closedDate), "dd MMM yyyy")}</div>
+                    <div>{formatDate(ncr.closedDate, "dd MMM yyyy")}</div>
                   </div>
                   <div>
                     <div className="text-sm text-muted-foreground">Closed By</div>
@@ -520,7 +521,7 @@ export default function NCRDetailPage() {
                     <div className="text-sm text-muted-foreground">Verified Date</div>
                     <div>
                       {ncr.verifiedDate
-                        ? format(new Date(ncr.verifiedDate), "dd MMM yyyy")
+                        ? formatDate(ncr.verifiedDate, "dd MMM yyyy")
                         : "—"}
                     </div>
                   </div>

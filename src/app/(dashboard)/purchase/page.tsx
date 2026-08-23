@@ -10,6 +10,7 @@ import { Plus, Eye, FileText, BarChart3, Send } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { formatDate } from "@/lib/dates";
 
 interface PR {
   id: string;
@@ -193,7 +194,7 @@ export default function PurchasePage() {
       header: "Required By",
       cell: (row) =>
         row.requiredByDate
-          ? format(new Date(row.requiredByDate), "dd MMM yyyy")
+          ? formatDate(row.requiredByDate, "dd MMM yyyy")
           : "—",
     },
     {
@@ -250,7 +251,7 @@ export default function PurchasePage() {
       key: "submissionDeadline",
       header: "Deadline",
       cell: (row) =>
-        row.submissionDeadline ? format(new Date(row.submissionDeadline), "dd MMM yyyy") : "—",
+        row.submissionDeadline ? formatDate(row.submissionDeadline, "dd MMM yyyy") : "—",
     },
     {
       key: "status",
@@ -337,7 +338,7 @@ export default function PurchasePage() {
     {
       key: "poDate",
       header: "PO Date",
-      cell: (row) => format(new Date(row.poDate), "dd MMM yyyy"),
+      cell: (row) => formatDate(row.poDate, "dd MMM yyyy"),
     },
     {
       key: "vendor",
@@ -372,7 +373,7 @@ export default function PurchasePage() {
       header: "Delivery Date",
       cell: (row) =>
         row.deliveryDate
-          ? format(new Date(row.deliveryDate), "dd MMM yyyy")
+          ? formatDate(row.deliveryDate, "dd MMM yyyy")
           : "—",
     },
     {

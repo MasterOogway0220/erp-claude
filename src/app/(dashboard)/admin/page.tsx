@@ -45,6 +45,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { formatDate } from "@/lib/dates";
 
 // ==================== Types ====================
 
@@ -422,10 +423,7 @@ export default function AdminPage() {
                           </TableCell>
                           <TableCell>
                             {user.lastLogin
-                              ? format(
-                                  new Date(user.lastLogin),
-                                  "dd MMM yyyy HH:mm"
-                                )
+                              ? formatDate(user.lastLogin, "dd MMM yyyy HH:mm")
                               : "Never"}
                           </TableCell>
                           <TableCell className="text-right">

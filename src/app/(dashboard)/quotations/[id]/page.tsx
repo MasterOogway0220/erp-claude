@@ -66,6 +66,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { downloadFile } from "@/lib/download";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { formatDate } from "@/lib/dates";
 
 const statusColors: Record<string, string> = {
   DRAFT: "secondary",
@@ -649,7 +650,7 @@ export default function QuotationDetailPage() {
             </div>
             <div>
               <div className="text-xs text-muted-foreground">Quotation Date</div>
-              <div className="text-sm font-medium">{format(new Date(quotation.quotationDate), "dd MMM yyyy")}</div>
+              <div className="text-sm font-medium">{formatDate(quotation.quotationDate, "dd MMM yyyy")}</div>
             </div>
             <div>
               <div className="text-xs text-muted-foreground">Deal Owner</div>
@@ -685,13 +686,13 @@ export default function QuotationDetailPage() {
             <div>
               <div className="text-xs text-muted-foreground">Inquiry Date</div>
               <div className="text-sm font-medium">
-                {quotation.inquiryDate ? format(new Date(quotation.inquiryDate), "dd MMM yyyy") : "---"}
+                {quotation.inquiryDate ? formatDate(quotation.inquiryDate, "dd MMM yyyy") : "---"}
               </div>
             </div>
             <div>
               <div className="text-xs text-muted-foreground">Follow Up Date</div>
               <div className={`text-sm font-medium ${quotation.nextActionDate && new Date(quotation.nextActionDate) < new Date() ? "text-destructive" : ""}`}>
-                {quotation.nextActionDate ? format(new Date(quotation.nextActionDate), "dd MMM yyyy") : "---"}
+                {quotation.nextActionDate ? formatDate(quotation.nextActionDate, "dd MMM yyyy") : "---"}
               </div>
             </div>
           </div>
@@ -719,7 +720,7 @@ export default function QuotationDetailPage() {
                     <div className="text-xs text-muted-foreground">
                       {quotation.status === "REJECTED" ? "Rejection" : "Approval"} Date
                     </div>
-                    <div className="text-sm font-medium">{format(new Date(quotation.approvalDate), "dd MMM yyyy")}</div>
+                    <div className="text-sm font-medium">{formatDate(quotation.approvalDate, "dd MMM yyyy")}</div>
                   </div>
                   {quotation.approvalRemarks && (
                     <div>
@@ -732,7 +733,7 @@ export default function QuotationDetailPage() {
               {quotation.sentDate && (
                 <div>
                   <div className="text-xs text-muted-foreground">Sent Date</div>
-                  <div className="text-sm font-medium">{format(new Date(quotation.sentDate), "dd MMM yyyy")}</div>
+                  <div className="text-sm font-medium">{formatDate(quotation.sentDate, "dd MMM yyyy")}</div>
                 </div>
               )}
               {quotation.lossReason && (
@@ -1124,7 +1125,7 @@ export default function QuotationDetailPage() {
                           Rev.{rev.version} {isCurrent && "(Current)"}
                         </TableCell>
                         <TableCell>
-                          {format(new Date(rev.quotationDate), "dd MMM yyyy")}
+                          {formatDate(rev.quotationDate, "dd MMM yyyy")}
                         </TableCell>
                         <TableCell>
                           <Badge variant={statusColors[rev.status] as any}>
@@ -1144,7 +1145,7 @@ export default function QuotationDetailPage() {
                         <TableCell>{rev.preparedBy?.name || "---"}</TableCell>
                         <TableCell>
                           {rev.sentDate
-                            ? format(new Date(rev.sentDate), "dd MMM yyyy")
+                            ? formatDate(rev.sentDate, "dd MMM yyyy")
                             : "---"}
                         </TableCell>
                         <TableCell>
@@ -1416,7 +1417,7 @@ export default function QuotationDetailPage() {
                       {emailLogsData.emailLogs.map((log: any) => (
                         <TableRow key={log.id}>
                           <TableCell className="whitespace-nowrap">
-                            {format(new Date(log.sentAt), "dd MMM yyyy, HH:mm")}
+                            {formatDate(log.sentAt, "dd MMM yyyy, HH:mm")}
                           </TableCell>
                           <TableCell className="max-w-[200px] truncate">{log.sentTo}</TableCell>
                           <TableCell className="max-w-[200px] truncate">{log.sentCc || "---"}</TableCell>

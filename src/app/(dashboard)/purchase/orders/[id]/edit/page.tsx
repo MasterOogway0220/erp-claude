@@ -25,6 +25,7 @@ import { format } from "date-fns";
 import { PageLoading } from "@/components/shared/page-loading";
 import { SmartCombobox } from "@/components/shared/smart-combobox";
 import { flangeDimForSize, getFittingSizeOptions, getFlangeSizeOptions, inferItemCategory } from "@/lib/fitting-flange-sizes";
+import { toDateInput } from "@/lib/dates";
 
 type POItemCategory = "Pipe" | "Fitting" | "Flange";
 
@@ -100,7 +101,7 @@ function EditPOPage() {
       setFormData({
         vendorId: po.vendor?.id || "",
         deliveryDate: po.deliveryDate
-          ? format(new Date(po.deliveryDate), "yyyy-MM-dd")
+          ? toDateInput(po.deliveryDate)
           : defaultDeliveryDate,
         specialRequirements: po.specialRequirements || "",
         currency: po.currency || "INR",
@@ -123,7 +124,7 @@ function EditPOPage() {
           unitRate: parseFloat(String(item.unitRate)) || 0,
           amount: parseFloat(String(item.amount)) || 0,
           deliveryDate: item.deliveryDate
-            ? format(new Date(item.deliveryDate), "yyyy-MM-dd")
+            ? toDateInput(item.deliveryDate)
             : defaultDeliveryDate,
           fittingId: item.fittingId || "",
           fittingLabel: "",

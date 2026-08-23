@@ -17,8 +17,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Plus, Search, Eye } from "lucide-react";
-import { format } from "date-fns";
 import { PageLoading } from "@/components/shared/page-loading";
+import { formatDate } from "@/lib/dates";
 
 interface InspectionOfferRow {
   id: string;
@@ -112,7 +112,7 @@ export default function InspectionOffersListPage() {
                       <TableCell>{offer.poNumber || "-"}</TableCell>
                       <TableCell>
                         {offer.proposedInspectionDate
-                          ? format(new Date(offer.proposedInspectionDate), "dd/MM/yyyy")
+                          ? formatDate(offer.proposedInspectionDate, "dd/MM/yyyy")
                           : "-"}
                       </TableCell>
                       <TableCell>{offer.inspectionLocation || "-"}</TableCell>

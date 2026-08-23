@@ -29,6 +29,7 @@ import {
 import { toast } from "sonner";
 import { format } from "date-fns";
 import Link from "next/link";
+import { formatDate } from "@/lib/dates";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -397,7 +398,7 @@ export default function AlertsPage() {
                             <p className="text-sm text-muted-foreground">{alert.message}</p>
                             <div className="flex items-center gap-4 text-xs text-muted-foreground pt-1">
                               {alert.dueDate && (
-                                <span>Due: {format(new Date(alert.dueDate), "dd MMM yyyy")}</span>
+                                <span>Due: {formatDate(alert.dueDate, "dd MMM yyyy")}</span>
                               )}
                               {alert.assignedToRole && (
                                 <span>Role: {alert.assignedToRole}</span>

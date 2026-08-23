@@ -41,6 +41,7 @@ import Link from "next/link";
 import { downloadFile } from "@/lib/download-file";
 import { numberToWords } from "@/lib/amount-in-words";
 import { PageLoading } from "@/components/shared/page-loading";
+import { formatDate } from "@/lib/dates";
 
 const invoiceTypeColors: Record<string, string> = {
   DOMESTIC: "bg-blue-500",
@@ -292,7 +293,7 @@ export default function InvoiceDetailPage() {
                 <div>
                   <div className="text-sm text-muted-foreground">Due Date</div>
                   <div>
-                    {format(new Date(invoice.dueDate), "dd MMM yyyy")}
+                    {formatDate(invoice.dueDate, "dd MMM yyyy")}
                   </div>
                 </div>
               )}
@@ -557,7 +558,7 @@ export default function InvoiceDetailPage() {
                 {emailLogs.map((log: any) => (
                   <TableRow key={log.id}>
                     <TableCell>
-                      {format(new Date(log.sentAt), "dd MMM yyyy HH:mm")}
+                      {formatDate(log.sentAt, "dd MMM yyyy HH:mm")}
                     </TableCell>
                     <TableCell className="text-sm">{log.sentTo}</TableCell>
                     <TableCell className="text-sm">{log.subject}</TableCell>

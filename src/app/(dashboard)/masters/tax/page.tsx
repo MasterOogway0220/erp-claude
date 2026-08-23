@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/select";
 import { Plus, Pencil } from "lucide-react";
 import { toast } from "sonner";
-import { format } from "date-fns";
+import { formatDate, toDateInput } from "@/lib/dates";
 
 interface TaxRate {
   id: string;
@@ -93,10 +93,10 @@ export default function TaxMasterPage() {
       taxType: item.taxType || "",
       hsnCode: item.hsnCode || "",
       effectiveFrom: item.effectiveFrom
-        ? format(new Date(item.effectiveFrom), "yyyy-MM-dd")
+        ? toDateInput(item.effectiveFrom)
         : "",
       effectiveTo: item.effectiveTo
-        ? format(new Date(item.effectiveTo), "yyyy-MM-dd")
+        ? toDateInput(item.effectiveTo)
         : "",
       isActive: item.isActive,
     });
@@ -213,7 +213,7 @@ export default function TaxMasterPage() {
       header: "Effective From",
       cell: (row) =>
         row.effectiveFrom
-          ? format(new Date(row.effectiveFrom), "dd/MM/yyyy")
+          ? formatDate(row.effectiveFrom, "dd/MM/yyyy")
           : "--",
     },
     {
@@ -221,7 +221,7 @@ export default function TaxMasterPage() {
       header: "Effective To",
       cell: (row) =>
         row.effectiveTo
-          ? format(new Date(row.effectiveTo), "dd/MM/yyyy")
+          ? formatDate(row.effectiveTo, "dd/MM/yyyy")
           : "--",
     },
     {

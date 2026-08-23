@@ -39,6 +39,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { PageLoading } from "@/components/shared/page-loading";
 import { downloadFile } from "@/lib/download-file";
+import { formatDate } from "@/lib/dates";
 
 const statusConfig: Record<
   string,
@@ -374,7 +375,7 @@ export default function MTCCertificateDetailPage() {
               <Label className="text-muted-foreground text-xs">PO Date</Label>
               <div>
                 {cert.poDate
-                  ? format(new Date(cert.poDate), "dd MMM yyyy")
+                  ? formatDate(cert.poDate, "dd MMM yyyy")
                   : "—"}
               </div>
             </div>

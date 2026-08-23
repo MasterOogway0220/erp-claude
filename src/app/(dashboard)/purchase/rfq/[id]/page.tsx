@@ -19,6 +19,7 @@ import { ArrowLeft, Send, BarChart3, ClipboardEdit } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { prItemFields } from "@/lib/purchase/pr-item-fields";
+import { formatDate } from "@/lib/dates";
 
 const statusColors: Record<string, string> = {
   DRAFT: "bg-gray-500",
@@ -202,7 +203,7 @@ export default function RFQDetailPage() {
               </p>
               <p>
                 {rfq.submissionDeadline
-                  ? format(new Date(rfq.submissionDeadline), "dd MMM yyyy")
+                  ? formatDate(rfq.submissionDeadline, "dd MMM yyyy")
                   : "—"}
               </p>
             </div>
@@ -316,7 +317,7 @@ export default function RFQDetailPage() {
                       <TableCell>{rv.vendor?.city || "—"}</TableCell>
                       <TableCell>
                         {rv.sentDate
-                          ? format(new Date(rv.sentDate), "dd MMM yyyy")
+                          ? formatDate(rv.sentDate, "dd MMM yyyy")
                           : "—"}
                       </TableCell>
                       <TableCell>

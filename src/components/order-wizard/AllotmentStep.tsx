@@ -39,6 +39,7 @@ import {
 import { toast } from "sonner";
 import { format } from "date-fns";
 import type { WizardOrder } from "./OrderWizard";
+import { formatDate } from "@/lib/dates";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -124,7 +125,7 @@ function StockRow({
       <TableCell className="font-mono font-medium">{stock.heatNo || "—"}</TableCell>
       <TableCell className="font-mono text-sm">{stock.mtcNo || "—"}</TableCell>
       <TableCell>
-        {stock.mtcDate ? format(new Date(stock.mtcDate), "dd MMM yyyy") : "—"}
+        {stock.mtcDate ? formatDate(stock.mtcDate, "dd MMM yyyy") : "—"}
       </TableCell>
       <TableCell className="text-sm">{stock.make || "—"}</TableCell>
       <TableCell className="text-right font-medium">

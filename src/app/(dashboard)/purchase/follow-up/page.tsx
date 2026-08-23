@@ -32,9 +32,10 @@ import {
   Eye,
   StickyNote,
 } from "lucide-react";
-import { format, differenceInDays } from "date-fns";
+import { differenceInDays } from "date-fns";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { formatDate } from "@/lib/dates";
 
 interface POTracking {
   id: string;
@@ -346,7 +347,7 @@ export default function POFollowUpPage() {
                       </TableCell>
                       <TableCell>{po.vendor.name}</TableCell>
                       <TableCell>
-                        {format(new Date(po.deliveryDate), "dd MMM yyyy")}
+                        {formatDate(po.deliveryDate, "dd MMM yyyy")}
                       </TableCell>
                       <TableCell>
                         <Badge variant="destructive">{daysOverdue} days</Badge>
@@ -427,7 +428,7 @@ export default function POFollowUpPage() {
                       </TableCell>
                       <TableCell>{po.vendor.name}</TableCell>
                       <TableCell>
-                        {format(new Date(po.deliveryDate), "dd MMM yyyy")}
+                        {formatDate(po.deliveryDate, "dd MMM yyyy")}
                       </TableCell>
                       <TableCell>
                         <Badge

@@ -30,6 +30,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import Link from "next/link";
 import { PageLoading } from "@/components/shared/page-loading";
+import { formatDate } from "@/lib/dates";
 
 const REPORT_TYPE_LABELS: Record<string, string> = {
   CHEMICAL: "Chemical Test Report",
@@ -257,7 +258,7 @@ export default function LabReportDetailPage() {
               </div>
               <div>
                 <div className="text-sm text-muted-foreground">Test Date</div>
-                <div>{report.testDate ? format(new Date(report.testDate), "dd MMM yyyy") : "—"}</div>
+                <div>{report.testDate ? formatDate(report.testDate, "dd MMM yyyy") : "—"}</div>
               </div>
               <div>
                 <div className="text-sm text-muted-foreground">Uploaded By</div>

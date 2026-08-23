@@ -25,6 +25,7 @@ import {
 import { Plus, Search, Eye, AlertTriangle, Clock, CheckCircle2, Package, Truck } from "lucide-react";
 import { format } from "date-fns";
 import { PageLoading } from "@/components/shared/page-loading";
+import { formatDate } from "@/lib/dates";
 
 interface IntimationItem {
   id: string;
@@ -308,7 +309,7 @@ export function WarehouseIntimationPanel({ embedded = false }: { embedded?: bool
                         <span className="text-xs text-muted-foreground ml-auto">
                           {format(new Date(mpr.mprDate), "dd/MM/yyyy")}
                           {mpr.requiredByDate && (
-                            <> | Due: <span className="font-medium">{format(new Date(mpr.requiredByDate), "dd/MM/yyyy")}</span></>
+                            <> | Due: <span className="font-medium">{formatDate(mpr.requiredByDate, "dd/MM/yyyy")}</span></>
                           )}
                         </span>
                       </div>

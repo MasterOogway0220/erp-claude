@@ -26,6 +26,7 @@ import {
 import { Plus, Search, Eye } from "lucide-react";
 import { format } from "date-fns";
 import { PageLoading } from "@/components/shared/page-loading";
+import { formatDate } from "@/lib/dates";
 
 interface ClientPO {
   id: string;
@@ -161,7 +162,7 @@ export default function ClientPurchaseOrdersPage() {
                       </TableCell>
                       <TableCell>
                         {cpo.clientPoDate
-                          ? format(new Date(cpo.clientPoDate), "dd/MM/yyyy")
+                          ? formatDate(cpo.clientPoDate, "dd/MM/yyyy")
                           : format(new Date(cpo.cpoDate), "dd/MM/yyyy")}
                       </TableCell>
                       <TableCell>{cpo.projectName || "-"}</TableCell>

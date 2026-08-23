@@ -38,10 +38,10 @@ import {
   Image,
   FileSpreadsheet,
 } from "lucide-react";
-import { format } from "date-fns";
 import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
 import { SQ_STATUSES, PRICING_UNITS } from "@/lib/constants/supplier-quotations";
+import { formatDate } from "@/lib/dates";
 
 interface SQDocument {
   id: string;
@@ -481,7 +481,7 @@ export default function SupplierQuotationDetailPage({
                   <p className="text-muted-foreground text-xs">Quotation Date</p>
                   <p className="font-medium">
                     {sq.quotationDate
-                      ? format(new Date(sq.quotationDate), "dd MMM yyyy")
+                      ? formatDate(sq.quotationDate, "dd MMM yyyy")
                       : "-"}
                   </p>
                 </div>
@@ -489,7 +489,7 @@ export default function SupplierQuotationDetailPage({
                   <p className="text-muted-foreground text-xs">Valid Until</p>
                   <p className="font-medium">
                     {sq.validUntil
-                      ? format(new Date(sq.validUntil), "dd MMM yyyy")
+                      ? formatDate(sq.validUntil, "dd MMM yyyy")
                       : "-"}
                   </p>
                 </div>

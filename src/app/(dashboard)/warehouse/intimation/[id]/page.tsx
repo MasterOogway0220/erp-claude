@@ -29,6 +29,7 @@ import { ArrowLeft, CheckCircle2, ChevronDown, ChevronRight, Clock, FileSearch, 
 import { Input } from "@/components/ui/input";
 import { PageLoading } from "@/components/shared/page-loading";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { formatDate, toDateInput } from "@/lib/dates";
 
 const STATUS_CONFIG: Record<string, { label: string; variant: string }> = {
   PENDING: { label: "Pending", variant: "secondary" },
@@ -267,7 +268,7 @@ export default function WarehouseIntimationDetailPage({
             {data.requiredByDate && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Required By</span>
-                <span className="font-medium">{format(new Date(data.requiredByDate), "dd/MM/yyyy")}</span>
+                <span className="font-medium">{formatDate(data.requiredByDate, "dd/MM/yyyy")}</span>
               </div>
             )}
             <div className="flex justify-between">
@@ -558,10 +559,10 @@ export default function WarehouseIntimationDetailPage({
                                         {canEditMtc ? (
                                           <input
                                             type="date"
-                                            defaultValue={detail.mtcDate ? format(new Date(detail.mtcDate), "yyyy-MM-dd") : ""}
+                                            defaultValue={detail.mtcDate ? toDateInput(detail.mtcDate) : ""}
                                             onBlur={async (e) => {
                                               const val = e.target.value;
-                                              const existing = detail.mtcDate ? format(new Date(detail.mtcDate), "yyyy-MM-dd") : "";
+                                              const existing = detail.mtcDate ? toDateInput(detail.mtcDate) : "";
                                               if (val !== existing) {
                                                 try {
                                                   await fetch(`/api/warehouse/intimation/${id}/details`, {
@@ -577,7 +578,7 @@ export default function WarehouseIntimationDetailPage({
                                             onClick={(e) => e.stopPropagation()}
                                           />
                                         ) : (
-                                          detail.mtcDate ? format(new Date(detail.mtcDate), "dd/MM/yyyy") : "\u2014"
+                                          detail.mtcDate ? formatDate(detail.mtcDate, "dd/MM/yyyy") : "\u2014"
                                         )}
                                       </TableCell>
                                       <TableCell>

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Eye } from "lucide-react";
 import { format } from "date-fns";
+import { formatDate } from "@/lib/dates";
 
 interface RFQ {
   id: string;
@@ -72,7 +73,7 @@ export default function RFQListPage() {
       header: "Deadline",
       cell: (row) =>
         row.submissionDeadline
-          ? format(new Date(row.submissionDeadline), "dd MMM yyyy")
+          ? formatDate(row.submissionDeadline, "dd MMM yyyy")
           : "—",
     },
     {

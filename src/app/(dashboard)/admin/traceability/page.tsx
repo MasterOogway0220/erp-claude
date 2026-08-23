@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { formatDate } from "@/lib/dates";
 
 // ==================== Types ====================
 
@@ -313,10 +314,7 @@ export default function TraceabilityPage() {
                       {data.purchaseOrder.vendor.name}
                     </p>
                     <p className="text-muted-foreground">
-                      {format(
-                        new Date(data.purchaseOrder.poDate),
-                        "dd MMM yyyy"
-                      )}
+                      {formatDate(data.purchaseOrder.poDate, "dd MMM yyyy")}
                     </p>
                   </div>
                 )}

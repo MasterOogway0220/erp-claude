@@ -33,6 +33,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import Link from "next/link";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { formatDate } from "@/lib/dates";
 
 const statusColors: Record<string, string> = {
   DRAFT: "bg-gray-500",
@@ -152,7 +153,7 @@ export default function PRDetailPage({
                 <p className="text-sm text-muted-foreground">Required By</p>
                 <p className="font-medium">
                   {pr.requiredByDate
-                    ? format(new Date(pr.requiredByDate), "dd MMM yyyy")
+                    ? formatDate(pr.requiredByDate, "dd MMM yyyy")
                     : "Not specified"}
                 </p>
               </div>
@@ -204,7 +205,7 @@ export default function PRDetailPage({
                 <p className="text-sm text-muted-foreground">Approval Date</p>
                 <p className="font-medium">
                   {pr.approvalDate
-                    ? format(new Date(pr.approvalDate), "dd MMM yyyy")
+                    ? formatDate(pr.approvalDate, "dd MMM yyyy")
                     : "Pending"}
                 </p>
               </div>

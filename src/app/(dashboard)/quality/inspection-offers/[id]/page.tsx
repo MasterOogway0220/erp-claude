@@ -38,6 +38,7 @@ import { format } from "date-fns";
 import { PageLoading } from "@/components/shared/page-loading";
 import { use } from "react";
 import { toast } from "sonner";
+import { formatDate } from "@/lib/dates";
 
 interface InspectionOfferDetail {
   id: string;
@@ -274,7 +275,7 @@ export default function InspectionOfferDetailPage({
             <DetailRow label="Project" value={offer.projectName} />
             <DetailRow
               label="Proposed Date"
-              value={offer.proposedInspectionDate ? format(new Date(offer.proposedInspectionDate), "dd/MM/yyyy") : null}
+              value={offer.proposedInspectionDate ? formatDate(offer.proposedInspectionDate, "dd/MM/yyyy") : null}
               highlight
             />
             <DetailRow label="Location" value={offer.inspectionLocation} />

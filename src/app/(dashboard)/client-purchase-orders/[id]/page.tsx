@@ -20,6 +20,7 @@ import { ArrowLeft, FileText, Calculator, FileCheck, Clock } from "lucide-react"
 import { format } from "date-fns";
 import { PageLoading } from "@/components/shared/page-loading";
 import { use } from "react";
+import { formatDate } from "@/lib/dates";
 
 interface ClientPODetail {
   id: string;
@@ -287,7 +288,7 @@ export default function ClientPODetailPage({
               label="Client P.O. Date"
               value={
                 clientPO.clientPoDate
-                  ? format(new Date(clientPO.clientPoDate), "dd/MM/yyyy")
+                  ? formatDate(clientPO.clientPoDate, "dd/MM/yyyy")
                   : null
               }
             />
@@ -353,7 +354,7 @@ export default function ClientPODetailPage({
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Delivery Date (CDD)</span>
                 <span className="text-sm text-foreground">
-                  {format(new Date(clientPO.deliveryDate), "dd MMM yyyy")}
+                  {formatDate(clientPO.deliveryDate, "dd MMM yyyy")}
                 </span>
               </div>
             )}
@@ -466,9 +467,9 @@ export default function ClientPODetailPage({
                     </TableCell>
                     <TableCell className="text-sm">
                       {item.deliveryDate
-                        ? format(new Date(item.deliveryDate), "dd MMM yyyy")
+                        ? formatDate(item.deliveryDate, "dd MMM yyyy")
                         : clientPO.deliveryDate
-                        ? <span className="text-muted-foreground italic">{format(new Date(clientPO.deliveryDate), "dd MMM yyyy")} (inherited)</span>
+                        ? <span className="text-muted-foreground italic">{formatDate(clientPO.deliveryDate, "dd MMM yyyy")} (inherited)</span>
                         : "-"}
                     </TableCell>
                     <TableCell>

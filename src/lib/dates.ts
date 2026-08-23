@@ -1,3 +1,34 @@
+import { format } from "date-fns";
+
+/**
+ * Format a date for display, tolerating every value the API can actually send.
+ *
+ * `format(new Date(x))` throws `RangeError: Invalid time value` when `x` is
+ * `undefined` or `""` — it does not degrade to a placeholder. One such cell
+ * throws during render, React unmounts the tree, and the user gets the
+ * "Something went wrong" boundary for the entire page instead of one empty
+ * column.
+ *
+ * `undefined` is not a rare case. Any nullable column reaches the browser as
+ * `undefined` whenever the route's `select` omits it, so narrowing a list
+ * payload — which is a routine optimisation here — turns a working screen into
+ * a crashing one with nothing failing at build time.
+ *
+ * `null` is handled too, and deliberately does NOT fall through to `new Date`:
+ * `new Date(null)` is the epoch, so an unset date rendered "01 Jan 1970" as
+ * though it were real data.
+ */
+export function formatDate(
+  value: string | number | Date | null | undefined,
+  pattern = "dd MMM yyyy",
+  fallback = "—"
+): string {
+  if (value === null || value === undefined || value === "") return fallback;
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return fallback;
+  return format(d, pattern);
+}
+
 /**
  * Format a date for an <input type="date"> using the user's LOCAL calendar.
  *

@@ -20,6 +20,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
 import { OrderWizard, type WizardOrder } from "@/components/order-wizard/OrderWizard";
+import { formatDate } from "@/lib/dates";
 
 interface SalesOrder {
   id: string;
@@ -258,7 +259,7 @@ export default function SalesOrderDetailPage() {
                 {salesOrder.customerPoDate && (
                   <div>
                     <div className="text-sm text-muted-foreground">Customer PO Date</div>
-                    <div>{format(new Date(salesOrder.customerPoDate), "dd MMM yyyy")}</div>
+                    <div>{formatDate(salesOrder.customerPoDate, "dd MMM yyyy")}</div>
                   </div>
                 )}
               </div>
@@ -353,7 +354,7 @@ export default function SalesOrderDetailPage() {
                     </TableCell>
                     <TableCell>
                       {item.deliveryDate
-                        ? format(new Date(item.deliveryDate), "dd MMM yyyy")
+                        ? formatDate(item.deliveryDate, "dd MMM yyyy")
                         : "—"}
                     </TableCell>
                     <TableCell>
