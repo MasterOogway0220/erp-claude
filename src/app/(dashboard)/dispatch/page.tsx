@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, Suspense } from "react";
+import { useApiQuery } from "@/hooks/use-api-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { DataTable, Column } from "@/components/shared/data-table";
@@ -9,7 +10,6 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus } from "lucide-react";
 import { format } from "date-fns";
-import { toast } from "sonner";
 import Link from "next/link";
 
 const plStatusColors: Record<string, string> = {
@@ -42,47 +42,31 @@ function DispatchPageContent() {
     ? tabParam!
     : "packing-lists";
 
-  const [packingLists, setPackingLists] = useState<any[]>([]);
-  const [dispatchNotes, setDispatchNotes] = useState<any[]>([]);
-  const [invoices, setInvoices] = useState<any[]>([]);
-  const [payments, setPayments] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Four independent lists, each its own cache entry so the standalone
+  // screens for these records reuse them instead of refetching.
+  const { data: plData, isLoading: loading } = useApiQuery<{ packingLists: any[] }>(
+    ["packing-lists"],
+    "/api/dispatch/packing-lists"
+  );
+  const packingLists = plData?.packingLists ?? [];
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const { data: dnData } = useApiQuery<{ dispatchNotes: any[] }>(
+    ["dispatch-notes"],
+    "/api/dispatch/dispatch-notes"
+  );
+  const dispatchNotes = dnData?.dispatchNotes ?? [];
 
-  const fetchData = async () => {
-    try {
-      const [plRes, dnRes, invRes, payRes] = await Promise.all([
-        fetch("/api/dispatch/packing-lists"),
-        fetch("/api/dispatch/dispatch-notes"),
-        fetch("/api/dispatch/invoices"),
-        fetch("/api/dispatch/payments"),
-      ]);
+  const { data: invData } = useApiQuery<{ invoices: any[] }>(
+    ["invoices"],
+    "/api/dispatch/invoices"
+  );
+  const invoices = invData?.invoices ?? [];
 
-      if (plRes.ok) {
-        const data = await plRes.json();
-        setPackingLists(data.packingLists || []);
-      }
-      if (dnRes.ok) {
-        const data = await dnRes.json();
-        setDispatchNotes(data.dispatchNotes || []);
-      }
-      if (invRes.ok) {
-        const data = await invRes.json();
-        setInvoices(data.invoices || []);
-      }
-      if (payRes.ok) {
-        const data = await payRes.json();
-        setPayments(data.paymentReceipts || []);
-      }
-    } catch (error) {
-      toast.error("Failed to load dispatch data");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: payData } = useApiQuery<{ paymentReceipts: any[] }>(
+    ["payment-receipts"],
+    "/api/dispatch/payments"
+  );
+  const payments = payData?.paymentReceipts ?? [];
 
   const plColumns: Column<any>[] = [
     {

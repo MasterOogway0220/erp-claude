@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import { useApiQuery } from "@/hooks/use-api-query";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,7 +36,6 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { format } from "date-fns";
-import { toast } from "sonner";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -142,31 +142,20 @@ function MiniPipeline({ stages }: { stages: { name: string; status: StageStatus 
 
 export default function POTrackingPage() {
   const router = useRouter();
-  const [orders, setOrders] = useState<TrackingOrder[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const fetchOrders = useCallback(async () => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams();
-      if (search) params.set("search", search);
-      if (statusFilter && statusFilter !== "all") params.set("status", statusFilter);
-      const res = await fetch(`/api/po-tracking?${params}`);
-      if (!res.ok) throw new Error("Failed to fetch");
-      const data = await res.json();
-      setOrders(data.orders || []);
-    } catch {
-      toast.error("Failed to fetch tracking data");
-    } finally {
-      setLoading(false);
-    }
-  }, [search, statusFilter]);
+  // Both filters are in the key, so a filter change is a different cache
+  // entry rather than a mutation of this one.
+  const trackingParams = new URLSearchParams();
+  if (search) trackingParams.set("search", search);
+  if (statusFilter && statusFilter !== "all") trackingParams.set("status", statusFilter);
 
-  useEffect(() => {
-    fetchOrders();
-  }, [fetchOrders]);
+  const { data, isLoading: loading } = useApiQuery<{ orders: TrackingOrder[] }>(
+    ["po-tracking", search, statusFilter],
+    `/api/po-tracking?${trackingParams}`
+  );
+  const orders = data?.orders ?? [];
 
   // Stats
   const totalOrders = orders.length;

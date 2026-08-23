@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useCustomers } from "@/hooks/use-masters";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -27,7 +28,7 @@ interface BuyerPerformance {
 export default function BuyerPerformancePage() {
   const [data, setData] = useState<BuyerPerformance[]>([]);
   const [loading, setLoading] = useState(false);
-  const [customers, setCustomers] = useState<any[]>([]);
+  const customers = useCustomers<any>();
   const [filters, setFilters] = useState({
     customerId: "",
     dateFrom: "",
@@ -35,21 +36,8 @@ export default function BuyerPerformancePage() {
   });
 
   useEffect(() => {
-    fetchCustomers();
     fetchData();
   }, []);
-
-  const fetchCustomers = async () => {
-    try {
-      const res = await fetch("/api/masters/customers");
-      if (res.ok) {
-        const d = await res.json();
-        setCustomers(d.customers || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch customers:", error);
-    }
-  };
 
   const fetchData = async () => {
     setLoading(true);

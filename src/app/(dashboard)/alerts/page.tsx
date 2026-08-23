@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useApiQuery, useInvalidate } from "@/hooks/use-api-query";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -121,38 +122,28 @@ const SEVERITY_BADGE_VARIANT: Record<string, string> = {
 // ---------------------------------------------------------------------------
 
 export default function AlertsPage() {
-  const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [summary, setSummary] = useState<AlertSummary>({
-    total: 0, critical: 0, high: 0, medium: 0, low: 0, unread: 0,
-  });
-  const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState("all");
   const [filterSeverity, setFilterSeverity] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
 
-  const fetchAlerts = async () => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams();
-      if (filterType !== "all") params.set("type", filterType);
-      if (filterSeverity !== "all") params.set("severity", filterSeverity);
-      if (filterStatus !== "all") params.set("status", filterStatus);
+  // All three filters are in the key. The summary counts arrive with the rows
+  // in one response, so they are read off the same cache entry rather than
+  // held in their own state.
+  const alertParams = new URLSearchParams();
+  if (filterType !== "all") alertParams.set("type", filterType);
+  if (filterSeverity !== "all") alertParams.set("severity", filterSeverity);
+  if (filterStatus !== "all") alertParams.set("status", filterStatus);
 
-      const res = await fetch(`/api/alerts?${params.toString()}`);
-      if (!res.ok) throw new Error("Failed to fetch alerts");
-      const data = await res.json();
-      setAlerts(data.alerts || []);
-      setSummary(data.summary || { total: 0, critical: 0, high: 0, medium: 0, low: 0, unread: 0 });
-    } catch {
-      toast.error("Failed to load alerts");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchAlerts();
-  }, [filterType, filterSeverity, filterStatus]);
+  const { data, isLoading: loading } = useApiQuery<{
+    alerts: Alert[];
+    summary: AlertSummary;
+  }>(
+    ["alerts", filterType, filterSeverity, filterStatus],
+    `/api/alerts?${alertParams.toString()}`
+  );
+  const alerts = data?.alerts ?? [];
+  const summary = data?.summary ?? { total: 0, critical: 0, high: 0, medium: 0, low: 0, unread: 0 };
+  const invalidate = useInvalidate();
 
   const handleMarkRead = async (id: string) => {
     try {
@@ -162,7 +153,7 @@ export default function AlertsPage() {
         body: JSON.stringify({ status: "READ" }),
       });
       if (!res.ok) throw new Error();
-      setAlerts((prev) => prev.map((a) => (a.id === id ? { ...a, status: "READ" } : a)));
+      invalidate(["alerts"]);
       toast.success("Alert marked as read");
     } catch {
       toast.error("Failed to update alert");
@@ -177,7 +168,7 @@ export default function AlertsPage() {
         body: JSON.stringify({ status: "DISMISSED" }),
       });
       if (!res.ok) throw new Error();
-      setAlerts((prev) => prev.filter((a) => a.id !== id));
+      invalidate(["alerts"]);
       toast.success("Alert dismissed");
     } catch {
       toast.error("Failed to dismiss alert");
@@ -336,7 +327,7 @@ export default function AlertsPage() {
                 </SelectContent>
               </Select>
             </div>
-            <Button variant="outline" size="sm" onClick={fetchAlerts} className="ml-auto">
+            <Button variant="outline" size="sm" onClick={() => invalidate(["alerts"])} className="ml-auto">
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
             </Button>

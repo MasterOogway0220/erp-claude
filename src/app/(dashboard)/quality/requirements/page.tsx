@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import { useApiQuery, useInvalidate } from "@/hooks/use-api-query";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { DataTable, Column } from "@/components/shared/data-table";
@@ -55,28 +56,14 @@ const TEST_TYPES: Record<string, string> = {
 
 export default function QualityRequirementsPage() {
   const router = useRouter();
-  const [requirements, setRequirements] = useState<QualityRequirement[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading: loading } = useApiQuery<{ requirements: QualityRequirement[] }>(
+    ["quality-requirements"],
+    "/api/quality/requirements"
+  );
+  const requirements = data?.requirements ?? [];
+  const invalidate = useInvalidate();
   const [deleteTarget, setDeleteTarget] = useState<QualityRequirement | null>(null);
   const [deleting, setDeleting] = useState(false);
-
-  const fetchRequirements = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await fetch("/api/quality/requirements");
-      if (!res.ok) throw new Error("Failed to fetch");
-      const data = await res.json();
-      setRequirements(data.requirements || []);
-    } catch {
-      toast.error("Failed to fetch quality requirements");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchRequirements();
-  }, [fetchRequirements]);
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -91,7 +78,7 @@ export default function QualityRequirementsPage() {
       }
       toast.success("Quality requirement deleted");
       setDeleteTarget(null);
-      fetchRequirements();
+      invalidate(["quality-requirements"]);
     } catch (error: any) {
       toast.error(error.message);
     } finally {

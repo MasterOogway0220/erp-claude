@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useApiQuery } from "@/hooks/use-api-query";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -106,11 +107,15 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function ClientStatusReportPage() {
-  const [salesOrders, setSalesOrders] = useState<SalesOrder[]>([]);
+  // Same list the sales screen reads, under the same key.
+  const { data: soData, isLoading: loadingSOs } = useApiQuery<{ salesOrders: SalesOrder[] }>(
+    ["sales-orders"],
+    "/api/sales-orders"
+  );
+  const salesOrders = soData?.salesOrders ?? [];
   const [selectedSOId, setSelectedSOId] = useState("");
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(false);
-  const [loadingSOs, setLoadingSOs] = useState(true);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [downloadingExcel, setDownloadingExcel] = useState(false);
   const [showEmailDialog, setShowEmailDialog] = useState(false);
@@ -122,31 +127,12 @@ export default function ClientStatusReportPage() {
   const [soSearch, setSOSearch] = useState("");
 
   useEffect(() => {
-    fetchSalesOrders();
-  }, []);
-
-  useEffect(() => {
     if (selectedSOId) {
       fetchReport(selectedSOId);
     } else {
       setReportData(null);
     }
   }, [selectedSOId]);
-
-  const fetchSalesOrders = async () => {
-    try {
-      setLoadingSOs(true);
-      const res = await fetch("/api/sales-orders");
-      if (res.ok) {
-        const data = await res.json();
-        setSalesOrders(data.salesOrders || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch SOs:", error);
-    } finally {
-      setLoadingSOs(false);
-    }
-  };
 
   const fetchReport = async (soId: string) => {
     try {

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useApiQuery, useInvalidate } from "@/hooks/use-api-query";
 import { PageHeader } from "@/components/shared/page-header";
 import { DataTable, Column } from "@/components/shared/data-table";
 import { Button } from "@/components/ui/button";
@@ -25,33 +26,21 @@ const verificationStatusColors: Record<string, string> = {
 };
 
 export default function MTCListPage() {
-  const [mtcs, setMtcs] = useState<any[]>([]);
   const [mtcSearch, setMtcSearch] = useState("");
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchMTCs();
-  }, []);
-
-  const fetchMTCs = async (search?: string) => {
-    try {
-      const url = search
-        ? `/api/quality/mtc?search=${encodeURIComponent(search)}`
-        : "/api/quality/mtc";
-      const response = await fetch(url);
-      if (response.ok) {
-        const data = await response.json();
-        setMtcs(data.mtcDocuments || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch MTCs:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Applied on a button press, not per keystroke — so the key follows the
+  // applied search. Shares its cache entry with the quality dashboard tab.
+  const [appliedSearch, setAppliedSearch] = useState("");
+  const { data } = useApiQuery<{ mtcDocuments: any[] }>(
+    ["mtc-documents", appliedSearch],
+    appliedSearch
+      ? `/api/quality/mtc?search=${encodeURIComponent(appliedSearch)}`
+      : "/api/quality/mtc"
+  );
+  const mtcs = data?.mtcDocuments ?? [];
+  const invalidate = useInvalidate();
 
   const handleMtcSearch = () => {
-    fetchMTCs(mtcSearch);
+    setAppliedSearch(mtcSearch);
   };
 
   const handleMtcVerificationUpdate = async (mtcId: string, verificationStatus: string) => {
@@ -63,7 +52,7 @@ export default function MTCListPage() {
       });
       if (response.ok) {
         toast.success(`MTC verification status updated to ${verificationStatus}`);
-        fetchMTCs(mtcSearch || undefined);
+        invalidate(["mtc-documents"]);
       } else {
         const error = await response.json();
         toast.error(error.error || "Failed to update verification status");
@@ -180,7 +169,7 @@ export default function MTCListPage() {
             size="sm"
             onClick={() => {
               setMtcSearch("");
-              fetchMTCs();
+              setAppliedSearch("");
             }}
           >
             Clear
