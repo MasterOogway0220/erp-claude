@@ -12,6 +12,7 @@ Renders the `/masters/units/[id]/edit` screen. 185 lines.
 
 - `"use client"` — runs in the browser.
 - Calls: `/api/masters/units`, `/api/masters/units/${id}`.
+- Reads the whole unit master from the shared `["units-master"]` cache entry and picks the row by id, instead of fetching the list again. This screen is almost always opened from the Unit Master list, which has just loaded the same rows, so the edit form now renders with no request at all.
 
 ## Gotchas
 

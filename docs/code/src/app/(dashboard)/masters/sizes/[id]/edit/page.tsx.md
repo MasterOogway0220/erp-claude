@@ -12,6 +12,7 @@ Renders the `/masters/sizes/[id]/edit` screen. 272 lines.
 
 - `"use client"` — runs in the browser.
 - Calls: `/api/masters/sizes`, `/api/masters/sizes/${id}`.
+- Reads the size master from the shared `["sizes"]` cache entry and picks the row by id rather than re-fetching the list.
 
 ## Gotchas
 

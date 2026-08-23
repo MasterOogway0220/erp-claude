@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useVendors } from "@/hooks/use-masters";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,7 +67,8 @@ function CreateRFQContent() {
   const prIdFromQuery = searchParams.get("prId");
 
   const [prs, setPrs] = useState<PR[]>([]);
-  const [vendors, setVendors] = useState<Vendor[]>([]);
+  // Shared vendor master rather than a second copy fetched alongside the PRs.
+  const vendors = useVendors<Vendor>();
   const [selectedPrId, setSelectedPrId] = useState<string>(prIdFromQuery || "");
   const [selectedPr, setSelectedPr] = useState<PR | null>(null);
   const [selectedVendorIds, setSelectedVendorIds] = useState<string[]>([]);
@@ -97,19 +99,11 @@ function CreateRFQContent() {
 
   const fetchInitialData = async () => {
     try {
-      const [prResponse, vendorResponse] = await Promise.all([
-        fetch("/api/purchase/requisitions?status=APPROVED"),
-        fetch("/api/masters/vendors"),
-      ]);
+      const prResponse = await fetch("/api/purchase/requisitions?status=APPROVED");
 
       if (prResponse.ok) {
         const prData = await prResponse.json();
         setPrs(prData.purchaseRequisitions || []);
-      }
-
-      if (vendorResponse.ok) {
-        const vendorData = await vendorResponse.json();
-        setVendors(vendorData.vendors || []);
       }
     } catch (error) {
       toast.error("Failed to load data");

@@ -13,6 +13,7 @@ Renders the `/purchase/rfq/create` screen. 420 lines.
 - `"use client"` — runs in the browser.
 - Reads `useSearchParams`, so it **must sit inside a `<Suspense>` boundary** — Next.js 16 fails the build otherwise.
 - Calls: `/api/masters/vendors`, `/api/purchase/requisitions`, `/api/purchase/rfq`.
+- The vendor list comes from the shared `useVendors` hook. It used to be fetched in the same `Promise.all` as the approved PRs; only the PR fetch remains, since that one is genuinely per-screen.
 
 ## Gotchas
 

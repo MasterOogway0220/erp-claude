@@ -12,6 +12,7 @@ Renders the `/masters/employees/[id]/edit` screen. 345 lines.
 
 - `"use client"` — runs in the browser.
 - Calls: `/api/masters/departments`, `/api/masters/employees`, `/api/masters/employees/${id}`.
+- Reads the employee master through `useEmployeesQuery` — the same `["employees"]` entry the owner/approver pickers use — and picks the row by id rather than re-fetching the list.
 
 ## Gotchas
 

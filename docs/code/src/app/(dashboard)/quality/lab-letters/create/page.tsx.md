@@ -12,6 +12,7 @@ Renders the `/quality/lab-letters/create` screen. 504 lines.
 
 - `"use client"` — runs in the browser.
 - Calls: `/api/inventory/stock`, `/api/masters/inspection-agencies`, `/api/masters/testing`, `/api/quality/lab-letters`.
+- The testing master comes from the shared `["testing-masters"]` entry. Mandatory tests are still pre-ticked, but only on the list's **first** arrival — guarded by a ref, because a refetch would otherwise silently re-tick them and wipe the user's own selections.
 
 ## Gotchas
 

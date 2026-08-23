@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useCustomers } from "@/hooks/use-masters";
+import { useBuyersQuery, useCustomers } from "@/hooks/use-masters";
 import { useRouter, useParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -65,39 +65,45 @@ export default function EditBuyerPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // Was `?search=` — an empty search, which the route treats as no filter at
+  // all, so this is the same list the shared ["buyers"] entry already holds.
+  // Dropping the parameter lets the two share one copy.
+  const {
+    data: buyersData,
+    isLoading: buyersLoading,
+    isError,
+  } = useBuyersQuery<Buyer>();
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const buyersRes = await fetch("/api/masters/buyers?search=");
-        if (!buyersRes.ok) throw new Error("Failed to fetch buyers");
-        const buyersData = await buyersRes.json();
-        const found = (buyersData.buyers || []).find((b: Buyer) => b.id === id);
+    if (buyersLoading) return;
 
-        if (!found) {
-          toast.error("Buyer not found");
-          router.push("/masters/buyers");
-          return;
-        }
+    if (isError) {
+      toast.error("Failed to load buyer data");
+      setLoading(false);
+      return;
+    }
 
-        setBuyer(found);
-        setFormData({
-          customerId: found.customerId,
-          buyerName: found.buyerName,
-          designation: found.designation || "",
-          email: found.email || "",
-          mobile: found.mobile || "",
-          telephone: found.telephone || "",
-          isActive: found.isActive,
-        });
-      } catch {
-        toast.error("Failed to load buyer data");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
+    const found = (buyersData?.buyers || []).find((b: Buyer) => b.id === id);
+
+    if (!found) {
+      toast.error("Buyer not found");
+      router.push("/masters/buyers");
+      return;
+    }
+
+    setBuyer(found);
+    setFormData({
+      customerId: found.customerId,
+      buyerName: found.buyerName,
+      designation: found.designation || "",
+      email: found.email || "",
+      mobile: found.mobile || "",
+      telephone: found.telephone || "",
+      isActive: found.isActive,
+    });
+    setLoading(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [buyersData, buyersLoading, isError, id]);
 
   const update = (field: keyof BuyerFormData, value: string | boolean) =>
     setFormData((prev) => ({ ...prev, [field]: value }));

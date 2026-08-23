@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useApiQuery } from "@/hooks/use-api-query";
-import { useWarehouses } from "@/hooks/use-masters";
+import { useTaxRatesQuery, useWarehouses } from "@/hooks/use-masters";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -100,35 +100,35 @@ function CreateInvoicePage() {
 
   const [items, setItems] = useState<InvoiceItem[]>([]);
 
-  useEffect(() => {
-    fetchTaxRates();
-  }, []);
+  // Shared GST rate master, keyed ["tax-rates"] like the Tax Master screen.
+  const { data: taxData } = useTaxRatesQuery<TaxRateOption>();
 
-  const fetchTaxRates = async () => {
-    try {
-      const response = await fetch("/api/masters/tax");
-      if (response.ok) {
-        const data = await response.json();
-        const rates: TaxRateOption[] = (data.taxRates || []).filter(
-          (t: TaxRateOption) => t.isActive
-        );
-        setTaxRates(rates);
-        // Set default tax rate from the first active GST rate
-        const firstGst = rates.find(
-          (r) =>
-            r.taxType === "IGST" ||
-            r.taxType === "CGST" ||
-            r.taxType === "SGST" ||
-            Number(r.percentage) > 0
-        );
-        if (firstGst) {
-          setDefaultTaxRate(String(Number(firstGst.percentage)));
-        }
-      }
-    } catch (error) {
-      console.error("Failed to fetch tax rates:", error);
+  // The default rate is derived once. Re-deriving it after a refetch would
+  // overwrite a rate the user had already changed on the form.
+  const defaultRateApplied = useRef(false);
+
+  useEffect(() => {
+    const rates: TaxRateOption[] = (taxData?.taxRates || []).filter(
+      (t: TaxRateOption) => t.isActive
+    );
+    if (!rates.length) return;
+
+    setTaxRates(rates);
+
+    if (defaultRateApplied.current) return;
+    // Default to the first active GST rate.
+    const firstGst = rates.find(
+      (r) =>
+        r.taxType === "IGST" ||
+        r.taxType === "CGST" ||
+        r.taxType === "SGST" ||
+        Number(r.percentage) > 0
+    );
+    if (firstGst) {
+      defaultRateApplied.current = true;
+      setDefaultTaxRate(String(Number(firstGst.percentage)));
     }
-  };
+  }, [taxData]);
 
   useEffect(() => {
     if (formData.dispatchNoteId) {

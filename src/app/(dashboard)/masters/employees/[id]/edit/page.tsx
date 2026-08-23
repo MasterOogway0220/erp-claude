@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useDepartments } from "@/hooks/use-masters";
+import { useDepartments, useEmployeesQuery } from "@/hooks/use-masters";
 import { useRouter, useParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -74,39 +74,47 @@ export default function EditEmployeePage() {
   const [showPassword, setShowPassword] = useState(false);
   const departments = useDepartments<{ id: string; name: string }>();
 
+  // Read from the shared ["employees"] entry — the same one `useEmployees`
+  // serves to every owner/approver picker — instead of fetching the master
+  // again to pick one row out of it.
+  const {
+    data: employeesData,
+    isLoading: employeesLoading,
+    isError,
+  } = useEmployeesQuery<Employee>();
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await fetch("/api/masters/employees");
-        if (!res.ok) throw new Error("Failed to fetch employees");
-        const data = await res.json();
-        const found = (data.employees || []).find((e: Employee) => e.id === id);
+    if (employeesLoading) return;
 
-        if (!found) {
-          toast.error("Employee not found");
-          router.push("/masters/employees");
-          return;
-        }
+    if (isError) {
+      toast.error("Failed to load employee data");
+      setLoading(false);
+      return;
+    }
 
-        setEmployee(found);
-        setIsActive(found.isActive !== false);
-        setFormData({
-          name: found.name,
-          email: found.email || "",
-          password: "",
-          mobile: found.mobile || "",
-          department: found.department || "",
-          moduleAccess: Array.isArray(found.moduleAccess) ? found.moduleAccess : [],
-        });
-      } catch {
-        toast.error("Failed to load employee data");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
+    const found = (employeesData?.employees || []).find(
+      (e: Employee) => e.id === id
+    );
+
+    if (!found) {
+      toast.error("Employee not found");
+      router.push("/masters/employees");
+      return;
+    }
+
+    setEmployee(found);
+    setIsActive(found.isActive !== false);
+    setFormData({
+      name: found.name,
+      email: found.email || "",
+      password: "",
+      mobile: found.mobile || "",
+      department: found.department || "",
+      moduleAccess: Array.isArray(found.moduleAccess) ? found.moduleAccess : [],
+    });
+    setLoading(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [employeesData, employeesLoading, isError, id]);
 
   const update = (field: keyof EmployeeFormData, value: string) =>
     setFormData((prev) => ({ ...prev, [field]: value }));

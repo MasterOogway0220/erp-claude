@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { useCompaniesQuery } from "@/hooks/use-masters";
 import { PageHeader } from "@/components/shared/page-header";
 import { PageLoading } from "@/components/shared/page-loading";
 import { Button } from "@/components/ui/button";
@@ -99,55 +100,61 @@ export default function CompanyEditPage() {
   const [fetchingPincode, setFetchingPincode] = useState<"reg" | "wh" | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Read from the shared ["companies"] entry rather than fetching the list
+  // again to pick one row out of it.
+  const {
+    data: companiesData,
+    isLoading: companiesLoading,
+    isError,
+  } = useCompaniesQuery<any>();
+
   useEffect(() => {
-    const fetchCompany = async () => {
-      try {
-        const res = await fetch("/api/masters/company");
-        if (!res.ok) throw new Error("Failed to fetch companies");
-        const data = await res.json();
-        const companies: any[] = data.companies || [];
-        const company = companies.find((c: any) => c.id === id);
-        if (!company) {
-          toast.error("Company not found");
-          router.push("/masters/company");
-          return;
-        }
-        setFormData({
-          companyName: company.companyName || "",
-          companyType: company.companyType || "",
-          email: company.email || "",
-          telephoneNo: company.telephoneNo || "",
-          website: company.website || "",
-          companyLogoUrl: company.companyLogoUrl || "",
-          fyStartMonth: company.fyStartMonth ?? 4,
-          fyStartDate: toDateInput(company.fyStartDate),
-          fyEndDate: toDateInput(company.fyEndDate),
-          panNo: company.panNo || "",
-          tanNo: company.tanNo || "",
-          gstNo: company.gstNo || "",
-          cinNo: company.cinNo || "",
-          regAddressLine1: company.regAddressLine1 || "",
-          regAddressLine2: company.regAddressLine2 || "",
-          regCity: company.regCity || "",
-          regPincode: company.regPincode || "",
-          regState: company.regState || "",
-          regCountry: company.regCountry || "India",
-          whAddressLine1: company.whAddressLine1 || "",
-          whAddressLine2: company.whAddressLine2 || "",
-          whCity: company.whCity || "",
-          whPincode: company.whPincode || "",
-          whState: company.whState || "",
-          whCountry: company.whCountry || "India",
-        });
-      } catch {
-        toast.error("Failed to load company");
-        router.push("/masters/company");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchCompany();
-  }, [id, router]);
+    if (companiesLoading) return;
+
+    if (isError) {
+      toast.error("Failed to load company");
+      router.push("/masters/company");
+      setLoading(false);
+      return;
+    }
+
+    const companies: any[] = companiesData?.companies || [];
+    const company = companies.find((c: any) => c.id === id);
+    if (!company) {
+      toast.error("Company not found");
+      router.push("/masters/company");
+      return;
+    }
+    setFormData({
+      companyName: company.companyName || "",
+      companyType: company.companyType || "",
+      email: company.email || "",
+      telephoneNo: company.telephoneNo || "",
+      website: company.website || "",
+      companyLogoUrl: company.companyLogoUrl || "",
+      fyStartMonth: company.fyStartMonth ?? 4,
+      fyStartDate: toDateInput(company.fyStartDate),
+      fyEndDate: toDateInput(company.fyEndDate),
+      panNo: company.panNo || "",
+      tanNo: company.tanNo || "",
+      gstNo: company.gstNo || "",
+      cinNo: company.cinNo || "",
+      regAddressLine1: company.regAddressLine1 || "",
+      regAddressLine2: company.regAddressLine2 || "",
+      regCity: company.regCity || "",
+      regPincode: company.regPincode || "",
+      regState: company.regState || "",
+      regCountry: company.regCountry || "India",
+      whAddressLine1: company.whAddressLine1 || "",
+      whAddressLine2: company.whAddressLine2 || "",
+      whCity: company.whCity || "",
+      whPincode: company.whPincode || "",
+      whState: company.whState || "",
+      whCountry: company.whCountry || "India",
+    });
+    setLoading(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [companiesData, companiesLoading, isError, id, router]);
 
   const updateField = (field: keyof CompanyFormData, value: any) => {
     setFormData((prev) => (prev ? { ...prev, [field]: value } : prev));

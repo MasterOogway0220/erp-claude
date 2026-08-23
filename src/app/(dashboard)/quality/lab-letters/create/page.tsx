@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useApiQuery } from "@/hooks/use-api-query";
-import { useInspectionAgencies } from "@/hooks/use-masters";
+import { useInspectionAgencies, useTestingQuery } from "@/hooks/use-masters";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -86,26 +86,28 @@ export default function CreateLabLetterPage() {
     remarks: "",
   });
 
-  useEffect(() => {
-    fetchTests();
-  }, []);
+  // Shared testing master, keyed ["testing-masters"] like the Testing Master
+  // screen. The route sends the same array twice, as `tests` and
+  // `testingMasters`; both are read here because the original fetch did.
+  const { data: testingData } = useTestingQuery<TestingItem>();
 
-  const fetchTests = async () => {
-    try {
-      const res = await fetch("/api/masters/testing");
-      if (res.ok) {
-        const data = await res.json();
-        const items = data.tests || data.testingMasters || [];
-        setTests(items);
-        const mandatoryIds = items
-          .filter((t: TestingItem) => t.isMandatory)
-          .map((t: TestingItem) => t.id);
-        setSelectedTestIds(mandatoryIds);
-      }
-    } catch {
-      console.error("Failed to fetch testing masters");
-    }
-  };
+  // The mandatory tests are pre-ticked once, on first arrival of the list.
+  // Without this guard a refetch ten minutes in would silently re-tick them
+  // and wipe whatever the user had chosen since.
+  const mandatoryApplied = useRef(false);
+
+  useEffect(() => {
+    const items = testingData?.tests || testingData?.testingMasters || [];
+    if (!items.length) return;
+
+    setTests(items);
+
+    if (mandatoryApplied.current) return;
+    mandatoryApplied.current = true;
+    setSelectedTestIds(
+      items.filter((t) => t.isMandatory).map((t) => t.id)
+    );
+  }, [testingData]);
 
   const handleStockSelect = (stockId: string) => {
     setSelectedStockId(stockId);

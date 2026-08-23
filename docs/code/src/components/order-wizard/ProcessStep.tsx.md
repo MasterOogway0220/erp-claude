@@ -7,6 +7,11 @@ the domain background — this doc covers only what is specific to this step.
 
 ## Notes
 
+The TPI agency dropdown reads the shared `useInspectionAgencies` list. It used
+to be fetched in the same `Promise.all` as the order's QAP; only the QAP fetch
+remains there, since that one is genuinely per-order while the agency master is
+the same list every inspection screen shows.
+
 The largest file in the codebase at 1,677 lines. Every field maps to a column on `OrderProcessingItem`; the picklists come from `src/lib/constants/order-processing.ts`. What is ticked here decides which inspections, tests and certificates the order needs, and therefore what the client eventually receives in the dossier.
 
 ## What was added to close the order-processing gaps

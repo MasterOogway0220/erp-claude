@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { useReferenceQuery } from "@/hooks/use-api-query";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,31 +27,41 @@ export default function EditLengthPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // Read from the shared ["lengths"] entry rather than fetching the master
+  // again — the list this screen is opened from has just loaded it.
+  const {
+    data: lengthsData,
+    isLoading: lengthsLoading,
+    isError,
+  } = useReferenceQuery<{ lengths: LengthEntry[] }>(
+    ["lengths"],
+    "/api/masters/lengths"
+  );
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await fetch("/api/masters/lengths");
-        if (!res.ok) throw new Error("Failed to fetch lengths");
-        const data = await res.json();
-        const found = (data.lengths || []).find((l: LengthEntry) => l.id === id);
+    if (lengthsLoading) return;
 
-        if (!found) {
-          toast.error("Length not found");
-          router.push("/masters/products");
-          return;
-        }
+    if (isError) {
+      toast.error("Failed to load length data");
+      setLoading(false);
+      return;
+    }
 
-        setLength(found);
-        setLabel(found.label);
-      } catch {
-        toast.error("Failed to load length data");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
+    const found = (lengthsData?.lengths || []).find(
+      (l: LengthEntry) => l.id === id
+    );
+
+    if (!found) {
+      toast.error("Length not found");
+      router.push("/masters/products");
+      return;
+    }
+
+    setLength(found);
+    setLabel(found.label);
+    setLoading(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [lengthsData, lengthsLoading, isError, id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

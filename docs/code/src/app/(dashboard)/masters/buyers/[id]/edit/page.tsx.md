@@ -12,6 +12,7 @@ Renders the `/masters/buyers/[id]/edit` screen. 283 lines.
 
 - `"use client"` — runs in the browser.
 - Calls: `/api/masters/buyers`, `/api/masters/buyers/${id}`, `/api/masters/customers`.
+- Reads the buyer master through `useBuyersQuery`. It previously fetched `?search=` — an empty search, which the route treats as no filter at all — so it was pulling the identical list under a URL of its own. Dropping the parameter lets it share the one `["buyers"]` entry.
 
 ## Gotchas
 

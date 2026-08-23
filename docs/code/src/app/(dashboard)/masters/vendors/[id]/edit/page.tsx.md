@@ -12,6 +12,7 @@ Renders the `/masters/vendors/[id]/edit` screen. 532 lines.
 
 - `"use client"` — runs in the browser.
 - Calls: `/api/masters/vendors`, `/api/masters/vendors/${id}`.
+- Reads the vendor master through `useVendorsQuery`, sharing the `["vendors"]` entry. Same story as the buyer screen: the old `?search=` was an empty search and produced a second copy of the same list.
 
 ## Gotchas
 

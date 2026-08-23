@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { useReferenceQuery } from "@/hooks/use-api-query";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,37 +64,44 @@ export default function EditSizePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // Read from the shared ["sizes"] entry rather than re-fetching the master.
+  const {
+    data: sizesData,
+    isLoading: sizesLoading,
+    isError,
+  } = useReferenceQuery<{ sizes: SizeEntry[] }>(
+    ["sizes"],
+    "/api/masters/sizes"
+  );
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await fetch("/api/masters/sizes");
-        if (!res.ok) throw new Error("Failed to fetch sizes");
-        const data = await res.json();
-        const found = (data.sizes || []).find((s: SizeEntry) => s.id === id);
+    if (sizesLoading) return;
 
-        if (!found) {
-          toast.error("Size not found");
-          router.push("/masters/products");
-          return;
-        }
+    if (isError) {
+      toast.error("Failed to load size data");
+      setLoading(false);
+      return;
+    }
 
-        setSize(found);
-        setFormData({
-          sizeLabel: found.sizeLabel,
-          pipeType: found.pipeType,
-          od: found.od.toString(),
-          wt: found.wt.toString(),
-          weight: found.weight.toString(),
-        });
-      } catch {
-        toast.error("Failed to load size data");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
+    const found = (sizesData?.sizes || []).find((s: SizeEntry) => s.id === id);
+
+    if (!found) {
+      toast.error("Size not found");
+      router.push("/masters/products");
+      return;
+    }
+
+    setSize(found);
+    setFormData({
+      sizeLabel: found.sizeLabel,
+      pipeType: found.pipeType,
+      od: found.od.toString(),
+      wt: found.wt.toString(),
+      weight: found.weight.toString(),
+    });
+    setLoading(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [sizesData, sizesLoading, isError, id]);
 
   const handleOdChange = (od: string) => {
     const calculated = calcWeight(od, formData.wt);

@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useCustomers } from "@/hooks/use-masters";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,7 +57,11 @@ export default function CreateTenderPage() {
   const [estimatedValue, setEstimatedValue] = useState("");
   const [currency, setCurrency] = useState("INR");
   const [customerId, setCustomerId] = useState("");
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  // Shared customer master. This screen used to fetch it and then test
+  // `Array.isArray(data)` — but the route answers { customers: [...] }, never a
+  // bare array, so the check was always false and the dropdown was permanently
+  // empty. The hook unwraps the right key.
+  const customers = useCustomers<Customer>();
 
   // EMD
   const [emdRequired, setEmdRequired] = useState(false);
@@ -77,12 +82,6 @@ export default function CreateTenderPage() {
   const [previewNumber, setPreviewNumber] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/masters/customers")
-      .then((r) => r.json())
-      .then((data) => {
-        if (Array.isArray(data)) setCustomers(data);
-      })
-      .catch(() => {});
     fetch("/api/quotations/preview-number")
       .then((r) => r.json())
       .then((data) => setPreviewNumber(data?.previewNumber || ""))

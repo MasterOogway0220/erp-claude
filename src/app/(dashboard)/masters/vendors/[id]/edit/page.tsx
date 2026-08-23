@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { useVendorsQuery } from "@/hooks/use-masters";
 import { PageHeader } from "@/components/shared/page-header";
 import { PageLoading } from "@/components/shared/page-loading";
 import { Button } from "@/components/ui/button";
@@ -90,55 +91,62 @@ export default function VendorEditPage() {
   const [vendorName, setVendorName] = useState("");
   const [formData, setFormData] = useState<VendorFormData>(emptyForm);
 
+  // Was `?search=` — an empty search, which the route treats as no filter, so
+  // this is the same list the shared ["vendors"] entry already holds.
+  const {
+    data: vendorsData,
+    isLoading: vendorsLoading,
+    isError,
+  } = useVendorsQuery<any>();
+
   useEffect(() => {
-    const fetchVendor = async () => {
-      try {
-        const res = await fetch(`/api/masters/vendors?search=`);
-        if (!res.ok) throw new Error("Failed to fetch vendors");
-        const data = await res.json();
-        const vendor = (data.vendors as any[]).find((v: any) => v.id === id);
+    if (vendorsLoading) return;
 
-        if (!vendor) {
-          toast.error("Vendor not found");
-          router.push("/masters/vendors");
-          return;
-        }
+    if (isError) {
+      toast.error("Failed to load vendor");
+      router.push("/masters/vendors");
+      setLoading(false);
+      return;
+    }
 
-        setVendorName(vendor.name ?? "");
-        setFormData({
-          name: vendor.name ?? "",
-          contactPerson: vendor.contactPerson ?? "",
-          email: vendor.email ?? "",
-          phone: vendor.phone ?? "",
-          addressLine1: vendor.addressLine1 ?? "",
-          addressLine2: vendor.addressLine2 ?? "",
-          city: vendor.city ?? "",
-          pincode: vendor.pincode ?? "",
-          state: vendor.state ?? "",
-          country: vendor.country ?? "India",
-          gstNo: vendor.gstNo ?? "",
-          gstType: vendor.gstType ?? "",
-          panNo: vendor.pan ?? "",
-          productsSupplied: vendor.productsSupplied ?? "",
-          avgLeadTimeDays: vendor.avgLeadTimeDays?.toString() ?? "",
-          vendorRating: vendor.vendorRating?.toString() ?? "",
-          bankName: vendor.bankName ?? "",
-          bankBranchName: vendor.bankBranchName ?? "",
-          bankAccountNo: vendor.bankAccountNo ?? "",
-          bankAccountType: vendor.bankAccountType ?? "",
-          bankIfsc: vendor.bankIfsc ?? "",
-          tanNo: vendor.tanNo ?? "",
-        });
-      } catch {
-        toast.error("Failed to load vendor");
-        router.push("/masters/vendors");
-      } finally {
-        setLoading(false);
-      }
-    };
+    const vendor = ((vendorsData?.vendors as any[]) || []).find(
+      (v: any) => v.id === id
+    );
 
-    fetchVendor();
-  }, [id, router]);
+    if (!vendor) {
+      toast.error("Vendor not found");
+      router.push("/masters/vendors");
+      return;
+    }
+
+    setVendorName(vendor.name ?? "");
+    setFormData({
+      name: vendor.name ?? "",
+      contactPerson: vendor.contactPerson ?? "",
+      email: vendor.email ?? "",
+      phone: vendor.phone ?? "",
+      addressLine1: vendor.addressLine1 ?? "",
+      addressLine2: vendor.addressLine2 ?? "",
+      city: vendor.city ?? "",
+      pincode: vendor.pincode ?? "",
+      state: vendor.state ?? "",
+      country: vendor.country ?? "India",
+      gstNo: vendor.gstNo ?? "",
+      gstType: vendor.gstType ?? "",
+      panNo: vendor.pan ?? "",
+      productsSupplied: vendor.productsSupplied ?? "",
+      avgLeadTimeDays: vendor.avgLeadTimeDays?.toString() ?? "",
+      vendorRating: vendor.vendorRating?.toString() ?? "",
+      bankName: vendor.bankName ?? "",
+      bankBranchName: vendor.bankBranchName ?? "",
+      bankAccountNo: vendor.bankAccountNo ?? "",
+      bankAccountType: vendor.bankAccountType ?? "",
+      bankIfsc: vendor.bankIfsc ?? "",
+      tanNo: vendor.tanNo ?? "",
+    });
+    setLoading(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vendorsData, vendorsLoading, isError, id, router]);
 
   const update = (field: keyof VendorFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));

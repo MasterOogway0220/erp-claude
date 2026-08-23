@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useInspectionAgencies } from "@/hooks/use-masters";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -228,7 +229,9 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
   const [allottingItem, setAllottingItem] = useState(false);
   const [allotmentConfirmed, setAllotmentConfirmed] = useState(false);
   const [generatingLetter, setGeneratingLetter] = useState(false);
-  const [agencies, setAgencies] = useState<{ id: string; name: string }[]>([]);
+  // Shared TPI agency master — the same cached list every inspection screen
+  // reads, rather than a copy fetched alongside the QAP.
+  const agencies = useInspectionAgencies<{ id: string; name: string }>();
   // Items this configuration will also be written to when saved. Empty = just
   // the item on screen.
   const [applyTargets, setApplyTargets] = useState<string[]>([]);
@@ -295,11 +298,7 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
       });
       setItems(data.items);
       signalCompletion(data.items);
-      const [agRes, qapRes] = await Promise.all([
-        fetch("/api/masters/inspection-agencies"),
-        fetch(`/api/sales-orders/${id}/qap`),
-      ]);
-      if (agRes.ok) setAgencies((await agRes.json()).agencies ?? []);
+      const qapRes = await fetch(`/api/sales-orders/${id}/qap`);
       if (qapRes.ok) {
         const q = await qapRes.json();
         orderInspectionTypeRef.current = q.orderInspectionType ?? "";

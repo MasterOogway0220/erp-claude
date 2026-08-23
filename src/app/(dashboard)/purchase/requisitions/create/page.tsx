@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useApiQuery } from "@/hooks/use-api-query";
-import { useVendors } from "@/hooks/use-masters";
+import { useDepartments, useVendors } from "@/hooks/use-masters";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -77,7 +77,8 @@ function CreatePRPage() {
     remarks: "",
   });
 
-  const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
+  // Shared department master — the same cached list every other picker reads.
+  const departments = useDepartments<{ id: string; name: string }>();
 
   const [items, setItems] = useState<PRItem[]>([
     {
@@ -90,21 +91,6 @@ function CreatePRPage() {
       remarks: "",
     },
   ]);
-
-  useEffect(() => {
-    fetchDepartments();
-  }, []);
-
-  const fetchDepartments = async () => {
-    try {
-      const res = await fetch("/api/masters/departments");
-      if (!res.ok) return;
-      const data = await res.json();
-      setDepartments(data.departments || data || []);
-    } catch {
-      // Department is optional on a PR — a failed lookup must not block it.
-    }
-  };
 
   const addItem = () => {
     setItems([

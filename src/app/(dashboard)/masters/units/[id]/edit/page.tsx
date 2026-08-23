@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { useReferenceQuery } from "@/hooks/use-api-query";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,35 +39,46 @@ export default function EditUnitPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // The whole unit master, read from the shared cache rather than fetched
+  // again: this screen is almost always reached from the Unit Master list,
+  // which has just loaded the same rows under this key. Keyed
+  // ["units-master"] to match that screen — a second key would mean a second
+  // copy of one list.
+  const {
+    data: unitsData,
+    isLoading: unitsLoading,
+    isError,
+  } = useReferenceQuery<{ units: Unit[] }>(
+    ["units-master"],
+    "/api/masters/units"
+  );
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await fetch("/api/masters/units");
-        if (!res.ok) throw new Error("Failed to fetch units");
-        const data = await res.json();
-        const found = (data.units || []).find((u: Unit) => u.id === id);
+    if (unitsLoading) return;
 
-        if (!found) {
-          toast.error("Unit not found");
-          router.push("/masters/products");
-          return;
-        }
+    if (isError) {
+      toast.error("Failed to load unit data");
+      setLoading(false);
+      return;
+    }
 
-        setUnit(found);
-        setFormData({
-          code: found.code,
-          name: found.name,
-          isActive: found.isActive,
-        });
-      } catch {
-        toast.error("Failed to load unit data");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
+    const found = (unitsData?.units || []).find((u: Unit) => u.id === id);
+
+    if (!found) {
+      toast.error("Unit not found");
+      router.push("/masters/products");
+      return;
+    }
+
+    setUnit(found);
+    setFormData({
+      code: found.code,
+      name: found.name,
+      isActive: found.isActive,
+    });
+    setLoading(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [unitsData, unitsLoading, isError, id]);
 
   const update = (field: keyof UnitFormData, value: string | boolean) =>
     setFormData((prev) => ({ ...prev, [field]: value }));

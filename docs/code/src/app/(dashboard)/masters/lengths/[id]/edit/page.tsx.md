@@ -12,6 +12,7 @@ Renders the `/masters/lengths/[id]/edit` screen. 127 lines.
 
 - `"use client"` — runs in the browser.
 - Calls: `/api/masters/lengths`, `/api/masters/lengths/${id}`.
+- Reads the length master from the shared `["lengths"]` cache entry and picks the row by id rather than re-fetching the list.
 
 ## Gotchas
 

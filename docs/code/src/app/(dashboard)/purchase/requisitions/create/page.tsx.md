@@ -13,6 +13,7 @@ Renders the `/purchase/requisitions/create` screen. 443 lines.
 - `"use client"` — runs in the browser.
 - Reads `useSearchParams`, so it **must sit inside a `<Suspense>` boundary** — Next.js 16 fails the build otherwise.
 - Calls: `/api/masters/departments`, `/api/masters/vendors`, `/api/purchase/requisitions`, `/api/sales-orders`.
+- The department dropdown reads the shared `useDepartments` list rather than fetching the master on mount. Department stays optional on a PR, so an empty list still cannot block one.
 
 ## Gotchas
 

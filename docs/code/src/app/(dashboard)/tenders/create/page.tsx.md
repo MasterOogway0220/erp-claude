@@ -12,6 +12,7 @@ Renders the `/tenders/create` screen. 535 lines.
 
 - `"use client"` — runs in the browser.
 - Calls: `/api/masters/customers`, `/api/quotations/preview-number`, `/api/tenders`.
+- The customer dropdown reads the shared `useCustomers` hook. **This fixed a live bug:** the screen used to fetch `/api/masters/customers` and then test `Array.isArray(data)`, but that route answers `{ customers: [...] }` and never a bare array — so the check was always false, `setCustomers` was never called, and the dropdown was permanently empty with nothing reporting an error.
 
 ## Gotchas
 

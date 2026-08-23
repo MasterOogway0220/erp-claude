@@ -12,6 +12,7 @@ Renders the `/masters/company/[id]/edit` screen. 488 lines.
 
 - `"use client"` — runs in the browser.
 - Calls: `/api/gst/search`, `/api/masters/company`, `/api/masters/company/${id}`, `/api/upload`, `https://api.postalpincode.in/pincode/${value}`.
+- Reads the company list through `useCompaniesQuery` (`["companies"]`) and picks the row by id rather than re-fetching it.
 
 ## Gotchas
 
