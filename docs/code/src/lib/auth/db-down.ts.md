@@ -19,10 +19,25 @@ checking accounts while the actual fault was a network one.
 
 The underlying fault is that **Hostinger drops this app's connections to
 `srv1128:3306`** when the Remote MySQL allowlist stops covering the
-deployment's egress IPs. That has already forced one region move — Vercel
-functions were relocated `bom1` → `sin1` in commit `5764432` after Hostinger
-banned the `bom1` egress ranges on port 3306, and `vercel.json` pins
-`"regions": ["sin1"]` to hold that.
+deployment's egress IPs. That has already forced the region to move twice:
+
+- `bom1` → `sin1` in commit `5764432`, after Hostinger banned the `bom1`
+  egress ranges on port 3306. Every login died on pool timeout and reported
+  "Invalid email or password" — the failure this file exists to describe.
+- `sin1` → `bom1` again once the ban proved to have lifted. The database is
+  `in-mum-web1128` (Mumbai), so `bom1` is same-city: a preview deployment
+  pinned there measured **80 ms** TCP against production `sin1`'s **151 ms**.
+
+**`bom1` is therefore the faster region and the one with a history of being
+banned.** Both facts are live. Before assuming a region move is a free win,
+check `?deep=1` from a preview deployment pinned to the target region — that
+answers it without touching production, which is how the second move was
+decided. Note that `DATABASE_URL` is Production-scoped, so such a preview
+needs the value supplied to that one deployment.
+
+If logins start failing again, `"regions"` in `vercel.json` is the first thing
+to look at, and reverting to `sin1` is the fast mitigation while the real fix
+is applied in hPanel.
 
 **The app cannot fix the outage.** Allowing the connection is a change in
 hPanel → Remote MySQL. What the app can do is stop misreporting which of the
