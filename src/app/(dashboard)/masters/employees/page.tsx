@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import { useReferenceQuery, useInvalidate } from "@/hooks/use-api-query";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -36,30 +37,19 @@ interface Employee {
 
 export default function EmployeesPage() {
   const router = useRouter();
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading: loading } = useReferenceQuery<{ employees: Employee[] }>(
+    ["employees"],
+    "/api/masters/employees"
+  );
+  const employees = data?.employees ?? [];
+  const invalidate = useInvalidate();
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const fetchEmployees = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await fetch("/api/masters/employees");
-      if (!res.ok) throw new Error("Failed to fetch employees");
-      const data = await res.json();
-      setEmployees(data.employees || []);
-    } catch {
-      toast.error("Failed to fetch employees");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchEmployees();
-  }, [fetchEmployees]);
-
+  // This flipped the row locally and rolled back on failure. Refetching from
+  // the cache instead removes the rollback branch entirely: the list can only
+  // ever show what the server actually stored, which matters here because the
+  // flag decides whether someone can log in.
   const handleToggleActive = async (id: string, next: boolean) => {
-    setEmployees((prev) => prev.map((e) => (e.id === id ? { ...e, isActive: next } : e)));
     try {
       const res = await fetch(`/api/masters/employees/${id}`, {
         method: "PATCH",
@@ -70,9 +60,9 @@ export default function EmployeesPage() {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || "Failed to update status");
       }
+      invalidate(["employees"]);
       toast.success(next ? "Employee activated — login enabled" : "Employee deactivated — login blocked");
     } catch (error: any) {
-      setEmployees((prev) => prev.map((e) => (e.id === id ? { ...e, isActive: !next } : e)));
       toast.error(error.message || "Failed to update status");
     }
   };
@@ -86,7 +76,7 @@ export default function EmployeesPage() {
         throw new Error(err.error || "Failed to delete");
       }
       toast.success("Employee deleted");
-      fetchEmployees();
+      invalidate(["employees"]);
     } catch (error: any) {
       toast.error(error.message || "Failed to delete employee");
     } finally {

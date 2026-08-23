@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAccess } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
-import { renderHtmlToPdf } from "@/lib/pdf/render-pdf";
-import { wrapHtmlForPrint } from "@/lib/pdf/print-wrapper";
-import { generatePurchaseOrderHtml } from "@/lib/pdf/purchase-order-template";
+import { renderToBuffer } from "@react-pdf/renderer";
+import { PurchaseOrderDocument } from "@/lib/pdf/purchase-order-pdf";
 
 const DEFAULT_COMPANY = {
   companyName: "NPS Piping Solutions",
@@ -57,25 +56,19 @@ export async function GET(
     const company = await prisma.companyMaster.findFirst();
     const companyInfo = company || DEFAULT_COMPANY;
 
-    const html = generatePurchaseOrderHtml(
-      {
-        ...purchaseOrder,
-        totalAmount: Number(purchaseOrder.totalAmount),
-        approvedBy: approvedByUser,
-        items: purchaseOrder.items,
-      } as any,
-      companyInfo as any
+    const pdfBuffer = await renderToBuffer(
+      <PurchaseOrderDocument
+        po={
+          {
+            ...purchaseOrder,
+            totalAmount: Number(purchaseOrder.totalAmount),
+            approvedBy: approvedByUser,
+            items: purchaseOrder.items,
+          } as never
+        }
+        company={companyInfo as never}
+      />
     );
-
-    const { searchParams } = new URL(request.url);
-    const format = searchParams.get("format");
-    if (format === "html") {
-      return new NextResponse(wrapHtmlForPrint(html, true), {
-        headers: { "Content-Type": "text/html" },
-      });
-    }
-
-    const pdfBuffer = await renderHtmlToPdf(html, true);
     const filename = `${purchaseOrder.poNo.replace(/\//g, "-")}.pdf`;
 
     return new NextResponse(new Uint8Array(pdfBuffer), {

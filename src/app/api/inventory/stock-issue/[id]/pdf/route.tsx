@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAccess } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
-import { renderHtmlToPdf } from "@/lib/pdf/render-pdf";
+import { renderToBuffer } from "@react-pdf/renderer";
 import { wrapHtmlForPrint } from "@/lib/pdf/print-wrapper";
 import { generateIssueSlipHtml } from "@/lib/pdf/issue-slip-template";
+import { IssueSlipDocument } from "@/lib/pdf/issue-slip-pdf";
 
 const DEFAULT_COMPANY = {
   companyName: "NPS Piping Solutions",
@@ -57,7 +58,9 @@ export async function GET(
       });
     }
 
-    const pdfBuffer = await renderHtmlToPdf(html, false);
+    const pdfBuffer = await renderToBuffer(
+      <IssueSlipDocument data={stockIssue as never} company={companyInfo as never} />
+    );
     const filename = `Issue-Slip-${stockIssue.issueNo.replace(/\//g, "-")}.pdf`;
 
     return new NextResponse(new Uint8Array(pdfBuffer), {

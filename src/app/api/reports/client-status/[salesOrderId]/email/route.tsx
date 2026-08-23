@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkAccess } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
-import { renderHtmlToPdf } from "@/lib/pdf/render-pdf";
-import { generateClientStatusReportHtml } from "@/lib/pdf/client-status-report-template";
+import { renderToBuffer } from "@react-pdf/renderer";
+import { ClientStatusReportDocument } from "@/lib/pdf/client-status-report-pdf";
 import nodemailer from "nodemailer";
 import { mailFrom, mailer } from "@/lib/mailer";
 
@@ -65,8 +65,9 @@ export async function POST(
     // Generate PDF attachment
     let pdfBuffer: Buffer;
     try {
-      const html = generateClientStatusReportHtml(reportData, companyInfo as any);
-      pdfBuffer = await renderHtmlToPdf(html, true);
+      pdfBuffer = await renderToBuffer(
+        <ClientStatusReportDocument report={reportData} company={companyInfo as never} />
+      );
     } catch (pdfError) {
       console.error("Error generating PDF for email:", pdfError);
       return NextResponse.json(

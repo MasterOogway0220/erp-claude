@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkAccess } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
-import { renderHtmlToPdf } from "@/lib/pdf/render-pdf";
-import { generateInvoiceHtml } from "@/lib/pdf/invoice-template";
+import { renderToBuffer } from "@react-pdf/renderer";
+import { InvoiceDocument } from "@/lib/pdf/invoice-pdf";
 import nodemailer from "nodemailer";
 import { mailFrom, mailer } from "@/lib/mailer";
 
@@ -101,8 +101,12 @@ export async function POST(
 
     let pdfBuffer: Buffer;
     try {
-      const html = generateInvoiceHtml(invoiceData, companyInfo as any);
-      pdfBuffer = await renderHtmlToPdf(html, false);
+      pdfBuffer = await renderToBuffer(
+        <InvoiceDocument
+          invoice={invoiceData as never}
+          company={companyInfo as never}
+        />
+      );
     } catch (pdfError) {
       console.error("Error generating PDF for email attachment:", pdfError);
       return NextResponse.json(

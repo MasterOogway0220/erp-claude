@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import { useReferenceQuery, useInvalidate } from "@/hooks/use-api-query";
 import { PageHeader } from "@/components/shared/page-header";
 import { DataTable, Column } from "@/components/shared/data-table";
 import { Button } from "@/components/ui/button";
@@ -64,30 +65,18 @@ const emptyForm: TaxFormData = {
 const TAX_TYPES = ["CGST", "SGST", "IGST", "ZERO_RATED"];
 
 export default function TaxMasterPage() {
-  const [taxRates, setTaxRates] = useState<TaxRate[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Master data: cached and shared with every other screen reading the
+  // same list, rather than refetched on each visit.
+  const { data, isLoading: loading } = useReferenceQuery<{ taxRates: TaxRate[] }>(
+    ["tax-rates"],
+    "/api/masters/tax"
+  );
+  const taxRates = data?.taxRates ?? [];
+  const invalidate = useInvalidate();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<TaxRate | null>(null);
   const [formData, setFormData] = useState<TaxFormData>(emptyForm);
   const [saving, setSaving] = useState(false);
-
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await fetch("/api/masters/tax");
-      if (!res.ok) throw new Error("Failed to fetch tax rates");
-      const data = await res.json();
-      setTaxRates(data.taxRates || []);
-    } catch {
-      toast.error("Failed to load tax rates");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
 
   const handleOpenCreate = () => {
     setEditingItem(null);
@@ -151,7 +140,7 @@ export default function TaxMasterPage() {
           : "Tax rate created successfully"
       );
       handleCloseDialog();
-      fetchData();
+      invalidate(["tax-rates"]);
     } catch (err: any) {
       toast.error(err.message || "Failed to save tax rate");
     } finally {

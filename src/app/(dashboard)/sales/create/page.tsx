@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense, useCallback } from "react";
+import { useCustomers } from "@/hooks/use-masters";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -66,7 +67,7 @@ function CreateSalesOrderPage() {
   const searchParams = useSearchParams();
   const preselectedQuotationId = searchParams.get("quotationId");
   const [loading, setLoading] = useState(false);
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const customers = useCustomers<Customer>();
   const [quotations, setQuotations] = useState<Quotation[]>([]);
 
   const [formData, setFormData] = useState({
@@ -84,21 +85,8 @@ function CreateSalesOrderPage() {
   const [items, setItems] = useState<SOItem[]>([]);
 
   useEffect(() => {
-    fetchCustomers();
     fetchQuotations();
   }, []);
-
-  const fetchCustomers = async () => {
-    try {
-      const response = await fetch("/api/masters/customers");
-      if (response.ok) {
-        const data = await response.json();
-        setCustomers(data.customers || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch customers:", error);
-    }
-  };
 
   const fetchQuotations = async () => {
     try {

@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAccess } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
-import { renderHtmlToPdf } from "@/lib/pdf/render-pdf";
-import { wrapHtmlForPrint } from "@/lib/pdf/print-wrapper";
+import { renderToBuffer } from "@react-pdf/renderer";
 import {
-  generateInspectionOfferHtml,
-  generateLengthTallyHtml,
-  generateColourCodeHtml,
-  generateCriteriaChecklistHtml,
-} from "@/lib/pdf/inspection-offer-template";
+  InspectionOfferDocument,
+  LengthTallyDocument,
+  ColourCodeDocument,
+  CriteriaChecklistDocument,
+} from "@/lib/pdf/inspection-offer-pdf";
 
 const DEFAULT_COMPANY = {
   companyName: "NPS Piping Solutions",
@@ -32,7 +31,6 @@ export async function GET(
 
     const { searchParams } = new URL(request.url);
     const docType = searchParams.get("type") || "offer"; // offer | tally | colour | criteria
-    const format = searchParams.get("format"); // html for preview
 
     const offer = await prisma.inspectionOffer.findUnique({
       where: { id },
@@ -90,18 +88,22 @@ export async function GET(
       })),
     };
 
-    let html: string;
-    let landscape = false;
+    // Each document decides its own page size internally, so the route only
+    // has to pick which one to render and what to call the file.
+    let doc: React.ReactElement;
     let filenamePrefix: string;
 
     switch (docType) {
       case "tally":
-        html = generateLengthTallyHtml(offerData, companyInfo as any);
-        landscape = true;
+        doc = (
+          <LengthTallyDocument data={offerData} company={companyInfo as never} />
+        );
         filenamePrefix = "Length-Tally";
         break;
       case "colour":
-        html = generateColourCodeHtml(offerData, companyInfo as any);
+        doc = (
+          <ColourCodeDocument data={offerData} company={companyInfo as never} />
+        );
         filenamePrefix = "Colour-Code-Compliance";
         break;
       case "criteria": {
@@ -132,24 +134,27 @@ export async function GET(
           })),
         };
 
-        html = generateCriteriaChecklistHtml(criteriaData, companyInfo as any);
-        landscape = true;
+        doc = (
+          <CriteriaChecklistDocument
+            data={criteriaData}
+            company={companyInfo as never}
+          />
+        );
         filenamePrefix = "Inspection-Criteria";
         break;
       }
       default:
-        html = generateInspectionOfferHtml(offerData, companyInfo as any);
+        doc = (
+          <InspectionOfferDocument
+            data={offerData}
+            company={companyInfo as never}
+          />
+        );
         filenamePrefix = "Inspection-Offer";
         break;
     }
 
-    if (format === "html") {
-      return new NextResponse(wrapHtmlForPrint(html, landscape), {
-        headers: { "Content-Type": "text/html" },
-      });
-    }
-
-    const pdfBuffer = await renderHtmlToPdf(html, landscape);
+    const pdfBuffer = await renderToBuffer(doc as never);
     const filename = `${filenamePrefix}-${offer.offerNo.replace(/\//g, "-")}`;
 
     return new NextResponse(new Uint8Array(pdfBuffer), {
@@ -159,8 +164,10 @@ export async function GET(
         "Cache-Control": "no-store",
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error generating inspection document PDF:", error);
-    return NextResponse.json({ error: error?.message || "Failed to generate PDF" }, { status: 500 });
+    const message =
+      error instanceof Error ? error.message : "Failed to generate PDF";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

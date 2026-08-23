@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useReferenceQuery, useInvalidate } from "@/hooks/use-api-query";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { DataTable, Column } from "@/components/shared/data-table";
@@ -40,8 +41,12 @@ import { toast } from "sonner";
 
 export default function WarehousesPage() {
   const router = useRouter();
-  const [warehouses, setWarehouses] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data } = useReferenceQuery<{ warehouses: any[] }>(
+    ["warehouses"],
+    "/api/masters/warehouses"
+  );
+  const warehouses = data?.warehouses ?? [];
+  const invalidate = useInvalidate();
   const [submitting, setSubmitting] = useState(false);
 
   // Location dialog state
@@ -56,24 +61,6 @@ export default function WarehousesPage() {
   const [locPreservation, setLocPreservation] = useState("");
   const [locStorageConditions, setLocStorageConditions] = useState("");
 
-  useEffect(() => {
-    fetchWarehouses();
-  }, []);
-
-  const fetchWarehouses = async () => {
-    try {
-      const res = await fetch("/api/masters/warehouses");
-      if (res.ok) {
-        const data = await res.json();
-        setWarehouses(data.warehouses || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch warehouses:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleDelete = async (id: string) => {
     try {
       const res = await fetch(`/api/masters/warehouses/${id}`, {
@@ -85,7 +72,7 @@ export default function WarehousesPage() {
         return;
       }
       toast.success("Warehouse deleted successfully");
-      fetchWarehouses();
+      invalidate(["warehouses"]);
     } catch {
       toast.error("Failed to delete warehouse");
     }
@@ -127,7 +114,7 @@ export default function WarehousesPage() {
       setLocCapacity("");
       setLocPreservation("");
       setLocStorageConditions("");
-      fetchWarehouses();
+      invalidate(["warehouses"]);
     } catch {
       toast.error("Failed to add location");
     } finally {

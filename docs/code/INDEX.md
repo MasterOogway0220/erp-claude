@@ -4,11 +4,18 @@ Companion explainers for every code file, mirroring the source tree. See
 [CONVENTIONS.md](./CONVENTIONS.md) for structure and depth, and the repo root
 `CLAUDE.md` for the standing rule that keeps them true.
 
-## Coverage: 486 / 486 ✅
+## Coverage: 481 / 493 — 12 pending
 
 Every `.ts`, `.tsx` and `.prisma` file under `src/`, `prisma/` and `scripts/`
-has a doc at the mirrored path. Test files are covered by the doc for what they
-test.
+should have a doc at the mirrored path. Test files are covered by the doc for
+what they test.
+
+**Outstanding:** the twelve files added by the Chromium removal and the query
+caching work are listed below marked **Doc pending** — the ten react-pdf
+documents and `dossier-data.ts` under PDF, plus `hooks/use-api-query.ts` and
+`hooks/use-masters.ts`. Their source carries full header comments; what is
+missing is the mirrored explainer. Five docs were deleted along with the files
+they described (`render-pdf.ts` and four HTML templates).
 
 | Area | Files | Depth |
 |---|---:|---|
@@ -163,25 +170,52 @@ authoritative, need maintaining, and teach nothing.
 - [`location-tag.ts`](./src/lib/location-tag.ts.md)
 
 ### PDF — [shared notes](./src/lib/pdf/README.md)
-- [`pdf/render-pdf.ts`](./src/lib/pdf/render-pdf.ts.md) — Chromium resolution
-  and the non-A4 page geometry.
-- [`pdf/print-wrapper.ts`](./src/lib/pdf/print-wrapper.ts.md)
-- [`pdf/quotation-standard-template.ts`](./src/lib/pdf/quotation-standard-template.ts.md)
-- [`pdf/quotation-nonstandard-template.ts`](./src/lib/pdf/quotation-nonstandard-template.ts.md)
-- [`pdf/quotation-pdf.tsx`](./src/lib/pdf/quotation-pdf.tsx.md) — the parallel
-  react-pdf implementation.
+Every PDF is rendered in-process by `@react-pdf/renderer`. Chromium and
+Puppeteer were removed once the last route was migrated, so there is no browser
+binary in the deployment any more.
+
+**Shared layers**
 - [`pdf/primitives.tsx`](./src/lib/pdf/primitives.tsx.md) — shared react-pdf
   building blocks: Indian digit grouping, and the cell borders that stop a
   react-pdf table doubling its rules.
-- [`pdf/issue-slip-pdf.tsx`](./src/lib/pdf/issue-slip-pdf.tsx.md) — the first
-  document migrated off Chromium. **Written and tested, route not switched yet.**
-- [`pdf/purchase-order-template.ts`](./src/lib/pdf/purchase-order-template.ts.md)
+- `pdf/bordered-doc.tsx` — chrome for the "bordered form" family (inspection
+  offers, packing lists): outer box, title bar, reference grid, generic typed
+  table with a repeating header, totals row, signature blocks. **Doc pending.**
+
+**Documents**
+- [`pdf/quotation-pdf.tsx`](./src/lib/pdf/quotation-pdf.tsx.md)
+- [`pdf/issue-slip-pdf.tsx`](./src/lib/pdf/issue-slip-pdf.tsx.md)
+- `pdf/lab-letter-pdf.tsx` — **Doc pending.**
+- `pdf/client-status-report-pdf.tsx` — **Doc pending.**
+- `pdf/inspection-offer-pdf.tsx` — offer, length tally, colour code and
+  criteria checklist. **Doc pending.**
+- `pdf/packing-list-pdf.tsx` — **Doc pending.**
+- `pdf/invoice-pdf.tsx` — GST tax invoice. **Doc pending.**
+- `pdf/purchase-order-pdf.tsx` — **Doc pending.**
+- `pdf/mtc-certificate-pdf.tsx` — mill test certificate. **Doc pending.**
+- `pdf/dossier-pdf.tsx` — the dispatch dossier, and the dispatch-note bundle
+  rendered from a narrower section list. **Doc pending.**
+- `pdf/dossier-data.ts` — the one traversal both dossier routes share.
+  **Doc pending.**
+
+**HTML templates still in use** (browser preview / print, no Chromium)
+- [`pdf/print-wrapper.ts`](./src/lib/pdf/print-wrapper.ts.md)
+- [`pdf/quotation-standard-template.ts`](./src/lib/pdf/quotation-standard-template.ts.md)
+- [`pdf/quotation-nonstandard-template.ts`](./src/lib/pdf/quotation-nonstandard-template.ts.md)
 - [`pdf/po-acceptance-template.ts`](./src/lib/pdf/po-acceptance-template.ts.md)
-- [`pdf/invoice-template.ts`](./src/lib/pdf/invoice-template.ts.md)
-- [`pdf/packing-list-template.ts`](./src/lib/pdf/packing-list-template.ts.md)
 - [`pdf/issue-slip-template.ts`](./src/lib/pdf/issue-slip-template.ts.md)
-- [`pdf/inspection-offer-template.ts`](./src/lib/pdf/inspection-offer-template.ts.md)
-- [`pdf/client-status-report-template.ts`](./src/lib/pdf/client-status-report-template.ts.md)
+- [`pdf/client-status-report-template.ts`](./src/lib/pdf/client-status-report-template.ts.md) —
+  now only the HTML preview route and the `ClientStatusReportData` type.
+
+### Data fetching (src/hooks)
+- `hooks/use-api-query.ts` — the one way screens read from this app's API:
+  a cached `useQuery` wrapper, `ApiError` carrying the HTTP status, a
+  debounce helper for search keys, and `useInvalidate` for post-write
+  refreshes. **Doc pending.**
+- `hooks/use-masters.ts` — one shared, cached read per master list. The
+  customer master alone was being fetched from fourteen screens. **Doc pending.**
+- [`hooks/use-units.ts`](./src/hooks/use-units.ts.md) — UOM codes, now
+  sharing the Unit Master screen's cache entry.
 
 ### Infrastructure
 - [`prisma.ts`](./src/lib/prisma.ts.md) — the client, pool limits, and why

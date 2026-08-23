@@ -47,20 +47,22 @@ The right value depends entirely on **how many processes there are**, which is
 a property of the deployment and not of the code — hence the `DB_POOL_SIZE`
 environment variable rather than a hardcoded number:
 
-- **Vercel: unset, so 5.** This is 5 *per lambda instance*, and the
-  application-wide total is 5 × however many happen to be warm — not a number
-  anyone controls. Raising it here is the fastest way to exhaust the cap.
-- **Render: `DB_POOL_SIZE=10`** (set in `render.yaml`). `numInstances` is
-  pinned to 1, so there is exactly one process and this pool is the entire
-  budget for concurrent queries. At 5, a handful of simultaneous users would
-  queue behind `acquireTimeout` and receive the same `pool timeout` error the
-  move to Render existed to eliminate — an identical-looking failure with a
-  completely different cause.
+- **Vercel — the only deployment today: unset, so 5.** This is 5 *per lambda
+  instance*, and the application-wide total is 5 × however many happen to be
+  warm — not a number anyone controls. Raising it here is the fastest way to
+  exhaust the cap, so it stays unset in production.
+- **A single long-lived process** (a container or VM, should the app ever move
+  to one) wants the opposite: there the pool is the entire application budget
+  for concurrent queries, and 5 would make a handful of simultaneous users
+  queue behind `acquireTimeout` and receive the same `pool timeout` error that
+  a move off serverless would exist to eliminate — an identical-looking failure
+  with a completely different cause. Roughly 10 is right there, and only there.
 
-**The default must stay low while both platforms are deployed**, because they
-share one 75-connection cap. Likewise, if the Render service is ever scaled
-past one instance this number becomes per-instance again. See
-`docs/deployment/render.md`.
+**The default must stay low**, because every warm instance draws from one
+75-connection cap. A container deployment was prepared once (`Dockerfile` and
+`render.yaml`, commit `5e300cd`) and later dropped in favour of staying on
+Vercel; the files are removed but recoverable from git history if that decision
+is revisited.
 
 The other four exist because of a specific outage, and the reasoning matters
 more than the numbers:

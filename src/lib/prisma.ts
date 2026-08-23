@@ -25,20 +25,19 @@ export function poolConfig(databaseUrl: string) {
     user: decodeURIComponent(url.username),
     password: decodeURIComponent(url.password),
     database: url.pathname.slice(1),
-    // The right value depends on how many processes there are, so it is set
-    // per deployment rather than hardcoded:
+    // The right value depends on how many processes there are, so it is an env
+    // var rather than a constant.
     //
-    //   Vercel  - unset, so 5. This is 5 *per lambda instance* and the real
-    //             ceiling is 5 x however many are warm, which nobody controls.
-    //             Raising it here is the fastest way to exhaust the 75.
-    //   Render  - DB_POOL_SIZE=10 (see render.yaml). There is exactly one
-    //             long-lived process, so this is the whole application's
-    //             budget for concurrent queries; at 5 a handful of
-    //             simultaneous users would queue behind acquireTimeout and hit
-    //             the same "pool timeout" the move to Render existed to fix.
+    // On Vercel — the only deployment today — this is 5 *per lambda instance*,
+    // and the real ceiling is 5 x however many instances are warm, which
+    // nobody controls. Raising it is the fastest way to exhaust the 75 above,
+    // so it stays unset in production.
     //
-    // Both platforms share one 75-connection cap, so while both are deployed
-    // the default MUST stay low.
+    // It is a variable at all because a single long-lived process (a container
+    // or a VM) wants the opposite: there the pool is the whole application's
+    // budget for concurrent queries, and 5 would make a handful of
+    // simultaneous users queue behind acquireTimeout. Set it to ~10 there, and
+    // only there.
     connectionLimit: Number(process.env.DB_POOL_SIZE) || 5,
     // Hostinger's MySQL sets wait_timeout/interactive_timeout to 20s, and the
     // driver keeps `minimumIdle` (= connectionLimit) sockets warm by default —

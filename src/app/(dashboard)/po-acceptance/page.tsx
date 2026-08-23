@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useApiQuery, useDebouncedValue } from "@/hooks/use-api-query";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -55,34 +56,22 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function POAcceptanceListPage() {
   const router = useRouter();
-  const [acceptances, setAcceptances] = useState<POAcceptanceItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const fetchAcceptances = async () => {
-    try {
-      const params = new URLSearchParams();
-      if (search) params.set("search", search);
-      if (statusFilter && statusFilter !== "all") params.set("status", statusFilter);
+  // The search box used to debounce the request; debouncing the value is
+  // what matters now, because the key decides whether a request happens at
+  // all — typing a word produces one cache entry instead of one per keystroke.
+  const debouncedSearch = useDebouncedValue(search);
 
-      const response = await fetch(`/api/po-acceptance?${params}`);
-      if (response.ok) {
-        setAcceptances(await response.json());
-      }
-    } catch (error) {
-      console.error("Failed to fetch:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const acceptanceParams = new URLSearchParams();
+  if (debouncedSearch) acceptanceParams.set("search", debouncedSearch);
+  if (statusFilter && statusFilter !== "all") acceptanceParams.set("status", statusFilter);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchAcceptances();
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [search, statusFilter]);
+  const { data: acceptances = [], isLoading: loading } = useApiQuery<POAcceptanceItem[]>(
+    ["po-acceptances", debouncedSearch, statusFilter],
+    `/api/po-acceptance?${acceptanceParams}`
+  );
 
   if (loading) return <PageLoading />;
 

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useApiQuery } from "@/hooks/use-api-query";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -52,33 +53,20 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function ClientPurchaseOrdersPage() {
   const router = useRouter();
-  const [clientPOs, setClientPOs] = useState<ClientPO[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  useEffect(() => {
-    fetchClientPOs();
-  }, [search, statusFilter]);
+  // Both filters are in the cache key — omitting one would serve the wrong
+  // rows from cache.
+  const cpoParams = new URLSearchParams();
+  if (search) cpoParams.set("search", search);
+  if (statusFilter && statusFilter !== "all") cpoParams.set("status", statusFilter);
 
-  const fetchClientPOs = async () => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams();
-      if (search) params.set("search", search);
-      if (statusFilter && statusFilter !== "all") params.set("status", statusFilter);
-
-      const response = await fetch(`/api/client-purchase-orders?${params}`);
-      if (response.ok) {
-        const data = await response.json();
-        setClientPOs(data.clientPOs || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch client POs:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data, isLoading: loading } = useApiQuery<{ clientPOs: ClientPO[] }>(
+    ["client-purchase-orders", search, statusFilter],
+    `/api/client-purchase-orders?${cpoParams}`
+  );
+  const clientPOs = data?.clientPOs ?? [];
 
   return (
     <div className="space-y-6">

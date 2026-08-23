@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import { useReferenceQuery, useInvalidate } from "@/hooks/use-api-query";
 import { PageHeader } from "@/components/shared/page-header";
 import { DataTable, Column } from "@/components/shared/data-table";
 import { Button } from "@/components/ui/button";
@@ -58,30 +59,18 @@ const emptyForm: AgencyFormData = {
 };
 
 export default function InspectionAgenciesPage() {
-  const [agencies, setAgencies] = useState<InspectionAgency[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Master data: cached and shared with every other screen reading the
+  // same list, rather than refetched on each visit.
+  const { data, isLoading: loading } = useReferenceQuery<{ agencies: InspectionAgency[] }>(
+    ["inspection-agencies"],
+    "/api/masters/inspection-agencies"
+  );
+  const agencies = data?.agencies ?? [];
+  const invalidate = useInvalidate();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InspectionAgency | null>(null);
   const [formData, setFormData] = useState<AgencyFormData>(emptyForm);
   const [saving, setSaving] = useState(false);
-
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await fetch("/api/masters/inspection-agencies");
-      if (!res.ok) throw new Error("Failed to fetch inspection agencies");
-      const data = await res.json();
-      setAgencies(data.agencies || []);
-    } catch {
-      toast.error("Failed to load inspection agencies");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
 
   const handleOpenCreate = () => {
     setEditingItem(null);
@@ -136,7 +125,7 @@ export default function InspectionAgenciesPage() {
           : "Inspection agency created successfully"
       );
       handleCloseDialog();
-      fetchData();
+      invalidate(["inspection-agencies"]);
     } catch (err: any) {
       toast.error(err.message || "Failed to save inspection agency");
     } finally {

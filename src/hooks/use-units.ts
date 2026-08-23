@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useReferenceQuery } from "./use-api-query";
 
 // The Unit dropdowns used to hold their own hardcoded array, so adding a UOM in
 // Product Master → Units never reached the quotation forms. This reads the
@@ -14,16 +14,14 @@ const FALLBACK_UNITS = ["Mtr", "Nos", "Kg", "MT", "Feet", "Set", "Lot"];
  * The API already filters to isActive and sorts by name.
  */
 export function useUnits(): string[] {
-  const { data } = useQuery({
-    queryKey: ["uom-master"],
-    queryFn: async () => {
-      const res = await fetch("/api/masters/units");
-      if (!res.ok) throw new Error("Failed to fetch units");
-      const json = await res.json();
-      return (json.units || []).map((u: { code: string }) => u.code) as string[];
-    },
-    staleTime: 5 * 60 * 1000,
-  });
+  // Shares the Unit Master screen's cache entry rather than fetching the same
+  // endpoint again under a key of its own — the codes are derived here instead
+  // of in the query, so both callers can hold one cached response.
+  const { data } = useReferenceQuery<{ units: { code: string }[] }>(
+    ["units-master"],
+    "/api/masters/units"
+  );
 
-  return data?.length ? data : FALLBACK_UNITS;
+  const codes = (data?.units || []).map((u) => u.code);
+  return codes.length ? codes : FALLBACK_UNITS;
 }

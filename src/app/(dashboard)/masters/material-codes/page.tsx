@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import { useReferenceQuery, useInvalidate } from "@/hooks/use-api-query";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { DataTable, Column } from "@/components/shared/data-table";
@@ -116,32 +117,18 @@ const SCHEDULES = [
 
 export default function MaterialCodesPage() {
   const router = useRouter();
-  const [materialCodes, setMaterialCodes] = useState<MaterialCode[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading: loading } = useReferenceQuery<{ materialCodes: MaterialCode[] }>(
+    ["material-codes"],
+    "/api/masters/material-codes"
+  );
+  const materialCodes = data?.materialCodes ?? [];
+  const invalidate = useInvalidate();
   const [editingItem, setEditingItem] = useState<MaterialCode | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState<FormData>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<MaterialCode | null>(null);
   const [deleting, setDeleting] = useState(false);
-
-  const fetchMaterialCodes = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await fetch("/api/masters/material-codes");
-      if (!res.ok) throw new Error("Failed to fetch");
-      const data = await res.json();
-      setMaterialCodes(data.materialCodes || []);
-    } catch {
-      toast.error("Failed to fetch item codes");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchMaterialCodes();
-  }, [fetchMaterialCodes]);
 
   // Auto-compose size label from OD/NB/Thickness
   const composeSizeLabel = (od: string, nb: string, thick: string): string => {
@@ -248,7 +235,7 @@ export default function MaterialCodesPage() {
         toast.success("Item code created successfully");
       }
       handleCloseDialog();
-      fetchMaterialCodes();
+      invalidate(["material-codes"]);
     } catch (error: any) {
       toast.error(error.message || "Something went wrong");
     } finally {
@@ -269,7 +256,7 @@ export default function MaterialCodesPage() {
       }
       toast.success("Item code deleted");
       setDeleteTarget(null);
-      fetchMaterialCodes();
+      invalidate(["material-codes"]);
     } catch (error: any) {
       toast.error(error.message);
     } finally {

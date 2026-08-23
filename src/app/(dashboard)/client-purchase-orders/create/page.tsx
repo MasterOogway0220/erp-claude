@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense, useCallback, useMemo, Fragment } from "react";
+import { useCustomers } from "@/hooks/use-masters";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -166,7 +167,7 @@ function CreateClientPOPage() {
   const preselectedQuotationId = searchParams.get("quotationId");
 
   const [loading, setLoading] = useState(false);
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const customers = useCustomers<Customer>();
   const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [filteredQuotations, setFilteredQuotations] = useState<Quotation[]>([]);
   const [quotationMeta, setQuotationMeta] = useState<QuotationMeta | null>(null);
@@ -233,21 +234,8 @@ function CreateClientPOPage() {
   const [showNegotiationSection, setShowNegotiationSection] = useState(false);
 
   useEffect(() => {
-    fetchCustomers();
     fetchQuotations();
   }, []);
-
-  const fetchCustomers = async () => {
-    try {
-      const response = await fetch("/api/masters/customers");
-      if (response.ok) {
-        const data = await response.json();
-        setCustomers(data.customers || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch customers:", error);
-    }
-  };
 
   const fetchQuotations = async () => {
     try {

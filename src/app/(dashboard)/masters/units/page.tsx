@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useReferenceQuery } from "@/hooks/use-api-query";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { DataTable, Column } from "@/components/shared/data-table";
 import { Plus, Pencil } from "lucide-react";
-import { toast } from "sonner";
 
 interface Unit {
   id: string;
@@ -21,26 +20,11 @@ interface Unit {
 
 export default function UnitsPage() {
   const router = useRouter();
-  const [units, setUnits] = useState<Unit[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchUnits = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await fetch("/api/masters/units");
-      if (!res.ok) throw new Error("Failed to fetch units");
-      const data = await res.json();
-      setUnits(data.units || []);
-    } catch {
-      toast.error("Failed to load units");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchUnits();
-  }, [fetchUnits]);
+  const { data, isLoading: loading } = useReferenceQuery<{ units: Unit[] }>(
+    ["units-master"],
+    "/api/masters/units"
+  );
+  const units = data?.units ?? [];
 
   const columns: Column<Unit>[] = [
     {

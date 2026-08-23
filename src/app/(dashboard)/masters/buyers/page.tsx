@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useReferenceQuery, useInvalidate } from "@/hooks/use-api-query";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { DataTable, Column } from "@/components/shared/data-table";
@@ -26,19 +26,12 @@ interface Buyer {
 
 export default function BuyersPage() {
   const router = useRouter();
-  const [buyers, setBuyers] = useState<Buyer[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchBuyers = () => {
-    setLoading(true);
-    fetch("/api/masters/buyers")
-      .then((r) => r.json())
-      .then((d) => setBuyers(d.buyers || []))
-      .catch(() => toast.error("Failed to load buyers"))
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => { fetchBuyers(); }, []);
+  const { data, isLoading: loading } = useReferenceQuery<{ buyers: Buyer[] }>(
+    ["buyers"],
+    "/api/masters/buyers"
+  );
+  const buyers = data?.buyers ?? [];
+  const invalidate = useInvalidate();
 
   const handleToggle = async (row: Buyer, isActive: boolean) => {
     const res = await fetch(`/api/masters/buyers/${row.id}`, {
@@ -47,7 +40,7 @@ export default function BuyersPage() {
       body: JSON.stringify({ isActive }),
     });
     if (res.ok) {
-      setBuyers((prev) => prev.map((b) => b.id === row.id ? { ...b, isActive } : b));
+      invalidate(["buyers"]);
     } else {
       toast.error("Failed to update status");
     }
@@ -58,7 +51,7 @@ export default function BuyersPage() {
     const res = await fetch(`/api/masters/buyers/${row.id}`, { method: "DELETE" });
     if (res.ok) {
       toast.success("Buyer deleted");
-      fetchBuyers();
+      invalidate(["buyers"]);
     } else {
       const err = await res.json().catch(() => ({}));
       toast.error(err.error || "Failed to delete buyer");

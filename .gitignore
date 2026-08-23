@@ -61,3 +61,6 @@ scripts/tmp-reset-admin.ts
 # database dumps — live customer data, never commit.
 # Root-anchored so prisma/migrations/**/*.sql stays tracked.
 /*.sql
+
+# graphify knowledge-graph cache (regenerated locally)
+.graphify/

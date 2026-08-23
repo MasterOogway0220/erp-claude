@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import { useApiQuery, useInvalidate } from "@/hooks/use-api-query";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -33,40 +34,25 @@ type TabValue = "ALL" | "BUYER" | "SUPPLIER";
 
 export default function CustomersPage() {
   const router = useRouter();
-  const [customers, setCustomers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const invalidate = useInvalidate();
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<TabValue>("ALL");
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const fetchCustomers = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (search) params.set("search", search);
-      if (activeTab !== "ALL") params.set("companyType", activeTab);
-      params.set("includeInactive", "true");
-      const res = await fetch(`/api/masters/customers?${params}`);
-      if (res.ok) {
-        const d = await res.json();
-        setCustomers(d.customers || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch customers:", error);
-      toast.error("Failed to load customers");
-    } finally {
-      setLoading(false);
-    }
-  }, [search, activeTab]);
+  // search and activeTab are part of the cache key: React Query caches by
+  // key, so leaving a filter out would serve another filter's rows.
+  const customerParams = new URLSearchParams();
+  if (search) customerParams.set("search", search);
+  if (activeTab !== "ALL") customerParams.set("companyType", activeTab);
+  customerParams.set("includeInactive", "true");
 
-  useEffect(() => {
-    fetchCustomers();
-  }, [fetchCustomers]);
+  const { data, isLoading: loading } = useApiQuery<{ customers: any[] }>(
+    ["customers", search, activeTab],
+    `/api/masters/customers?${customerParams}`
+  );
+  const customers = data?.customers ?? [];
 
   const handleToggleActive = async (id: string, next: boolean) => {
-    setCustomers((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, isActive: next } : c))
-    );
     try {
       const res = await fetch(`/api/masters/customers/${id}`, {
         method: "PATCH",
@@ -77,11 +63,9 @@ export default function CustomersPage() {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || "Failed to update status");
       }
+      invalidate(["customers"]);
       toast.success(next ? "Customer activated" : "Customer deactivated");
     } catch (error: any) {
-      setCustomers((prev) =>
-        prev.map((c) => (c.id === id ? { ...c, isActive: !next } : c))
-      );
       toast.error(error.message || "Failed to update status");
     }
   };
@@ -97,7 +81,7 @@ export default function CustomersPage() {
         throw new Error(err.error || "Failed to delete");
       }
       toast.success("Customer deleted");
-      fetchCustomers();
+      invalidate(["customers"]);
     } catch (error: any) {
       toast.error(error.message || "Failed to delete customer");
     } finally {

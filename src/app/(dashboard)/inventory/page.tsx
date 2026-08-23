@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
+import { useApiQuery, useReferenceQuery } from "@/hooks/use-api-query";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { DataTable, Column } from "@/components/shared/data-table";
@@ -59,12 +60,6 @@ interface VendorOption {
 
 export default function InventoryPage() {
   const router = useRouter();
-  const [stocks, setStocks] = useState<any[]>([]);
-  const [grns, setGrns] = useState<any[]>([]);
-  const [stockIssues, setStockIssues] = useState<any[]>([]);
-  const [summary, setSummary] = useState<any>({});
-  const [loading, setLoading] = useState(true);
-
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [warehouseId, setWarehouseId] = useState<string>("all");
@@ -73,96 +68,54 @@ export default function InventoryPage() {
   const [vendorId, setVendorId] = useState<string>("all");
   const [selfStockFilter, setSelfStockFilter] = useState<string>("all"); // "all" | "true" | "false"
 
-  // Reference data
-  const [warehouses, setWarehouses] = useState<WarehouseOption[]>([]);
-  const [vendors, setVendors] = useState<VendorOption[]>([]);
+  // Reference data — warehouses and vendors change rarely, so they are cached
+  // for far longer than the stock list and shared with every other screen
+  // that reads the same masters.
+  const { data: warehouseData } = useReferenceQuery<{
+    warehouses: WarehouseOption[];
+  }>(["warehouses"], "/api/masters/warehouses");
+  const warehouses = useMemo(
+    () => warehouseData?.warehouses ?? [],
+    [warehouseData]
+  );
 
-  // Fetch reference data on mount
-  useEffect(() => {
-    fetchWarehouses();
-    fetchVendors();
-  }, []);
+  const { data: vendorData } = useReferenceQuery<{ vendors: VendorOption[] }>(
+    ["vendors"],
+    "/api/masters/vendors"
+  );
+  const vendors = vendorData?.vendors ?? [];
 
-  // Fetch stock when filters change
-  useEffect(() => {
-    fetchStock();
-  }, [statusFilter, warehouseId, rack, bay, vendorId, selfStockFilter]);
+  // Every filter is part of the key: React Query caches by key, so a filter
+  // left out would serve another filter's rows from cache.
+  const stockParams = new URLSearchParams();
+  if (statusFilter !== "all") stockParams.append("status", statusFilter);
+  if (warehouseId !== "all") stockParams.append("warehouseId", warehouseId);
+  if (rack !== "all") stockParams.append("rack", rack);
+  if (bay !== "all") stockParams.append("bay", bay);
+  if (vendorId !== "all") stockParams.append("vendorId", vendorId);
+  if (selfStockFilter !== "all") stockParams.append("selfStock", selfStockFilter);
 
-  // Fetch GRN and stock issues on mount
-  useEffect(() => {
-    fetchGRNs();
-    fetchStockIssues();
-  }, []);
+  const { data: stockData } = useApiQuery<{
+    stocks: any[];
+    summary: any;
+  }>(
+    ["inventory-stock", statusFilter, warehouseId, rack, bay, vendorId, selfStockFilter],
+    `/api/inventory/stock?${stockParams}`
+  );
+  const stocks = stockData?.stocks ?? [];
+  const summary = stockData?.summary ?? {};
 
-  const fetchWarehouses = async () => {
-    try {
-      const res = await fetch("/api/masters/warehouses");
-      if (res.ok) {
-        const data = await res.json();
-        setWarehouses(data.warehouses || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch warehouses:", error);
-    }
-  };
+  const { data: grnData } = useApiQuery<{ grns: any[] }>(
+    ["grns"],
+    "/api/inventory/grn"
+  );
+  const grns = grnData?.grns ?? [];
 
-  const fetchVendors = async () => {
-    try {
-      const res = await fetch("/api/masters/vendors");
-      if (res.ok) {
-        const data = await res.json();
-        setVendors(data.vendors || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch vendors:", error);
-    }
-  };
-
-  const fetchStock = async () => {
-    try {
-      const params = new URLSearchParams();
-      if (statusFilter && statusFilter !== "all") params.append("status", statusFilter);
-      if (warehouseId && warehouseId !== "all") params.append("warehouseId", warehouseId);
-      if (rack && rack !== "all") params.append("rack", rack);
-      if (bay && bay !== "all") params.append("bay", bay);
-      if (vendorId && vendorId !== "all") params.append("vendorId", vendorId);
-      if (selfStockFilter !== "all") params.append("selfStock", selfStockFilter);
-      const response = await fetch(`/api/inventory/stock?${params}`);
-      if (response.ok) {
-        const data = await response.json();
-        setStocks(data.stocks || []);
-        setSummary(data.summary || {});
-      }
-    } catch (error) {
-      console.error("Failed to fetch stock:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchGRNs = async () => {
-    try {
-      const response = await fetch("/api/inventory/grn");
-      if (response.ok) {
-        const data = await response.json();
-        setGrns(data.grns || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch GRNs:", error);
-    }
-  };
-
-  const fetchStockIssues = async () => {
-    try {
-      const response = await fetch("/api/inventory/stock-issue");
-      if (response.ok) {
-        const data = await response.json();
-        setStockIssues(data.stockIssues || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch stock issues:", error);
-    }
-  };
+  const { data: issueData } = useApiQuery<{ stockIssues: any[] }>(
+    ["stock-issues"],
+    "/api/inventory/stock-issue"
+  );
+  const stockIssues = issueData?.stockIssues ?? [];
 
   // Cascading location options
   const selectedWarehouse = warehouses.find((w) => w.id === warehouseId);

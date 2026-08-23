@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import { useReferenceQuery, useInvalidate } from "@/hooks/use-api-query";
 import { PageHeader } from "@/components/shared/page-header";
 import { DataTable, Column } from "@/components/shared/data-table";
 import { Button } from "@/components/ui/button";
@@ -46,30 +47,18 @@ const emptyForm: DeliveryTermFormData = {
 };
 
 export default function DeliveryTermsPage() {
-  const [deliveryTerms, setDeliveryTerms] = useState<DeliveryTerm[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Master data: cached and shared with every other screen reading the
+  // same list, rather than refetched on each visit.
+  const { data, isLoading: loading } = useReferenceQuery<{ deliveryTerms: DeliveryTerm[] }>(
+    ["delivery-terms"],
+    "/api/masters/delivery-terms"
+  );
+  const deliveryTerms = data?.deliveryTerms ?? [];
+  const invalidate = useInvalidate();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<DeliveryTerm | null>(null);
   const [formData, setFormData] = useState<DeliveryTermFormData>(emptyForm);
   const [saving, setSaving] = useState(false);
-
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await fetch("/api/masters/delivery-terms");
-      if (!res.ok) throw new Error("Failed to fetch delivery terms");
-      const data = await res.json();
-      setDeliveryTerms(data.deliveryTerms || []);
-    } catch {
-      toast.error("Failed to load delivery terms");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
 
   const handleOpenCreate = () => {
     setEditingItem(null);
@@ -123,7 +112,7 @@ export default function DeliveryTermsPage() {
           : "Delivery term created successfully"
       );
       handleCloseDialog();
-      fetchData();
+      invalidate(["delivery-terms"]);
     } catch (err: any) {
       toast.error(err.message || "Failed to save delivery term");
     } finally {
@@ -143,7 +132,7 @@ export default function DeliveryTermsPage() {
         throw new Error(errData.error || "Failed to delete delivery term");
       }
       toast.success("Delivery term deleted");
-      fetchData();
+      invalidate(["delivery-terms"]);
     } catch (err: any) {
       toast.error(err.message || "Failed to delete delivery term");
     }

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkAccess } from "@/lib/rbac";
-import { renderHtmlToPdf } from "@/lib/pdf/render-pdf";
-import { generateClientStatusReportHtml } from "@/lib/pdf/client-status-report-template";
+import { renderToBuffer } from "@react-pdf/renderer";
+import { ClientStatusReportDocument } from "@/lib/pdf/client-status-report-pdf";
 
 const DEFAULT_COMPANY = {
   companyName: "NPS Piping Solutions",
@@ -50,9 +50,9 @@ export async function GET(
     const company = await prisma.companyMaster.findFirst();
     const companyInfo = company || DEFAULT_COMPANY;
 
-    // Generate PDF
-    const html = generateClientStatusReportHtml(reportData, companyInfo as any);
-    const pdfBuffer = await renderHtmlToPdf(html, true); // landscape for wide table
+    const pdfBuffer = await renderToBuffer(
+      <ClientStatusReportDocument report={reportData} company={companyInfo as never} />
+    );
 
     const filename = `Order-Status-${reportData.salesOrder.soNo.replace(/\//g, "-")}-${new Date().toISOString().split("T")[0]}.pdf`;
 

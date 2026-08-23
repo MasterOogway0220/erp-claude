@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import { useReferenceQuery, useInvalidate } from "@/hooks/use-api-query";
 import { PageHeader } from "@/components/shared/page-header";
 import { DataTable, Column } from "@/components/shared/data-table";
 import { Button } from "@/components/ui/button";
@@ -46,30 +47,18 @@ const emptyForm: PaymentTermFormData = {
 };
 
 export default function PaymentTermsPage() {
-  const [paymentTerms, setPaymentTerms] = useState<PaymentTerm[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Master data: cached and shared with every other screen reading the
+  // same list, rather than refetched on each visit.
+  const { data, isLoading: loading } = useReferenceQuery<{ paymentTerms: PaymentTerm[] }>(
+    ["payment-terms"],
+    "/api/masters/payment-terms"
+  );
+  const paymentTerms = data?.paymentTerms ?? [];
+  const invalidate = useInvalidate();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<PaymentTerm | null>(null);
   const [formData, setFormData] = useState<PaymentTermFormData>(emptyForm);
   const [saving, setSaving] = useState(false);
-
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await fetch("/api/masters/payment-terms");
-      if (!res.ok) throw new Error("Failed to fetch payment terms");
-      const data = await res.json();
-      setPaymentTerms(data.paymentTerms || []);
-    } catch {
-      toast.error("Failed to load payment terms");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
 
   const handleOpenCreate = () => {
     setEditingItem(null);
@@ -123,7 +112,7 @@ export default function PaymentTermsPage() {
           : "Payment term created successfully"
       );
       handleCloseDialog();
-      fetchData();
+      invalidate(["payment-terms"]);
     } catch (err: any) {
       toast.error(err.message || "Failed to save payment term");
     } finally {
@@ -143,7 +132,7 @@ export default function PaymentTermsPage() {
         throw new Error(errData.error || "Failed to delete payment term");
       }
       toast.success("Payment term deleted");
-      fetchData();
+      invalidate(["payment-terms"]);
     } catch (err: any) {
       toast.error(err.message || "Failed to delete payment term");
     }

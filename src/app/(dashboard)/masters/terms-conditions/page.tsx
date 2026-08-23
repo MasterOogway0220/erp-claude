@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import { useReferenceQuery, useInvalidate } from "@/hooks/use-api-query";
 import { PageHeader } from "@/components/shared/page-header";
 import { DataTable, Column } from "@/components/shared/data-table";
 import { Button } from "@/components/ui/button";
@@ -81,24 +82,18 @@ function SummaryCards({ items }: { items: { label: string; value: number; color?
 
 function PaymentTermsTab() {
   const emptyForm = { code: "", name: "", description: "", days: 30, isActive: true };
-  const [items, setItems] = useState<PaymentTerm[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Shares one cache entry with the standalone payment-terms screen, so an edit
+  // on either surface refreshes both.
+  const { data, isLoading: loading } = useReferenceQuery<{ paymentTerms: PaymentTerm[] }>(
+    ["payment-terms"],
+    "/api/masters/payment-terms"
+  );
+  const items = data?.paymentTerms ?? [];
+  const invalidate = useInvalidate();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<PaymentTerm | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
-
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await fetch("/api/masters/payment-terms");
-      const data = await res.json();
-      setItems(data.paymentTerms || []);
-    } catch { toast.error("Failed to load payment terms"); }
-    finally { setLoading(false); }
-  }, []);
-
-  useEffect(() => { fetchData(); }, [fetchData]);
 
   const openCreate = () => { setEditing(null); setForm(emptyForm); setOpen(true); };
   const openEdit = (item: PaymentTerm) => {
@@ -117,14 +112,14 @@ function PaymentTermsTab() {
       const res = await fetch(url, { method: editing ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
       if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || "Failed to save"); }
       toast.success(editing ? "Payment term updated" : "Payment term created");
-      closeDialog(); fetchData();
+      closeDialog(); invalidate(["payment-terms"]);
     } catch (err: any) { toast.error(err.message); }
     finally { setSaving(false); }
   };
 
   const handleToggle = async (item: PaymentTerm, isActive: boolean) => {
     const res = await fetch(`/api/masters/payment-terms/${item.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isActive }) });
-    if (res.ok) setItems((prev) => prev.map((i) => i.id === item.id ? { ...i, isActive } : i));
+    if (res.ok) invalidate(["payment-terms"]);
     else toast.error("Failed to update status");
   };
 
@@ -133,7 +128,7 @@ function PaymentTermsTab() {
     try {
       const res = await fetch(`/api/masters/payment-terms/${item.id}`, { method: "DELETE" });
       if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || "Failed to delete"); }
-      toast.success("Payment term deleted"); fetchData();
+      toast.success("Payment term deleted"); invalidate(["payment-terms"]);
     } catch (err: any) { toast.error(err.message); }
   };
 
@@ -205,24 +200,18 @@ function PaymentTermsTab() {
 
 function DeliveryTermsTab() {
   const emptyForm = { code: "", name: "", description: "", incoterms: "", isActive: true };
-  const [items, setItems] = useState<DeliveryTerm[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Shares one cache entry with the standalone delivery-terms screen, so an edit
+  // on either surface refreshes both.
+  const { data, isLoading: loading } = useReferenceQuery<{ deliveryTerms: DeliveryTerm[] }>(
+    ["delivery-terms"],
+    "/api/masters/delivery-terms"
+  );
+  const items = data?.deliveryTerms ?? [];
+  const invalidate = useInvalidate();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<DeliveryTerm | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
-
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await fetch("/api/masters/delivery-terms");
-      const data = await res.json();
-      setItems(data.deliveryTerms || []);
-    } catch { toast.error("Failed to load delivery terms"); }
-    finally { setLoading(false); }
-  }, []);
-
-  useEffect(() => { fetchData(); }, [fetchData]);
 
   const openCreate = () => { setEditing(null); setForm(emptyForm); setOpen(true); };
   const openEdit = (item: DeliveryTerm) => {
@@ -241,14 +230,14 @@ function DeliveryTermsTab() {
       const res = await fetch(url, { method: editing ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
       if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || "Failed to save"); }
       toast.success(editing ? "Delivery term updated" : "Delivery term created");
-      closeDialog(); fetchData();
+      closeDialog(); invalidate(["delivery-terms"]);
     } catch (err: any) { toast.error(err.message); }
     finally { setSaving(false); }
   };
 
   const handleToggle = async (item: DeliveryTerm, isActive: boolean) => {
     const res = await fetch(`/api/masters/delivery-terms/${item.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isActive }) });
-    if (res.ok) setItems((prev) => prev.map((i) => i.id === item.id ? { ...i, isActive } : i));
+    if (res.ok) invalidate(["delivery-terms"]);
     else toast.error("Failed to update status");
   };
 
@@ -257,7 +246,7 @@ function DeliveryTermsTab() {
     try {
       const res = await fetch(`/api/masters/delivery-terms/${item.id}`, { method: "DELETE" });
       if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || "Failed to delete"); }
-      toast.success("Delivery term deleted"); fetchData();
+      toast.success("Delivery term deleted"); invalidate(["delivery-terms"]);
     } catch (err: any) { toast.error(err.message); }
   };
 
@@ -317,24 +306,18 @@ function DeliveryTermsTab() {
 
 function TaxRatesTab() {
   const emptyForm = { code: "", name: "", percentage: "", taxType: "", hsnCode: "", effectiveFrom: "", effectiveTo: "", isActive: true };
-  const [items, setItems] = useState<TaxRate[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Shares one cache entry with the standalone tax-rates screen, so an edit
+  // on either surface refreshes both.
+  const { data, isLoading: loading } = useReferenceQuery<{ taxRates: TaxRate[] }>(
+    ["tax-rates"],
+    "/api/masters/tax"
+  );
+  const items = data?.taxRates ?? [];
+  const invalidate = useInvalidate();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<TaxRate | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
-
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await fetch("/api/masters/tax");
-      const data = await res.json();
-      setItems(data.taxRates || []);
-    } catch { toast.error("Failed to load tax rates"); }
-    finally { setLoading(false); }
-  }, []);
-
-  useEffect(() => { fetchData(); }, [fetchData]);
 
   const openCreate = () => { setEditing(null); setForm(emptyForm); setOpen(true); };
   const openEdit = (item: TaxRate) => {
@@ -363,14 +346,14 @@ function TaxRatesTab() {
       });
       if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || "Failed to save"); }
       toast.success(editing ? "Tax rate updated" : "Tax rate created");
-      closeDialog(); fetchData();
+      closeDialog(); invalidate(["tax-rates"]);
     } catch (err: any) { toast.error(err.message); }
     finally { setSaving(false); }
   };
 
   const handleToggle = async (item: TaxRate, isActive: boolean) => {
     const res = await fetch(`/api/masters/tax/${item.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isActive }) });
-    if (res.ok) setItems((prev) => prev.map((i) => i.id === item.id ? { ...i, isActive } : i));
+    if (res.ok) invalidate(["tax-rates"]);
     else toast.error("Failed to update status");
   };
 
@@ -379,7 +362,7 @@ function TaxRatesTab() {
     try {
       const res = await fetch(`/api/masters/tax/${item.id}`, { method: "DELETE" });
       if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || "Failed to delete"); }
-      toast.success("Tax rate deleted"); fetchData();
+      toast.success("Tax rate deleted"); invalidate(["tax-rates"]);
     } catch (err: any) { toast.error(err.message); }
   };
 
@@ -458,24 +441,18 @@ function TaxRatesTab() {
 
 function InspectionAgenciesTab() {
   const emptyForm = { code: "", name: "", contactPerson: "", phone: "", email: "", address: "", accreditationDetails: "", approvedStatus: true, isActive: true };
-  const [items, setItems] = useState<InspectionAgency[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Shares one cache entry with the standalone inspection-agencies screen, so an edit
+  // on either surface refreshes both.
+  const { data, isLoading: loading } = useReferenceQuery<{ agencies: InspectionAgency[] }>(
+    ["inspection-agencies"],
+    "/api/masters/inspection-agencies"
+  );
+  const items = data?.agencies ?? [];
+  const invalidate = useInvalidate();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<InspectionAgency | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
-
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await fetch("/api/masters/inspection-agencies");
-      const data = await res.json();
-      setItems(data.agencies || []);
-    } catch { toast.error("Failed to load inspection agencies"); }
-    finally { setLoading(false); }
-  }, []);
-
-  useEffect(() => { fetchData(); }, [fetchData]);
 
   const openCreate = () => { setEditing(null); setForm(emptyForm); setOpen(true); };
   const openEdit = (item: InspectionAgency) => {
@@ -494,14 +471,14 @@ function InspectionAgenciesTab() {
       const res = await fetch(url, { method: editing ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
       if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || "Failed to save"); }
       toast.success(editing ? "Agency updated" : "Agency created");
-      closeDialog(); fetchData();
+      closeDialog(); invalidate(["inspection-agencies"]);
     } catch (err: any) { toast.error(err.message); }
     finally { setSaving(false); }
   };
 
   const handleToggle = async (item: InspectionAgency, isActive: boolean) => {
     const res = await fetch(`/api/masters/inspection-agencies/${item.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isActive }) });
-    if (res.ok) setItems((prev) => prev.map((i) => i.id === item.id ? { ...i, isActive } : i));
+    if (res.ok) invalidate(["inspection-agencies"]);
     else toast.error("Failed to update status");
   };
 
@@ -510,7 +487,7 @@ function InspectionAgenciesTab() {
     try {
       const res = await fetch(`/api/masters/inspection-agencies/${item.id}`, { method: "DELETE" });
       if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || "Failed to delete"); }
-      toast.success("Agency deleted"); fetchData();
+      toast.success("Agency deleted"); invalidate(["inspection-agencies"]);
     } catch (err: any) { toast.error(err.message); }
   };
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useApiQuery, retryUnauthorizedOnce } from "@/hooks/use-api-query";
 import Link from "next/link";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { PageHeader } from "@/components/shared/page-header";
@@ -37,41 +38,21 @@ import {
 
 export default function DashboardPage() {
   const { user } = useCurrentUser();
-  const [metrics, setMetrics] = useState<any>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [metricsLoading, setMetricsLoading] = useState(true);
 
-  useEffect(() => {
-    fetchMetrics();
-  }, []);
+  // This is the first screen after login, so it can mount before the session
+  // cookie is readable and get a single 401 that resolves itself — hence the
+  // 401-only retry, which the hand-rolled version implemented as a loop.
+  const { data: metrics, isLoading: metricsLoading } = useApiQuery<any>(
+    ["management-review"],
+    "/api/reports/management-review",
+    { retry: retryUnauthorizedOnce }
+  );
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
     return () => clearInterval(timer);
   }, []);
-
-  const fetchMetrics = async (retries = 2) => {
-    setMetricsLoading(true);
-    for (let attempt = 0; attempt <= retries; attempt++) {
-      try {
-        const response = await fetch("/api/reports/management-review");
-        if (response.ok) {
-          const data = await response.json();
-          setMetrics(data);
-          setMetricsLoading(false);
-          return;
-        }
-        // If 401, wait briefly and retry (session may not be ready yet)
-        if (response.status === 401 && attempt < retries) {
-          await new Promise((r) => setTimeout(r, 1000));
-          continue;
-        }
-      } catch (error) {
-        console.error("Failed to fetch metrics:", error);
-      }
-    }
-    setMetricsLoading(false);
-  };
 
   const formatCurrency = (val: number | null | undefined) => {
     if (val == null) return "—";

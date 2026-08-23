@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import { useReferenceQuery, useInvalidate } from "@/hooks/use-api-query";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,33 +52,20 @@ const emptyForm: FormData = {
 };
 
 export default function OfferTermsPage() {
-  const [terms, setTerms] = useState<OfferTerm[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Both DOMESTIC and EXPORT terms come back in one response and are
+  // filtered client-side, so this is a single cached read.
+  const { data, isLoading: loading } = useReferenceQuery<{ templates: OfferTerm[] }>(
+    ["offer-term-templates"],
+    "/api/offer-term-templates?includeInactive=true"
+  );
+  const terms = data?.templates ?? [];
+  const invalidate = useInvalidate();
   const [activeTab, setActiveTab] = useState("DOMESTIC");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<OfferTerm | null>(null);
   const [formData, setFormData] = useState<FormData>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [deletingItem, setDeletingItem] = useState<OfferTerm | null>(null);
-
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      // Fetch all terms (both types) without active filter
-      const res = await fetch("/api/offer-term-templates?includeInactive=true");
-      if (!res.ok) throw new Error("Failed to fetch");
-      const data = await res.json();
-      setTerms(data.templates || []);
-    } catch {
-      toast.error("Failed to load offer terms");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
 
   const filteredTerms = terms
     .filter((t) => t.quotationType === activeTab)
@@ -136,7 +124,7 @@ export default function OfferTermsPage() {
         toast.success("Term created");
       }
       handleCloseDialog();
-      fetchData();
+      invalidate(["offer-term-templates"]);
     } catch (err: any) {
       toast.error(err.message || "Failed to save");
     } finally {
@@ -153,7 +141,7 @@ export default function OfferTermsPage() {
       });
       if (!res.ok) throw new Error("Failed to update");
       toast.success(item.isActive ? "Term deactivated" : "Term activated");
-      fetchData();
+      invalidate(["offer-term-templates"]);
     } catch {
       toast.error("Failed to update status");
     }
@@ -169,7 +157,7 @@ export default function OfferTermsPage() {
       if (!res.ok) throw new Error("Failed to delete");
       toast.success("Term deleted");
       setDeletingItem(null);
-      fetchData();
+      invalidate(["offer-term-templates"]);
     } catch {
       toast.error("Failed to delete term");
     }

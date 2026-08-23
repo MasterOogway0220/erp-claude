@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useApiQuery } from "@/hooks/use-api-query";
 import { PageHeader } from "@/components/shared/page-header";
 import { DataTable, Column } from "@/components/shared/data-table";
 import { Button } from "@/components/ui/button";
@@ -136,38 +137,20 @@ const poAcceptanceColors: Record<string, string> = {
 
 export default function SalesOrdersPage() {
   const router = useRouter();
-  const [salesOrders, setSalesOrders] = useState<SalesOrder[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [kpis, setKpis] = useState<DashboardKpis | null>(null);
+  const { data: soData, isLoading: loading } = useApiQuery<{ salesOrders: SalesOrder[] }>(
+    ["sales-orders"],
+    "/api/sales-orders"
+  );
+  const salesOrders = soData?.salesOrders ?? [];
 
-  useEffect(() => {
-    fetchSalesOrders();
-    fetchDashboardKpis();
-  }, []);
-
-  const fetchSalesOrders = async () => {
-    try {
-      const response = await fetch("/api/sales-orders");
-      if (!response.ok) throw new Error("Failed to fetch");
-      const data = await response.json();
-      setSalesOrders(data.salesOrders);
-    } catch (error) {
-      toast.error("Failed to load sales orders");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchDashboardKpis = async () => {
-    try {
-      const res = await fetch("/api/sales/dashboard");
-      if (!res.ok) return; // silently skip if unavailable
-      const json = await res.json();
-      if (json?.kpis) setKpis(json.kpis);
-    } catch {
-      // non-fatal — stats row simply won't render
-    }
-  };
+  // The stats row is decoration: if this fails the page still works, so a
+  // failure is not retried and simply leaves the row unrendered.
+  const { data: kpiData } = useApiQuery<{ kpis: DashboardKpis }>(
+    ["sales-dashboard-kpis"],
+    "/api/sales/dashboard",
+    { retry: 0 }
+  );
+  const kpis = kpiData?.kpis ?? null;
 
   const pendingReviewOrders = salesOrders.filter(
     (so) => so.poAcceptanceStatus === "PENDING"
