@@ -30,7 +30,8 @@ interface InspectionOfferRow {
   status: string;
   customer: { name: string; city: string | null };
   tpiAgency: { name: string } | null;
-  items: any[];
+  // Only the count is drawn, so `view=list` returns ids and nothing else.
+  items: { id: string }[];
 }
 
 export default function InspectionOffersListPage() {
@@ -39,7 +40,7 @@ export default function InspectionOffersListPage() {
 
   // search is part of the cache key — leaving it out would serve another
   // search's rows from cache.
-  const offerParams = new URLSearchParams();
+  const offerParams = new URLSearchParams({ view: "list" });
   if (search) offerParams.set("search", search);
 
   const { data, isLoading: loading } = useApiQuery<{ offers: InspectionOfferRow[] }>(

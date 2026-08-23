@@ -35,6 +35,14 @@ screen's checks are convenience, this is the boundary.
 ## Gotchas
 
 - Errors return `error.message`, so thrown text reaches the user's toast.
+- `?view=list` on the GET returns a summary shape: the line items come back as
+  bare ids instead of whole rows. Both current callers (the CPO register table
+  and the P.O. acceptance picker) only need `items.length`, and both send it.
+  It is opt-in on purpose — a caller that forgets it gets the full rows and is
+  merely slow, whereas one silently handed less than it needs would build a
+  document with empty lines. Those two callers also share one React Query key,
+  so if you change one of them you must change the other, or whichever fetch
+  lands first will fill the cache with the shape the other cannot read.
 
 ## Related
 

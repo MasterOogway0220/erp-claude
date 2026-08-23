@@ -12,6 +12,7 @@ Renders the `/quality/inspection-offers` screen. 156 lines.
 
 - `"use client"` — runs in the browser.
 - Calls: `/api/quality/inspection-offers`.
+- Requests `?view=list`. The table renders `items.length` and no line field, so `items` arrives as ids only.
 
 ## Gotchas
 

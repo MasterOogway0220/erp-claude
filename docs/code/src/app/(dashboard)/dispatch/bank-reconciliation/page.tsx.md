@@ -11,7 +11,12 @@ Renders the `/dispatch/bank-reconciliation` screen. 903 lines.
 ## How it works
 
 - `"use client"` — runs in the browser.
-- Calls: `/api/dispatch/payments`.
+- Calls: `/api/dispatch/payments?view=list`.
+- Its `PaymentReceipt` interface needs nothing of the customer but `id` and
+  `name`, so it takes the summary shape under the key
+  `["payment-receipts", "list"]` — shared with the `/dispatch` payments tab,
+  which requests the same URL. Reconciliation state is local, in
+  `localStorage`, and is not part of this payload.
 
 ## Gotchas
 

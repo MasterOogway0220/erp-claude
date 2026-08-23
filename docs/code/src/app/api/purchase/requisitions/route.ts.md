@@ -15,6 +15,8 @@ Operates on `purchaseRequisition`, `salesOrder`.
 ## How it works
 
 - Gated by `checkAccess("purchaseRequisition", "read")`, `checkAccess("purchaseRequisition", "write")`. **Authentication only** — role enforcement is disabled app-wide.
+- **GET `?view=list`** returns a summary shape: `items` collapses to ids, enough for the purchase list table's "N item(s)" count. The PO and RFQ create screens copy PR lines into the document they are building, so they omit the flag and get every line field. Opt-in for that reason — narrowing by default would give those documents empty lines with nothing reporting an error.
+- `suggestedVendor` selects `city` alongside `name`, for the same reason as the PO route: the register renders it and the select had omitted it.
 - Company-scoped with `companyFilter(companyId)`.
 - Allocates a document number with `generateDocumentNumber()` (per company, per financial year).
 - Writes an audit row. Audit failures are swallowed and never block the operation.

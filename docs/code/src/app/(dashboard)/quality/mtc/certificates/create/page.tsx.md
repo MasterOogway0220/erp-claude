@@ -12,7 +12,7 @@ Renders the `/quality/mtc/certificates/create` screen. 1123 lines.
 
 - `"use client"` — runs in the browser.
 - Reads `useSearchParams`, so it **must sit inside a `<Suspense>` boundary** — Next.js 16 fails the build otherwise.
-- Calls: `/api/masters/customers`, `/api/mtc/certificates`, `/api/mtc/material-specs`, `/api/purchase/orders`, `/api/purchase/orders/${poId}`, `/api/quotations`, `/api/quotations/${quotationId}`.
+- Calls: `/api/masters/customers`, `/api/mtc/certificates`, `/api/mtc/material-specs`, `/api/purchase/orders?view=list`, `/api/purchase/orders/${poId}`, `/api/quotations`, `/api/quotations/${quotationId}`.
 
 ## Gotchas
 

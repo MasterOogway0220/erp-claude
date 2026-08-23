@@ -11,7 +11,7 @@ Renders the `/quality/lab-reports/create` screen. 371 lines.
 ## How it works
 
 - `"use client"` — runs in the browser.
-- Calls: `/api/inventory/stock`, `/api/purchase/orders`, `/api/quality/lab-reports`, `/api/upload`.
+- Calls: `/api/inventory/stock`, `/api/purchase/orders?pageSize=200&view=list`, `/api/quality/lab-reports`, `/api/upload`. The PO dropdown takes the summary shape (`view=list`).
 
 ## Gotchas
 

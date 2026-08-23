@@ -21,13 +21,28 @@ export async function GET(request: NextRequest) {
       ];
     }
 
+    // `view=list` asks for the summary shape the offers table needs.
+    //
+    // The list screen is the only consumer of this endpoint, and of the offer's
+    // items it shows nothing but how many there are — so the ids are enough to
+    // give the array a length. It never shows who raised the offer either, so
+    // the createdBy join can go with them.
+    //
+    // Full offer items carry the heat number, specification, colour code and
+    // ready quantity that the inspection-offer letter and the inspection run
+    // are built from; anything that produces a document reads the per-offer
+    // route, not this one, and would break on the narrowed shape. Hence opt-in:
+    // a caller that forgets the flag is merely slow, never silently short of
+    // fields.
+    const summaryOnly = searchParams.get("view") === "list";
+
     const offers = await prisma.inspectionOffer.findMany({
       where,
       include: {
         customer: { select: { id: true, name: true, city: true } },
         tpiAgency: { select: { id: true, name: true } },
-        createdBy: { select: { name: true } },
-        items: true,
+        createdBy: summaryOnly ? false : { select: { name: true } },
+        items: summaryOnly ? { select: { id: true } } : true,
       },
       orderBy: { createdAt: "desc" },
     });

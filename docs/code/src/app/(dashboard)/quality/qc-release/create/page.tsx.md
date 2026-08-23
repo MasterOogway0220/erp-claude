@@ -12,6 +12,7 @@ Renders the `/quality/qc-release/create` screen. 230 lines.
 
 - `"use client"` — runs in the browser.
 - Calls: `/api/quality/inspections`, `/api/quality/qc-release`.
+- Requests `/api/quality/inspections?view=list`. Everything this screen needs — the stock row's id, status, product, size and quantity — is in the summary shape; the measured parameters it never reads are not.
 
 ## Gotchas
 

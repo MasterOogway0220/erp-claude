@@ -12,6 +12,7 @@ Renders the `/quality/inspection-offers/create` screen. 462 lines.
 
 - `"use client"` — runs in the browser.
 - Calls: `/api/masters/customers`, `/api/masters/inspection-agencies`, `/api/quality/inspection-offers`, `/api/sales-orders`, `/api/sales-orders/${v}/qap`.
+- Requests `/api/sales-orders?view=list` for the order dropdown, which maps only the id, `soNo` and customer name.
 
 ## Gotchas
 

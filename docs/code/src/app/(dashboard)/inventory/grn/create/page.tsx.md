@@ -12,7 +12,7 @@ Renders the `/inventory/grn/create` screen. 376 lines.
 
 - `"use client"` — runs in the browser.
 - Reads `useSearchParams`, so it **must sit inside a `<Suspense>` boundary** — Next.js 16 fails the build otherwise.
-- Calls: `/api/inventory/grn`, `/api/masters/warehouses`, `/api/purchase/orders`, `/api/purchase/orders/${poId}`.
+- Calls: `/api/inventory/grn`, `/api/masters/warehouses`, `/api/purchase/orders?view=list`, `/api/purchase/orders/${poId}`. The PO dropdown takes the summary shape (`view=list`); the lines come from the by-id fetch once a PO is chosen.
 
 ## Gotchas
 

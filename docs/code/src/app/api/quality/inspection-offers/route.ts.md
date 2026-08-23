@@ -15,6 +15,7 @@ Operates on `inspectionOffer`.
 ## How it works
 
 - Gated by `checkAccess("inspectionOffer", "read")`, `checkAccess("inspectionOffer", "write")`. **Authentication only** — role enforcement is disabled app-wide.
+- **GET `?view=list`** returns a summary shape: `items` collapses to ids — enough for the register's "N item(s)" count — and `createdBy` is dropped. The offers table never reads a line; heat numbers, colour codes and quantities live on the detail screen. Opt-in, so a caller that forgets the flag is merely slower, never silently handed less than it needs.
 - Company-scoped with `companyFilter(companyId)`.
 - Allocates a document number with `generateDocumentNumber()` (per company, per financial year).
 - Writes an audit row. Audit failures are swallowed and never block the operation.

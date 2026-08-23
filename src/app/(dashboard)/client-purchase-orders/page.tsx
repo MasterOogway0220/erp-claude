@@ -40,7 +40,8 @@ interface ClientPO {
   customer: { id: string; name: string; city: string | null };
   quotation: { id: string; quotationNo: string };
   createdBy: { name: string } | null;
-  items: any[];
+  /** Only counted, never read — `view=list` returns just the ids. */
+  items: { id: string }[];
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -61,6 +62,12 @@ export default function ClientPurchaseOrdersPage() {
   const cpoParams = new URLSearchParams();
   if (search) cpoParams.set("search", search);
   if (statusFilter && statusFilter !== "all") cpoParams.set("status", statusFilter);
+  // This table shows the customer, the quotation number and how many lines
+  // there are — never a line itself — so it opts into the summary shape.
+  // Appended last so that with an empty search and status=REGISTERED the URL
+  // matches, character for character, the one the P.O. acceptance picker
+  // hard-codes for the cache key the two share.
+  cpoParams.set("view", "list");
 
   const { data, isLoading: loading } = useApiQuery<{ clientPOs: ClientPO[] }>(
     ["client-purchase-orders", search, statusFilter],

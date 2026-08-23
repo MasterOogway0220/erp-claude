@@ -28,19 +28,38 @@ export async function GET(request: NextRequest) {
       where.overallResult = result;
     }
 
+    // `view=list` asks for the summary shape the two list screens need.
+    //
+    // Both callers only pick an inspection out of a table or a dropdown: the
+    // quality dashboard's inspection register shows the number, date, heat
+    // number, result, inspector and TPI agency; the QC-release picker adds the
+    // linked stock's product, size, quantity and status. Neither ever reads
+    // the parameter rows, and neither shows the GRN behind a GRN item.
+    //
+    // The parameters are the expensive part — one child row per measured
+    // property (dimensions, chemistry, hydro) on every inspection, on a list
+    // with no pagination. Pulling them to draw six columns is the whole cost.
+    //
+    // Opt-in, so a caller that forgets it is merely slow rather than silently
+    // handed less data than it needs — the inspection detail screen reads its
+    // own /[id] route and is unaffected either way.
+    const summaryOnly = searchParams.get("view") === "list";
+
     const inspections = await prisma.inspection.findMany({
       where,
       include: {
         grnItem: {
-          select: {
-            id: true,
-            heatNo: true,
-            product: true,
-            sizeLabel: true,
-            grn: {
-              select: { id: true, grnNo: true },
-            },
-          },
+          select: summaryOnly
+            ? { id: true, heatNo: true }
+            : {
+                id: true,
+                heatNo: true,
+                product: true,
+                sizeLabel: true,
+                grn: {
+                  select: { id: true, grnNo: true },
+                },
+              },
         },
         inventoryStock: {
           select: {
@@ -59,7 +78,7 @@ export async function GET(request: NextRequest) {
         tpiAgency: {
           select: { id: true, name: true, code: true },
         },
-        parameters: true,
+        parameters: !summaryOnly,
       },
       orderBy: { inspectionDate: "desc" },
     });

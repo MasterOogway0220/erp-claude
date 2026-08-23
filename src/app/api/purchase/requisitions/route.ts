@@ -27,6 +27,19 @@ export async function GET(request: NextRequest) {
       where.status = status;
     }
 
+    // `view=list` asks for the summary shape the purchase list table needs.
+    //
+    // Three screens read this endpoint. The purchase list table only prints
+    // "N item(s)" beside each PR, so the ids are enough to give it a length.
+    // The other two copy the lines into the document they are building — the
+    // PO form turns each PR line into a PO line, and the RFQ form tabulates
+    // them for the vendors — so they need product, material, spec, size,
+    // quantity, uom and remarks. Narrowing by default would hand those two
+    // documents empty lines with nothing reporting an error.
+    //
+    // Opt-in for that reason: a caller that forgets the flag is merely slow.
+    const summaryOnly = searchParams.get("view") === "list";
+
     const purchaseRequisitions = await prisma.purchaseRequisition.findMany({
       where,
       include: {
@@ -34,9 +47,9 @@ export async function GET(request: NextRequest) {
           select: { id: true, soNo: true },
         },
         suggestedVendor: {
-          select: { id: true, name: true },
+          select: { id: true, name: true, city: true },
         },
-        items: true,
+        items: summaryOnly ? { select: { id: true } } : true,
       },
       orderBy: { prDate: "desc" },
     });

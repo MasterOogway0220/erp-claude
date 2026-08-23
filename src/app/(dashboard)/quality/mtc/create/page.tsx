@@ -30,8 +30,8 @@ export default function CreateMTCPage() {
   );
   const stocks = stockData?.stocks ?? [];
   const { data: purchaseOrdersData } = useApiQuery<{ purchaseOrders: any[] }>(
-    ["purchase-orders", ""],
-    "/api/purchase/orders"
+    ["purchase-orders", "view=list"],
+    "/api/purchase/orders?view=list"
   );
   const purchaseOrders = purchaseOrdersData?.purchaseOrders ?? [];
   const { data: grnsData } = useApiQuery<{ grns: any[] }>(

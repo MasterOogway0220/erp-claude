@@ -112,8 +112,10 @@ export default function PurchasePage() {
   const fetchData = async () => {
     try {
       const [prResponse, poResponse, rfqResponse, csResponse] = await Promise.all([
-        fetch("/api/purchase/requisitions"),
-        fetch("/api/purchase/orders"),
+        // Both tables only need the header fields and a line count, so ask for
+        // the summary shape rather than dragging every PR/PO line across.
+        fetch("/api/purchase/requisitions?view=list"),
+        fetch("/api/purchase/orders?view=list"),
         fetch("/api/purchase/rfq"),
         fetch("/api/purchase/comparative-statement"),
       ]);

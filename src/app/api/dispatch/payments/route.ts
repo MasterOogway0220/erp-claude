@@ -20,6 +20,26 @@ export async function GET(request: NextRequest) {
       ];
     }
 
+    // `view=list` asks for the summary shape both list screens need.
+    //
+    // Only two screens read this endpoint: the payments tab on the dispatch
+    // page and the bank-reconciliation screen. Between them they use nothing
+    // of the customer but its id and name — every other field on the receipt
+    // comes from the receipt itself, and the invoice is already narrowed.
+    // Sending the whole customer record means ~30 columns of billing address,
+    // GSTIN, PAN and credit terms per row to print one name in a table cell.
+    //
+    // Both screens also share one React Query key, so they must agree: if one
+    // asked for the summary shape and the other for the full one, whichever
+    // loaded first would populate the cache and the other would read the wrong
+    // shape out of it. Both send this flag, and both use a key of
+    // ["payment-receipts", "list"] to stay clear of any future full-shape
+    // reader.
+    //
+    // Opt-in, so a caller that forgets it is merely slow rather than silently
+    // handed less data than it needs.
+    const summaryOnly = searchParams.get("view") === "list";
+
     const paymentReceipts = await prisma.paymentReceipt.findMany({
       where,
       include: {
@@ -32,7 +52,7 @@ export async function GET(request: NextRequest) {
             status: true,
           },
         },
-        customer: true,
+        customer: summaryOnly ? { select: { id: true, name: true } } : true,
       },
       orderBy: { receiptDate: "desc" },
     });

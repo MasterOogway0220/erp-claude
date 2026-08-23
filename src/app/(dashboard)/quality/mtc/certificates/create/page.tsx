@@ -79,8 +79,8 @@ function CreateMTCPage() {
     "PURCHASE_ORDER" | "QUOTATION"
   >("PURCHASE_ORDER");
   const { data: poData, isLoading: loadingPOs } = useApiQuery<{ purchaseOrders: any[] }>(
-    ["purchase-orders", ""],
-    "/api/purchase/orders"
+    ["purchase-orders", "view=list"],
+    "/api/purchase/orders?view=list"
   );
   const purchaseOrders = poData?.purchaseOrders ?? [];
   // Keyed by the status filter, so each form's slice is its own entry.

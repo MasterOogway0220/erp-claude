@@ -29,13 +29,34 @@ export async function GET(request: NextRequest) {
       where.status = status;
     }
 
+    // `view=list` asks for the summary shape both list screens need.
+    //
+    // Two screens read this endpoint — the CPO register table and the P.O.
+    // acceptance wizard's picker. Neither reads a line item: the register
+    // prints `items.length` in an "Items" column and the picker does not even
+    // declare `items` on its interface. Everything that prices or copies the
+    // lines (the CPO detail page, the acceptance wizard once a CPO is chosen)
+    // goes to /api/client-purchase-orders/[id] instead, which is untouched.
+    //
+    // Both screens also share one React Query key — ["client-purchase-orders",
+    // search, status] — so they must agree: if one asked for the summary shape
+    // and the other for the full one, whichever loaded first would fill the
+    // cache and the other would read the wrong shape out of it. Both send this
+    // flag, and the acceptance wizard's literal URL is kept byte-identical to
+    // what the register builds for the same key.
+    //
+    // Opt-in, so a caller that forgets it is merely slow rather than silently
+    // handed less data than it needs.
+    const summaryOnly = searchParams.get("view") === "list";
+
     const clientPOs = await prisma.clientPurchaseOrder.findMany({
       where,
       include: {
         customer: { select: { id: true, name: true, city: true } },
         quotation: { select: { id: true, quotationNo: true } },
         createdBy: { select: { name: true } },
-        items: true,
+        // Only the count is shown, so the ids are enough to give it a length.
+        items: summaryOnly ? { select: { id: true } } : true,
       },
       orderBy: { createdAt: "desc" },
     });

@@ -15,6 +15,7 @@ Operates on `inspection`, `inventoryStock`, `nCR`.
 ## How it works
 
 - Gated by `checkAccess("inspection", "read")`, `checkAccess("inspection", "write")`. **Authentication only** — role enforcement is disabled app-wide.
+- **GET `?view=list`** returns a summary shape: `parameters` — one row per measured property (dimensions, chemistry, hydro test) — is dropped, and `grnItem` narrows to `{ id, heatNo }`, removing a nested join per row. On an unpaginated list that is the bulk of the payload, and neither list screen renders any of it. Opt-in.
 - Company-scoped with `companyFilter(companyId)`.
 - Allocates a document number with `generateDocumentNumber()` (per company, per financial year).
 - Writes inside `$transaction`. Item updates follow the delete-and-recreate pattern, so **a field the caller omits is lost**.

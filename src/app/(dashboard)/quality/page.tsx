@@ -75,9 +75,13 @@ function QualityPageInner() {
   // Six independent lists, one per tab. Each is its own cache entry, shared
   // with the standalone screen for that record type — opening the NCR page
   // after this dashboard issues no second query.
+  // `["inspections", "list"]` rather than `["inspections"]`: this register only
+  // needs the summary shape, so it must not share a cache entry with any screen
+  // that asks for the full record — whichever loaded first would win and the
+  // other would silently read the wrong shape.
   const { data: inspectionData } = useApiQuery<{ inspections: any[] }>(
-    ["inspections"],
-    "/api/quality/inspections"
+    ["inspections", "list"],
+    "/api/quality/inspections?view=list"
   );
   const inspections = inspectionData?.inspections ?? [];
 

@@ -123,8 +123,8 @@ function formatCurrency(value: number): string {
 export default function BankReconciliationPage() {
   // Data
   const { data: receiptsData, isLoading: loading } = useApiQuery<{ paymentReceipts: PaymentReceipt[] }>(
-    ["payment-receipts"],
-    "/api/dispatch/payments"
+    ["payment-receipts", "list"],
+    "/api/dispatch/payments?view=list"
   );
   const receipts = receiptsData?.paymentReceipts ?? [];
   const invalidate = useInvalidate();

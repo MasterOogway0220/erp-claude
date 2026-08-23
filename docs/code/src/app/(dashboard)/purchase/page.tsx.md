@@ -11,7 +11,7 @@ Renders the `/purchase` screen. 514 lines.
 ## How it works
 
 - `"use client"` — runs in the browser.
-- Calls: `/api/purchase/comparative-statement`, `/api/purchase/orders`, `/api/purchase/requisitions`, `/api/purchase/rfq`.
+- Calls: `/api/purchase/comparative-statement`, `/api/purchase/orders?view=list`, `/api/purchase/requisitions?view=list`, `/api/purchase/rfq`. The `view=list` flag asks both purchase endpoints for their summary shape — these tables show header fields and a line count only.
 
 ## Gotchas
 

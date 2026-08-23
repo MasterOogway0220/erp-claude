@@ -9,7 +9,9 @@ See [../README.md](../README.md) for this module's shared behaviour, and
 
 Operates on `paymentReceipt`, `invoice`.
 
-- **GET** — Read
+- **GET** — Read. `?search=` matches the receipt number. `?view=list` returns
+  the summary shape: the customer collapsed to `{ id, name }` instead of the
+  whole customer record. The invoice is always narrowed.
 - **POST** — Create
 
 ## How it works
@@ -23,6 +25,16 @@ Operates on `paymentReceipt`, `invoice`.
 ## Gotchas
 
 - Errors return `error.message`, so thrown text reaches the user's toast.
+- `view=list` is **opt-in**. The database is shared hosting with a hard
+  connection cap, so the list screens ask for less; a caller that forgets the
+  flag gets the full customer record and is merely slow, never short of data.
+  Never invert it — a caller silently handed less than it needs breaks with no
+  error, just a blank cell.
+- Both readers of this list (`/dispatch` payments tab, `/dispatch/bank-reconciliation`)
+  send `view=list` and share the React Query key `["payment-receipts", "list"]`.
+  They must stay in agreement: two screens on one key requesting different
+  shapes means whichever loads first fills the cache and the other reads the
+  wrong shape. A future screen needing the full customer must use its own key.
 
 ## Related
 

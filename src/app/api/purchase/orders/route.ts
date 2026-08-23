@@ -28,11 +28,35 @@ export async function GET(request: NextRequest) {
       where.status = status;
     }
 
+    // `view=list` asks for the summary shape the picker screens need.
+    //
+    // Five screens read this endpoint: the purchase list table, the GRN form,
+    // the lab-report form, the MTC-upload form and the MTC-certificate form.
+    // Every one of them only picks a PO out of a table or a dropdown — between
+    // them they use the PO number and date, the vendor name, the linked SO
+    // number, the status and the total. None reads the lines from here; the
+    // three that go on to copy lines into a document (GRN, MTC certificate)
+    // re-fetch the PO by id first, which still returns them in full.
+    //
+    // So the summary shape drops `items` entirely — a PO line carries product,
+    // material, spec, size, quantity, rate, amount, delivery date and the
+    // fitting/flange links, none of which reaches the screen.
+    //
+    // The GRN, MTC-upload and MTC-certificate forms share one React Query key
+    // (["purchase-orders", ""]), so they must agree: if one asked for the
+    // summary shape and another for the full one, whichever loaded first would
+    // populate the cache and the other would read the wrong shape out of it.
+    // All three send this flag and all three key off the new query string.
+    //
+    // Opt-in, so a caller that forgets it is merely slow rather than silently
+    // handed less data than it needs.
+    const summaryOnly = searchParams.get("view") === "list";
+
     const purchaseOrders = await prisma.purchaseOrder.findMany({
       where,
       include: {
         vendor: {
-          select: { id: true, name: true },
+          select: { id: true, name: true, city: true },
         },
         salesOrder: {
           select: { id: true, soNo: true },
@@ -40,7 +64,7 @@ export async function GET(request: NextRequest) {
         purchaseRequisition: {
           select: { id: true, prNo: true },
         },
-        items: true,
+        items: summaryOnly ? false : true,
       },
       orderBy: { poDate: "desc" },
     });

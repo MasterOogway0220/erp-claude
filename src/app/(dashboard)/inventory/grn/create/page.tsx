@@ -91,8 +91,8 @@ function CreateGRNPage() {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const { data: purchaseOrdersRawData } = useApiQuery<{ purchaseOrders: any[] }>(
-    ["purchase-orders", ""],
-    "/api/purchase/orders"
+    ["purchase-orders", "view=list"],
+    "/api/purchase/orders?view=list"
   );
   const purchaseOrdersRaw = purchaseOrdersRawData?.purchaseOrders ?? [];
   // Only orders that can still receive material are selectable here.

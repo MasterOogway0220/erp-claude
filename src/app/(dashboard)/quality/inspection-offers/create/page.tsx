@@ -91,7 +91,9 @@ export default function CreateInspectionOfferPage() {
 
   const fetchSalesOrders = async () => {
     try {
-      const soRes = await fetch("/api/sales-orders");
+      // Only id, soNo and the customer's name reach the dropdown below, so ask
+      // for the summary shape rather than every line of every sales order.
+      const soRes = await fetch("/api/sales-orders?view=list");
       if (soRes.ok) {
         const d = await soRes.json();
         const list = d.salesOrders ?? [];

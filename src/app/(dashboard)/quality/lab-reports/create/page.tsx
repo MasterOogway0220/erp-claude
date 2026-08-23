@@ -39,8 +39,8 @@ export default function CreateLabReportPage() {
   );
   const stocks = stockData?.stocks ?? [];
   const { data: purchaseOrdersData } = useApiQuery<{ purchaseOrders: any[] }>(
-    ["purchase-orders", "pageSize=200"],
-    "/api/purchase/orders?pageSize=200"
+    ["purchase-orders", "pageSize=200&view=list"],
+    "/api/purchase/orders?pageSize=200&view=list"
   );
   const purchaseOrders = purchaseOrdersData?.purchaseOrders ?? [];
   const [formData, setFormData] = useState({

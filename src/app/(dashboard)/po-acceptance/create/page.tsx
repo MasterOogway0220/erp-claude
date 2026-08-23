@@ -169,11 +169,14 @@ function CreatePOAcceptanceContent() {
   /**
    * Registered CPOs available for acceptance. Same key *and* URL as the CPO
    * register screen, so the two share one cache entry instead of each issuing
-   * its own query.
+   * its own query — which is why `view=list` has to be here too: sharing a key
+   * with a screen that asked for a narrower shape would leave whichever loaded
+   * second reading the other's rows. This picker only needs the header fields
+   * anyway; the lines come from the per-CPO fetch below.
    */
   const { data: cpoListData, isLoading } = useApiQuery<{ clientPOs: ClientPO[] }>(
     ["client-purchase-orders", "", "REGISTERED"],
-    "/api/client-purchase-orders?status=REGISTERED"
+    "/api/client-purchase-orders?status=REGISTERED&view=list"
   );
   const clientPOs = useMemo(
     () => (cpoListData?.clientPOs ?? []).filter((c) => c.status === "REGISTERED"),

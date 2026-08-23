@@ -17,6 +17,13 @@ Renders the `/po-acceptance/create` screen. 1551 lines.
 ## Gotchas
 
 - Large file (1551 lines). Read the section you are changing rather than pattern-matching from a sibling.
+- The CPO dropdown deliberately reuses the CPO register screen's React Query key
+  and URL, `?status=REGISTERED&view=list`, so the two share one cache entry.
+  `view=list` returns the summary shape (line items as bare ids); this picker
+  reads only header fields, and the priced lines come from the per-CPO fetch. If
+  you change either the key or the flag, change the register screen to match —
+  otherwise whichever query lands first fills the cache with a shape the other
+  cannot read, and the dropdown or the table silently empties.
 - Any `Select` needs a non-empty `SelectItem` value; the codebase uses a `"NONE"` sentinel mapped to `""`.
 - Role gating in the UI is cosmetic — the API is the boundary, and its role checks are currently disabled.
 

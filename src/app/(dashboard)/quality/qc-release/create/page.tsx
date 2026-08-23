@@ -33,7 +33,9 @@ export default function CreateQCReleasePage() {
   const fetchInspections = async () => {
     try {
       const [inspRes, qcrRes] = await Promise.all([
-        fetch("/api/quality/inspections"),
+        // A picker: it reads the result, the stock's status/heat/product/size/qty
+        // and nothing else, so it takes the summary shape.
+        fetch("/api/quality/inspections?view=list"),
         fetch("/api/quality/qc-release"),
       ]);
       if (inspRes.ok && qcrRes.ok) {

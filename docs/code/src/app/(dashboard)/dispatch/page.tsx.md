@@ -12,7 +12,11 @@ Renders the `/dispatch` screen. 483 lines.
 
 - `"use client"` — runs in the browser.
 - Reads `useSearchParams`, so it **must sit inside a `<Suspense>` boundary** — Next.js 16 fails the build otherwise.
-- Calls: `/api/dispatch/dispatch-notes`, `/api/dispatch/invoices`, `/api/dispatch/packing-lists`, `/api/dispatch/payments`.
+- Calls: `/api/dispatch/dispatch-notes`, `/api/dispatch/invoices`, `/api/dispatch/packing-lists`, `/api/dispatch/payments?view=list`.
+- The payments tab prints only the receipt number and date, the invoice number,
+  the customer's name, the amount and the mode, so it takes the summary shape
+  under the key `["payment-receipts", "list"]` — shared with
+  `/dispatch/bank-reconciliation`, which requests the same URL.
 
 ## Gotchas
 

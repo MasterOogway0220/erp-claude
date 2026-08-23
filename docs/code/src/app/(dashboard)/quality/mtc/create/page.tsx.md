@@ -11,7 +11,7 @@ Renders the `/quality/mtc/create` screen. 282 lines.
 ## How it works
 
 - `"use client"` — runs in the browser.
-- Calls: `/api/inventory/grn`, `/api/inventory/stock`, `/api/purchase/orders`, `/api/quality/mtc`.
+- Calls: `/api/inventory/grn`, `/api/inventory/stock`, `/api/purchase/orders?view=list`, `/api/quality/mtc`. The PO dropdown takes the summary shape (`view=list`) — it shows only the PO number and vendor name.
 
 ## Gotchas
 

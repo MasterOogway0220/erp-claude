@@ -63,8 +63,8 @@ function DispatchPageContent() {
   const invoices = invData?.invoices ?? [];
 
   const { data: payData } = useApiQuery<{ paymentReceipts: any[] }>(
-    ["payment-receipts"],
-    "/api/dispatch/payments"
+    ["payment-receipts", "list"],
+    "/api/dispatch/payments?view=list"
   );
   const payments = payData?.paymentReceipts ?? [];
 
