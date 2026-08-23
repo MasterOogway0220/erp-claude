@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useInspectionAgencies } from "@/hooks/use-masters";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -54,7 +55,7 @@ export default function CreateLabLetterPage() {
   const [loading, setLoading] = useState(false);
   const [stocks, setStocks] = useState<StockItem[]>([]);
   const [tests, setTests] = useState<TestingItem[]>([]);
-  const [agencies, setAgencies] = useState<InspectionAgency[]>([]);
+  const agencies = useInspectionAgencies<InspectionAgency>();
 
   const [selectedStockId, setSelectedStockId] = useState("");
   const [selectedStock, setSelectedStock] = useState<StockItem | null>(null);
@@ -81,7 +82,6 @@ export default function CreateLabLetterPage() {
   useEffect(() => {
     fetchStocks();
     fetchTests();
-    fetchAgencies();
   }, []);
 
   const fetchStocks = async () => {
@@ -110,18 +110,6 @@ export default function CreateLabLetterPage() {
       }
     } catch {
       console.error("Failed to fetch testing masters");
-    }
-  };
-
-  const fetchAgencies = async () => {
-    try {
-      const res = await fetch("/api/masters/inspection-agencies");
-      if (res.ok) {
-        const data = await res.json();
-        setAgencies(data.inspectionAgencies || data.agencies || []);
-      }
-    } catch {
-      console.error("Failed to fetch inspection agencies");
     }
   };
 

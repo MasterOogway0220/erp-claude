@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useCustomers } from "@/hooks/use-masters";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -43,22 +44,8 @@ const emptyForm: BuyerFormData = {
 export default function CreateBuyerPage() {
   const router = useRouter();
   const [formData, setFormData] = useState<BuyerFormData>(emptyForm);
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const customers = useCustomers<Customer>();
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    const fetchCustomers = async () => {
-      try {
-        const res = await fetch("/api/masters/customers");
-        if (!res.ok) throw new Error("Failed to fetch customers");
-        const data = await res.json();
-        setCustomers(data.customers || []);
-      } catch {
-        toast.error("Failed to load customers");
-      }
-    };
-    fetchCustomers();
-  }, []);
 
   const update = (field: keyof BuyerFormData, value: string) =>
     setFormData((prev) => ({ ...prev, [field]: value }));

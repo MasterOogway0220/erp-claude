@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useApiQuery } from "@/hooks/use-api-query";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { DataTable, Column } from "@/components/shared/data-table";
@@ -8,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Eye } from "lucide-react";
 import { format } from "date-fns";
-import { toast } from "sonner";
 
 interface ComparativeStatement {
   id: string;
@@ -36,28 +36,11 @@ const statusColors: Record<string, string> = {
 
 export default function ComparativeStatementListPage() {
   const router = useRouter();
-  const [statements, setStatements] = useState<ComparativeStatement[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchStatements();
-  }, []);
-
-  const fetchStatements = async () => {
-    try {
-      const response = await fetch("/api/purchase/comparative-statement");
-      if (response.ok) {
-        const data = await response.json();
-        setStatements(data.comparativeStatements || []);
-      } else {
-        toast.error("Failed to load comparative statements");
-      }
-    } catch (error) {
-      toast.error("Failed to load comparative statements");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data, isLoading: loading } = useApiQuery<{ comparativeStatements: ComparativeStatement[] }>(
+    ["comparative-statements"],
+    "/api/purchase/comparative-statement"
+  );
+  const statements = data?.comparativeStatements ?? [];
 
   const columns: Column<ComparativeStatement>[] = [
     {

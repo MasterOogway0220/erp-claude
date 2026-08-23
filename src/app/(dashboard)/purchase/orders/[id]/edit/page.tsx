@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
+import { useVendors } from "@/hooks/use-masters";
 import { useRouter, useParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -63,7 +64,7 @@ function EditPOPage() {
   const id = params.id as string;
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
-  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const vendors = useVendors<Vendor>();
 
   const defaultDeliveryDate = format(
     new Date(Date.now() + 45 * 24 * 60 * 60 * 1000),
@@ -80,21 +81,8 @@ function EditPOPage() {
   const [items, setItems] = useState<POItem[]>([]);
 
   useEffect(() => {
-    fetchVendors();
     fetchPO();
   }, []);
-
-  const fetchVendors = async () => {
-    try {
-      const response = await fetch("/api/masters/vendors");
-      if (response.ok) {
-        const data = await response.json();
-        setVendors(data.vendors || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch vendors:", error);
-    }
-  };
 
   const fetchPO = async () => {
     try {

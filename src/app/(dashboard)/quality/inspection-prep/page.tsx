@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useApiQuery } from "@/hooks/use-api-query";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,32 +41,16 @@ function statusBadgeVariant(
 
 export default function InspectionPrepListPage() {
   const router = useRouter();
-  const [preps, setPreps] = useState<InspectionPrepRow[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
-  useEffect(() => {
-    fetchPreps();
-  }, [search]);
+  const prepParams = new URLSearchParams();
+  if (search) prepParams.set("search", search);
 
-  const fetchPreps = async () => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams();
-      if (search) params.set("search", search);
-      const res = await fetch(`/api/quality/inspection-prep?${params}`);
-      if (res.ok) {
-        const data = await res.json();
-        setPreps(data.preps || []);
-      } else {
-        toast.error("Failed to load inspection prep records");
-      }
-    } catch (err) {
-      toast.error("Failed to load inspection prep records");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data, isLoading: loading } = useApiQuery<{ preps: InspectionPrepRow[] }>(
+    ["inspection-preps", search],
+    `/api/quality/inspection-prep?${prepParams}`
+  );
+  const preps = data?.preps ?? [];
 
   return (
     <div className="space-y-6">

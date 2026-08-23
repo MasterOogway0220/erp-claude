@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
+import { useCustomersQuery } from "@/hooks/use-masters";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -78,7 +79,8 @@ function CreateMTCPage() {
   >("PURCHASE_ORDER");
   const [purchaseOrders, setPurchaseOrders] = useState<any[]>([]);
   const [quotations, setQuotations] = useState<any[]>([]);
-  const [customers, setCustomers] = useState<any[]>([]);
+  const { data: customerData, isLoading: loadingCustomers } = useCustomersQuery<any>();
+  const customers = customerData?.customers ?? [];
   const [materialSpecs, setMaterialSpecs] = useState<any[]>([]);
   const [selectedPO, setSelectedPO] = useState<any>(null);
   const [selectedQuotation, setSelectedQuotation] = useState<any>(null);
@@ -106,7 +108,6 @@ function CreateMTCPage() {
   // Loading states
   const [loadingPOs, setLoadingPOs] = useState(false);
   const [loadingQuotations, setLoadingQuotations] = useState(false);
-  const [loadingCustomers, setLoadingCustomers] = useState(false);
   const [loadingSpecs, setLoadingSpecs] = useState(false);
   const [loadingPODetail, setLoadingPODetail] = useState(false);
   const [loadingQuotationDetail, setLoadingQuotationDetail] = useState(false);
@@ -118,7 +119,6 @@ function CreateMTCPage() {
   useEffect(() => {
     fetchPurchaseOrders();
     fetchQuotations();
-    fetchCustomers();
     fetchMaterialSpecs();
   }, []);
 
@@ -149,21 +149,6 @@ function CreateMTCPage() {
       console.error("Failed to fetch quotations:", error);
     } finally {
       setLoadingQuotations(false);
-    }
-  };
-
-  const fetchCustomers = async () => {
-    setLoadingCustomers(true);
-    try {
-      const res = await fetch("/api/masters/customers");
-      if (res.ok) {
-        const data = await res.json();
-        setCustomers(data.customers || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch customers:", error);
-    } finally {
-      setLoadingCustomers(false);
     }
   };
 

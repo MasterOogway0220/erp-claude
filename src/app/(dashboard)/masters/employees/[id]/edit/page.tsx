@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useDepartments } from "@/hooks/use-masters";
 import { useRouter, useParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -71,14 +72,7 @@ export default function EditEmployeePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
-
-  useEffect(() => {
-    fetch("/api/masters/departments")
-      .then((r) => r.json())
-      .then((d) => setDepartments(d.departments || []))
-      .catch(() => {});
-  }, []);
+  const departments = useDepartments<{ id: string; name: string }>();
 
   useEffect(() => {
     const fetchData = async () => {

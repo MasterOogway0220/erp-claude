@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useApiQuery } from "@/hooks/use-api-query";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { format } from "date-fns";
@@ -22,26 +23,11 @@ const statusColors: Record<string, { variant: "default" | "secondary" | "destruc
 
 export default function MTCCertificatesListPage() {
   const router = useRouter();
-  const [certificates, setCertificates] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchCertificates();
-  }, []);
-
-  const fetchCertificates = async () => {
-    try {
-      const response = await fetch("/api/mtc/certificates");
-      if (response.ok) {
-        const data = await response.json();
-        setCertificates(data.certificates || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch MTC certificates:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data, isLoading: loading } = useApiQuery<{ certificates: any[] }>(
+    ["mtc-certificates"],
+    "/api/mtc/certificates"
+  );
+  const certificates = data?.certificates ?? [];
 
   const columns: Column<any>[] = [
     {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useCustomers } from "@/hooks/use-masters";
 import { useRouter, useParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -51,7 +52,7 @@ export default function EditBuyerPage() {
   const id = params.id as string;
 
   const [buyer, setBuyer] = useState<Buyer | null>(null);
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const customers = useCustomers<Customer>();
   const [formData, setFormData] = useState<BuyerFormData>({
     customerId: "",
     buyerName: "",
@@ -67,16 +68,7 @@ export default function EditBuyerPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [buyersRes, customersRes] = await Promise.all([
-          fetch("/api/masters/buyers?search="),
-          fetch("/api/masters/customers"),
-        ]);
-
-        if (customersRes.ok) {
-          const customersData = await customersRes.json();
-          setCustomers(customersData.customers || []);
-        }
-
+        const buyersRes = await fetch("/api/masters/buyers?search=");
         if (!buyersRes.ok) throw new Error("Failed to fetch buyers");
         const buyersData = await buyersRes.json();
         const found = (buyersData.buyers || []).find((b: Buyer) => b.id === id);

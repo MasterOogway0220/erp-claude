@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useApiQuery } from "@/hooks/use-api-query";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -34,30 +35,18 @@ interface InspectionOfferRow {
 
 export default function InspectionOffersListPage() {
   const router = useRouter();
-  const [offers, setOffers] = useState<InspectionOfferRow[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
-  useEffect(() => {
-    fetchOffers();
-  }, [search]);
+  // search is part of the cache key — leaving it out would serve another
+  // search's rows from cache.
+  const offerParams = new URLSearchParams();
+  if (search) offerParams.set("search", search);
 
-  const fetchOffers = async () => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams();
-      if (search) params.set("search", search);
-      const res = await fetch(`/api/quality/inspection-offers?${params}`);
-      if (res.ok) {
-        const data = await res.json();
-        setOffers(data.offers || []);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data, isLoading: loading } = useApiQuery<{ offers: InspectionOfferRow[] }>(
+    ["inspection-offers", search],
+    `/api/quality/inspection-offers?${offerParams}`
+  );
+  const offers = data?.offers ?? [];
 
   return (
     <div className="space-y-6">

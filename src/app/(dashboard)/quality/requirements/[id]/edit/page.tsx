@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useInspectionAgencies } from "@/hooks/use-masters";
 import { useRouter, useParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { PageLoading } from "@/components/shared/page-loading";
@@ -42,7 +43,7 @@ const INSPECTION_LOCATIONS = [
 export default function EditQualityRequirementPage() {
   const router = useRouter();
   const params = useParams();
-  const [agencies, setAgencies] = useState<TPIAgency[]>([]);
+  const agencies = useInspectionAgencies<TPIAgency>();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -62,8 +63,7 @@ export default function EditQualityRequirementPage() {
   useEffect(() => {
     if (params.id) {
       fetchRequirement(params.id as string);
-      fetchAgencies();
-    }
+      }
   }, [params.id]);
 
   const fetchRequirement = async (id: string) => {
@@ -89,16 +89,6 @@ export default function EditQualityRequirementPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const fetchAgencies = async () => {
-    try {
-      const res = await fetch("/api/masters/inspection-agencies");
-      if (res.ok) {
-        const data = await res.json();
-        setAgencies(data.agencies || []);
-      }
-    } catch {}
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {

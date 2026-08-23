@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useApiQuery } from "@/hooks/use-api-query";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { format } from "date-fns";
@@ -13,26 +14,11 @@ import { PageLoading } from "@/components/shared/page-loading";
 
 export default function MaterialSpecsListPage() {
   const router = useRouter();
-  const [specs, setSpecs] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchSpecs();
-  }, []);
-
-  const fetchSpecs = async () => {
-    try {
-      const response = await fetch("/api/mtc/material-specs");
-      if (response.ok) {
-        const data = await response.json();
-        setSpecs(data.materialSpecs || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch material specs:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data, isLoading: loading } = useApiQuery<{ materialSpecs: any[] }>(
+    ["material-specs"],
+    "/api/mtc/material-specs"
+  );
+  const specs = data?.materialSpecs ?? [];
 
   const columns: Column<any>[] = [
     {

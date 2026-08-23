@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, Suspense } from "react";
+import { useApiQuery, useInvalidate } from "@/hooks/use-api-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { DataTable, Column } from "@/components/shared/data-table";
@@ -65,65 +66,52 @@ function QualityPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const defaultTab = searchParams.get("tab") || "inspections";
-  const [inspections, setInspections] = useState<any[]>([]);
-  const [ncrs, setNcrs] = useState<any[]>([]);
-  const [mtcs, setMtcs] = useState<any[]>([]);
   const [mtcSearch, setMtcSearch] = useState("");
-  const [labLetters, setLabLetters] = useState<any[]>([]);
-  const [qcReleases, setQcReleases] = useState<any[]>([]);
-  const [labReports, setLabReports] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  // The MTC list is filtered by a button, not as you type, so the key follows
+  // the *applied* search rather than the input.
+  const [appliedMtcSearch, setAppliedMtcSearch] = useState("");
+  const invalidate = useInvalidate();
 
-  useEffect(() => {
-    fetchInspections();
-    fetchNCRs();
-    fetchMTCs();
-    fetchLabLetters();
-    fetchQCReleases();
-    fetchLabReports();
-  }, []);
+  // Six independent lists, one per tab. Each is its own cache entry, shared
+  // with the standalone screen for that record type — opening the NCR page
+  // after this dashboard issues no second query.
+  const { data: inspectionData } = useApiQuery<{ inspections: any[] }>(
+    ["inspections"],
+    "/api/quality/inspections"
+  );
+  const inspections = inspectionData?.inspections ?? [];
 
-  const fetchInspections = async () => {
-    try {
-      const response = await fetch("/api/quality/inspections");
-      if (response.ok) {
-        const data = await response.json();
-        setInspections(data.inspections || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch inspections:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: ncrData } = useApiQuery<{ ncrs: any[] }>(["ncrs"], "/api/quality/ncr");
+  const ncrs = ncrData?.ncrs ?? [];
 
-  const fetchNCRs = async () => {
-    try {
-      const response = await fetch("/api/quality/ncr");
-      if (response.ok) {
-        const data = await response.json();
-        setNcrs(data.ncrs || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch NCRs:", error);
-    }
-  };
+  const { data: mtcData } = useApiQuery<{ mtcDocuments: any[] }>(
+    ["mtc-documents", appliedMtcSearch],
+    appliedMtcSearch
+      ? `/api/quality/mtc?search=${encodeURIComponent(appliedMtcSearch)}`
+      : "/api/quality/mtc"
+  );
+  const mtcs = mtcData?.mtcDocuments ?? [];
 
-  const fetchMTCs = async (search?: string) => {
-    try {
-      const url = search ? `/api/quality/mtc?search=${encodeURIComponent(search)}` : "/api/quality/mtc";
-      const response = await fetch(url);
-      if (response.ok) {
-        const data = await response.json();
-        setMtcs(data.mtcDocuments || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch MTCs:", error);
-    }
-  };
+  const { data: labLetterData } = useApiQuery<{ labLetters: any[] }>(
+    ["lab-letters"],
+    "/api/quality/lab-letters"
+  );
+  const labLetters = labLetterData?.labLetters ?? [];
+
+  const { data: qcReleaseData } = useApiQuery<{ qcReleases: any[] }>(
+    ["qc-releases"],
+    "/api/quality/qc-release"
+  );
+  const qcReleases = qcReleaseData?.qcReleases ?? [];
+
+  const { data: labReportData } = useApiQuery<{ labReports: any[] }>(
+    ["lab-reports"],
+    "/api/quality/lab-reports"
+  );
+  const labReports = labReportData?.labReports ?? [];
 
   const handleMtcSearch = () => {
-    fetchMTCs(mtcSearch);
+    setAppliedMtcSearch(mtcSearch);
   };
 
   const handleMtcVerificationUpdate = async (mtcId: string, verificationStatus: string) => {
@@ -135,49 +123,13 @@ function QualityPageInner() {
       });
       if (response.ok) {
         toast.success(`MTC verification status updated to ${verificationStatus}`);
-        fetchMTCs(mtcSearch || undefined);
+        invalidate(["mtc-documents"]);
       } else {
         const error = await response.json();
         toast.error(error.error || "Failed to update verification status");
       }
     } catch (error) {
       toast.error("Failed to update verification status");
-    }
-  };
-
-  const fetchLabLetters = async () => {
-    try {
-      const response = await fetch("/api/quality/lab-letters");
-      if (response.ok) {
-        const data = await response.json();
-        setLabLetters(data.labLetters || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch lab letters:", error);
-    }
-  };
-
-  const fetchQCReleases = async () => {
-    try {
-      const response = await fetch("/api/quality/qc-release");
-      if (response.ok) {
-        const data = await response.json();
-        setQcReleases(data.qcReleases || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch QC releases:", error);
-    }
-  };
-
-  const fetchLabReports = async () => {
-    try {
-      const response = await fetch("/api/quality/lab-reports");
-      if (response.ok) {
-        const data = await response.json();
-        setLabReports(data.labReports || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch lab reports:", error);
     }
   };
 
@@ -642,7 +594,7 @@ function QualityPageInner() {
                   Search
                 </Button>
                 {mtcSearch && (
-                  <Button variant="ghost" size="sm" onClick={() => { setMtcSearch(""); fetchMTCs(); }}>
+                  <Button variant="ghost" size="sm" onClick={() => { setMtcSearch(""); setAppliedMtcSearch(""); }}>
                     Clear
                   </Button>
                 )}

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useDepartments } from "@/hooks/use-masters";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -59,14 +60,7 @@ export default function CreateEmployeePage() {
   const [formData, setFormData] = useState<EmployeeFormData>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
-
-  useEffect(() => {
-    fetch("/api/masters/departments")
-      .then((r) => r.json())
-      .then((d) => setDepartments(d.departments || []))
-      .catch(() => {});
-  }, []);
+  const departments = useDepartments<{ id: string; name: string }>();
 
   const update = (field: keyof EmployeeFormData, value: string) =>
     setFormData((prev) => ({ ...prev, [field]: value }));

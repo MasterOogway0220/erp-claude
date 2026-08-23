@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useInspectionAgencies } from "@/hooks/use-masters";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -40,7 +41,7 @@ const INSPECTION_LOCATIONS = [
 
 export default function CreateQualityRequirementPage() {
   const router = useRouter();
-  const [agencies, setAgencies] = useState<TPIAgency[]>([]);
+  const agencies = useInspectionAgencies<TPIAgency>();
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
@@ -55,13 +56,6 @@ export default function CreateQualityRequirementPage() {
     qapDocumentPath: "",
     remarks: "",
   });
-
-  useEffect(() => {
-    fetch("/api/masters/inspection-agencies")
-      .then((res) => (res.ok ? res.json() : { agencies: [] }))
-      .then((data) => setAgencies(data.agencies || []))
-      .catch(() => {});
-  }, []);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

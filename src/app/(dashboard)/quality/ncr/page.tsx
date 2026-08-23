@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useApiQuery } from "@/hooks/use-api-query";
 import { PageHeader } from "@/components/shared/page-header";
 import { DataTable, Column } from "@/components/shared/data-table";
 import { Button } from "@/components/ui/button";
@@ -27,27 +28,13 @@ const ncrStatusColors: Record<string, string> = {
 
 export default function NCRListPage() {
   const router = useRouter();
-  const [ncrs, setNcrs] = useState<any[]>([]);
+  // Shares its cache entry with the quality dashboard's NCR tab.
+  const { data } = useApiQuery<{ ncrs: any[] }>(
+    ["ncrs"],
+    "/api/quality/ncr"
+  );
+  const ncrs = data?.ncrs ?? [];
   const [statusFilter, setStatusFilter] = useState("ALL");
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchNCRs();
-  }, []);
-
-  const fetchNCRs = async () => {
-    try {
-      const response = await fetch("/api/quality/ncr");
-      if (response.ok) {
-        const data = await response.json();
-        setNcrs(data.ncrs || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch NCRs:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const filteredNcrs =
     statusFilter === "ALL"

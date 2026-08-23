@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useDepartments } from "@/hooks/use-masters";
 import { useCustomers } from "@/hooks/use-masters";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -54,7 +55,7 @@ interface CustomerContact {
 export default function CustomerContactsPage() {
   const [contacts, setContacts] = useState<CustomerContact[]>([]);
   const customers = useCustomers<Customer>();
-  const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
+  const departments = useDepartments<{ id: string; name: string }>();
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterCustomer, setFilterCustomer] = useState("");
@@ -75,20 +76,8 @@ export default function CustomerContactsPage() {
 
   useEffect(() => {
     fetchContacts();
-    fetchDepartments();
   }, []);
 
-  const fetchDepartments = async () => {
-    try {
-      const res = await fetch("/api/masters/departments");
-      if (res.ok) {
-        const data = await res.json();
-        setDepartments(data.departments || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch departments:", error);
-    }
-  };
 
   const fetchContacts = async () => {
     try {

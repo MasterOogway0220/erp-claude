@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, Suspense } from "react";
+import { useInspectionAgencies } from "@/hooks/use-masters";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { PageLoading } from "@/components/shared/page-loading";
@@ -253,7 +254,7 @@ function CreateInspectionForm() {
   );
 
   // TPI Agency
-  const [agencies, setAgencies] = useState<TPIAgency[]>([]);
+  const agencies = useInspectionAgencies<TPIAgency>();
   const [tpiAgencyId, setTpiAgencyId] = useState("");
 
   // File uploads
@@ -264,7 +265,6 @@ function CreateInspectionForm() {
 
   useEffect(() => {
     fetchStocks();
-    fetchAgencies();
   }, []);
 
   useEffect(() => {
@@ -282,18 +282,6 @@ function CreateInspectionForm() {
       }
     } catch (error) {
       console.error("Failed to fetch stocks:", error);
-    }
-  };
-
-  const fetchAgencies = async () => {
-    try {
-      const res = await fetch("/api/masters/inspection-agencies");
-      if (res.ok) {
-        const data = await res.json();
-        setAgencies(data.agencies || []);
-      }
-    } catch {
-      // Silently fail
     }
   };
 

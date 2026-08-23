@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
+import { useWarehouses } from "@/hooks/use-masters";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -78,7 +79,8 @@ function CreateInvoicePage() {
   const [customer, setCustomer] = useState<any>(null);
   const [taxRates, setTaxRates] = useState<TaxRateOption[]>([]);
   const [defaultTaxRate, setDefaultTaxRate] = useState<string>("18");
-  const [warehouses, setWarehouses] = useState<WarehouseOption[]>([]);
+  const allWarehouses = useWarehouses<WarehouseOption>();
+  const warehouses = allWarehouses.filter((w) => (w as { isActive?: boolean }).isActive);
 
   const [formData, setFormData] = useState({
     dispatchNoteId: preselectedDnId,
@@ -96,20 +98,7 @@ function CreateInvoicePage() {
   useEffect(() => {
     fetchDispatchNotes();
     fetchTaxRates();
-    fetchWarehouses();
   }, []);
-
-  const fetchWarehouses = async () => {
-    try {
-      const response = await fetch("/api/masters/warehouses");
-      if (response.ok) {
-        const data = await response.json();
-        setWarehouses((data.warehouses || []).filter((w: any) => w.isActive));
-      }
-    } catch (error) {
-      console.error("Failed to fetch warehouses:", error);
-    }
-  };
 
   const fetchTaxRates = async () => {
     try {

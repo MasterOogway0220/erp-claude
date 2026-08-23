@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
+import { useWarehouses } from "@/hooks/use-masters";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -74,7 +75,8 @@ function CreateDispatchNotePage() {
   const [loading, setLoading] = useState(false);
   const [packingLists, setPackingLists] = useState<PackingList[]>([]);
   const [transporters, setTransporters] = useState<Transporter[]>([]);
-  const [warehouses, setWarehouses] = useState<WarehouseOption[]>([]);
+  const allWarehouses = useWarehouses<WarehouseOption>();
+  const warehouses = allWarehouses.filter((w) => (w as { isActive?: boolean }).isActive);
   const [selectedPL, setSelectedPL] = useState<PackingList | null>(null);
 
   const [formData, setFormData] = useState({
@@ -93,7 +95,6 @@ function CreateDispatchNotePage() {
   useEffect(() => {
     fetchPackingLists();
     fetchTransporters();
-    fetchWarehouses();
   }, []);
 
   useEffect(() => {
@@ -118,18 +119,6 @@ function CreateDispatchNotePage() {
       }
     } catch (error) {
       console.error("Failed to fetch packing lists:", error);
-    }
-  };
-
-  const fetchWarehouses = async () => {
-    try {
-      const response = await fetch("/api/masters/warehouses");
-      if (response.ok) {
-        const data = await response.json();
-        setWarehouses((data.warehouses || []).filter((w: any) => w.isActive));
-      }
-    } catch (error) {
-      console.error("Failed to fetch warehouses:", error);
     }
   };
 

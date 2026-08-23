@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useCustomers } from "@/hooks/use-masters";
+import { useInspectionAgencies } from "@/hooks/use-masters";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -64,8 +66,8 @@ const EMPTY_ITEM: OfferItem = {
 export default function CreateInspectionOfferPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [tpiAgencies, setTpiAgencies] = useState<TpiAgency[]>([]);
+  const customers = useCustomers<Customer>();
+  const tpiAgencies = useInspectionAgencies<TpiAgency>();
 
   const [formData, setFormData] = useState({
     salesOrderId: "",
@@ -84,34 +86,8 @@ export default function CreateInspectionOfferPage() {
   const [items, setItems] = useState<OfferItem[]>([{ ...EMPTY_ITEM }]);
 
   useEffect(() => {
-    fetchCustomers();
-    fetchTpiAgencies();
     fetchSalesOrders();
   }, []);
-
-  const fetchCustomers = async () => {
-    try {
-      const res = await fetch("/api/masters/customers");
-      if (res.ok) {
-        const data = await res.json();
-        setCustomers(data.customers || []);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const fetchTpiAgencies = async () => {
-    try {
-      const res = await fetch("/api/masters/inspection-agencies");
-      if (res.ok) {
-        const data = await res.json();
-        setTpiAgencies(data.agencies || []);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
 
   const fetchSalesOrders = async () => {
     try {

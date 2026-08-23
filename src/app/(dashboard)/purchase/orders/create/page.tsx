@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense, useCallback } from "react";
+import { useVendors } from "@/hooks/use-masters";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -68,7 +69,7 @@ function CreatePOPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
-  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const vendors = useVendors<Vendor>();
   const [prs, setPRs] = useState<any[]>([]);
   const [salesOrders, setSalesOrders] = useState<SalesOrder[]>([]);
 
@@ -108,7 +109,6 @@ function CreatePOPage() {
   ]);
 
   useEffect(() => {
-    fetchVendors();
     fetchPRs();
     fetchSalesOrders();
   }, []);
@@ -126,18 +126,6 @@ function CreatePOPage() {
       loadSOItems(formData.salesOrderId);
     }
   }, [formData.salesOrderId]);
-
-  const fetchVendors = async () => {
-    try {
-      const response = await fetch("/api/masters/vendors");
-      if (response.ok) {
-        const data = await response.json();
-        setVendors(data.vendors || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch vendors:", error);
-    }
-  };
 
   const fetchPRs = async () => {
     try {

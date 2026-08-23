@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useApiQuery } from "@/hooks/use-api-query";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -39,26 +40,13 @@ const statusBadgeClass: Record<string, string> = {
 
 export default function SupplierQuotationsPage() {
   const router = useRouter();
-  const [quotations, setQuotations] = useState<SupplierQuotation[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading: loading } = useApiQuery<{ supplierQuotations: SupplierQuotation[] }>(
+    ["supplier-quotations"],
+    "/api/purchase/supplier-quotations"
+  );
+  const quotations = data?.supplierQuotations ?? [];
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
-
-  useEffect(() => {
-    fetchQuotations();
-  }, []);
-
-  const fetchQuotations = async () => {
-    try {
-      const res = await fetch("/api/purchase/supplier-quotations");
-      if (res.ok) {
-        const data = await res.json();
-        setQuotations(data.supplierQuotations || []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const filtered = quotations.filter((sq) => {
     const matchesSearch =

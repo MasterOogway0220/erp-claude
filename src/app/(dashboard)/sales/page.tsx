@@ -24,7 +24,6 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { toast } from "sonner";
 
 // ---------------------------------------------------------------------------
 // Types

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
+import { useWarehouses } from "@/hooks/use-masters";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -95,11 +96,10 @@ function CreateGRNPage() {
     remarks: "",
   });
   const [items, setItems] = useState<GRNItem[]>([{ ...emptyItem }]);
-  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  const warehouses = useWarehouses<Warehouse>();
 
   useEffect(() => {
     fetchPurchaseOrders();
-    fetchWarehouses();
   }, []);
 
   useEffect(() => {
@@ -120,18 +120,6 @@ function CreateGRNPage() {
       }
     } catch (error) {
       console.error("Failed to fetch POs:", error);
-    }
-  };
-
-  const fetchWarehouses = async () => {
-    try {
-      const response = await fetch("/api/masters/warehouses");
-      if (response.ok) {
-        const data = await response.json();
-        setWarehouses(data.warehouses || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch warehouses:", error);
     }
   };
 

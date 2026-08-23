@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useApiQuery } from "@/hooks/use-api-query";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { DataTable, Column } from "@/components/shared/data-table";
@@ -8,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Eye } from "lucide-react";
 import { format } from "date-fns";
-import { toast } from "sonner";
 
 interface RFQ {
   id: string;
@@ -32,28 +32,11 @@ const statusColors: Record<string, string> = {
 
 export default function RFQListPage() {
   const router = useRouter();
-  const [rfqs, setRfqs] = useState<RFQ[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchRFQs();
-  }, []);
-
-  const fetchRFQs = async () => {
-    try {
-      const response = await fetch("/api/purchase/rfq");
-      if (response.ok) {
-        const data = await response.json();
-        setRfqs(data.rfqs || []);
-      } else {
-        toast.error("Failed to load RFQs");
-      }
-    } catch (error) {
-      toast.error("Failed to load RFQs");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data, isLoading: loading } = useApiQuery<{ rfqs: RFQ[] }>(
+    ["rfqs"],
+    "/api/purchase/rfq"
+  );
+  const rfqs = data?.rfqs ?? [];
 
   const columns: Column<RFQ>[] = [
     {
