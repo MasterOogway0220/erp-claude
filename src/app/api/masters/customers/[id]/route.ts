@@ -139,7 +139,9 @@ export async function PATCH(
         country: country ?? undefined,
         pincode: pincode ?? undefined,
         gstNo: gstNo ?? undefined,
-        gstType: gstType ?? undefined,
+        // "" comes from the edit form when gstType is unset (e.g. international
+        // customers) — it is not a valid GSTType enum value, so map it to null.
+        gstType: gstType !== undefined ? gstType || null : undefined,
         pan: pan ?? panNo ?? undefined,
         industrySegment: industrySegment ?? undefined,
         contactPerson: contactPerson ?? undefined,
@@ -152,7 +154,7 @@ export async function PATCH(
         isActive: isActive ?? undefined,
         customerType: customerType ?? undefined,
         companyType: companyType ?? undefined,
-        openingBalance: openingBalance !== undefined ? parseFloat(openingBalance) : undefined,
+        openingBalance: openingBalance !== undefined ? (openingBalance ? parseFloat(openingBalance) : 0) : undefined,
         creditLimit: creditLimit !== undefined ? (creditLimit ? parseFloat(creditLimit) : null) : undefined,
         creditDays: creditDays !== undefined ? (creditDays ? parseInt(creditDays) : null) : undefined,
         defaultPaymentTermsId: defaultPaymentTermsId ?? undefined,
@@ -233,7 +235,7 @@ export async function PATCH(
             email: email ?? undefined,
             phone: phone ?? undefined,
             gstNo: gstNo ?? undefined,
-            gstType: gstType as any ?? undefined,
+            gstType: gstType !== undefined ? (gstType as any) || null : undefined,
             pan: (pan || panNo) ?? undefined,
           },
         });

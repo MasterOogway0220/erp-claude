@@ -170,7 +170,8 @@ export async function PATCH(
         email: email ?? undefined,
         phone: phone ?? undefined,
         gstNo: gstNo ?? undefined,
-        gstType: gstType ?? undefined,
+        // "" from the edit form is not a valid GSTType enum value — map to null.
+        gstType: gstType !== undefined ? gstType || null : undefined,
         bankAccountNo: bankAccountNo ?? undefined,
         bankIfsc: bankIfsc ?? undefined,
         bankName: bankName ?? undefined,

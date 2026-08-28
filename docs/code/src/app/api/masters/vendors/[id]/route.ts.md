@@ -23,6 +23,9 @@ Operates on `vendorMaster`.
 
 - `params` is a `Promise` (Next.js 16) and must be awaited.
 - Errors return `error.message`, so thrown text reaches the user's toast.
+- The edit form sends `""` for unset optional fields. `gstType` is a nullable
+  Prisma enum (`GSTType`), so PATCH maps `""` → `null` before the update —
+  passing `""` through makes Prisma reject the whole save.
 
 ## Related
 
