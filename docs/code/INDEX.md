@@ -4,7 +4,7 @@ Companion explainers for every code file, mirroring the source tree. See
 [CONVENTIONS.md](./CONVENTIONS.md) for structure and depth, and the repo root
 `CLAUDE.md` for the standing rule that keeps them true.
 
-## Coverage: 498 / 498 ✅
+## Coverage: 499 / 499 ✅
 
 Every `.ts`, `.tsx` and `.prisma` file under `src/`, `prisma/` and `scripts/`
 has a doc at the mirrored path. Test files are covered by the doc for what they
@@ -13,7 +13,7 @@ test.
 | Area | Files | Depth |
 |---|---:|---|
 | `src/lib` | 57 | Hand-written throughout |
-| `prisma` + `scripts` | 10 | Hand-written |
+| `prisma` + `scripts` | 11 | Hand-written |
 | `src/components` | 41 | Hand-written for shared/layout/wizard; grouped for `ui/` |
 | Root, hooks, auth, layouts | 13 | Hand-written |
 | `src/app/api` | 208 | Hand-written module READMEs + per-route facts |
