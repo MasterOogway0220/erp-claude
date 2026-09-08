@@ -39,24 +39,34 @@ export function poolConfig(databaseUrl: string) {
     // simultaneous users queue behind acquireTimeout. Set it to ~10 there, and
     // only there.
     connectionLimit: Number(process.env.DB_POOL_SIZE) || 5,
-    // Hostinger's MySQL sets wait_timeout/interactive_timeout to 20s, and the
-    // driver keeps `minimumIdle` (= connectionLimit) sockets warm by default —
-    // so every Vercel instance re-opened 5 connections every ~20s forever, even
-    // while completely idle (measured: 20 connects in 70s of doing nothing).
-    // Holding one instead of the whole pool cuts that churn by an order of
-    // magnitude, and matters just as much on a single long-lived process.
+    // Zero, so an idle instance holds no socket and opens one only when a
+    // query needs it.
     //
-    // MUST NOT BE 0. `@prisma/adapter-mariadb` bundles its own mariadb 3.4.5
-    // (not the 3.5.1 at the top level), and 3.4.5 decides whether to open a
-    // socket with:
+    // Hostinger's MySQL sets wait_timeout/interactive_timeout to 20s, and the
+    // driver keeps `minimumIdle` sockets warm — it reopens whatever the server
+    // just killed, forever, with nobody using the app. Any non-zero value
+    // therefore makes connection count a function of wall-clock time rather
+    // than of traffic, and the account's real ceiling is not the 75 concurrent
+    // above but MAX_CONNECTIONS_PER_HOUR (~500). At minimumIdle: 1 a single
+    // warm instance spends ~180 connects/hour doing nothing; a few warm
+    // instances lock the whole database out before a user logs in. Measured
+    // against a socket-counting server: minimumIdle 1 = 5 dials in 12s idle,
+    // minimumIdle 0 = 0.
+    //
+    // This is only safe because of the `overrides` pin in package.json.
+    // `@prisma/adapter-mariadb` depends on mariadb 3.4.5 exactly, so npm nests
+    // that copy and the 3.5.1 hoisted at the top level never loads. 3.4.5
+    // decides whether to open a socket with:
     //     idleConnections.length < opts.minimumIdle
     // With minimumIdle: 0 that is false forever, so the pool never opens a
     // single connection and every query waits out acquireTimeout and dies on
     // "pool timeout ... (active=0 idle=0 limit=5)" — the whole app, not one
     // route. 3.5.1 rewrote that check to also open on demand for a pending
-    // request, so a 0 tests clean against the top-level copy and still takes
-    // production down. Test against the bundled copy, not the hoisted one.
-    minimumIdle: 1,
+    // request (measured: 3.4.5 = 0 dials on a query, 3.5.1 = 4). The override
+    // forces the nested copy to 3.5.1; drop it and this 0 is an outage.
+    // prisma.test.ts resolves the driver the way the adapter does and asserts
+    // a socket is actually attempted, so the pairing cannot silently break.
+    minimumIdle: 0,
     // Retires any socket beyond `minimumIdle` before the server's 20s kill.
     idleTimeout: 10,
     // connectTimeout must stay well under acquireTimeout: with both at 10s a

@@ -45,6 +45,15 @@ describe("poolConfig", () => {
     );
     expect(cfg.minimumIdle).toBeLessThanOrEqual(cfg.connectionLimit);
   });
+
+  // The cap that actually bites is not the 75 concurrent connections but the
+  // account's MAX_CONNECTIONS_PER_HOUR. Any warm-idle socket is reopened every
+  // time the server's 20s wait_timeout kills it, which spends that hourly
+  // budget while nobody is using the app. Connections must track traffic, not
+  // wall-clock time — so nothing is held open speculatively.
+  it("holds no connection open while idle", () => {
+    expect(cfg.minimumIdle).toBe(0);
+  });
 });
 
 // Resolve the driver exactly as @prisma/adapter-mariadb does. It bundles its

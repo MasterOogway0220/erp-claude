@@ -32,7 +32,7 @@ Built by `poolConfig(databaseUrl)`, which is exported (and covered by
 
 ```
 connectionLimit: Number(process.env.DB_POOL_SIZE) || 5
-minimumIdle:     1        // MUST NOT be 0 — see below
+minimumIdle:     0        // load-bearing; requires the npm override — see below
 idleTimeout:     10       // seconds
 connectTimeout:  5_000
 acquireTimeout:  15_000
@@ -72,11 +72,26 @@ more than the numbers:
   `minimumIdle` defaults to `connectionLimit`, so the pool used to keep five
   sockets warm that the server killed every 20 seconds — measured at **20 fresh
   connections per 70 seconds of a completely idle instance**, forever, on every
-  warm lambda. Holding **one** instead of five cuts that by 80%;
-  `idleTimeout: 10` retires anything above `minimumIdle` before the server
-  does.
-- **`minimumIdle` must never be `0`.** See the gotcha below — a zero here takes
-  the entire application down.
+  warm lambda.
+- **`minimumIdle` is `0`, and that is the point.** The cap that actually takes
+  this application down is not the 75 concurrent connections but the hosting
+  account's `MAX_CONNECTIONS_PER_HOUR` (~500, recorded from the earlier
+  lockouts — it counts *new connections*, not concurrent ones, and resets only
+  when the hour rolls over). Any non-zero `minimumIdle` means the pool reopens
+  whatever the server's 20-second timeout just killed, so connection count
+  becomes a function of **wall-clock time rather than of traffic**: at
+  `minimumIdle: 1` one warm instance spends roughly 180 connects an hour doing
+  nothing at all, and a few warm instances lock the database out before anyone
+  logs in. At `0` an idle instance holds nothing and opens a socket only when a
+  query needs one. Measured against a socket-counting local server:
+  `minimumIdle: 1` produced **5 dials in 12 idle seconds**, `minimumIdle: 0`
+  produced **0**. `idleTimeout: 10` still retires a working connection before
+  the server does.
+
+  The sibling app `finance-crm` runs the same stack (Next.js on Vercel, Prisma,
+  Hostinger MySQL) and has never hit this, because stock Prisma's Rust engine
+  pool has no keep-warm minimum — it is lazy by default. This setting is what
+  brings the driver-adapter pool back to that behaviour.
 - `connectTimeout` must stay well under `acquireTimeout`. Both were 10 000, and
   the driver clamps `connectTimeout` down to `acquireTimeout` — so one slow
   connect consumed the entire acquire window and the request failed instead of
@@ -105,21 +120,42 @@ None.
 - No `$connect()`; the client connects lazily on first query.
 - A transient failure here surfaces in odd places — the NextAuth `jwt` callback
   explicitly catches DB errors so an outage does not delete session cookies.
-- **There are two copies of the `mariadb` driver installed, and the one that
-  matters is not the obvious one.** `@prisma/adapter-mariadb` bundles its own
-  nested `mariadb` (3.4.5 at the time of writing); npm also hoists a different
-  version (3.5.1) to the top level. The adapter loads *its* nested copy, so
-  anything you verify against the top-level one may be meaningless.
+- **The `overrides` block in `package.json` is load-bearing. Deleting it is an
+  outage.**
 
-  The two disagree about `minimumIdle: 0`. In 3.4.5 the decision to open a
-  socket is `idleConnections.length < opts.minimumIdle`, which with `0` is
-  false forever — the pool never opens a single connection, and every query in
-  the application waits out `acquireTimeout` and fails with
-  `active=0 idle=0`. 3.5.1 rewrote it to also open on demand for a pending
-  request, so `0` is harmless there. A `minimumIdle: 0` was shipped on that
-  basis and took production down for roughly 40 minutes while the database
-  itself was idle and healthy. `prisma.test.ts` now resolves the driver the way
-  the adapter does and asserts the pool actually attempts a connection.
+  ```json
+  "overrides": { "@prisma/adapter-mariadb": { "mariadb": "$mariadb" } }
+  ```
+
+  `@prisma/adapter-mariadb` depends on `mariadb` at the **exact** version
+  `3.4.5`, so without the override npm nests that copy inside the adapter and
+  the `^3.5.1` hoisted to the top level never loads. The adapter always loads
+  whichever copy resolves from *its own* directory, so anything verified
+  against the top-level one is meaningless. The `$mariadb` form is required
+  rather than a literal `"3.5.1"`: npm silently ignores an override on a
+  package the root also depends on directly unless the spec is referenced this
+  way, and `$mariadb` resolves to the root's own `^3.5.1`.
+
+  The two versions disagree about `minimumIdle: 0`. In 3.4.5 the decision to
+  open a socket is `idleConnections.length < opts.minimumIdle`, which with `0`
+  is false forever — the pool never opens a single connection, and every query
+  in the application waits out `acquireTimeout` and fails with `active=0
+  idle=0`. 3.5.1 rewrote it to also open on demand for a pending request.
+  Measured by counting TCP dials against a local server: on one query,
+  **3.4.5 dialled 0 times, 3.5.1 dialled 4**. A `minimumIdle: 0` was once
+  shipped against 3.4.5 and took production down for roughly 40 minutes while
+  the database itself was idle and healthy.
+
+  `prisma.test.ts` resolves the driver exactly as the adapter does and asserts
+  a socket is actually attempted, so the config and the override cannot drift
+  apart silently.
+
+- **Changing anything about the adapter's version invites npm to move it.**
+  `npm install @prisma/adapter-mariadb` (the only way found to make npm
+  re-resolve that subtree after the override was added — plain `npm install`
+  reports "up to date" and ignores it) also bumped the adapter from 7.4.2 to
+  7.10.0 while `@prisma/client` stayed at 7.3.0. Re-pin it deliberately;
+  adapter/client skew is not something the test suite checks.
 - **The signature of a pool problem** is a 500 from *every* DB-touching route
   at once, with `prisma:error pool timeout: failed to retrieve a connection
   from pool after Nms (pool connections: active=0 idle=0 limit=5)` in the
