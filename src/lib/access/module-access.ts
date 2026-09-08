@@ -4,9 +4,6 @@
  * be imported from both a NextAuth callback and a client component.
  */
 
-/** The single login that bypasses the production-mode module lockdown. */
-export const TEST_USER_EMAIL = "testuser@erp.com";
-
 /**
  * `EmployeeMaster.moduleAccess` is stored as a JSON-stringified array in a
  * LongText column (see the employees API). Parse it back to a string[].
@@ -23,51 +20,10 @@ export function parseModuleAccess(raw: string | null | undefined): string[] {
   }
 }
 
-export interface NavItemMeta {
-  roles?: string[];
-  moduleKey?: string;
-  moduleKeys?: string[];
-  productionHidden?: boolean;
-}
-
-export interface VisibilityContext {
-  userRole: string | undefined;
-  userEmail: string | undefined;
-  moduleAccess: string[] | undefined;
-  isProductionMode: boolean;
-}
-
-/**
- * Decide whether a sidebar nav item is visible to a user.
- *
- * Rules (in order):
- *  1. Production lockdown — `productionHidden` items are hidden in production
- *     UNLESS the user is the test user OR has been explicitly granted that
- *     module. (A granted module is always shown — the grant is the authorization.)
- *  2. Module grants are authoritative — a non-admin who has ANY explicit grants
- *     sees a module item iff it is in their grants. The per-item role list is
- *     bypassed for granted users (the grant supersedes the coarse role gate).
- *  3. Role gate — for admins, the test user, items without a moduleKey, or users
- *     with no grants at all, fall back to the item's role list.
- */
-export function isNavItemVisible(item: NavItemMeta, ctx: VisibilityContext): boolean {
-  const { userRole, userEmail, moduleAccess, isProductionMode } = ctx;
-  const isTestUser = userEmail === TEST_USER_EMAIL;
-  const isAdminOrAbove = userRole === "SUPER_ADMIN" || userRole === "ADMIN";
-  const grants = moduleAccess ?? [];
-  const hasGrants = grants.length > 0;
-  const keys = item.moduleKeys ?? (item.moduleKey ? [item.moduleKey] : []);
-  const isGranted = keys.length > 0 && keys.some((k) => grants.includes(k));
-
-  // 1. Production lockdown — only the test user or an explicit grant bypasses it.
-  if (isProductionMode && item.productionHidden && !isTestUser && !isGranted) {
-    return false;
-  }
-
-  // ponytail: grant + role gates removed per owner request (2026-07-16) — every
-  // role sees every module. Restore rules 2 & 3 from git history to re-gate.
-  void isAdminOrAbove;
-  void hasGrants;
-
-  return true;
-}
+// Nav visibility used to live here as `isNavItemVisible`. Every rule it applied
+// has now been removed by owner request: the role and grant gates went on
+// 2026-07-16, and the production lockdown (which hid modules not yet handed to
+// the client behind NEXT_PUBLIC_PRODUCTION_MODE, with `testuser@erp.com` as the
+// one bypass) went when every module was opened up on production. With no rules
+// left the function could only `return true`, so it and the sidebar's call to it
+// are gone rather than kept as ceremony. Restore any of it from git history.

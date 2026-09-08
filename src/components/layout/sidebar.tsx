@@ -7,7 +7,6 @@ import { useLogout } from "@/hooks/use-logout";
 import { UserRole } from "@prisma/client";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useSidebarStore } from "@/stores/sidebar-store";
-import { isNavItemVisible } from "@/lib/access/module-access";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -51,7 +50,6 @@ interface NavItem {
   roles?: UserRole[];
   moduleKey?: string;
   moduleKeys?: string[];
-  productionHidden?: boolean;
   children?: { title: string; href: string; roles?: UserRole[] }[];
 }
 
@@ -79,7 +77,6 @@ const navSections: NavSection[] = [
         href: "/alerts",
         icon: <Bell className="h-5 w-5" />,
         iconColorClass: "text-amber-500",
-        productionHidden: true,
       },
       {
         title: "Masters",
@@ -134,7 +131,6 @@ const navSections: NavSection[] = [
         iconColorClass: "text-orange-500",
         roles: ["PURCHASE", "MANAGEMENT", "ADMIN", "SUPER_ADMIN"],
         moduleKey: "purchase",
-        productionHidden: true,
         children: [
           { title: "Dashboard", href: "/purchase/dashboard" },
           { title: "Purchase Requisitions", href: "/purchase" },
@@ -163,7 +159,6 @@ const navSections: NavSection[] = [
         iconColorClass: "text-violet-500",
         roles: ["QC", "MANAGEMENT", "ADMIN", "SUPER_ADMIN"],
         moduleKey: "quality",
-        productionHidden: true,
         children: [
           { title: "Inspections", href: "/quality" },
           { title: "New Inspection", href: "/quality/inspections/create" },
@@ -186,7 +181,6 @@ const navSections: NavSection[] = [
         iconColorClass: "text-rose-500",
         roles: ["STORES", "ACCOUNTS", "MANAGEMENT", "ADMIN", "SUPER_ADMIN"],
         moduleKeys: ["dispatch", "finance"],
-        productionHidden: true,
         children: [
           { title: "Packing Lists", href: "/dispatch" },
           { title: "Dispatch Notes", href: "/dispatch?tab=dispatch-notes" },
@@ -203,7 +197,6 @@ const navSections: NavSection[] = [
         iconColorClass: "text-teal-500",
         roles: ["SALES", "MANAGEMENT", "ADMIN", "SUPER_ADMIN"],
         moduleKey: "reports",
-        productionHidden: true,
         children: [
           { title: "Client Status Report", href: "/reports/client-status" },
         ],
@@ -224,31 +217,16 @@ const navSections: NavSection[] = [
   },
 ];
 
-// ---------------------------------------------------------------------------
-// Helper: flatten all nav items for backward-compat role filtering
-// ---------------------------------------------------------------------------
-
-const isProductionMode = process.env.NEXT_PUBLIC_PRODUCTION_MODE === "true";
-
-// Visibility rules live in a shared, unit-tested helper (src/lib/access/module-access.ts).
-// In production, only the test user sees productionHidden modules — but a user
-// explicitly GRANTED a module always sees it; ungranted logins stay limited to
-// the always-on + role-allowed items (Masters + Quotation).
-function filterSections(
-  sections: NavSection[],
-  userRole: UserRole | undefined,
-  userEmail: string | undefined,
-  moduleAccess: string[] | undefined
-): NavSection[] {
-  return sections
-    .map((section) => ({
-      ...section,
-      items: section.items.filter((item) =>
-        isNavItemVisible(item, { userRole, userEmail, moduleAccess, isProductionMode })
-      ),
-    }))
-    .filter((section) => section.items.length > 0);
-}
+// Every nav item is shown to every signed-in user. There is no visibility
+// filter here any more: the role and grant gates were removed on 2026-07-16,
+// and the production lockdown (NEXT_PUBLIC_PRODUCTION_MODE, which hid modules
+// not yet handed to the client from everyone but testuser@erp.com) was removed
+// when all modules were opened up on production. `navSections` is rendered as
+// written.
+//
+// Note this was only ever nav *visibility*, never access control — the routes
+// and their APIs were reachable by URL throughout. Guarding a module means
+// guarding its API route (src/lib/rbac.ts), not hiding its sidebar entry.
 
 // ---------------------------------------------------------------------------
 // Sidebar (main export)
@@ -265,8 +243,6 @@ export function Sidebar() {
   const [openGroup, setOpenGroup] = useState<string | null>(null);
 
   const userRole = user?.role;
-  const moduleAccess = user?.moduleAccess;
-  const filteredSections = filterSections(navSections, userRole, user?.email, moduleAccess);
 
   const initials = user?.name
     ? user.name
@@ -279,7 +255,7 @@ export function Sidebar() {
 
   // Initialize openGroup to whichever group contains the active route
   useEffect(() => {
-    for (const section of filteredSections) {
+    for (const section of navSections) {
       for (const item of section.items) {
         if (item.children?.some((child) => pathname.startsWith(child.href))) {
           setOpenGroup(item.title);
@@ -349,7 +325,7 @@ export function Sidebar() {
   const navigationContent = (
     <ScrollArea className="flex-1 relative [&_[data-radix-scroll-area-viewport]]:scrollbar-thin [&_[data-radix-scroll-area-viewport]]:scrollbar-track-transparent [&_[data-radix-scroll-area-viewport]]:scrollbar-thumb-border/40">
       <nav className={cn("py-3", isCollapsed ? "px-2" : "px-3")}>
-        {filteredSections.map((section, sectionIdx) => (
+        {navSections.map((section, sectionIdx) => (
           <div key={section.label} className={cn(sectionIdx > 0 && "mt-2")}>
             {isCollapsed && sectionIdx > 0 && (
               <Separator className="my-3 mx-auto w-5 opacity-30" />

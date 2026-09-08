@@ -19,14 +19,21 @@ Renders grouped, collapsible navigation. A `NavItem` is either a single link
 
 ### Visibility
 
-Every item passes through `isNavItemVisible` from
-`src/lib/access/module-access.ts`. **Only the production lockdown still
-applies** — role and grant gating was removed by owner decision on 2026-07-16.
-So `roles: [...]` on an item is currently documentation, not enforcement.
+There isn't any. `navSections` is rendered exactly as written, to every
+signed-in user.
 
-`productionHidden: true` hides an item from live users while showing it to
-`testuser@erp.com` and to anyone explicitly granted the module. **Removing that
-line is how a module goes live** — that is exactly what took Inventory live.
+It used to be filtered by `isNavItemVisible` from
+`src/lib/access/module-access.ts`. Role and grant gating was removed by owner
+decision on 2026-07-16; the remaining production lockdown — `productionHidden:
+true` on an item, which hid it from live users while showing it to
+`testuser@erp.com`, keyed off `NEXT_PUBLIC_PRODUCTION_MODE` — was removed when
+all modules were opened up on production. Five groups came out of hiding at
+that point: **Alerts, Purchase, Quality, Dispatch & Finance, Reports**.
+
+With no rules left, the filter could only return everything, so it and the
+helper were deleted. `roles: [...]`, `moduleKey` and `moduleKeys` remain on
+items as inert annotations — they document intent and give a restore path, and
+enforce nothing.
 
 ### Single links vs groups
 
@@ -43,6 +50,10 @@ them separately meant two routes to the same place.
   matcher; a new top-level route must be added there too or it is reachable
   unauthenticated.
 - **The `roles` arrays are inert.** Do not read them as access control.
+- **Hiding a nav entry never was access control either.** While the production
+  lockdown existed, every one of those modules stayed reachable by typing its
+  URL, and its API answered normally. Gating a module means guarding its API
+  route (`src/lib/rbac.ts`).
 - Icons are lucide-react with per-item colour classes; the brand palette is red
   `#e31e24`, blue `#4e6cad`, black.
 - Open-group state is local; collapsed state is shared with the topbar via
@@ -50,7 +61,7 @@ them separately meant two routes to the same place.
 
 ## Related
 
-- `src/lib/access/module-access.ts` — `isNavItemVisible`.
+- `src/lib/access/module-access.ts` — now only `parseModuleAccess`.
 - `src/middleware.ts`
 - `src/stores/sidebar-store.ts`
 - `src/components/layout/topbar.tsx`, `breadcrumbs.tsx`
