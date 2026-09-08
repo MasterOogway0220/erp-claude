@@ -79,20 +79,48 @@ export function poolConfig(databaseUrl: string) {
   };
 }
 
-function createAdapter() {
-  return new PrismaMariaDb(poolConfig(process.env.DATABASE_URL!));
-}
+function createClient() {
+  const databaseUrl = process.env.DATABASE_URL;
+  // Named explicitly: the URL parse below would otherwise fail with
+  // "TypeError: Invalid URL ... input: 'undefined'", which names neither the
+  // variable nor the file.
+  if (!databaseUrl) throw new Error("DATABASE_URL is not set");
 
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({
-    adapter: createAdapter(),
+  return new PrismaClient({
+    adapter: new PrismaMariaDb(poolConfig(databaseUrl)),
     log:
       process.env.NODE_ENV === "development"
         ? ["error", "warn"]
         : ["error"],
   });
+}
 
-// Always cache on globalThis so the pool is reused across hot reloads (dev)
-// and across module re-evaluations on some Node.js hosts (prod)
-globalForPrisma.prisma = prisma;
+// Built on first use, not on import.
+//
+// `next build` collects page data by evaluating every route module, and every
+// route that touches the database imports this one. Constructing the client
+// here at module scope therefore made the *build* require DATABASE_URL — a
+// runtime secret. On Vercel that variable is scoped to Production only, so
+// every preview build died during page-data collection with
+// "TypeError: Invalid URL ... input: 'undefined'", reported against whichever
+// route happened to be collected first (/api/admin/audit-logs). Production
+// builds passed only because the variable happens to exist there, which is why
+// this survived unnoticed.
+//
+// Deferring costs nothing: constructing a PrismaClient opens no socket (the
+// driver adapter's pool connects lazily on the first query), so the only thing
+// that moves is when the URL is read.
+export const prisma: PrismaClient = new Proxy({} as PrismaClient, {
+  get(_target, prop) {
+    const client = (globalForPrisma.prisma ??= createClient());
+    const value = Reflect.get(client, prop, client);
+    // Methods must keep their `this`; model delegates are plain properties.
+    return typeof value === "function" ? value.bind(client) : value;
+  },
+});
+
+// The globalThis cache lives in the trap above, so the pool is reused across
+// hot reloads (dev) and across module re-evaluations on some Node.js hosts
+// (prod). It must NOT also be assigned here: that would store the proxy
+// itself, `??=` would then find it already set, and every property access
+// would resolve back through the proxy into itself and recurse forever.

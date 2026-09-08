@@ -1,8 +1,10 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { createRequire } from "node:module";
 
-// Importing the module builds the real PrismaClient, which needs a URL to
-// parse — hence the env var and the dynamic import.
+// The client is built lazily now, so importing this module needs nothing. The
+// env var is still set because the tests below construct pools from a URL, and
+// the dynamic import is what lets `vi.resetModules()` re-evaluate the module
+// with DATABASE_URL removed.
 process.env.DATABASE_URL ||= "mysql://user:pass@localhost:3306/erp";
 const { poolConfig, SERVER_WAIT_TIMEOUT_SEC, SERVER_MAX_USER_CONNECTIONS } =
   await import("./prisma");
@@ -53,6 +55,38 @@ describe("poolConfig", () => {
   // wall-clock time — so nothing is held open speculatively.
   it("holds no connection open while idle", () => {
     expect(cfg.minimumIdle).toBe(0);
+  });
+});
+
+// `next build` evaluates every route module to collect page data, and every
+// route that reads the database imports this one — so anything this module does
+// at import time becomes a build-time requirement. Reading DATABASE_URL here
+// made the build depend on a runtime secret that, on Vercel, only exists in the
+// Production environment: every preview build failed during page-data
+// collection with "TypeError: Invalid URL ... input: 'undefined'", pinned on
+// whichever route was collected first rather than on this file.
+describe("importing the module without a database", () => {
+  it("does not read DATABASE_URL at import time", async () => {
+    vi.resetModules();
+    const saved = process.env.DATABASE_URL;
+    delete process.env.DATABASE_URL;
+    try {
+      await expect(import("./prisma")).resolves.toBeDefined();
+    } finally {
+      process.env.DATABASE_URL = saved;
+    }
+  });
+
+  it("names the missing variable when a query is actually attempted", async () => {
+    vi.resetModules();
+    const saved = process.env.DATABASE_URL;
+    delete process.env.DATABASE_URL;
+    try {
+      const mod = await import("./prisma");
+      expect(() => mod.prisma.$connect).toThrow(/DATABASE_URL is not set/);
+    } finally {
+      process.env.DATABASE_URL = saved;
+    }
   });
 });
 

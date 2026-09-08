@@ -98,12 +98,48 @@ more than the numbers:
   retrying. At 5 000 / 15 000 the driver's backoff gets two or three attempts
   inside one acquire.
 
-### The `globalThis` cache
+### The `globalThis` cache, and why `prisma` is a Proxy
 
 Standard Next.js pattern, but the comment is explicit that it applies in
 **production too**, not just dev hot-reload. Some Node hosts re-evaluate
 modules; without the cache each evaluation builds a new pool against a host
 that has few connections to spare.
+
+The exported `prisma` is a `Proxy` whose `get` trap builds the real client on
+first property access and stores it on `globalThis`. It is not lazy for
+elegance — it is lazy because **`next build` evaluates every route module** to
+collect page data, and every route that touches the database imports this file.
+Reading `DATABASE_URL` at module scope therefore made the *build* depend on a
+runtime secret. On Vercel that variable is scoped to the **Production
+environment only**, so every preview build failed during page-data collection
+with:
+
+```
+TypeError: Invalid URL ... { code: 'ERR_INVALID_URL', input: 'undefined' }
+Failed to collect page data for /api/admin/audit-logs
+```
+
+The named route is a red herring — it is simply whichever route was collected
+first. Production builds passed only because the variable happens to exist
+there, which is why this went unnoticed for months.
+
+Deferring costs nothing: constructing a `PrismaClient` opens no socket, since
+the driver adapter's pool connects lazily on the first query. The only thing
+that moves is *when* the URL is read.
+
+Two constraints on that trap, both of which have teeth:
+
+- **Do not also assign `globalForPrisma.prisma = prisma` at module scope.**
+  That stores the proxy itself; the `??=` inside the trap then finds it already
+  set, and every property access resolves back through the proxy into itself
+  and recurses until the stack blows.
+- **Functions must be bound to the client.** `Reflect.get` returns `$transaction`
+  and friends unbound, and they lose their `this`. Model delegates
+  (`prisma.quotation`) are plain properties and need no binding.
+
+A missing `DATABASE_URL` now throws `DATABASE_URL is not set` rather than
+`Invalid URL ... input: 'undefined'`, which named neither the variable nor the
+file.
 
 ## Domain notes
 
