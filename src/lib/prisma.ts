@@ -39,24 +39,34 @@ export function poolConfig(databaseUrl: string) {
     // simultaneous users queue behind acquireTimeout. Set it to ~10 there, and
     // only there.
     connectionLimit: Number(process.env.DB_POOL_SIZE) || 5,
-    // Hostinger's MySQL sets wait_timeout/interactive_timeout to 20s, and the
-    // driver keeps `minimumIdle` (= connectionLimit) sockets warm by default —
-    // so every Vercel instance re-opened 5 connections every ~20s forever, even
-    // while completely idle (measured: 20 connects in 70s of doing nothing).
-    // Holding one instead of the whole pool cuts that churn by an order of
-    // magnitude, and matters just as much on a single long-lived process.
+    // Zero, so an idle instance holds no socket and opens one only when a
+    // query needs it.
     //
-    // MUST NOT BE 0. `@prisma/adapter-mariadb` bundles its own mariadb 3.4.5
-    // (not the 3.5.1 at the top level), and 3.4.5 decides whether to open a
-    // socket with:
+    // Hostinger's MySQL sets wait_timeout/interactive_timeout to 20s, and the
+    // driver keeps `minimumIdle` sockets warm — it reopens whatever the server
+    // just killed, forever, with nobody using the app. Any non-zero value
+    // therefore makes connection count a function of wall-clock time rather
+    // than of traffic, and the account's real ceiling is not the 75 concurrent
+    // above but MAX_CONNECTIONS_PER_HOUR (~500). At minimumIdle: 1 a single
+    // warm instance spends ~180 connects/hour doing nothing; a few warm
+    // instances lock the whole database out before a user logs in. Measured
+    // against a socket-counting server: minimumIdle 1 = 5 dials in 12s idle,
+    // minimumIdle 0 = 0.
+    //
+    // This is only safe because of the `overrides` pin in package.json.
+    // `@prisma/adapter-mariadb` depends on mariadb 3.4.5 exactly, so npm nests
+    // that copy and the 3.5.1 hoisted at the top level never loads. 3.4.5
+    // decides whether to open a socket with:
     //     idleConnections.length < opts.minimumIdle
     // With minimumIdle: 0 that is false forever, so the pool never opens a
     // single connection and every query waits out acquireTimeout and dies on
     // "pool timeout ... (active=0 idle=0 limit=5)" — the whole app, not one
     // route. 3.5.1 rewrote that check to also open on demand for a pending
-    // request, so a 0 tests clean against the top-level copy and still takes
-    // production down. Test against the bundled copy, not the hoisted one.
-    minimumIdle: 1,
+    // request (measured: 3.4.5 = 0 dials on a query, 3.5.1 = 4). The override
+    // forces the nested copy to 3.5.1; drop it and this 0 is an outage.
+    // prisma.test.ts resolves the driver the way the adapter does and asserts
+    // a socket is actually attempted, so the pairing cannot silently break.
+    minimumIdle: 0,
     // Retires any socket beyond `minimumIdle` before the server's 20s kill.
     idleTimeout: 10,
     // connectTimeout must stay well under acquireTimeout: with both at 10s a
@@ -69,20 +79,48 @@ export function poolConfig(databaseUrl: string) {
   };
 }
 
-function createAdapter() {
-  return new PrismaMariaDb(poolConfig(process.env.DATABASE_URL!));
-}
+function createClient() {
+  const databaseUrl = process.env.DATABASE_URL;
+  // Named explicitly: the URL parse below would otherwise fail with
+  // "TypeError: Invalid URL ... input: 'undefined'", which names neither the
+  // variable nor the file.
+  if (!databaseUrl) throw new Error("DATABASE_URL is not set");
 
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({
-    adapter: createAdapter(),
+  return new PrismaClient({
+    adapter: new PrismaMariaDb(poolConfig(databaseUrl)),
     log:
       process.env.NODE_ENV === "development"
         ? ["error", "warn"]
         : ["error"],
   });
+}
 
-// Always cache on globalThis so the pool is reused across hot reloads (dev)
-// and across module re-evaluations on some Node.js hosts (prod)
-globalForPrisma.prisma = prisma;
+// Built on first use, not on import.
+//
+// `next build` collects page data by evaluating every route module, and every
+// route that touches the database imports this one. Constructing the client
+// here at module scope therefore made the *build* require DATABASE_URL — a
+// runtime secret. On Vercel that variable is scoped to Production only, so
+// every preview build died during page-data collection with
+// "TypeError: Invalid URL ... input: 'undefined'", reported against whichever
+// route happened to be collected first (/api/admin/audit-logs). Production
+// builds passed only because the variable happens to exist there, which is why
+// this survived unnoticed.
+//
+// Deferring costs nothing: constructing a PrismaClient opens no socket (the
+// driver adapter's pool connects lazily on the first query), so the only thing
+// that moves is when the URL is read.
+export const prisma: PrismaClient = new Proxy({} as PrismaClient, {
+  get(_target, prop) {
+    const client = (globalForPrisma.prisma ??= createClient());
+    const value = Reflect.get(client, prop, client);
+    // Methods must keep their `this`; model delegates are plain properties.
+    return typeof value === "function" ? value.bind(client) : value;
+  },
+});
+
+// The globalThis cache lives in the trap above, so the pool is reused across
+// hot reloads (dev) and across module re-evaluations on some Node.js hosts
+// (prod). It must NOT also be assigned here: that would store the proxy
+// itself, `??=` would then find it already set, and every property access
+// would resolve back through the proxy into itself and recurse forever.
