@@ -25,6 +25,13 @@ Same letterhead, totals and terms as the standard template. The item table is
 the difference: a free-text item description carrying whatever the salesperson
 typed, with structured fields alongside where they exist.
 
+`buildItemDescription` composes that cell: a `MATERIAL CODE:` line when a code
+is saved and the description does not already contain it, the description
+itself, then a `REMARK:` line when the item has a remark. Keep it in step with
+`buildItemDescriptionLines` in `quotation-pdf.tsx` — the download and the email
+attachment must read the same. The remark line was added 2026-09-18; before
+that the field was saved and shown nowhere on a non-standard quotation.
+
 The header's right-hand info box prints the inquiry no. (exactly as entered,
 above the inquiry date) and a **"Prepared by"** contact block. That block shows
 the **Inquiry Owner** (`dealOwner` — the salesperson who owns the deal), not

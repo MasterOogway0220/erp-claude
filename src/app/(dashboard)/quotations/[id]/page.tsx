@@ -862,6 +862,7 @@ export default function QuotationDetailPage() {
                       <TableHead className="text-right">Rate</TableHead>
                       <TableHead className="text-right">Amount</TableHead>
                       <TableHead>Delivery</TableHead>
+                      <TableHead>Remarks</TableHead>
                     </>
                   ) : (
                     <>
@@ -878,6 +879,7 @@ export default function QuotationDetailPage() {
                       <TableHead className="text-right">Rate</TableHead>
                       <TableHead className="text-right">Amount</TableHead>
                       <TableHead>Delivery</TableHead>
+                      <TableHead>Remarks</TableHead>
                       <TableHead className="text-right">Weight (MT)</TableHead>
                     </>
                   )}
@@ -931,6 +933,7 @@ export default function QuotationDetailPage() {
                           {item.isRegret ? "REGRET" : parseFloat(item.amount).toFixed(2)}
                         </TableCell>
                         <TableCell>{item.delivery || "---"}</TableCell>
+                        <TableCell className="text-xs whitespace-pre-line">{item.remark || "---"}</TableCell>
                       </>
                     ) : (
                       <>
@@ -957,6 +960,7 @@ export default function QuotationDetailPage() {
                           {item.isRegret ? "REGRET" : parseFloat(item.amount).toFixed(2)}
                         </TableCell>
                         <TableCell>{item.delivery || "---"}</TableCell>
+                        <TableCell className="text-xs whitespace-pre-line">{item.remark || "---"}</TableCell>
                         <TableCell className="text-right">
                           {item.totalWeightMT
                             ? parseFloat(item.totalWeightMT).toFixed(4)
@@ -977,6 +981,7 @@ export default function QuotationDetailPage() {
                   {quotation.quotationCategory !== "NON_STANDARD" && (
                     <>
                       <TableCell />
+                      <TableCell />
                       <TableCell className="text-right">
                         {/* fittings/flanges carry no weight — say so instead
                             of presenting a pipe-only sum as the total */}
@@ -986,7 +991,7 @@ export default function QuotationDetailPage() {
                       </TableCell>
                     </>
                   )}
-                  {quotation.quotationCategory === "NON_STANDARD" && <TableCell />}
+                  {quotation.quotationCategory === "NON_STANDARD" && <TableCell colSpan={2} />}
                 </TableRow>
               </TableBody>
             </Table>

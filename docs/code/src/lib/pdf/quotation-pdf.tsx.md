@@ -41,6 +41,17 @@ in its Prisma query.
 containing JSX must be `.tsx`, not `.ts`** — several PDF and email routes are
 named that way for this reason.
 
+The standard layout prints the per-item **remark** and material code together
+in its last column ("Remark/Material Code"). The non-standard layout has no
+such column: everything about a line lives in the description cell, which
+`buildItemDescriptionLines` assembles — a `MATERIAL CODE:` line when a code is
+saved and the description does not already contain it, then the description,
+then a `REMARK:` line. That last line was missing until 2026-09-18; the remark
+was saved and shown nowhere, and salespeople had started typing the customer's
+material code into Remarks to force it onto paper. The structured (no
+`itemDescription`) branch of the same function falls back to the remark as the
+material code, so it prints the `REMARK:` line only when the two differ.
+
 Both the standard and non-standard layouts here get their rate and amount cells
 from **`priceCellWord`** (`src/lib/quotations/display.ts`), shared with the two
 HTML templates: it returns `"REGRET"`, `"QUOTED"`, or `null` meaning "print the

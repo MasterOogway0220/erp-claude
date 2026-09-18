@@ -470,6 +470,9 @@ function buildItemDescriptionLines(item: any): string[] {
       lines.push(`MATERIAL CODE: ${mcCode}`);
     }
     lines.push(...item.itemDescription.split("\n"));
+    // The Remarks field was saved but never printed on non-standard lines;
+    // users had started typing material codes into it to get them on paper.
+    if (item.remark) lines.push(`REMARK: ${item.remark}`);
     return lines;
   }
 
@@ -485,6 +488,8 @@ function buildItemDescriptionLines(item: any): string[] {
   if (item.drawingRef) lines.push(`DWG: ${item.drawingRef}`);
   if (item.componentPosition) lines.push(`ITEM NO.: ${item.componentPosition}`);
   if (item.certificateReq) { lines.push(""); lines.push(`CERTIFICATE REQUIRED: ${item.certificateReq}`); }
+  // remark doubles as the material code above only when no real code exists
+  if (item.remark && matCode !== item.remark) lines.push(`REMARK: ${item.remark}`);
   return lines;
 }
 

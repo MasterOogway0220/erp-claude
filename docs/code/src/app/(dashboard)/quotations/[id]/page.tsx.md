@@ -21,7 +21,10 @@ Renders the `/quotations/[id]` screen. 1719 lines.
 - The standard items table must show every field the edit form saves — Length
   was once saved and printed but not shown here, and users read the gap as
   "my edit didn't save". The total row's `colSpan` is keyed to this column
-  count; adding a column means bumping it.
+  count; adding a column means bumping it. Remarks had the same gap until
+  2026-09-18: saved by both forms, printed on the standard PDF, never shown
+  here — so both branches now carry a Remarks column, and the empty trailing
+  cells in the total row grew with it.
 - **Rate and amount cells are three-way**, in both the standard and the
   non-standard branch of the items table: `REGRET` for a line the company
   declined to quote, `---` when `unitRate` is `NULL` (not priced yet), and the

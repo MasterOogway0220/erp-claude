@@ -105,10 +105,11 @@ function buildItemDescription(item: any): string {
     // If itemDescription doesn't already include material code, prepend it
     const mcCode = item.materialCode?.code || item.materialCodeLabel || "";
     const desc = item.itemDescription;
+    const remark = item.remark ? `<br>REMARK: ${escapeHtml(item.remark)}` : "";
     if (mcCode && !desc.includes(mcCode)) {
-      return `MATERIAL CODE: ${escapeHtml(mcCode)}<br>${nl2br(desc)}`;
+      return `MATERIAL CODE: ${escapeHtml(mcCode)}<br>${nl2br(desc)}${remark}`;
     }
-    return nl2br(desc);
+    return `${nl2br(desc)}${remark}`;
   }
 
   const lines: string[] = [];
@@ -133,6 +134,7 @@ function buildItemDescription(item: any): string {
     lines.push("");
     lines.push(`CERTIFICATE REQUIRED: ${item.certificateReq}`);
   }
+  if (item.remark && matCode !== item.remark) lines.push(`REMARK: ${item.remark}`);
 
   return lines.map((l) => escapeHtml(l)).join("<br>");
 }
