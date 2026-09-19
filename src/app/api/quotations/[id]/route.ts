@@ -6,6 +6,7 @@ import { checkAccess, companyFilter } from "@/lib/rbac";
 import { normalizeItemPricing, parseRate, unpricedItemsError } from "@/lib/quotations/pricing";
 import { dealOwnerPatch } from "@/lib/quotations/deal-owner";
 import { resolveUpdateCurrency } from "@/lib/quotations/currency";
+import { rememberClientItems } from "@/lib/quotations/client-items";
 
 // Valid quotation status transitions
 const VALID_QUOTATION_TRANSITIONS: Record<string, string[]> = {
@@ -581,6 +582,8 @@ export async function PUT(
         },
       });
     });
+
+    await rememberClientItems({ customerId: updated.customerId, quotationCategory: updated.quotationCategory, items, companyId });
 
     // Build detailed change log for audit trail
     const changeDetails: Record<string, any> = {

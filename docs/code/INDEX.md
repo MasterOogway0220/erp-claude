@@ -12,12 +12,12 @@ test.
 
 | Area | Files | Depth |
 |---|---:|---|
-| `src/lib` | 57 | Hand-written throughout |
+| `src/lib` | 58 | Hand-written throughout |
 | `prisma` + `scripts` | 11 | Hand-written |
 | `src/components` | 41 | Hand-written for shared/layout/wizard; grouped for `ui/` |
 | Root, hooks, auth, layouts | 13 | Hand-written |
-| `src/app/api` | 208 | Hand-written module READMEs + per-route facts |
-| `src/app/(dashboard)` | 158 | Hand-written module READMEs + per-page facts |
+| `src/app/api` | 210 | Hand-written module READMEs + per-route facts |
+| `src/app/(dashboard)` | 159 | Hand-written module READMEs + per-page facts |
 
 ### Two levels of depth, deliberately
 
@@ -111,6 +111,8 @@ authoritative, need maintaining, and teach nothing.
 - [`validators/auth.ts`](./src/lib/validators/auth.ts.md) — password policy.
 
 ### Quotations
+- [`quotations/client-items.ts`](./src/lib/quotations/client-items.ts.md) —
+  why the customer's item IDs on non-standard quotations remember themselves.
 - [`quotations/currency.ts`](./src/lib/quotations/currency.ts.md) — update
   currency resolution and the blank Currency-term fill; both born from live
   incidents.

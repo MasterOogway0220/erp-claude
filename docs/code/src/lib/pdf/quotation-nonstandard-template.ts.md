@@ -55,6 +55,13 @@ template only supplies the markup (`quoted-bold` / `quoted-normal` spans).
 `src/lib/pdf/quotation-rate-column.test.ts` renders this template and asserts
 both columns.
 
+**Item ID:** the identifier line at the top of each description prints as
+`ITEM ID: <materialCodeLabel>` (skipped when the description already contains
+it). It was `MATERIAL CODE:` until 2026-09-19; a non-standard line has no
+material code — the value is the customer's own item number.
+`src/lib/pdf/quotation-client-item.test.ts` pins the label and the no-repeat
+rule.
+
 **Remarks:** `quotation.remarks`, when set, prints as a full-width row
 between Amount in Words and OFFER TERMS (`nl2br`, so line breaks hold). The
 non-standard format has no reserved slot, so a blank remark prints nothing —

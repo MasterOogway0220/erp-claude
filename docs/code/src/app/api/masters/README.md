@@ -29,6 +29,11 @@ keep rendering. `DELETE` sets `deletedAt` via `softDeleteData()`, and reads
 must spread `notDeleted`. Nothing enforces that; a query missing it shows
 deleted masters in a live dropdown.
 
+Two exceptions hard-delete: `material-codes` (pre-dates the rule) and
+`client-items` (customer item IDs on non-standard quotations — lines store
+the ID as text, so no document references the row and there is nothing to
+keep rendering).
+
 Several routes check for references before allowing a delete.
 
 ## Where the catalogue actually comes from

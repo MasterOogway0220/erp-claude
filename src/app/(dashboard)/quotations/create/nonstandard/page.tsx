@@ -230,10 +230,13 @@ function NonStandardQuotationPage() {
     },
   });
 
-  // Fetch material codes for autocomplete — scoped to customer + NON_STANDARD quotations only
-  const { data: materialCodesData } = useReferenceQuery<Record<string, any>>(["material-codes", formData.customerId, "NON_STANDARD"], `/api/masters/material-codes?customerId=${formData.customerId}&quotationCategory=NON_STANDARD`, { enabled: !!formData.customerId });
+  // A non-standard line carries the customer's own item ID, not a material
+  // code. Suggestions are this customer's IDs — every saved non-standard
+  // quotation adds its IDs to the master, so anything quoted once is offered
+  // again. The ID is stored on the line as materialCodeLabel (text).
+  const { data: clientItemsData } = useReferenceQuery<Record<string, any>>(["client-items", formData.customerId], `/api/masters/client-items?customerId=${formData.customerId}`, { enabled: !!formData.customerId });
 
-  const materialCodes = materialCodesData?.materialCodes || [];
+  const clientItems = clientItemsData?.clientItems || [];
 
   // Fetch offer term templates filtered by quotation type
   const { data: templatesData } = useQuery({
@@ -667,6 +670,8 @@ function NonStandardQuotationPage() {
       // show a stale pre-save snapshot (the edit query itself has gcTime: 0).
       queryClient.invalidateQueries({ queryKey: ["quotation", data.id || editId] });
       queryClient.invalidateQueries({ queryKey: ["quotations"] });
+      // The save just remembered this customer's item IDs in the master.
+      queryClient.invalidateQueries({ queryKey: ["client-items"] });
       router.push(`/quotations/${data.id || editId}`);
     },
     onError: (error: Error) => toast.error(error.message, { duration: 10000 }),
@@ -676,12 +681,13 @@ function NonStandardQuotationPage() {
     setItems([...items, { ...emptyItem }]);
   };
 
-  // Fetch material history (past quote + PO) when material code is selected
-  const fetchMaterialHistory = async (index: number, materialCodeId: string) => {
-    if (!formData.customerId || !materialCodeId) return;
+  // Fetch material history (past quote + PO) when a customer item ID is
+  // picked — matched on the ID text, since non-standard lines have no master FK
+  const fetchMaterialHistory = async (index: number, itemNo: string) => {
+    if (!formData.customerId || !itemNo) return;
     try {
       const res = await fetch(
-        `/api/quotations/material-history?customerId=${formData.customerId}&materialCodeId=${materialCodeId}`
+        `/api/quotations/material-history?customerId=${formData.customerId}&label=${encodeURIComponent(itemNo)}`
       );
       if (!res.ok) return;
       const data = await res.json();
@@ -1230,139 +1236,59 @@ function NonStandardQuotationPage() {
                 </div>
 
                   <>
-                    {/* Free Text mode: Material Code + Description textarea */}
+                    {/* Customer Item ID + Description textarea */}
                     <div className="grid gap-2">
-                      <Label className="text-sm">Material Code</Label>
-                      <div className="flex gap-1">
-                        {materialCodes.length > 0 ? (
-                          <SmartCombobox
-                            options={materialCodes}
-                            value={item.materialCodeLabel || ""}
-                            onSelect={(mc: any) => {
-                              setItems((prev) => {
-                                const newItems = [...prev];
-                                newItems[index] = {
-                                  ...newItems[index],
-                                  materialCodeId: mc.id,
-                                  materialCodeLabel: mc.code,
-                                  materialCode: mc.code,
-                                  ...(mc.productType ? { itemDescription: mc.productType } : {}),
-                                  ...(mc.materialGrade ? { material: mc.materialGrade } : {}),
-                                  ...(mc.size ? { size: mc.size } : {}),
-                                  ...(mc.unit ? { uom: mc.unit } : {}),
-                                };
-                                return newItems;
-                              });
-                              fetchMaterialHistory(index, mc.id);
-                            }}
-                            onChange={(text) => {
-                              setItems((prev) => {
-                                const newItems = [...prev];
-                                newItems[index] = { ...newItems[index], materialCodeLabel: text, materialCodeId: "", materialCode: text };
-                                return newItems;
-                              });
-                            }}
-                            displayFn={(mc: any) => `${mc.code}${mc.description ? ` — ${mc.description}` : ""}`}
-                            filterFn={(mc: any, query) =>
-                              mc.code.toLowerCase().includes(query.toLowerCase()) ||
-                              (mc.description || "").toLowerCase().includes(query.toLowerCase())
-                            }
-                            placeholder="Search material code..."
-                            inputClassName="h-8"
-                          />
-                        ) : (
-                          <Input
-                            value={item.materialCodeLabel || ""}
-                            onChange={(e) => {
-                              const text = e.target.value;
-                              setItems((prev) => {
-                                const newItems = [...prev];
-                                newItems[index] = { ...newItems[index], materialCodeLabel: text, materialCodeId: "", materialCode: text };
-                                return newItems;
-                              });
-                            }}
-                            placeholder={formData.customerId ? "Enter new material code" : "Select customer first"}
-                            disabled={!formData.customerId}
-                            className="h-8"
-                          />
-                        )}
-                        {item.materialCodeLabel && item.itemDescription && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="h-8 px-2 text-[10px] whitespace-nowrap shrink-0"
-                            title="Save to Material Code Master"
-                            onClick={async () => {
-                              const code = item.materialCodeLabel.trim();
-                              if (!code) { toast.error("Material Code is required"); return; }
-                              try {
-                                const checkRes = await fetch("/api/masters/material-codes/check-duplicate", {
-                                  method: "POST",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({
-                                    productType: item.itemDescription,
-                                    materialGrade: "",
-                                    size: "",
-                                    code,
-                                  }),
-                                });
-                                const checkData = await checkRes.json();
-                                if (checkData.duplicates?.length > 0) {
-                                  const dup = checkData.duplicates[0];
-                                  const replace = window.confirm(
-                                    `A product with same specifications exists in the master with material code "${dup.code}".\n\nDo you want to replace it with "${code}"?`
-                                  );
-                                  if (!replace) return;
-                                  const updateRes = await fetch(`/api/masters/material-codes/${dup.id}`, {
-                                    method: "PATCH",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({ code }),
-                                  });
-                                  if (!updateRes.ok) {
-                                    const err = await updateRes.json().catch(() => ({}));
-                                    throw new Error(err.error || "Failed to update material code");
-                                  }
-                                  const updated = await updateRes.json();
-                                  setItems((prev) => {
-                                    const newItems = [...prev];
-                                    newItems[index] = { ...newItems[index], materialCodeId: updated.id, materialCodeLabel: code, materialCode: code };
-                                    return newItems;
-                                  });
-                                  queryClient.invalidateQueries({ queryKey: ["material-codes"] });
-                                  toast.success(`Material code updated from "${dup.code}" to "${code}"`);
-                                  return;
-                                }
-                                const createRes = await fetch("/api/masters/material-codes", {
-                                  method: "POST",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({
-                                    code,
-                                    productType: item.itemDescription,
-                                    description: item.itemDescription,
-                                  }),
-                                });
-                                if (!createRes.ok) {
-                                  const err = await createRes.json().catch(() => ({}));
-                                  throw new Error(err.error || "Failed to create material code");
-                                }
-                                const created = await createRes.json();
-                                setItems((prev) => {
-                                  const newItems = [...prev];
-                                  newItems[index] = { ...newItems[index], materialCodeId: created.id, materialCodeLabel: code, materialCode: code };
-                                  return newItems;
-                                });
-                                queryClient.invalidateQueries({ queryKey: ["material-codes"] });
-                                toast.success("Material code recorded successfully");
-                              } catch (err: any) {
-                                toast.error(err.message || "Failed to record material code");
-                              }
-                            }}
-                          >
-                            Record
-                          </Button>
-                        )}
-                      </div>
+                      <Label className="text-sm">Customer Item ID</Label>
+                      {clientItems.length > 0 ? (
+                        <SmartCombobox
+                          options={clientItems}
+                          value={item.materialCodeLabel || ""}
+                          onSelect={(ci: any) => {
+                            setItems((prev) => {
+                              const newItems = [...prev];
+                              newItems[index] = {
+                                ...newItems[index],
+                                materialCodeId: "",
+                                materialCodeLabel: ci.itemNo,
+                                materialCode: ci.itemNo,
+                                ...(ci.description ? { itemDescription: ci.description } : {}),
+                                ...(ci.unit ? { uom: ci.unit } : {}),
+                              };
+                              return newItems;
+                            });
+                            fetchMaterialHistory(index, ci.itemNo);
+                          }}
+                          onChange={(text) => {
+                            setItems((prev) => {
+                              const newItems = [...prev];
+                              newItems[index] = { ...newItems[index], materialCodeLabel: text, materialCodeId: "", materialCode: text };
+                              return newItems;
+                            });
+                          }}
+                          displayFn={(ci: any) => `${ci.itemNo}${ci.description ? ` — ${ci.description.split("\n")[0].slice(0, 60)}` : ""}`}
+                          filterFn={(ci: any, query) =>
+                            ci.itemNo.toLowerCase().includes(query.toLowerCase()) ||
+                            (ci.description || "").toLowerCase().includes(query.toLowerCase())
+                          }
+                          placeholder="Search this customer's item IDs, or type a new one..."
+                          inputClassName="h-8"
+                        />
+                      ) : (
+                        <Input
+                          value={item.materialCodeLabel || ""}
+                          onChange={(e) => {
+                            const text = e.target.value;
+                            setItems((prev) => {
+                              const newItems = [...prev];
+                              newItems[index] = { ...newItems[index], materialCodeLabel: text, materialCodeId: "", materialCode: text };
+                              return newItems;
+                            });
+                          }}
+                          placeholder={formData.customerId ? "Customer's item ID (e.g. 10, 6000061996)" : "Select customer first"}
+                          disabled={!formData.customerId}
+                          className="h-8"
+                        />
+                      )}
                     </div>
 
                     <div className="grid gap-1">
@@ -1371,7 +1297,7 @@ function NonStandardQuotationPage() {
                         value={item.itemDescription}
                         onChange={(e) => updateItem(index, "itemDescription", e.target.value)}
                         rows={8}
-                        placeholder={"MATERIAL CODE: 9715286\nPIPE BE 6\" S-40 A106B + NACE + CLAD N10276\nSIZE: 6\" X SCH-40\nBEVELLED ENDS\nMATERIAL: A106Gr.B + NACE\nTAG NUMBER: ...\nDWG: ...\nITEM NO.: ...\n\nCERTIFICATE REQUIRED: ..."}
+                        placeholder={"ITEM ID: 9715286\nPIPE BE 6\" S-40 A106B + NACE + CLAD N10276\nSIZE: 6\" X SCH-40\nBEVELLED ENDS\nMATERIAL: A106Gr.B + NACE\nTAG NUMBER: ...\nDWG: ...\nITEM NO.: ...\n\nCERTIFICATE REQUIRED: ..."}
                         className="font-mono text-xs"
                       />
                     </div>

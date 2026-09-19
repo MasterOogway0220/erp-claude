@@ -7,6 +7,7 @@ import { QuotationStatus, QuotationType, QuotationCategory } from "@prisma/clien
 import { checkAccess, companyFilter } from "@/lib/rbac";
 import { shouldIncludeTenders, collapseRevisions } from "@/lib/quotations/listing";
 import { normalizeItemPricing, parseRate } from "@/lib/quotations/pricing";
+import { rememberClientItems } from "@/lib/quotations/client-items";
 
 export async function GET(request: NextRequest) {
   try {
@@ -416,6 +417,8 @@ export async function POST(request: NextRequest) {
       newValue: JSON.stringify({ quotationNo: quotation.quotationNo }),
       companyId,
     }).catch(console.error);
+
+    await rememberClientItems({ customerId: quotation.customerId, quotationCategory: quotation.quotationCategory, items, companyId });
 
     return NextResponse.json(quotation, { status: 201 });
   } catch (error: any) {

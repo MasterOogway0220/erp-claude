@@ -65,6 +65,10 @@ gives the downloaded PDF coverage of the part that can actually be wrong —
 `src/lib/pdf/quotation-rate-column.test.ts` pins the rule to exactly those
 three outcomes.
 
+**Item ID:** the non-standard description builder prefixes
+`ITEM ID: <materialCodeLabel>` (was `MATERIAL CODE:`); the standard table's
+"Remark/Material Code" column is unchanged.
+
 **Remarks:** both layouts print `quotation.remarks`. The standard layout
 always prints the `Remarks:` heading (format sheet) with the text after it;
 the non-standard layout prints a bordered Remarks row between Amount in Words

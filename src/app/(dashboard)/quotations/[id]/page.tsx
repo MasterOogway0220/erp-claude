@@ -855,7 +855,7 @@ export default function QuotationDetailPage() {
                   <TableHead>S/N</TableHead>
                   {quotation.quotationCategory === "NON_STANDARD" ? (
                     <>
-                      <TableHead>Material Code</TableHead>
+                      <TableHead>Customer Item ID</TableHead>
                       <TableHead>Description</TableHead>
                       <TableHead className="text-right">Qty</TableHead>
                       <TableHead>Unit</TableHead>

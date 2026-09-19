@@ -469,8 +469,9 @@ function buildItemDescriptionLines(item: any): string[] {
   if (item.itemDescription) {
     const mcCode = item.materialCode?.code || item.materialCodeLabel || "";
     const lines: string[] = [];
+    // A non-standard line's identifier is the customer's own item ID.
     if (mcCode && !item.itemDescription.includes(mcCode)) {
-      lines.push(`MATERIAL CODE: ${mcCode}`);
+      lines.push(`ITEM ID: ${mcCode}`);
     }
     lines.push(...item.itemDescription.split("\n"));
     // The Remarks field was saved but never printed on non-standard lines;
@@ -481,7 +482,7 @@ function buildItemDescriptionLines(item: any): string[] {
 
   const lines: string[] = [];
   const matCode = item.materialCode?.code || item.materialCodeLabel || item.remark || "";
-  if (matCode) lines.push(`MATERIAL CODE: ${matCode}`);
+  if (matCode) lines.push(`ITEM ID: ${matCode}`);
   const descParts = [item.product, item.sizeLabel, item.material].filter(Boolean);
   if (descParts.length) lines.push(descParts.join(" "));
   if (item.sizeLabel) lines.push(`SIZE: ${item.sizeLabel}${item.schedule ? ` X ${item.schedule}` : ""}`);

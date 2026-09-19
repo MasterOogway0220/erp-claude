@@ -71,6 +71,10 @@ baked into `src/lib/fitting-flange-sizes.ts` at build time.
 and OFFER TERMS — not to be confused with `approvalRemarks` (internal
 approval note), `revisionNotes` or `lossNotes`.
 
+`ClientItemMaster` (2026-09-19) holds the customer's own item IDs used on
+non-standard quotations, unique per `(customerId, itemNo)`; lines reference
+it by text (`QuotationItem.materialCodeLabel`), never by FK.
+
 ### Purchase
 `PurchaseRequisition` → `PRItem`, `RFQ` → `RFQVendor` → `VendorQuotation`,
 `ComparativeStatement` → `CSEntry`, `PurchaseOrder` → `POItem`,

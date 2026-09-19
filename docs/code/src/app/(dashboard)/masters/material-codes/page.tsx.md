@@ -8,6 +8,12 @@ See [../README.md](../README.md) for this module's shared behaviour.
 
 Renders the `/masters/material-codes` screen. 703 lines.
 
+Two masters share the page under tabs: **Material Codes** (this file — our
+codes as per Client P.O. spec, used on standard quotations) and **Customer
+Item IDs** (`client-items-tab.tsx` — the customer's own item numbers used on
+non-standard quotations). The Add Item Code button moved from the page header
+into the first tab, because it only applies there.
+
 ## How it works
 
 - `"use client"` — runs in the browser.

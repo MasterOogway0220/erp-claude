@@ -107,6 +107,7 @@ model CustomerMaster {
   companyId             String?
   customerType          String                    @default("DOMESTIC")
   buyers                BuyerMaster[]
+  clientItems           ClientItemMaster[]
   clientPurchaseOrders  ClientPurchaseOrder[]
   customerContacts      CustomerContact[]
   dispatchAddresses     CustomerDispatchAddress[]
@@ -579,6 +580,10 @@ model QuotationItem {
   pastPoPrice       Decimal?            @db.Decimal(12, 2)
   pastQuote         String?
   pastQuotePrice    Decimal?            @db.Decimal(12, 2)
+  // The customer's identifier for the line as printed: their material code on
+  // a STANDARD quotation (materialCodeId links the master row when picked),
+  // their item ID on a NON_STANDARD one (materialCodeId stays null; see
+  // ClientItemMaster).
   materialCodeLabel String?
   clientPOItems     ClientPOItem[]
   fitting           FittingMaster?      @relation(fields: [fittingId], references: [id])
@@ -813,6 +818,27 @@ model MaterialCodeMaster {
   @@index([clientItemCode])
   @@index([materialGrade])
   @@index([productType])
+}
+
+// The customer's own line identifier on NON-STANDARD quotations — their SAP /
+// tender item number, not our material code. One row per customer + item ID;
+// remembered automatically from every saved non-standard quotation (see
+// src/lib/quotations/client-items.ts) and curated under Masters > Material
+// Codes > Customer Item IDs. The quotation line stores the ID as text in
+// QuotationItem.materialCodeLabel, so nothing here is referenced by FK.
+model ClientItemMaster {
+  id          String         @id @default(cuid())
+  customerId  String
+  itemNo      String
+  description String?        @db.Text
+  unit        String?
+  companyId   String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  customer    CustomerMaster @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, itemNo])
+  @@index([companyId])
 }
 
 model DepartmentMaster {

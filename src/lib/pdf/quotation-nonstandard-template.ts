@@ -107,8 +107,9 @@ function buildItemDescription(item: any): string {
     const mcCode = item.materialCode?.code || item.materialCodeLabel || "";
     const desc = item.itemDescription;
     const remark = item.remark ? `<br>REMARK: ${escapeHtml(item.remark)}` : "";
+    // A non-standard line's identifier is the customer's own item ID.
     if (mcCode && !desc.includes(mcCode)) {
-      return `MATERIAL CODE: ${escapeHtml(mcCode)}<br>${nl2br(desc)}${remark}`;
+      return `ITEM ID: ${escapeHtml(mcCode)}<br>${nl2br(desc)}${remark}`;
     }
     return `${nl2br(desc)}${remark}`;
   }
@@ -117,7 +118,7 @@ function buildItemDescription(item: any): string {
 
   const matCode = item.materialCode?.code || item.materialCodeLabel || item.remark || "";
   if (matCode) {
-    lines.push(`MATERIAL CODE: ${matCode}`);
+    lines.push(`ITEM ID: ${matCode}`);
   }
 
   // Build short pipe description line

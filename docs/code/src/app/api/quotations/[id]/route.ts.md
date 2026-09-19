@@ -71,6 +71,11 @@ PUT writes `remarks` the same way POST does — trimmed, `null` when blank.
 Sending the field is how the form clears it; `undefined` also clears, which
 matches the rest of the header fields here.
 
+### Customer item IDs
+
+PUT calls `rememberClientItems` after the update, same as POST — an ID added
+while editing a non-standard quotation is remembered too.
+
 ## Gotchas
 
 - `params` is a `Promise` (Next.js 16) and must be awaited.

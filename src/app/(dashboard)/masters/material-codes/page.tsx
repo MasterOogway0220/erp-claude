@@ -35,6 +35,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Plus, Pencil, Trash2, Package, Copy } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ClientItemsTab } from "./client-items-tab";
 import { toast } from "sonner";
 
 // ---------------------------------------------------------------------------
@@ -379,13 +381,24 @@ export default function MaterialCodesPage() {
     <div className="space-y-6">
       <PageHeader
         title="Item / Material Code Master"
-        description="Manage material codes and item entries as per Client P.O. specifications"
-      >
+        description="Material codes for standard quotations; the customer's own item IDs for non-standard ones"
+      />
+
+      {/* Two masters, one page: material codes (ours, per Client P.O.
+          spec) and customer item IDs (theirs, on non-standard quotations). */}
+      <Tabs defaultValue="material-codes" className="space-y-6">
+      <TabsList>
+        <TabsTrigger value="material-codes">Material Codes</TabsTrigger>
+        <TabsTrigger value="client-items">Customer Item IDs</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="material-codes" className="space-y-6">
+      <div className="flex justify-end">
         <Button onClick={handleOpenCreate}>
           <Plus className="h-4 w-4 mr-2" />
           Add Item Code
         </Button>
-      </PageHeader>
+      </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -445,6 +458,12 @@ export default function MaterialCodesPage() {
           )}
         </CardContent>
       </Card>
+      </TabsContent>
+
+      <TabsContent value="client-items">
+        <ClientItemsTab />
+      </TabsContent>
+      </Tabs>
 
       {/* Create / Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

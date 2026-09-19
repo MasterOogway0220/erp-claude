@@ -45,6 +45,7 @@ Naming: `YYYYMMDDHHMMSS_snake_case_description`.
 
 | Migration | What and why |
 |---|---|
+| `20260919130000_client_item_master` | New `ClientItemMaster` table — the customer's own item IDs on non-standard quotations, unique per customer + ID, cascade on customer delete. Additive. |
 | `20260919120000_quotation_remarks` | `Quotation.remarks` TEXT NULL — the customer-facing "Remarks:" line the client's QTN-Rev.2 format reserves between the Total row and OFFER TERMS. The PDF had printed the bare heading since July with nothing to put behind it. Additive. |
 | `20260822090000_order_processing_gaps` | Nine additive columns closing the order-processing gaps: the client PO's own contact (email/phone), its billing party and signed P.O. copy, a per-line qty remark, the client's line references on `SalesOrderItem`, the order-level inspection regime, `otherLabTests` + `additionalSpec` on `OrderProcessingItem`, and `PRItem.technicalRequirements` — the column that finally carries the client's technical requirements to purchase. |
 | `20260819103000_quotation_item_regret_and_nullable_rate` | `QuotationItem.unitRate` made nullable + `isRegret` added. **The one migration here that is not purely additive** — it also rewrites existing `0` rates to `NULL`, because before this change a stored `0` could only ever have meant "unpriced". |

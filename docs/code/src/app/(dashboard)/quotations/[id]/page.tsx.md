@@ -15,6 +15,9 @@ Renders the `/quotations/[id]` screen. 1719 lines.
 - Writes with `useMutation`, invalidating the affected query keys on success.
 - Calls: `/api/quotations/${params.id}`, `/api/quotations/${params.id}/activity`, `/api/quotations/${params.id}/email`, `/api/quotations/${params.id}/emails`, `/api/quotations/${params.id}/revise`, `/api/quotations/${params.id}/terms`.
 
+On a non-standard quotation the first item column is **Customer Item ID**
+(`materialCodeLabel`); standard quotations keep Material Code.
+
 A **Remarks** card renders between the items table and Terms & Conditions
 when `quotation.remarks` is set (`whitespace-pre-line`, so typed line breaks
 survive). It mirrors where the line prints on the PDF.

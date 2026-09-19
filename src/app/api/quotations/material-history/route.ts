@@ -3,7 +3,12 @@ import { prisma } from "@/lib/prisma";
 import { checkAccess, companyFilter } from "@/lib/rbac";
 
 // GET /api/quotations/material-history?customerId=...&materialCodeId=...
-// Returns the most recent past quotation and past PO for a given customer+materialCode combination
+//   or ...?customerId=...&label=...
+// Returns the most recent past quotation and past PO for a given
+// customer + material code. `materialCodeId` matches a picked master row
+// (standard quotations); `label` matches the identifier text on the line —
+// how a non-standard quotation's customer item ID is stored — so history
+// works for IDs that were typed rather than picked.
 export async function GET(request: NextRequest) {
   const { authorized, response, companyId } = await checkAccess("quotation", "read");
   if (!authorized) return response;
@@ -12,13 +17,15 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const customerId = searchParams.get("customerId")?.trim();
     const materialCodeId = searchParams.get("materialCodeId")?.trim();
+    const label = searchParams.get("label")?.trim();
 
-    if (!customerId || !materialCodeId) {
+    if (!customerId || (!materialCodeId && !label)) {
       return NextResponse.json(
-        { error: "customerId and materialCodeId are required" },
+        { error: "customerId and materialCodeId or label are required" },
         { status: 400 }
       );
     }
+    const codeMatch = materialCodeId ? { materialCodeId } : { materialCodeLabel: label };
 
     // Find all customers from the same company
     const selectedCustomer = await prisma.customerMaster.findUnique({
@@ -41,7 +48,7 @@ export async function GET(request: NextRequest) {
     // Find the most recent quotation item with this materialCodeId for these customers
     const latestQuoteItem = await prisma.quotationItem.findFirst({
       where: {
-        materialCodeId,
+        ...codeMatch,
         // Unpriced draft items (rate 0) must not shadow real price history
         unitRate: { gt: 0 },
         quotation: {
@@ -91,7 +98,7 @@ export async function GET(request: NextRequest) {
     const latestPOItem = await prisma.clientPOItem.findFirst({
       where: {
         quotationItem: {
-          materialCodeId,
+          ...codeMatch,
           quotation: {
             customerId: { in: customerIds },
             ...companyFilter(companyId),

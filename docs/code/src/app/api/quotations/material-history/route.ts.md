@@ -11,6 +11,13 @@ Operates on `customerMaster`, `quotationItem`, `clientPOItem`.
 
 - **GET** — Read
 
+`?customerId=&materialCodeId=` returns the latest priced quotation line and
+latest Client PO line for that customer (and same-named customers in the
+company) carrying that material-code master row. `?customerId=&label=` does
+the same by the identifier **text** (`materialCodeLabel`) — a non-standard
+quotation's customer item ID is stored as text with no master FK, and this is
+how its history is found even when the ID was typed rather than picked.
+
 ## How it works
 
 - Gated by `checkAccess("quotation", "read")`. **Authentication only** — role enforcement is disabled app-wide.

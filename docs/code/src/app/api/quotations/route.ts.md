@@ -47,6 +47,13 @@ and OFFER TERMS. It is trimmed and stored as `null` when blank, so an untouched
 textarea never persists `""`. Per-item `remark` is a different column (the
 "Remark/Material Code" cell).
 
+### Customer item IDs
+
+After a **non-standard** quotation is created, `rememberClientItems`
+(`src/lib/quotations/client-items.ts`) upserts each line's `materialCodeLabel`
+into `ClientItemMaster` for that customer, so the IDs are suggested next time.
+It runs after the save, outside the transaction, and cannot fail the request.
+
 ## Gotchas
 
 - Errors return `error.message`, so thrown text reaches the user's toast.

@@ -21,6 +21,27 @@ Renders the `/quotations/create/nonstandard` screen. 1794 lines.
   module-level `UOM_OPTIONS` array, identical to and separate from the
   standard page's — so Product Master → Units (UOM) reached neither form.
 
+### Customer Item ID, not Material Code
+
+The first field on a non-standard line is **Customer Item ID** — the
+customer's own identifier for the line (SAP material number, tender line
+number). There is no material code of ours on non-standard work; the field
+used to be labelled Material Code and looked up `MaterialCodeMaster`, which
+had nothing to offer for these lines.
+
+- Suggestions come from `/api/masters/client-items?customerId=` — every ID this
+  customer has had on a saved non-standard quotation, plus anything added on
+  the master page. Display is `itemNo — first line of description`.
+- Picking one fills the item description (when the master row has one) and
+  the unit, and pulls past quote/PO history by the ID **text**
+  (`material-history?label=`), since these lines have no master FK.
+- Typing a new ID is fine; it is remembered on save (the API upserts it), so
+  there is no Record button.
+- The value is stored on the line as `materialCodeLabel` and `materialCodeId`
+  is always blank — the same column a standard quotation uses for its
+  material code, so revise/compare/PO paths carry it unchanged. The view page
+  and both non-standard renderers label it "Item ID".
+
 ### Remarks card
 
 Between the totals and Terms & Conditions sits a **Remarks** textarea
