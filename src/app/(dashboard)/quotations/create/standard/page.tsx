@@ -1305,8 +1305,35 @@ function StandardQuotationPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             {items.map((item, index) => {
-              const sizeOptions = getSizeOptionsForProduct(item.product);
-              const hasPipeType = !!getPipeType(item.product);
+              // Pipe sizes come from the pipe-size master (CS/AS/SS/DS pools)
+              // plus any size typed against the product in Product Master —
+              // the only source for N.A./Ti/Cu-Ni pipes, which have no pool.
+              const poolSizes = getSizeOptionsForProduct(item.product);
+              const sizeOptions = [
+                ...poolSizes,
+                ...getMasterExtraSizes(item.product)
+                  .filter((l) => !poolSizes.some((s: { sizeLabel: string }) => s.sizeLabel === l))
+                  .map((sizeLabel) => ({ id: "", sizeLabel })),
+              ];
+              // Free-typed / master-row size: the previous selection's
+              // derived fields no longer apply — clear them (they are
+              // readOnly and would print stale).
+              const setFreeSize = (text: string) =>
+                setItems((prev) => {
+                  const newItems = [...prev];
+                  newItems[index] = {
+                    ...newItems[index],
+                    sizeLabel: text,
+                    sizeId: "",
+                    nps: "",
+                    schedule: "",
+                    od: "",
+                    wt: "",
+                    unitWeight: "",
+                    totalWeightMT: "",
+                  };
+                  return newItems;
+                });
 
               return (
                 <div key={index} className="grid gap-4 p-4 border border-border/50 rounded-lg relative bg-muted/20">
@@ -1614,12 +1641,16 @@ function StandardQuotationPage() {
                                 : ends || newItems[index].ends,
                             // "" clears a stale dim for dim-less materials
                             dimStandard: dimStandard ?? newItems[index].dimStandard,
-                            // A Pipe's label is derived from the size master,
-                            // and an existing entry is the user's — only fill
-                            // a blank one from the master row.
+                            // An existing entry is the user's — only fill a
+                            // blank one. A CS/SS pipe's label must come via
+                            // sizeId (derives OD/WT/weight), so skip those; a
+                            // pipe with no size pool (N.A., Ti…) takes the
+                            // master-row size, its only source.
                             sizeLabel:
                               newItems[index].sizeLabel ||
-                              (newItems[index].itemCategory !== "Pipe" ? size || "" : ""),
+                              (newItems[index].itemCategory !== "Pipe" || !getPipeType(newItems[index].product)
+                                ? size || ""
+                                : ""),
                           };
                           return newItems;
                         });
@@ -1712,39 +1743,20 @@ function StandardQuotationPage() {
                           <SmartCombobox
                             options={sizeOptions}
                             value={item.sizeLabel || ""}
-                            onSelect={(s: any) => updateItem(index, "sizeId", s.id)}
-                            onChange={(text) => {
-                              setItems((prev) => {
-                                const newItems = [...prev];
-                                // Free-typed size: the previous selection's
-                                // derived fields no longer apply — clear them
-                                // (they are readOnly and would print stale).
-                                newItems[index] = {
-                                  ...newItems[index],
-                                  sizeLabel: text,
-                                  sizeId: "",
-                                  nps: "",
-                                  schedule: "",
-                                  od: "",
-                                  wt: "",
-                                  unitWeight: "",
-                                  totalWeightMT: "",
-                                };
-                                return newItems;
-                              });
-                            }}
+                            onSelect={(s: any) => (s.id ? updateItem(index, "sizeId", s.id) : setFreeSize(s.sizeLabel))}
+                            onChange={setFreeSize}
                             displayFn={(s: any) => s.sizeLabel}
                             filterFn={(s: any, query) =>
                               s.sizeLabel.toLowerCase().includes(query.toLowerCase())
                             }
                             placeholder={
-                              !hasPipeType
+                              !item.product
                                 ? "Select product first"
                                 : sizeOptions.length === 0
                                   ? "No sizes in master — type manually"
                                   : "Search sizes..."
                             }
-                            disabled={!hasPipeType}
+                            disabled={!item.product}
                           />
                         </div>
                         <div className="space-y-1">

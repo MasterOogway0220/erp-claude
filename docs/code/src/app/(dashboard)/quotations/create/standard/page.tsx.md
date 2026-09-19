@@ -26,6 +26,34 @@ Renders the `/quotations/create/standard` screen. 2295 lines.
   file — they are business rules, not a list of legal values.
 - The per-item **Length** dropdown is populated from Length Master (`/api/masters/lengths`), not a hardcoded list. A length is the supplied pipe length — either a fixed cut (`6.00 Mtr Fixed`), a range the mill can supply within (`5.00-7.00 Mtr`), or a non-numeric instruction (`Random`, `As Per Drg.`, `Cut Length`). The selected label is stored verbatim on `QuotationItem.length` and printed verbatim on the PDF, so the master's label text is what the customer sees.
 
+### Pipe sizes: size pool vs. Product Master row
+
+A pipe's **Size** field (NPS × Schedule, e.g. `6" NB X Sch 40S`) has two
+sources:
+
+- The **pipe-size master** (`/api/masters/sizes`, `PipeSizeMaster`), keyed by
+  `pipeType` — `CS_AS` for carbon/alloy, `SS_DS` for stainless/duplex.
+  `getPipeType()` derives the pool from the product-name prefix (`C.S.`,
+  `A.S.`, `L.T.C.S.` → CS_AS; `S.S.`, `D.S.` → SS_DS). Picking one of these
+  sets `sizeId`, and `updateItem`'s `sizeId` branch derives OD, WT, schedule
+  and weight/metre from the row.
+- The **`size` column on the Product Master row** (`ProductSpecMaster.size`,
+  via `getMasterExtraSizes`). This is the only source for pipes with no pool —
+  nickel alloy (`N.A.`), titanium, cupro-nickel — where `getPipeType()` is
+  `null`.
+
+The combobox merges both (pool first, master-row labels deduped after) and is
+enabled as soon as a product is chosen. Choosing a master-row size behaves like
+free text: `sizeLabel` is set and `sizeId`/OD/WT/weight are cleared, since
+there is no master row to derive them from. `onAutoFill` also copies the
+master-row size onto a *blank* item, but only for pool-less pipes — a CS/SS
+pipe must get its label via `sizeId` so the derived dimensions stay in sync.
+
+History: the combobox used to be `disabled` whenever `getPipeType()` returned
+`null`, showing "Select product first" even with a product selected, and the
+autofill skipped every pipe. A client added `N.A. SEAMLESS PIPE` rows with
+sizes to the master and the quotation printed `—` for Size on every line.
+
 ### Edit mode must not change what it did not touch
 
 A client reported values "changing by themselves" after edits (lengths gone,
