@@ -127,9 +127,9 @@ export async function POST(
         <p>Should you have any queries, please feel free to contact us.</p>
 
         <p>Best regards,<br>
-        <strong>${quotation.preparedBy?.name || "Sales Team"}</strong><br>
+        <strong>${(quotation.dealOwner || quotation.preparedBy)?.name || "Sales Team"}</strong><br>
         ${companyInfo.companyName}<br>
-        ${quotation.preparedBy?.email || companyInfo.email || ""}<br>
+        ${(quotation.dealOwner || quotation.preparedBy)?.email || companyInfo.email || ""}<br>
         ${companyInfo.telephoneNo || ""}</p>
 
         <hr style="margin: 30px 0; border: none; border-top: 1px solid #e2e8f0;">

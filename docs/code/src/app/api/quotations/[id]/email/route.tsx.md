@@ -22,8 +22,10 @@ Operates on `quotation`, `companyMaster`, `quotationEmailLog`.
 
 - The include must select both `preparedBy` and `dealOwner` — both HTML
   templates print the Inquiry Owner (`dealOwner`) as our contact, with
-  `preparedBy` only as fallback. The email signature itself still uses
-  `preparedBy` (the sender), which is deliberate.
+  `preparedBy` only as fallback. Since 2026-09-19 the email signature follows
+  the same rule (it used to sign as the sender, so an admin emailing on a
+  salesperson's behalf signed the mail while the attachment named the
+  salesperson — the client asked for one name on both).
 - `params` is a `Promise` (Next.js 16) and must be awaited.
 - Named `.tsx` because it contains JSX — a route file with JSX must not be `.ts`.
 - Confirm the company-scoping story before reusing this as a template.
