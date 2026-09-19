@@ -39,6 +39,7 @@ interface QuotationData {
     phone?: string | null;
   };
   preparedBy?: { name?: string; email?: string; phone?: string } | null;
+  dealOwner?: { name?: string; email?: string; phone?: string } | null;
   buyer?: {
     buyerName?: string | null;
     designation?: string | null;
@@ -148,6 +149,10 @@ export function generateStandardQuotationHtml(
     company.regCountry,
   ].filter(Boolean).join(", ")}`;
 
+  // Our Contact/Email print the deal owner (the salesperson who owns the
+  // deal), not the login that keyed the quotation in; the creator only when
+  // no owner is assigned. Same rule as the non-standard template.
+  const contactPerson = quotation.dealOwner || quotation.preparedBy;
   const footerContact = [
     company.telephoneNo ? `Tel. ${company.telephoneNo}` : null,
     company.email ? `Email: ${company.email}` : null,
@@ -360,12 +365,12 @@ export function generateStandardQuotationHtml(
   <tr>
     <td>Attn.<span style="float:right">:</span></td><td>${esc(quotation.buyer?.buyerName || quotation.customer.contactPerson)}</td>
     <td>Designation<span style="float:right">:</span></td><td>${esc(quotation.buyer?.designation)}</td>
-    <td>Contact<span style="float:right">:</span></td><td>${esc(quotation.preparedBy?.name)}</td>
+    <td>Contact<span style="float:right">:</span></td><td>${esc(contactPerson?.name)}</td>
   </tr>
   <tr>
     <td>Email<span style="float:right">:</span></td><td>${esc(quotation.buyer?.email || quotation.customer.email)}</td>
     <td>Contact no.<span style="float:right">:</span></td><td>${esc(quotation.buyer?.mobile || quotation.buyer?.telephone || quotation.customer.phone)}</td>
-    <td>Email<span style="float:right">:</span></td><td>${esc(quotation.preparedBy?.email)}</td>
+    <td>Email<span style="float:right">:</span></td><td>${esc(contactPerson?.email)}</td>
   </tr>
 </table>
 

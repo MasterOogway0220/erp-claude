@@ -31,11 +31,15 @@ whichever renderer runs. The inquiry no. prints exactly as entered (above the
 inquiry date); `displayInquiryNo`'s digit filter applies only to the PDF
 filename, not to headers.
 
-The non-standard page's **"Prepared by"** block shows the **Inquiry Owner**
-(`dealOwner`), falling back to `preparedBy` (the user who keyed the quotation
-in) only when no owner is assigned — so the client contacts the salesperson
-who owns the deal, not a data-entry user. The route must include `dealOwner`
-in its Prisma query.
+**Our contact person is the deal owner.** The standard header's Contact /
+Email cells and the non-standard "Prepared by" block both print the **Inquiry
+Owner** (`dealOwner`), falling back to `preparedBy` (the login that keyed the
+quotation in) only when no owner is assigned — so the customer contacts the
+salesperson who owns the deal, not a data-entry user. Until 2026-09-19 only
+the non-standard layout did this; an admin preparing a standard offer for a
+salesperson came out as the customer's contact. The route must include
+`dealOwner` in its Prisma query. `src/lib/pdf/quotation-contact.test.ts` pins
+the rule on both HTML templates.
 
 `.tsx` because it contains JSX. Note the project convention: **an API route
 containing JSX must be `.tsx`, not `.ts`** — several PDF and email routes are

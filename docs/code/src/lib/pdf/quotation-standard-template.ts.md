@@ -43,6 +43,12 @@ team expected on the document; the filter now guards only the PDF filename.
 There are deliberately **no OD or WT columns** — the client's format identifies
 pipe by nominal bore and schedule, not by measured dimensions.
 
+**Contact / Email** (our side, right-hand header column) print the deal owner
+(`dealOwner`), falling back to `preparedBy` only when no owner is set — the
+same rule as the non-standard template. Before 2026-09-19 this template
+printed the creator, so an offer keyed in by an admin on a salesperson's
+behalf named the admin. `src/lib/pdf/quotation-contact.test.ts` pins it.
+
 **Remarks:** the line between the Total row and OFFER TERMS prints
 `quotation.remarks` (HTML-escaped, `white-space: pre-line` so typed line breaks
 hold). The heading itself always prints — it is part of the format sheet — so

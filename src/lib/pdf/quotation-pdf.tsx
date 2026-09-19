@@ -225,6 +225,10 @@ function StandardQuotationPage({
     company.regCountry,
   ].filter(Boolean).join(", ");
 
+  // Our Contact/Email print the deal owner (the salesperson who owns the
+  // deal), not the login that keyed the quotation in; the creator only when
+  // no owner is assigned. Same rule as the non-standard layout below.
+  const contactPerson = quotation.dealOwner || quotation.preparedBy;
   const footerContact = [
     company.telephoneNo ? `Tel. ${company.telephoneNo}` : null,
     company.email ? `Email: ${company.email}` : null,
@@ -275,12 +279,12 @@ function StandardQuotationPage({
       <InfoRow cells={[
         { label: "Attn.", value: quotation.buyer?.buyerName || quotation.customer.contactPerson || "", flex: 2.5 },
         { label: "Designation", value: quotation.buyer?.designation || "", flex: 1.5 },
-        { label: "Contact", value: quotation.preparedBy?.name || "", flex: 1.5 },
+        { label: "Contact", value: contactPerson?.name || "", flex: 1.5 },
       ]} />
       <InfoRow cells={[
         { label: "Email", value: quotation.buyer?.email || quotation.customer.email || "", flex: 2.5 },
         { label: "Contact no.", value: quotation.buyer?.mobile || quotation.buyer?.telephone || quotation.customer.phone || "", flex: 1.5 },
-        { label: "Email", value: quotation.preparedBy?.email || "", flex: 1.5 },
+        { label: "Email", value: contactPerson?.email || "", flex: 1.5 },
       ]} />
 
       {/* SHEET HEADING */}
