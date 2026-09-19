@@ -17,6 +17,10 @@ Operates on `quotation`.
 - Company-scoped with `companyFilter(companyId)`.
 - Diffs two revisions of the same quotation, item by item, matched on `sNo`.
 
+`remarks` is one of the compared header fields (label "Remarks"), so a
+changed remark shows in the revision diff like a changed validity or delivery
+period.
+
 ## Gotchas
 
 - `params` is a `Promise` (Next.js 16) and must be awaited.

@@ -21,6 +21,17 @@ Renders the `/quotations/create/nonstandard` screen. 1794 lines.
   module-level `UOM_OPTIONS` array, identical to and separate from the
   standard page's — so Product Master → Units (UOM) reached neither form.
 
+### Remarks card
+
+Between the totals and Terms & Conditions sits a **Remarks** textarea
+(`formData.remarks`). It is the customer-facing "Remarks:" line the PDF prints
+before OFFER TERMS — on the non-standard copy only when filled, since that
+format has no fixed slot for it. Round-trips on edit like the other header
+fields; sent as-is (the API trims and nulls a blank). The standard form has the
+identical card. A quotation started from a tender (`?tenderId=`) lands on one
+of these two forms, so it has the card too; the tender's own `remarks` (internal
+notes) are not copied onto it.
+
 ## Gotchas
 
 - **A non-standard line is free text only.** There is no Item/Fitting/Flange

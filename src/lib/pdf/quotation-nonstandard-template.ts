@@ -49,6 +49,7 @@ interface QuotationData {
     telephone?: string | null;
   } | null;
   version?: number;
+  remarks?: string | null;
   items: any[];
   terms: any[];
 }
@@ -564,6 +565,10 @@ export function generateNonStandardQuotationHtml(
       <strong>Amount in Words:</strong> ${escapeHtml(numberToWords(gt, quotation.currency))}
     </td></tr>`;
   })() : ""}
+
+  ${quotation.remarks ? `<tr><td colspan="9" style="font-size:8pt;padding:4px 6px 2px 6px;text-align:left;border:0.5px solid #999;">
+      <strong>Remarks:</strong> ${nl2br(quotation.remarks)}
+    </td></tr>` : ""}
 
   <!-- ============================================================ -->
   <!-- OFFER TERMS                                                  -->

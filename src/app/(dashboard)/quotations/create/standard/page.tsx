@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -33,7 +34,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Trash2, ArrowLeft, Building2, MapPin, ListChecks, FileText, Package, Copy, ChevronDown } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Building2, MapPin, ListChecks, FileText, Package, Copy, ChevronDown, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
 import { useCurrentUser } from "@/hooks/use-current-user";
@@ -173,6 +174,7 @@ function StandardQuotationPage() {
     dealOwnerId: "",
     nextActionDate: "",
     kindAttention: "",
+    remarks: "",
     placeOfSupplyCity: "",
     placeOfSupplyState: "",
     placeOfSupplyCountry: "India",
@@ -616,6 +618,7 @@ function StandardQuotationPage() {
         dealOwnerId: q.dealOwnerId || "",
         nextActionDate: q.nextActionDate ? toDateInput(q.nextActionDate) : "",
         kindAttention: q.kindAttention || "",
+        remarks: q.remarks || "",
         placeOfSupplyCity: q.placeOfSupplyCity || "",
         placeOfSupplyState: q.placeOfSupplyState || "",
         placeOfSupplyCountry: q.placeOfSupplyCountry || "India",
@@ -984,6 +987,7 @@ function StandardQuotationPage() {
       dealOwnerId: formData.dealOwnerId || null,
       nextActionDate: formData.nextActionDate || undefined,
       kindAttention: formData.kindAttention || undefined,
+      remarks: formData.remarks,
       placeOfSupplyCity: formData.placeOfSupplyCity || undefined,
       placeOfSupplyState: formData.placeOfSupplyState || undefined,
       placeOfSupplyCountry: formData.placeOfSupplyCountry || undefined,
@@ -2026,6 +2030,25 @@ function StandardQuotationPage() {
                 </div>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Remarks — prints as the "Remarks:" line between the Total row and
+            OFFER TERMS on the PDF (the client's QTN-Rev.2 sheet reserves it). */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <MessageSquare className="h-4 w-4 text-primary" />
+              Remarks
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Textarea
+              value={formData.remarks}
+              onChange={(e) => setFormData((prev) => ({ ...prev, remarks: e.target.value }))}
+              placeholder="Printed under the items table, above Offer Terms. Leave blank for none."
+              rows={2}
+            />
           </CardContent>
         </Card>
 

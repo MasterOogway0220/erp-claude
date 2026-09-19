@@ -65,6 +65,12 @@ and unparseable rates fail. The PUT write path runs each item through
 `NULL` and a regretted line is forced to `NULL` rate and `0` amount on both
 paths, with one tested implementation instead of two copies.
 
+### Remarks
+
+PUT writes `remarks` the same way POST does — trimmed, `null` when blank.
+Sending the field is how the form clears it; `undefined` also clears, which
+matches the rest of the header fields here.
+
 ## Gotchas
 
 - `params` is a `Promise` (Next.js 16) and must be awaited.

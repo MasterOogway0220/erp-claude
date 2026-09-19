@@ -93,6 +93,7 @@ export async function GET(
       ["validUpto", "Validity"],
       ["currency", "Currency"],
       ["deliveryPeriod", "Delivery Period"],
+      ["remarks", "Remarks"],
     ];
 
     for (const [field, label] of headerFields) {

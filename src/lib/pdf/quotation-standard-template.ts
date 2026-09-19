@@ -58,6 +58,7 @@ interface QuotationData {
   roundOffAmount?: number | string | null;
   grandTotal?: number | string | null;
   advanceToPay?: number | string | null;
+  remarks?: string | null;
   items: any[];
   terms: any[];
 }
@@ -424,7 +425,7 @@ export function generateStandardQuotationHtml(
 </table>
 
 <!-- REMARKS (per client format: heading line between total and terms) -->
-<div style="font-size:8.5pt;font-weight:bold;padding:6px 0 2px 0;">Remarks: </div>
+<div style="font-size:8.5pt;padding:6px 0 2px 0;white-space:pre-line;"><b>Remarks: </b>${esc(quotation.remarks)}</div>
 
 <!-- OFFER TERMS -->
 <table class="terms">

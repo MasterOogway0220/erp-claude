@@ -55,6 +55,11 @@ template only supplies the markup (`quoted-bold` / `quoted-normal` spans).
 `src/lib/pdf/quotation-rate-column.test.ts` renders this template and asserts
 both columns.
 
+**Remarks:** `quotation.remarks`, when set, prints as a full-width row
+between Amount in Words and OFFER TERMS (`nl2br`, so line breaks hold). The
+non-standard format has no reserved slot, so a blank remark prints nothing —
+`src/lib/pdf/quotation-remarks.test.ts` asserts both cases.
+
 ## Domain notes
 
 `quotationCategory` is `STANDARD` or `NON_STANDARD`, chosen at creation, and it

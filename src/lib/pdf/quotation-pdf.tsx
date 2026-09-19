@@ -362,7 +362,10 @@ function StandardQuotationPage({
 
       {/* REMARKS (per client format: heading line between total and terms) */}
       <View style={{ marginTop: 4 }}>
-        <T style={{ fontFamily: "Helvetica", fontWeight: "bold", fontSize: 8.5 }}>Remarks: </T>
+        <T style={{ fontSize: 8.5 }}>
+          <T style={{ fontFamily: "Helvetica", fontWeight: "bold" }}>Remarks: </T>
+          {quotation.remarks || ""}
+        </T>
       </View>
 
       {/* OFFER TERMS */}
@@ -686,6 +689,16 @@ function NonStandardQuotationPage({
           <T style={{ fontSize: 8 }}>
             <T style={{ fontFamily: "Helvetica", fontWeight: "bold" }}>Amount in Words: </T>
             {numberToWords(grandTotal, curr)}
+          </T>
+        </View>
+      )}
+
+      {/* REMARKS — only when filled; the non-standard format has no fixed slot for it */}
+      {quotation.remarks && (
+        <View style={[BORDER, { padding: "2pt 4pt", borderTopWidth: 0 }]}>
+          <T style={{ fontSize: 8 }}>
+            <T style={{ fontFamily: "Helvetica", fontWeight: "bold" }}>Remarks: </T>
+            {quotation.remarks}
           </T>
         </View>
       )}

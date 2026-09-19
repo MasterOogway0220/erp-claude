@@ -306,6 +306,7 @@ export async function POST(
           dealOwnerId: sourceQuotation.dealOwnerId,
           nextActionDate: sourceQuotation.nextActionDate,
           kindAttention: sourceQuotation.kindAttention,
+          remarks: sourceQuotation.remarks,
           placeOfSupplyCity: sourceQuotation.placeOfSupplyCity,
           placeOfSupplyState: sourceQuotation.placeOfSupplyState,
           placeOfSupplyCountry: sourceQuotation.placeOfSupplyCountry,

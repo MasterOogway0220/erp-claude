@@ -43,6 +43,12 @@ team expected on the document; the filter now guards only the PDF filename.
 There are deliberately **no OD or WT columns** — the client's format identifies
 pipe by nominal bore and schedule, not by measured dimensions.
 
+**Remarks:** the line between the Total row and OFFER TERMS prints
+`quotation.remarks` (HTML-escaped, `white-space: pre-line` so typed line breaks
+hold). The heading itself always prints — it is part of the format sheet — so
+a blank remark renders the bare `Remarks:` line, exactly as it did before the
+field existed. `src/lib/pdf/quotation-remarks.test.ts` pins the placement.
+
 ### `REGRET` and `QUOTED` in the price columns
 
 Two different words replace a number in the Unit Rate and Amount columns, and

@@ -18,6 +18,10 @@ Operates on `quotation`.
 - Writes inside `$transaction`. Item updates follow the delete-and-recreate pattern, so **a field the caller omits is lost**.
 - Writes an audit row. Audit failures are swallowed and never block the operation.
 
+The header `remarks` line is copied onto the new revision along with the
+other header fields — a revision starts as the previous document, remark
+included.
+
 ## Gotchas
 
 - `params` is a `Promise` (Next.js 16) and must be awaited.

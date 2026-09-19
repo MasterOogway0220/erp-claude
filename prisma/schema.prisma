@@ -449,6 +449,9 @@ model Quotation {
   dealOwnerId          String?
   nextActionDate       DateTime?
   kindAttention        String?               @db.VarChar(200)
+  // Free-text "Remarks:" printed between the Total row and OFFER TERMS
+  // (the client's QTN-Rev.2 sheet reserves that line).
+  remarks              String?               @db.Text
   additionalDiscount   Decimal?              @db.Decimal(10, 2)
   discountAmount       Decimal?              @db.Decimal(14, 2)
   totalAfterDiscount   Decimal?              @db.Decimal(14, 2)

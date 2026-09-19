@@ -33,7 +33,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Trash2, ArrowLeft, Building2, MapPin, ListChecks, Copy, ChevronDown, FileText } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Building2, MapPin, ListChecks, Copy, ChevronDown, FileText, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
 import { useCurrentUser } from "@/hooks/use-current-user";
@@ -133,6 +133,7 @@ function NonStandardQuotationPage() {
     dealOwnerId: "",
     nextActionDate: "",
     kindAttention: "",
+    remarks: "",
     sourceTenderId: "",
   });
   const [items, setItems] = useState<NonStdItem[]>([emptyItem]);
@@ -526,6 +527,7 @@ function NonStandardQuotationPage() {
         dealOwnerId: q.dealOwnerId || "",
         nextActionDate: q.nextActionDate ? toDateInput(q.nextActionDate) : "",
         kindAttention: q.kindAttention || "",
+        remarks: q.remarks || "",
         sourceTenderId: q.sourceTenderId || "",
       });
       setTaxRate(q.taxRate ? String(q.taxRate) : "");
@@ -847,6 +849,7 @@ function NonStandardQuotationPage() {
       dealOwnerId: formData.dealOwnerId || null,
       nextActionDate: formData.nextActionDate || undefined,
       kindAttention: formData.kindAttention || undefined,
+      remarks: formData.remarks,
       taxRate: taxRate || undefined,
       additionalDiscount: additionalDiscount || undefined,
       rcmEnabled,
@@ -1523,6 +1526,25 @@ function NonStandardQuotationPage() {
                 </div>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Remarks — prints as the "Remarks:" line between the Total row and
+            OFFER TERMS on the PDF (the client's QTN-Rev.2 sheet reserves it). */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <MessageSquare className="h-4 w-4 text-primary" />
+              Remarks
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Textarea
+              value={formData.remarks}
+              onChange={(e) => setFormData((prev) => ({ ...prev, remarks: e.target.value }))}
+              placeholder="Printed under the items table, above Offer Terms. Leave blank for none."
+              rows={2}
+            />
           </CardContent>
         </Card>
 

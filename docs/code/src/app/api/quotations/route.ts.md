@@ -40,6 +40,13 @@ invalid, so a priced line cannot slip through totalling zero. The quotation
 subtotal is summed from the normalised amounts *after* this loop runs, which is
 what keeps regretted lines out of the total.
 
+### Remarks
+
+`remarks` is the quotation-level "Remarks:" line printed between the Total row
+and OFFER TERMS. It is trimmed and stored as `null` when blank, so an untouched
+textarea never persists `""`. Per-item `remark` is a different column (the
+"Remark/Material Code" cell).
+
 ## Gotchas
 
 - Errors return `error.message`, so thrown text reaches the user's toast.

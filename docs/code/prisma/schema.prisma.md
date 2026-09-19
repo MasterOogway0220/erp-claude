@@ -66,6 +66,10 @@ baked into `src/lib/fitting-flange-sizes.ts` at build time.
 
 **`Quotation` is the largest model** and the most revised. Revisions share a
 `quotationNo` and increment `version`, linked by `parentQuotationId`.
+`Quotation.remarks` (TEXT, added 2026-09-19) is the customer-facing
+"Remarks:" line the client's QTN-Rev.2 sheet reserves between the Total row
+and OFFER TERMS — not to be confused with `approvalRemarks` (internal
+approval note), `revisionNotes` or `lossNotes`.
 
 ### Purchase
 `PurchaseRequisition` → `PRItem`, `RFQ` → `RFQVendor` → `VendorQuotation`,

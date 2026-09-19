@@ -1004,6 +1004,17 @@ export default function QuotationDetailPage() {
         </CardContent>
       </Card>
 
+      {/* Remarks — the "Remarks:" line printed between Total and OFFER TERMS */}
+      {quotation.remarks && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Remarks</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm whitespace-pre-line">{quotation.remarks}</p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Terms & Conditions */}
       {(quotation.terms?.length > 0 || isEditingTerms) && (

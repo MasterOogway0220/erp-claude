@@ -65,6 +65,12 @@ gives the downloaded PDF coverage of the part that can actually be wrong —
 `src/lib/pdf/quotation-rate-column.test.ts` pins the rule to exactly those
 three outcomes.
 
+**Remarks:** both layouts print `quotation.remarks`. The standard layout
+always prints the `Remarks:` heading (format sheet) with the text after it;
+the non-standard layout prints a bordered Remarks row between Amount in Words
+and OFFER TERMS only when there is text. Keep in step with the two HTML
+templates (email attachment), which carry the same rule.
+
 ## Domain notes
 
 Same document as `quotation-standard-template.ts`; see that doc for the column
