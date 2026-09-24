@@ -6,6 +6,7 @@
 // SANDBOX_COMPANY_ID picks the company; it defaults to N-Pipe Solutions Inc.
 // in production. Run the first sandbox copy AFTER this, so Akash's own User
 // row exists in sbx_User (rows he creates reference him).
+import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import bcrypt from "bcryptjs";
@@ -14,7 +15,8 @@ const EMAIL = "akash.sandbox@demo.local";
 const PASSWORD = "Akash@Sandbox#2026";
 const COMPANY_ID = process.env.SANDBOX_COMPANY_ID ?? "cmmrs9ytr0001panemoxnq3gf";
 
-const url = new URL(process.env.DATABASE_URL!);
+if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is not set (checked the environment and .env)");
+const url = new URL(process.env.DATABASE_URL);
 const prisma = new PrismaClient({
   adapter: new PrismaMariaDb({
     host: url.hostname,
