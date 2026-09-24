@@ -15,6 +15,8 @@ model User {
   passwordHash              String
   role                      UserRole                    @default(SALES)
   isActive                  Boolean                     @default(true)
+  /// Sandbox login: every query runs against the sbx_* table copies. See docs/code/src/lib/sandbox/.
+  isSandbox                 Boolean                     @default(false)
   lastLogin                 DateTime?
   ipAddress                 String?
   phone                     String?

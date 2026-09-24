@@ -37,8 +37,13 @@ const rows = await prisma.quotation.findMany({ where: { ...companyFilter(company
 ### What still runs
 
 1. `getServerSession`. No `session.user.id` → 401.
-2. `getActiveCompanyId(session)`.
-3. Return authorised.
+2. **Sandbox backstop** (`sandboxUnrouted`): a sandbox session
+   (`session.user.isSandbox`) on a request that middleware did not mark with
+   `x-erp-sandbox` → **500**, because its queries would run on the real tables.
+   Normal cause: a new API path outside the middleware matcher. See
+   [the sandbox module](./sandbox/README.md).
+3. `getActiveCompanyId(session)`.
+4. Return authorised.
 
 The 401 check is written as `!session?.user?.id` rather than `!session`
 deliberately. A **blanked JWT** — which is what the `jwt` callback returns for
@@ -106,4 +111,6 @@ saying so.
 
 - `src/lib/auth.ts` — session and the JWT callbacks.
 - `src/lib/access/module-access.ts` — the UI-side twin, same removal.
-- `src/middleware.ts` — route-level auth before a handler runs.
+- `src/middleware.ts` — route-level auth before a handler runs, and the
+  sandbox marker the backstop above relies on.
+- `src/lib/sandbox/context.ts` — `currentSandbox()`.

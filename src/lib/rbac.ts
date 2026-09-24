@@ -12,6 +12,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { authOptions } from "@/lib/auth";
 import { UserRole } from "@prisma/client";
+import { currentSandbox } from "@/lib/sandbox/context";
 
 export type RBACAction = "read" | "write" | "delete" | "approve";
 
@@ -301,6 +302,9 @@ export async function checkAccess(
   // reinstate the allowedRoles / moduleAccess checks here (see git history).
   void MODULE_TO_ACCESS_KEY;
 
+  const unrouted = await sandboxUnrouted(session);
+  if (unrouted) return unrouted;
+
   const companyId = await getActiveCompanyId(session);
 
   return { authorized: true, session, companyId };
@@ -320,9 +324,27 @@ export async function checkAuth(): Promise<AuthResult> {
     };
   }
 
+  const unrouted = await sandboxUnrouted(session);
+  if (unrouted) return unrouted;
+
   const companyId = await getActiveCompanyId(session);
 
   return { authorized: true, session, companyId };
+}
+
+/**
+ * A sandbox session whose request middleware did not mark — its queries would
+ * run on the real tables. Refused outright rather than risked. Normal cause:
+ * a new API path outside the middleware matcher.
+ */
+async function sandboxUnrouted(session: { user: { isSandbox?: boolean } }): Promise<AuthResult | null> {
+  if (!session.user.isSandbox || (await currentSandbox())) return null;
+  console.error("[sandbox] sandbox session on an unmarked request — refused");
+  return {
+    authorized: false,
+    session: null,
+    response: NextResponse.json({ error: "Sandbox routing unavailable for this request" }, { status: 500 }),
+  };
 }
 
 // ponytail: all roles, per the same open-access request — restore the short lists to re-gate QA/approval actions

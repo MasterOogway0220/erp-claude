@@ -1,8 +1,13 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
+import { sandboxAdapter } from "./sandbox/adapter";
+import { currentSandbox } from "./sandbox/context";
+import { routedClient } from "./sandbox/router";
+import { MODEL_TABLES } from "./sandbox/tables";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
+  sandboxPrisma: PrismaClient | undefined;
 };
 
 // The DB server closes an idle connection after this many seconds
@@ -95,6 +100,21 @@ function createClient() {
   });
 }
 
+// The sandbox login's client: same database, but every statement is renamed
+// onto the sbx_* table copies before it is sent (see src/lib/sandbox/). Its
+// own small pool, so a sandbox session never waits on real users' sockets.
+// Two connections, not one: route code sometimes calls `prisma.*` from inside
+// a `$transaction` callback, which needs a second socket while the first is
+// held by the transaction.
+function createSandboxClient() {
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) throw new Error("DATABASE_URL is not set");
+  return new PrismaClient({
+    adapter: sandboxAdapter(new PrismaMariaDb({ ...poolConfig(databaseUrl), connectionLimit: 2 }), MODEL_TABLES),
+    log: ["error"],
+  });
+}
+
 // Built on first use, not on import.
 //
 // `next build` collects page data by evaluating every route module, and every
@@ -110,17 +130,33 @@ function createClient() {
 // Deferring costs nothing: constructing a PrismaClient opens no socket (the
 // driver adapter's pool connects lazily on the first query), so the only thing
 // that moves is when the URL is read.
-export const prisma: PrismaClient = new Proxy({} as PrismaClient, {
+const realClient = () => (globalForPrisma.prisma ??= createClient());
+
+/**
+ * The real client, never routed to the sandbox. Only for reads that must see
+ * real data even inside a sandbox request — login identity checks. Anything
+ * that writes must use `prisma`.
+ */
+export const realPrisma: PrismaClient = new Proxy({} as PrismaClient, {
   get(_target, prop) {
-    const client = (globalForPrisma.prisma ??= createClient());
+    const client = realClient();
     const value = Reflect.get(client, prop, client);
     // Methods must keep their `this`; model delegates are plain properties.
     return typeof value === "function" ? value.bind(client) : value;
   },
 });
 
-// The globalThis cache lives in the trap above, so the pool is reused across
-// hot reloads (dev) and across module re-evaluations on some Node.js hosts
-// (prod). It must NOT also be assigned here: that would store the proxy
-// itself, `??=` would then find it already set, and every property access
-// would resolve back through the proxy into itself and recurse forever.
+// Each call is routed: a request middleware marked as the sandbox login
+// (x-erp-sandbox, from a verified JWT) runs on the sandbox client, everything
+// else on the real one. See src/lib/sandbox/router.ts.
+export const prisma: PrismaClient = routedClient(
+  realClient,
+  () => (globalForPrisma.sandboxPrisma ??= createSandboxClient()),
+  currentSandbox
+);
+
+// The globalThis caches live in the factories above, so the pools are reused
+// across hot reloads (dev) and across module re-evaluations on some Node.js
+// hosts (prod). They must NOT also be assigned here: that would store the
+// proxy itself, `??=` would then find it already set, and every property
+// access would resolve back through the proxy into itself and recurse forever.

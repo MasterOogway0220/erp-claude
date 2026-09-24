@@ -1,4 +1,5 @@
 import { unstable_cache, revalidateTag } from "next/cache";
+import { currentSandbox } from "@/lib/sandbox/context";
 
 /**
  * Server-side caching for the master lists.
@@ -104,6 +105,11 @@ export async function cachedMasterRead<T>({
   read: () => Promise<T>;
 }): Promise<T> {
   if (skipCache) return read();
+
+  // The sandbox login reads the sbx_* copies. Its result must never be stored
+  // under a key real users read, and a real cached result must never be served
+  // to it — the key has no way to tell the two apart, so it bypasses the cache.
+  if (await currentSandbox()) return read();
 
   // A null companyId means "not company-scoped" for this deployment, which is
   // a different result set from any real company's — so it gets its own slot

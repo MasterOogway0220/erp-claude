@@ -20,13 +20,20 @@ NextAuth types so `session.user` carries `id`, `role`, `companyId` and
 ### `authorize`
 
 1. Email and password required.
-2. Look the user up, including `employee.moduleAccess`.
+2. Look the user up, including `employee.moduleAccess` — through
+   `realPrisma`: a sign-in made while a sandbox session cookie is present
+   arrives marked as sandbox, and who may log in must come from the real
+   `User` table.
 3. Reject if absent or `isActive` is false.
 4. `bcrypt.compare`.
 5. **Second factor**, if `otpRequiredFor(user.role)` — verified *here*, not
    only in the login page, so a direct POST to
    `/api/auth/callback/credentials` cannot skip it.
-6. Stamp `lastLogin`, write a `LOGIN` audit row, return the user.
+6. Stamp `lastLogin`, write a `LOGIN` audit row, return the user —
+   **except for a sandbox login** (`user.isSandbox`), which skips both: login
+   runs before any request is marked as sandbox, so those writes would land in
+   the real `User` and `AuditLog` tables. See
+   [the sandbox module](./sandbox/README.md).
 
 Every failure throws the same `"Invalid credentials"` for unknown user,
 inactive user and wrong password — no account enumeration.
@@ -40,7 +47,7 @@ would never match.
 
 Three distinct jobs, in order, and the order matters.
 
-**On sign-in** (`user` present): copy id, role, companyId, grants; stamp
+**On sign-in** (`user` present): copy id, role, companyId, grants, `isSandbox`; stamp
 `verifiedAt`; stamp **`loginAt` once**. `loginAt` is never refreshed — it is
 the anchor for the absolute session cap.
 
@@ -66,8 +73,13 @@ middleware then redirects to `/login`. Same mechanism as the deactivated-user
 path below it.
 
 **Periodic re-verification:** every 5 minutes, re-read the user to catch
-deactivation, role changes and grant changes mid-session. Throttled because it
-was previously a database query on *every* request.
+deactivation, role changes and grant changes mid-session (and `isSandbox`).
+Throttled because it was previously a database query on *every* request.
+
+It reads through **`realPrisma`**, not `prisma`: this callback also runs inside
+ordinary API requests, and for the sandbox login those are routed onto the
+`sbx_*` copies — who the user is must come from the real `User` table, or a
+sandbox user deactivating themselves in the sandbox would lock themselves out.
 
 With sessions running 30 idle days this is **the only thing that ends a
 session promptly**. These are JWTs: there is no server-side session table, so a
@@ -89,6 +101,9 @@ error is logged and `verifiedAt` is nudged to back off about a minute.
 ```ts
 if (!token?.id) return {} as unknown as typeof session;
 ```
+
+Copies id, role, companyId, grants and `isSandbox` (default `false`) onto
+`session.user`.
 
 A blanked token must produce an empty session object, not `{ user: undefined }`
 — the latter is truthy, passes `if (!session)` guards, and crashes at

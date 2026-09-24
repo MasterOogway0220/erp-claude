@@ -35,11 +35,15 @@ vi.mock("next/cache", () => ({
   },
 }));
 
+const sandbox = vi.hoisted(() => ({ user: null as string | null }));
+vi.mock("@/lib/sandbox/context", () => ({ currentSandbox: async () => sandbox.user }));
+
 const { cachedMasterRead, invalidateMasters, MASTER_TTL_SECONDS } = await import(
   "./master-cache"
 );
 
 beforeEach(() => {
+  sandbox.user = null;
   calls.length = 0;
   revalidated.length = 0;
   profiles.length = 0;
@@ -146,5 +150,22 @@ describe("invalidateMasters", () => {
   it("is a no-op when given nothing", () => {
     invalidateMasters();
     expect(revalidated).toEqual([]);
+  });
+});
+
+describe("the sandbox login never touches the shared cache", () => {
+  // The cache is shared by every user. A sandbox read cached under the normal
+  // key would serve Akash's sbx_ rows to real users; a cache hit would serve
+  // real rows to Akash. So sandbox reads go straight to the (sandbox) query.
+  it("reads straight through for a sandbox request", async () => {
+    sandbox.user = "akash";
+    const rows = await cachedMasterRead({ tag: "customers", companyId: "company-a", read: async () => ["sbx"] });
+    expect(rows).toEqual(["sbx"]);
+    expect(calls).toHaveLength(0);
+  });
+
+  it("still caches for a normal request", async () => {
+    await cachedMasterRead({ tag: "customers", companyId: "company-a", read: async () => ["a"] });
+    expect(calls).toHaveLength(1);
   });
 });

@@ -75,6 +75,14 @@ slot (`__unscoped__`) rather than sharing a real company's. Two lists use it
 deliberately — UOM and GST rates carry no `companyFilter`, so every company
 genuinely shares one entry.
 
+**The sandbox login bypasses the cache entirely** — `read()` runs directly
+when `currentSandbox()` names a sandbox user. Its reads come from the `sbx_*`
+copies; cached under the normal key they would be served to real users, and a
+real cached entry would be served to the sandbox. The key cannot tell the two
+apart, so the sandbox never touches it. (`invalidateMasters` is not
+special-cased: a sandbox write purging a tag only makes real users re-read real
+data.) See [the sandbox module](../sandbox/README.md).
+
 **Auth is unaffected.** `cachedMasterRead` is called *after* `checkAccess`, so
 every request is still authorised individually. Only the database result is
 cached, never the decision to allow it.

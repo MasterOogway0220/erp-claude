@@ -1,7 +1,7 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import { prisma } from "./prisma";
+import { prisma, realPrisma } from "./prisma";
 import { UserRole } from "@prisma/client";
 import { parseModuleAccess } from "./access/module-access";
 import { createAuditLog } from "./audit";
@@ -17,6 +17,8 @@ declare module "next-auth" {
       role: UserRole;
       companyId: string | null;
       moduleAccess: string[];
+      /** Sandbox login: every query runs on the sbx_* copies (src/lib/sandbox). */
+      isSandbox: boolean;
     };
   }
 
@@ -27,6 +29,7 @@ declare module "next-auth" {
     role: UserRole;
     companyId: string | null;
     moduleAccess: string[];
+    isSandbox: boolean;
   }
 }
 
@@ -36,6 +39,7 @@ declare module "next-auth/jwt" {
     role: UserRole;
     companyId: string | null;
     moduleAccess: string[];
+    isSandbox?: boolean;
     verifiedAt?: number;
     /** Sign-in time, set once — the anchor for the absolute 24h session cap. */
     loginAt?: number;
@@ -67,7 +71,10 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Email and password are required");
         }
 
-        const user = await prisma.user.findUnique({
+        // realPrisma: a sign-in made while a sandbox session cookie is still
+        // present arrives marked as sandbox; who may log in, and with which
+        // password, must still come from the real User table.
+        const user = await realPrisma.user.findUnique({
           where: { email: credentials.email },
           include: { employee: { select: { moduleAccess: true } } },
         });
@@ -94,20 +101,25 @@ export const authOptions: NextAuthOptions = {
           if (!check.ok) throw new Error(OTP_ERRORS[check.reason]);
         }
 
-        // Update last login
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { lastLogin: new Date() },
-        });
+        // The sandbox login must leave no trace in real data, and this runs
+        // before middleware has marked any request as sandbox — so it would
+        // write to the real User and AuditLog tables. Skip both for it.
+        if (!user.isSandbox) {
+          // Update last login
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { lastLogin: new Date() },
+          });
 
-        // createAuditLog swallows its own errors, so a logging failure can never block login
-        await createAuditLog({
-          tableName: "user",
-          recordId: user.id,
-          action: "LOGIN",
-          userId: user.id,
-          companyId: user.companyId,
-        });
+          // createAuditLog swallows its own errors, so a logging failure can never block login
+          await createAuditLog({
+            tableName: "user",
+            recordId: user.id,
+            action: "LOGIN",
+            userId: user.id,
+            companyId: user.companyId,
+          });
+        }
 
         // moduleAccess is stored as a JSON string in EmployeeMaster.moduleAccess
         // (LongText). Parse it — Array.isArray() on a string is always false.
@@ -120,6 +132,7 @@ export const authOptions: NextAuthOptions = {
           role: user.role,
           companyId: user.companyId,
           moduleAccess,
+          isSandbox: user.isSandbox,
         };
       },
     }),
@@ -154,6 +167,7 @@ export const authOptions: NextAuthOptions = {
         token.role = user.role;
         token.companyId = user.companyId;
         token.moduleAccess = user.moduleAccess;
+        token.isSandbox = user.isSandbox;
         token.verifiedAt = Date.now();
         // Stamped once, never refreshed — this is what makes the 24h window
         // absolute instead of sliding.
@@ -178,12 +192,15 @@ export const authOptions: NextAuthOptions = {
       if (token.id && Date.now() - (token.verifiedAt ?? 0) > REVERIFY_INTERVAL_MS) {
         let current;
         try {
-          current = await prisma.user.findUnique({
+          // realPrisma: this can run inside a sandbox request, and who the
+          // user is must come from the real User table, not the sbx_ copy.
+          current = await realPrisma.user.findUnique({
             where: { id: token.id },
             select: {
               isActive: true,
               role: true,
               companyId: true,
+              isSandbox: true,
               employee: { select: { moduleAccess: true } },
             },
           });
@@ -202,6 +219,7 @@ export const authOptions: NextAuthOptions = {
         }
         token.role = current.role;
         token.companyId = current.companyId;
+        token.isSandbox = current.isSandbox;
         // Refresh grants so module-access changes take effect without re-login.
         token.moduleAccess = parseModuleAccess(current.employee?.moduleAccess);
         token.verifiedAt = Date.now();
@@ -222,6 +240,7 @@ export const authOptions: NextAuthOptions = {
         session.user.role = token.role;
         session.user.companyId = token.companyId;
         session.user.moduleAccess = token.moduleAccess;
+        session.user.isSandbox = token.isSandbox ?? false;
       }
       return session;
     },

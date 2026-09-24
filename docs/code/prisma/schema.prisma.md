@@ -104,6 +104,12 @@ each comparable against the spec.
 `User`, `CompanyMaster`, `AuditLog`, `DocumentSequence`, `Alert`, `EmailOtp`,
 `StoredFile`, `FinancialYear`.
 
+`User.isSandbox` marks the sandbox login, whose queries run on `sbx_<Table>`
+copies of every table in this schema. Those copies live in the same database
+but are **not models** — they are created by `src/lib/sandbox/refresh.ts`, so
+`prisma db push` reports them as drift. See
+[the sandbox module](../src/lib/sandbox/README.md).
+
 ## Conventions that hold across the schema
 
 ### Company scoping

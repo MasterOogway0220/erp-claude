@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Sidebar } from "@/components/layout/sidebar";
 import { TopBar } from "@/components/layout/topbar";
+import { SandboxBanner } from "@/components/layout/sandbox-banner";
 
 function SessionKeepAlive() {
   // SessionProvider's refetchInterval permanently stops once a single poll
@@ -40,6 +41,7 @@ export default function DashboardLayout({
         <div className="flex min-h-screen">
           <Sidebar />
           <div className="flex flex-1 flex-col min-w-0">
+            <SandboxBanner />
             <TopBar />
             <main className="flex-1 p-4 md:p-6">
               {children}

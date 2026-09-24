@@ -13,7 +13,25 @@ check is an unprotected screen. This gates whole route trees at the edge.
 Wraps `withAuth` from `next-auth/middleware`. Redirects unauthenticated users
 to `/login`, and sends a `SUPER_ADMIN` with no active company to `/superadmin`.
 
+On `/api/*` it does no auth (routes answer 401 themselves) and only sets the
+**sandbox marker**: any client-sent `x-erp-sandbox` header is deleted, and for
+a verified sandbox token (`isSandbox`, read with `getToken`) it is set to the
+user id. That header is what routes a request's queries onto the `sbx_*`
+copies. See [the sandbox module](./lib/sandbox/README.md).
+
 ## How it works
+
+### Two handlers: `/api/*` first, then `withAuth` for pages
+
+The default export checks the path. `/api/*` is handled directly — decode the
+token, strip/set the sandbox header, pass through. Everything else goes to the
+`withAuth`-wrapped page handler.
+
+The split exists because **`withAuth` returns without calling its handler for
+anything under `/api/auth`** (next-auth's own base path). `/api/auth` is not
+only NextAuth: `change-password` lives there and writes `User` + `AuditLog`.
+With the marker set inside `withAuth`, a sandbox password change went to the
+real tables — caught in review and pinned by `e2e/sandbox.e2e.ts`.
 
 ### `authorized: ({ token }) => !!token?.id`
 
@@ -31,8 +49,9 @@ query would run unscoped across all three companies.
 
 ### The matcher
 
-Lists every top-level folder under `src/app/(dashboard)` explicitly, plus `/`.
-`/login`, `/api/auth/**` and static assets are deliberately outside it.
+Lists every top-level folder under `src/app/(dashboard)` explicitly, plus `/`,
+plus `/api/:path*` (for the sandbox marker only). `/login` and static assets
+are deliberately outside it.
 
 **It used to carry a `"/(dashboard)(.*)"` entry that protected nothing.**
 `(dashboard)` is a Next.js *route group*: it organises files without appearing
@@ -67,6 +86,11 @@ done
   hypothetical: six routes were open this way, while a dead route-group pattern
   made the list look exhaustive. Add the folder to the matcher in the same
   commit that creates it, and never trust a pattern containing a route group.
+- **Do not move the sandbox marking back inside `withAuth`** — see above.
+- **The `/api/:path*` matcher entry is a security boundary for the sandbox.**
+  Remove it and a client could send `x-erp-sandbox` itself (and the sandbox
+  login's requests would run on real tables — `checkAccess` refuses those with
+  a 500 as a backstop).
 - Next.js warns that `middleware` is deprecated in favour of `proxy`. It still
   works; migrating is a separate job.
 
@@ -74,3 +98,4 @@ done
 
 - `src/lib/auth.ts` — the `jwt` callback that blanks tokens.
 - `src/lib/rbac.ts` — the per-route gate.
+- `src/lib/sandbox/headers.ts` — `markSandboxHeaders`.

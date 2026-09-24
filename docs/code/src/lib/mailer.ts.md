@@ -30,7 +30,7 @@ turned out to matter: **production had no SMTP variables set at all.**
 
 | Export | Purpose |
 |---|---|
-| `mailer()` | The configured `nodemailer` transport. Throws if unconfigured. |
+| `mailer()` | The configured `nodemailer` transport. Throws if unconfigured. For the **sandbox login**, `sendMail` sends nothing: it logs `[SANDBOX] blocked email` with the recipients and subject and returns a success-shaped result (`messageId: sandbox-…`, `accepted` = the recipients), so the screen flow completes. |
 | `mailFrom(displayName?)` | The From header, falling back safely. |
 | `mailerConfigured()` | Boolean — can mail be sent right now? |
 | `missingMailerConfig()` | Which variables are missing, for the message. |
@@ -99,10 +99,17 @@ None — infrastructure.
   down with the function anyway.
 - **`mailerConfigured()` checks presence, not validity.** Wrong credentials
   still return `true` and fail at send time.
+- **The sandbox check is inside `sendMail`**, because the sandbox marker is a
+  request header (async to read) and `mailer()` is synchronous. The missing-
+  config throw still happens first, for everyone. Every sender goes through
+  here, so this is the only place mail is blocked for the sandbox — a new
+  sender that builds its own nodemailer transport would bypass it. See
+  [the sandbox module](./sandbox/README.md).
 
 ## Related
 
 - `src/lib/mailer.test.ts` — pins the From fallback and the missing-config list.
+- `src/lib/mailer.sandbox.test.ts` — the sandbox never reaches SMTP; others do.
 - `src/lib/auth/otp.ts` — login codes.
 - `src/app/api/quotations/[id]/email/route.tsx`,
   `src/app/api/po-acceptance/[id]/email/route.tsx`,

@@ -4,7 +4,7 @@ Companion explainers for every code file, mirroring the source tree. See
 [CONVENTIONS.md](./CONVENTIONS.md) for structure and depth, and the repo root
 `CLAUDE.md` for the standing rule that keeps them true.
 
-## Coverage: 499 / 499 ✅
+## Coverage: 510 / 510 ✅
 
 Every `.ts`, `.tsx` and `.prisma` file under `src/`, `prisma/` and `scripts/`
 has a doc at the mirrored path. Test files are covered by the doc for what they
@@ -12,11 +12,11 @@ test.
 
 | Area | Files | Depth |
 |---|---:|---|
-| `src/lib` | 58 | Hand-written throughout |
-| `prisma` + `scripts` | 11 | Hand-written |
-| `src/components` | 41 | Hand-written for shared/layout/wizard; grouped for `ui/` |
+| `src/lib` | 65 | Hand-written throughout |
+| `prisma` + `scripts` | 12 | Hand-written |
+| `src/components` | 42 | Hand-written for shared/layout/wizard; grouped for `ui/` |
 | Root, hooks, auth, layouts | 13 | Hand-written |
-| `src/app/api` | 210 | Hand-written module READMEs + per-route facts |
+| `src/app/api` | 212 | Hand-written module READMEs + per-route facts |
 | `src/app/(dashboard)` | 159 | Hand-written module READMEs + per-page facts |
 
 ### Two levels of depth, deliberately
@@ -222,6 +222,19 @@ binary in the deployment any more.
 - [`cache/master-cache.ts`](./src/lib/cache/master-cache.ts.md) — server-side
   caching for the master lists, keyed so one company cannot be served
   another's rows. The multiplier the browser cache cannot be.
+- [`sandbox/`](./src/lib/sandbox/README.md) — the sandbox login (Akash):
+  every query renamed onto `sbx_*` table copies, refreshed nightly; real data
+  never written. [rewrite](./src/lib/sandbox/rewrite.ts.md) ·
+  [adapter](./src/lib/sandbox/adapter.ts.md) ·
+  [router](./src/lib/sandbox/router.ts.md) ·
+  [refresh](./src/lib/sandbox/refresh.ts.md) ·
+  [tables](./src/lib/sandbox/tables.ts.md) ·
+  [context](./src/lib/sandbox/context.ts.md) ·
+  [headers](./src/lib/sandbox/headers.ts.md). Also
+  [`api/sandbox`](./src/app/api/sandbox/route.ts.md),
+  [`api/cron/sandbox-refresh`](./src/app/api/cron/sandbox-refresh/route.ts.md),
+  [`sandbox-banner.tsx`](./src/components/layout/sandbox-banner.tsx.md),
+  [`prisma/seed-sandbox-user.ts`](./prisma/seed-sandbox-user.ts.md).
 - [`prisma.ts`](./src/lib/prisma.ts.md) — the client, pool limits, and why
   `migrate dev` does not work here.
 - [`mailer.ts`](./src/lib/mailer.ts.md) — the one SMTP transport.

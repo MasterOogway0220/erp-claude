@@ -4,6 +4,10 @@
     {
       "path": "/api/cron/rfq-reminders",
       "schedule": "30 3 * * *"
+    },
+    {
+      "path": "/api/cron/sandbox-refresh",
+      "schedule": "30 21 * * *"
     }
   ],
   "functions": {

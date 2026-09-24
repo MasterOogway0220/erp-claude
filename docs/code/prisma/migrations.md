@@ -45,6 +45,7 @@ Naming: `YYYYMMDDHHMMSS_snake_case_description`.
 
 | Migration | What and why |
 |---|---|
+| `20260924120000_user_is_sandbox` | `User.isSandbox` BOOLEAN NOT NULL DEFAULT false — the sandbox login flag (see `src/lib/sandbox/`). Additive; every existing user stays `false`. After deploying any later migration, trigger a sandbox refresh so the `sbx_*` copies pick up the new structure. |
 | `20260919130000_client_item_master` | New `ClientItemMaster` table — the customer's own item IDs on non-standard quotations, unique per customer + ID, cascade on customer delete. Additive. |
 | `20260919120000_quotation_remarks` | `Quotation.remarks` TEXT NULL — the customer-facing "Remarks:" line the client's QTN-Rev.2 format reserves between the Total row and OFFER TERMS. The PDF had printed the bare heading since July with nothing to put behind it. Additive. |
 | `20260822090000_order_processing_gaps` | Nine additive columns closing the order-processing gaps: the client PO's own contact (email/phone), its billing party and signed P.O. copy, a per-line qty remark, the client's line references on `SalesOrderItem`, the order-level inspection regime, `otherLabTests` + `additionalSpec` on `OrderProcessingItem`, and `PRItem.technicalRequirements` — the column that finally carries the client's technical requirements to purchase. |

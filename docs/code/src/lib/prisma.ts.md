@@ -11,7 +11,18 @@ non-default decisions worth knowing before touching it.
 ## What it does
 
 Exports `prisma`, a `PrismaClient` using `@prisma/adapter-mariadb`, cached on
-`globalThis`.
+`globalThis`. Each call on it is **routed**: a request that middleware marked as
+the sandbox login runs on a second, sandbox client whose SQL is renamed onto the
+`sbx_*` table copies; everything else runs on the real client exactly as before.
+See [the sandbox module](./sandbox/README.md).
+
+Also exports:
+
+- `realPrisma` — the real client behind the original lazy proxy, never
+  routed. Only for reads that must see real data even inside a sandbox request
+  (the login lookup and the `jwt` re-verify in `auth.ts`, `lastRefreshAt`).
+- `poolConfig(url)` — the pool settings, reused by the sandbox client, seeds
+  and the sandbox refresh.
 
 ## How it works
 
@@ -141,6 +152,19 @@ A missing `DATABASE_URL` now throws `DATABASE_URL is not set` rather than
 `Invalid URL ... input: 'undefined'`, which named neither the variable nor the
 file.
 
+### Routing to the sandbox client
+
+Since 2026-09-24 the proxy is built by `routedClient` (`sandbox/router.ts`)
+from two lazy factories — the real client and `createSandboxClient()` — plus
+`currentSandbox` (reads the `x-erp-sandbox` header). Model calls,
+`$transaction` and raw SQL go to whichever the request calls for; lifecycle
+methods stay on the real client. The laziness above is preserved: neither
+client is built until first use, and the sandbox one only by a sandbox request.
+
+The sandbox client wraps the MariaDB adapter with `sandboxAdapter` and has its
+own pool of **2** connections (not 1: route code sometimes calls `prisma.*`
+inside a `$transaction` callback, which needs a second socket).
+
 ## Domain notes
 
 None.
@@ -152,6 +176,11 @@ None.
   working procedure is to hand-write `migration.sql` and run
   `prisma migrate deploy`, then verify with `SHOW COLUMNS`. Every migration in
   this repo was authored that way.
+- **Routed model calls start immediately** (plain Promises, not lazy
+  `PrismaPromise`s), so **`prisma.$transaction([...])` throws** — use the
+  callback form. See `sandbox/router.ts`.
+- The sandbox pool adds up to 2 connections per warm instance serving the
+  sandbox login, counted against the same hourly connection cap.
 - Logging is `["error","warn"]` in development and `["error"]` in production.
 - No `$connect()`; the client connects lazily on first query.
 - A transient failure here surfaces in odd places — the NextAuth `jwt` callback
@@ -206,3 +235,4 @@ None.
 - `prisma/schema.prisma`
 - `src/lib/rbac.ts` — `companyFilter`, applied to most queries.
 - `src/lib/auth.ts` — the DB-error tolerance in the `jwt` callback.
+- `src/lib/sandbox/` — the router, the SQL renamer, the table copies.

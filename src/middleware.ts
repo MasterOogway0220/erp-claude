@@ -1,7 +1,9 @@
-import { withAuth } from "next-auth/middleware";
-import { NextResponse } from "next/server";
+import { withAuth, type NextRequestWithAuth } from "next-auth/middleware";
+import { getToken } from "next-auth/jwt";
+import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server";
+import { markSandboxHeaders } from "@/lib/sandbox/headers";
 
-export default withAuth(
+const pages = withAuth(
   function middleware(req) {
     const token = req.nextauth.token;
     const { pathname } = req.nextUrl;
@@ -29,6 +31,24 @@ export default withAuth(
   }
 );
 
+export default async function middleware(req: NextRequest, event: NextFetchEvent) {
+  // API routes do their own auth; here they only get the sandbox marker.
+  // Every request has any client-sent x-erp-sandbox removed, and only a
+  // verified sandbox token puts it back — that header is what routes a
+  // request's queries onto the sbx_* copies (src/lib/prisma.ts).
+  //
+  // Handled here, before withAuth: withAuth returns without calling its
+  // handler for anything under /api/auth, and /api/auth is not only NextAuth
+  // — change-password lives there and writes User + AuditLog, which for the
+  // sandbox login must land in the copies. Identity reads that must see real
+  // data (login, the session re-verify) use realPrisma explicitly.
+  if (req.nextUrl.pathname.startsWith("/api/")) {
+    const token = await getToken({ req });
+    return NextResponse.next({ request: { headers: markSandboxHeaders(req.headers, token) } });
+  }
+  return pages(req as NextRequestWithAuth, event);
+}
+
 export const config = {
   // Every top-level folder under src/app/(dashboard) must be listed here.
   //
@@ -44,6 +64,8 @@ export const config = {
   // server component added under one of those paths, which would have read the
   // database with no session check and nothing to flag it.
   matcher: [
+    // All API routes, for the sandbox marker above (not for auth).
+    "/api/:path*",
     "/",
     "/admin/:path*",
     "/alerts/:path*",

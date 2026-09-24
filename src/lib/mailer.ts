@@ -1,4 +1,6 @@
 import nodemailer from "nodemailer";
+import type { SendMailOptions } from "nodemailer";
+import { currentSandbox } from "@/lib/sandbox/context";
 
 // One transport for every outbound mail — quotations, PO acceptances,
 // invoices, dispatch dossiers, client status reports and login codes. These
@@ -33,7 +35,7 @@ export function mailer() {
     );
   }
   const port = smtpPort();
-  return nodemailer.createTransport({
+  const transport = nodemailer.createTransport({
     host: process.env.SMTP_HOST || "smtp.gmail.com",
     port,
     // 465 is implicit TLS; 587 and 25 start plain and upgrade via STARTTLS.
@@ -42,6 +44,20 @@ export function mailer() {
     secure: port === 465,
     auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
   });
+
+  // The sandbox login must never reach a real inbox. Its mail is logged and
+  // reported as sent, so the screen it came from completes as it would for a
+  // real admin. Every sender goes through here, so this is the only check.
+  const send = transport.sendMail.bind(transport);
+  transport.sendMail = (async (options: SendMailOptions) => {
+    if (await currentSandbox()) {
+      const to = ([] as unknown[]).concat(options.to ?? []).map(String);
+      console.log("[SANDBOX] blocked email", { to, subject: options.subject });
+      return { messageId: `sandbox-${Date.now()}`, accepted: to, rejected: [], response: "sandbox: not sent" };
+    }
+    return send(options);
+  }) as typeof transport.sendMail;
+  return transport;
 }
 
 /**

@@ -89,7 +89,7 @@ export async function DELETE(
     }
 
     // Check if address is referenced
-    const refCount = await prisma.$transaction([
+    const refCount = await Promise.all([
       prisma.salesOrder.count({ where: { dispatchAddressId: addressId } }),
       prisma.dispatchNote.count({ where: { dispatchAddressId: addressId } }),
       prisma.invoice.count({ where: { dispatchAddressId: addressId } }),

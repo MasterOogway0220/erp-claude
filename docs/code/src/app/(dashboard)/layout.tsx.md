@@ -11,7 +11,9 @@ moving between pages does not rebuild the sidebar.
 
 ## What it does
 
-Renders the sidebar, topbar and breadcrumbs around `children`.
+Renders the sidebar, topbar and breadcrumbs around `children`, with the
+[sandbox banner](../../components/layout/sandbox-banner.tsx.md) above the
+topbar (it renders nothing unless the session is the sandbox login).
 
 ## How it works
 
@@ -33,5 +35,6 @@ here, because the topbar's hamburger button also writes it.
 
 ## Related
 
-- `src/components/layout/sidebar.tsx`, `topbar.tsx`, `breadcrumbs.tsx`
+- `src/components/layout/sidebar.tsx`, `topbar.tsx`, `breadcrumbs.tsx`,
+  `sandbox-banner.tsx`
 - `src/middleware.ts`
