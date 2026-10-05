@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { shouldIncludeTenders, collapseRevisions } from "./listing";
+import { shouldIncludeTenders, collapseRevisions, quotationSearchWhere, tenderSearchWhere } from "./listing";
 
 const noFilters = { category: "", status: "", revision: "", conversionStatus: "" };
 
@@ -53,5 +53,28 @@ describe("collapseRevisions", () => {
     const single = [{ quotationNo: "QTN/25-26/00011", version: 0 }];
     expect(collapseRevisions(single)).toEqual(single);
     expect(collapseRevisions([])).toEqual([]);
+  });
+});
+
+// Users look a quotation up by the client's enquiry number or by the tender it
+// came from, not only by our quotation number.
+describe("quotationSearchWhere", () => {
+  const or = quotationSearchWhere("RFQ-77");
+  it("matches our number, the customer, the client's enquiry/reference and the source tender", () => {
+    expect(or).toContainEqual({ quotationNo: { contains: "RFQ-77" } });
+    expect(or).toContainEqual({ customer: { name: { contains: "RFQ-77" } } });
+    expect(or).toContainEqual({ inquiryNo: { contains: "RFQ-77" } });
+    expect(or).toContainEqual({ customerReference: { contains: "RFQ-77" } });
+    expect(or).toContainEqual({ sourceTender: { tenderRef: { contains: "RFQ-77" } } });
+    expect(or).toContainEqual({ sourceTender: { tenderNo: { contains: "RFQ-77" } } });
+  });
+});
+
+describe("tenderSearchWhere", () => {
+  it("matches the client's own tender reference", () => {
+    expect(tenderSearchWhere("GAIL/T/9")).toContainEqual({ tenderRef: { contains: "GAIL/T/9" } });
+  });
+  it("keeps the customer match the quotation list relied on", () => {
+    expect(tenderSearchWhere("x")).toContainEqual({ customer: { name: { contains: "x" } } });
   });
 });

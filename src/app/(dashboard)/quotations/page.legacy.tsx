@@ -1,0 +1,459 @@
+"use client";
+
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { PageHeader } from "@/components/shared/page-header";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Plus, Search, Eye, Download, FileText, FileX, CalendarClock, CheckCircle2, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { downloadFile } from "@/lib/download";
+import { format } from "date-fns";
+import { formatDate } from "@/lib/dates";
+
+
+interface Quotation {
+  id: string;
+  quotationNo: string;
+  quotationDate: string;
+  customer: { name: string };
+  quotationType: string;
+  quotationCategory: string;
+  currency: string;
+  status: string;
+  version: number;
+  grandTotal: number | null;
+  preparedBy: { name: string } | null;
+  dealOwner: { name: string } | null;
+  nextActionDate: string | null;
+  items: { amount: string }[];
+  revisionTrigger: string | null;
+  salesOrders: { id: string; soNo: string }[];
+  sourceTenderId: string | null;
+}
+
+// Tender records shown under the Tender category filter (they share the
+// quotation number series but live in the Tenders module).
+interface TenderRow {
+  id: string;
+  tenderNo: string;
+  tenderDate: string;
+  closingDate: string | null;
+  organization: string | null;
+  customer: { name: string } | null;
+  status: string;
+  currency: string;
+  estimatedValue: number | null;
+  itemCount: number;
+}
+
+const statusColors: Record<string, string> = {
+  DRAFT: "secondary",
+  PENDING_APPROVAL: "default",
+  APPROVED: "default",
+  REJECTED: "destructive",
+  SENT: "outline",
+  WON: "default",
+  LOST: "destructive",
+  EXPIRED: "secondary",
+  SUPERSEDED: "secondary",
+  CANCELLED: "destructive",
+  REVISED: "secondary",
+};
+
+const typeLabels: Record<string, string> = {
+  DOMESTIC: "Domestic",
+  EXPORT: "Export",
+  BOM: "BOM/Project",
+};
+
+export default function QuotationsPage() {
+  const router = useRouter();
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [conversionFilter, setConversionFilter] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [revisionFilter, setRevisionFilter] = useState<"all" | "original" | "revised">("all");
+
+  // Single-flight download with visible progress: the PDF renders server-side
+  // for a few seconds, and extra clicks during that window used to stack
+  // parallel renders until downloads started failing.
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const handleDownloadPDF = async (id: string, variant: "quoted" | "unquoted") => {
+    if (downloadingId) return;
+    setDownloadingId(id);
+    try {
+      await downloadFile(`/api/quotations/${id}/pdf?variant=${variant}`);
+    } catch {
+      toast.error("PDF download failed. Please try again.");
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["quotations", search, statusFilter, conversionFilter, categoryFilter, revisionFilter],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        search,
+        // Ask for the summary shape: this screen shows a line count and a
+        // total, so it needs `amount` off each item and the customer's name —
+        // not whole item rows and whole customer records for every quotation.
+        // The order-creation flows read the same endpoint without this and
+        // still get everything, because they copy each line into a document.
+        view: "list",
+        ...(statusFilter !== "all" && { status: statusFilter }),
+        ...(conversionFilter !== "all" && { conversionStatus: conversionFilter }),
+        ...(categoryFilter !== "all" && { category: categoryFilter }),
+        ...(revisionFilter !== "all" && { revision: revisionFilter }),
+      });
+      const res = await fetch(`/api/quotations?${params}`);
+      if (!res.ok) throw new Error("Failed to fetch quotations");
+      return res.json();
+    },
+  });
+
+  const getAmount = (quotation: Quotation) => {
+    if (quotation.grandTotal != null) return Number(quotation.grandTotal);
+    return quotation.items.reduce((sum, item) => sum + parseFloat(item.amount || "0"), 0);
+  };
+
+  const isOverdue = (dateStr: string | null) => {
+    if (!dateStr) return false;
+    return new Date(dateStr) < new Date();
+  };
+
+  // Tenders share the quotation number series, so merge both row types into a
+  // single list ordered by document number, newest first.
+  const rows: Array<
+    | { kind: "tender"; no: string; tender: TenderRow }
+    | { kind: "quotation"; no: string; quotation: Quotation }
+  > = [
+    ...(data?.tenders ?? []).map((tender: TenderRow) => ({
+      kind: "tender" as const,
+      no: tender.tenderNo,
+      tender,
+    })),
+    ...(data?.quotations ?? []).map((quotation: Quotation) => ({
+      kind: "quotation" as const,
+      no: quotation.quotationNo,
+      quotation,
+    })),
+  ].sort((a, b) => b.no.localeCompare(a.no));
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Quotations"
+        description="Manage quotations with auto-calculations and PDF generation"
+      />
+
+      {/* Filters row */}
+      <Tabs value={revisionFilter} onValueChange={(v) => setRevisionFilter(v as "all" | "original" | "revised")}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3 flex-1">
+            <TabsList>
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="original">Original</TabsTrigger>
+              <TabsTrigger value="revised">Revisions</TabsTrigger>
+            </TabsList>
+
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search quotations..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-10 w-[220px]"
+              />
+            </div>
+
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Active</SelectItem>
+                <SelectItem value="DRAFT">Draft</SelectItem>
+                <SelectItem value="PENDING_APPROVAL">Pending Approval</SelectItem>
+                <SelectItem value="APPROVED">Approved</SelectItem>
+                <SelectItem value="SENT">Sent</SelectItem>
+                <SelectItem value="WON">Won</SelectItem>
+                <SelectItem value="LOST">Lost</SelectItem>
+                <SelectItem value="EXPIRED">Expired</SelectItem>
+                <SelectItem value="SUPERSEDED">Superseded</SelectItem>
+                <SelectItem value="CANCELLED">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="STANDARD">Standard</SelectItem>
+                <SelectItem value="NON_STANDARD">Non-Standard</SelectItem>
+                <SelectItem value="TENDER">Tender</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={conversionFilter} onValueChange={setConversionFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Conversion" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Conversions</SelectItem>
+                <SelectItem value="pending">Pending (No OC)</SelectItem>
+                <SelectItem value="converted">Converted (OC Created)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Button onClick={() => router.push("/quotations/create")}>
+            <Plus className="h-4 w-4 mr-2" />
+            New Quotation
+          </Button>
+        </div>
+      </Tabs>
+
+      {/* Data Table */}
+      <div className="rounded-lg border bg-card overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Quotation No.</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead>Customer</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Items</TableHead>
+              <TableHead>Amount</TableHead>
+              <TableHead>Deal Owner</TableHead>
+              <TableHead>Follow Up</TableHead>
+              <TableHead>OC Created</TableHead>
+              <TableHead>Prepared By</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={13} className="text-center py-8 text-muted-foreground">
+                  Loading quotations...
+                </TableCell>
+              </TableRow>
+            ) : (data?.quotations?.length ?? 0) === 0 && (data?.tenders?.length ?? 0) === 0 ? (
+              <TableRow>
+                <TableCell colSpan={13} className="text-center py-8 text-muted-foreground">
+                  {categoryFilter === "TENDER" && !search
+                    ? "No tenders or tender-linked quotations found. Register a tender via New Quotation → Tender Quotation, then raise quotations from its detail page."
+                    : search
+                      ? "No results match your search."
+                      : "No quotations found. Create your first quotation!"}
+                </TableCell>
+              </TableRow>
+            ) : (
+              rows.map((row) => {
+                if (row.kind === "tender") {
+                  const tender = row.tender;
+                  return (
+                <TableRow key={`tender-${tender.id}`}>
+                  <TableCell className="font-medium">{tender.tenderNo}</TableCell>
+                  <TableCell>
+                    {format(new Date(tender.tenderDate), "dd MMM yyyy")}
+                  </TableCell>
+                  <TableCell>
+                    {tender.customer?.name || tender.organization || (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-muted-foreground text-sm">—</span>
+                  </TableCell>
+                  <TableCell>
+                    <Badge>Tender</Badge>
+                  </TableCell>
+                  <TableCell>{tender.itemCount}</TableCell>
+                  <TableCell className="font-semibold">
+                    {tender.estimatedValue != null ? (
+                      <>
+                        {tender.currency}{" "}
+                        {tender.estimatedValue.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                      </>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    <span className="text-muted-foreground">—</span>
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {tender.closingDate ? (
+                      <div className={`flex items-center gap-1 ${isOverdue(tender.closingDate) ? "text-destructive" : ""}`}>
+                        <CalendarClock className="h-3.5 w-3.5" />
+                        {formatDate(tender.closingDate, "dd MMM")}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-muted-foreground text-sm">—</span>
+                  </TableCell>
+                  <TableCell className="text-sm">—</TableCell>
+                  <TableCell>
+                    <Badge variant={(statusColors[tender.status] as any) || "outline"}>
+                      {tender.status.replace(/_/g, " ")}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => router.push(`/tenders/${tender.id}`)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+                  );
+                }
+                const quotation = row.quotation;
+                return (
+                <TableRow key={quotation.id}>
+                  <TableCell className="font-medium">
+                    <div>
+                      {quotation.quotationNo}
+                      {quotation.version > 0 && (
+                        <Badge variant="outline" className="ml-2">
+                          Rev.{quotation.version}
+                        </Badge>
+                      )}
+                    </div>
+                    {revisionFilter === "revised" && quotation.revisionTrigger && (
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        {quotation.revisionTrigger.replace(/_/g, " ")}
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {formatDate(quotation.quotationDate, "dd MMM yyyy")}
+                  </TableCell>
+                  <TableCell>{quotation.customer.name}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline">
+                      {typeLabels[quotation.quotationType]}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={quotation.quotationCategory === "NON_STANDARD" ? "secondary" : "outline"}>
+                      {quotation.quotationCategory === "NON_STANDARD" ? "Non-Std" : "Std"}
+                    </Badge>
+                    {quotation.sourceTenderId && (
+                      <Badge className="ml-1">Tender</Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>{quotation.items.length}</TableCell>
+                  <TableCell className="font-semibold">
+                    {quotation.currency}{" "}
+                    {getAmount(quotation).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {quotation.dealOwner?.name || <span className="text-muted-foreground">—</span>}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {quotation.nextActionDate ? (
+                      <div className={`flex items-center gap-1 ${isOverdue(quotation.nextActionDate) ? "text-destructive" : ""}`}>
+                        <CalendarClock className="h-3.5 w-3.5" />
+                        {formatDate(quotation.nextActionDate, "dd MMM")}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {quotation.salesOrders?.length > 0 ? (
+                      <div className="flex items-center gap-1 text-sm text-green-600">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        {quotation.salesOrders[0].soNo}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {quotation.preparedBy?.name || "—"}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={statusColors[quotation.status] as any}>
+                      {quotation.status.replace(/_/g, " ")}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => router.push(`/quotations/${quotation.id}`)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" title="Download PDF" disabled={downloadingId === quotation.id}>
+                            {downloadingId === quotation.id
+                              ? <Loader2 className="h-4 w-4 animate-spin" />
+                              : <Download className="h-4 w-4" />}
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleDownloadPDF(quotation.id, "quoted")}>
+                            <FileText className="h-4 w-4 mr-2" />
+                            {quotation.quotationCategory === "NON_STANDARD" ? "Commercial" : "Priced"}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDownloadPDF(quotation.id, "unquoted")}>
+                            <FileX className="h-4 w-4 mr-2" />
+                            {quotation.quotationCategory === "NON_STANDARD" ? "Technical" : "Technical (No Prices)"}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </TableCell>
+                </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+}

@@ -13,6 +13,16 @@ Renders the `/po-acceptance/create` screen. 1551 lines.
 - `"use client"` — runs in the browser.
 - Reads `useSearchParams`, so it **must sit inside a `<Suspense>` boundary** — Next.js 16 fails the build otherwise.
 - Calls: `/api/client-purchase-orders`, `/api/client-purchase-orders/${cpoId}`, `/api/masters/customer-contacts`, `/api/po-acceptance`, `/api/po-acceptance/${createdId}/email`, `/api/po-acceptance/${newId}/finalize`.
+- Once the chosen client PO loads, one effect seeds the form from it: the six
+  additional charges and their tax flags, GST rate and inter-state flag, and
+  the **committed delivery date** (CDD — the date we promise delivery by).
+  The CDD comes from `committedDeliveryDate`, falling back to the older
+  `deliveryDate` twin, which CPO edit does not update. A date the user has
+  already typed is kept; picking a different client PO clears the CDD and the
+  "Others" description so the new PO's values load. Before 5 Oct 2026 the CDD
+  was not seeded and had to be retyped on every acceptance.
+- The Other Charges box has a description input ("What is this charge for?"),
+  seeded from the client PO's `otherChargesDescription`.
 
 ## Gotchas
 
@@ -26,6 +36,14 @@ Renders the `/po-acceptance/create` screen. 1551 lines.
   cannot read, and the dropdown or the table silently empties.
 - Any `Select` needs a non-empty `SelectItem` value; the codebase uses a `"NONE"` sentinel mapped to `""`.
 - Role gating in the UI is cosmetic — the API is the boundary, and its role checks are currently disabled.
+
+## Sandbox preview (temporary, from 5 Oct 2026)
+
+`page.tsx` is currently a gate: the sandbox login gets `page.sandbox.tsx`
+— the behaviour this doc describes — and every other user gets
+`page.legacy`, the version from before the 03/10/26 meeting fixes. See
+`src/lib/sandbox/preview.ts.md`. Going live: replace this file with the
+`.sandbox` copy and delete both copies; then delete this section.
 
 ## Related
 

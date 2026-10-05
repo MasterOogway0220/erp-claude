@@ -39,7 +39,12 @@ does not appear until a full reload.
 ### Filtering and autofill
 
 Products filter by `category` (`PIPES` / `FITTINGS` / `FLANGES` / `PLATES`),
-materials by the chosen product. `tryAutoFill` fills ends, dimensional
+materials by the chosen product. The product list and every product match go
+through `productKey` / `uniqueProductNames` (`src/lib/masters/product-names.ts`):
+trimmed and case-insensitive. The master has no unique constraint and holds
+"C.S. SEAMLESS PIPE" and "C.S. SEAMLESS PIPE " (trailing space); the list used
+to de-duplicate on the exact string, so it showed both, and picking one hid the
+materials stored under the other. `tryAutoFill` fills ends, dimensional
 standard and size **only when unambiguous** — `unique()` returns a value only
 if exactly one distinct option exists.
 
@@ -64,6 +69,14 @@ sub-master is empty.
   deduplication, so concurrent mounts share one request.
 - A failed fetch resets the promise so the next mount retries, but returns `[]`
   meanwhile — empty dropdowns rather than an error.
+
+## Sandbox preview (temporary, from 5 Oct 2026)
+
+`product-material-select.tsx` is currently a gate: the sandbox login gets `product-material-select.sandbox.tsx`
+— the behaviour this doc describes — and every other user gets
+`product-material-select.legacy`, the version from before the 03/10/26 meeting fixes. See
+`src/lib/sandbox/preview.ts.md`. Going live: replace this file with the
+`.sandbox` copy and delete both copies; then delete this section.
 
 ## Related
 

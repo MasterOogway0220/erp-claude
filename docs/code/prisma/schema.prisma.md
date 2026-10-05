@@ -120,10 +120,12 @@ enforced by the database**, so a missing filter silently leaks across tenants.
 Catalogue masters deliberately opt out; see above.
 
 ### Soft delete
-Many masters carry `deletedAt`. Nothing hard-deletes a master, because
-historical documents must keep rendering. Use `notDeleted` from
-`src/lib/soft-delete.ts`. **No middleware enforces this** — every query opts
-in.
+About 18 models carry `deletedAt`; **Quotation** and **Tender** use it (Tender's column is migration `20261005092000_tender_soft_delete`): deleting a
+DRAFT quotation sets `deletedAt` (`softDeleteData` in
+`src/lib/soft-delete.ts`) and every quotation read filters `deletedAt: null`.
+Masters do not soft-delete. **No middleware enforces the filter** — every query
+opts in. `@@unique([quotationNo, version])` still covers deleted rows, so a
+deleted draft's revision number is never reused.
 
 ### Denormalised snapshots
 Document items copy `product`, `material`, `sizeLabel`, `additionalSpec` as
@@ -154,7 +156,9 @@ percentages, lab tests, NDT, PMI, coating, hot-dip galvanising, screwed ends,
 colour coding, `additionalPipeSpec` (what is stencilled ON the pipe) and
 `additionalSpec` (what the product must COMPLY with — a different thing, and
 routinely a different value). `otherLabTests` is free text for a test outside
-the eleven standard ones.
+the eleven standard ones. `additionalSpec` and `otherLabTests` are TEXT
+(migration `20261005091000_processing_text_columns`): pasted spec clauses
+run past 191 characters, and the live MySQL truncates instead of failing.
 
 Those requirements reach the warehouse through `WarehouseIntimation`. They now
 also reach procurement: `PRItem.technicalRequirements` holds them rendered as
@@ -175,6 +179,21 @@ Order Processing does not ask for them a second time.
 ("10 weeks"), not a date; `committedDeliveryDate` is what we commit to, derived
 from it at registration. `contactEmail` / `contactPhone` are the contact for
 **this order**, which is not necessarily the customer master's default.
+
+`ClientPOTerm` holds the order's own terms and conditions: copied from the
+quotation's offer terms at registration, then edited for the order; the ticked
+ones print on the PO acceptance letter (migration
+`20261005094000_client_po_terms`). `billingAddressText` / `dispatchAddressText`
+hold a typed one-off address, used instead of the saved-site FK, which stays
+null; `otherChargesDescription` (also on `POAcceptance`) says what the
+"Others" charge is (migration `20261005093000_cpo_other_charge_and_address_text`).
+
+The six additional charges each have an amount and a `*TaxApplicable` flag
+(on both `ClientPurchaseOrder` and `POAcceptance`) deciding whether it joins
+the GST base. The flags default to true (migration
+`20261005090000_charge_tax_default_true`). Three flag names do not follow the
+amount name — `tpiTaxApplicable`, `testingTaxApplicable`,
+`packingTaxApplicable` — see `src/lib/calc/cpo-charges.ts`.
 
 `dispatchAddressId` and `billingAddressId` both point at
 `CustomerDispatchAddress` under different relation names

@@ -16,6 +16,10 @@ Renders the `/quotations/create/standard` screen. 2295 lines.
 - Reads `useSearchParams`, so it **must sit inside a `<Suspense>` boundary** — Next.js 16 fails the build otherwise.
 - Calls: `/api/masters/buyers`, `/api/masters/customers`, `/api/masters/customers/${formData.customerId}/terms`, `/api/masters/lengths`, `/api/masters/material-codes`, `/api/masters/material-codes/${dup.id}`, `/api/masters/material-codes/check-duplicate`, `/api/masters/sizes`, `/api/offer-term-templates`.
 - Master dropdowns (customers, sizes, lengths, buyers, item codes) read through `useReferenceQuery` (ten minutes) rather than a hand-rolled `useQuery` (60 seconds). The form shares `["customers"]`, `["sizes"]` and `["lengths"]` with the app-wide hooks, so the shorter window had been forcing refetches for every other screen as well. Buyers and item codes keep the customer id and quotation category in their key — those remain a per-customer list, and must never be pointed at a fetch-everything hook.
+- Under the read-only customer **Address**, the selected customer's **GSTIN**
+  (GST registration number) is shown when the master has one, so the person
+  quoting can see which registered entity they are quoting without leaving the
+  form. Display only; nothing is saved from it.
 - The per-item **Unit** dropdown is populated from Unit Master via
   [`useUnits()`](../../../../../../hooks/use-units.ts.md)
   (`/api/masters/units`). It used to be a module-level
@@ -120,6 +124,14 @@ with `typeof value === "string"` before using it as a lookup key.
 - Length is stored as free text, and older rows hold values that were never in the master (`90`, `1620`, and the pre-master `5.8`/`9.0-11.8` codes). The Length select therefore injects the item's current value as an extra option when the master does not contain it — without that, editing an old quotation would render the field blank and invite the user to overwrite a real value with nothing. The **Unit (UOM)** select applies the same fallback, now against Unit Master rather than a hardcoded array — so a unit deactivated in the master still displays on quotations already saved with it.
 - **Currency and GST rate are still hardcoded** here (`CURRENCY_OPTIONS`, `GST_RATES`) even though `CurrencyMaster` (4 rows) and `TaxMaster` (9 rows) exist and are populated. Changing them in Masters does nothing to this form.
 - Rows whose length/uom were already nulled by pre-fix saves stay null — the fix stops future loss, it cannot restore past loss (the audit diff did not track `length`/`ends`/`uom` until now).
+
+## Sandbox preview (temporary, from 5 Oct 2026)
+
+`page.tsx` is currently a gate: the sandbox login gets `page.sandbox.tsx`
+— the behaviour this doc describes — and every other user gets
+`page.legacy`, the version from before the 03/10/26 meeting fixes. See
+`src/lib/sandbox/preview.ts.md`. Going live: replace this file with the
+`.sandbox` copy and delete both copies; then delete this section.
 
 ## Related
 

@@ -36,3 +36,33 @@ export function collapseRevisions<T extends { quotationNo: string }>(rows: T[]):
     return true;
   });
 }
+
+/**
+ * `OR` conditions for searching the quotation list. Besides our number and the customer, users
+ * look a quotation up by the client's own enquiry number (`inquiryNo`), their
+ * reference (`customerReference`), or the tender it was raised from — the
+ * tender's register number or the client's own tender reference.
+ */
+export function quotationSearchWhere(search: string) {
+  const c = { contains: search };
+  return [
+    { quotationNo: c },
+    { customer: { name: c } },
+    { inquiryNo: c },
+    { customerReference: c },
+    { sourceTender: { tenderRef: c } },
+    { sourceTender: { tenderNo: c } },
+  ];
+}
+
+/** `OR` conditions for searching the tender rows shown in the quotation list. */
+export function tenderSearchWhere(search: string) {
+  const c = { contains: search };
+  return [
+    { tenderNo: c },
+    { tenderRef: c },
+    { organization: c },
+    { projectName: c },
+    { customer: { name: c } },
+  ];
+}

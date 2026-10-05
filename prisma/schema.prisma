@@ -1102,24 +1102,26 @@ model ClientPurchaseOrder {
   cgst                      Decimal?          @db.Decimal(14, 2)
   clientState               String?
   freight                   Decimal?          @db.Decimal(14, 2)
-  freightTaxApplicable      Boolean           @default(false)
+  freightTaxApplicable      Boolean           @default(true)
   gstRate                   Decimal?          @db.Decimal(5, 2)
   igst                      Decimal?          @db.Decimal(14, 2)
   insurance                 Decimal?          @db.Decimal(14, 2)
-  insuranceTaxApplicable    Boolean           @default(false)
+  insuranceTaxApplicable    Boolean           @default(true)
   isInterState              Boolean           @default(false)
   otherCharges              Decimal?          @db.Decimal(14, 2)
-  otherChargesTaxApplicable Boolean           @default(false)
+  otherChargesTaxApplicable Boolean           @default(true)
+  // What the "Others" charge is for; the other five charges are named by their column.
+  otherChargesDescription   String?
   packingForwarding         Decimal?          @db.Decimal(14, 2)
-  packingTaxApplicable      Boolean           @default(false)
+  packingTaxApplicable      Boolean           @default(true)
   roundOff                  Decimal?          @db.Decimal(10, 2)
   sgst                      Decimal?          @db.Decimal(14, 2)
   supplierState             String?
   taxableAmount             Decimal?          @db.Decimal(14, 2)
   testingCharges            Decimal?          @db.Decimal(14, 2)
-  testingTaxApplicable      Boolean           @default(false)
+  testingTaxApplicable      Boolean           @default(true)
   tpiCharges                Decimal?          @db.Decimal(14, 2)
-  tpiTaxApplicable          Boolean           @default(false)
+  tpiTaxApplicable          Boolean           @default(true)
   deliveryDate              DateTime?
   // Where the material physically ships. Picked from the customer's saved
   // dispatch addresses at PO registration, because a client PO routinely
@@ -1132,12 +1134,17 @@ model ClientPurchaseOrder {
   // party is picked from the same saved-address collection and kept separate
   // from dispatchAddressId. NULL = bill to the customer master address.
   billingAddressId          String?
+  // Typed one-off addresses, used instead of the FK when the site is not saved
+  // on the customer master. The FK stays NULL when text is used.
+  billingAddressText        String?                  @db.Text
+  dispatchAddressText       String?                  @db.Text
   billingAddress            CustomerDispatchAddress? @relation("CPOBillingAddress", fields: [billingAddressId], references: [id])
   // The client's own signed P.O. document, scanned in at registration. Stored
   // via /api/upload (StoredFile) and carried onto SalesOrder.customerPoDocument.
   clientPoDocumentPath      String?
   clientPoDocumentName      String?
   items                     ClientPOItem[]
+  terms                     ClientPOTerm[]
   company                   CompanyMaster?    @relation(fields: [companyId], references: [id])
   createdBy                 User?             @relation("CPOCreatedBy", fields: [createdById], references: [id])
   customer                  CustomerMaster    @relation(fields: [customerId], references: [id])
@@ -1153,6 +1160,21 @@ model ClientPurchaseOrder {
   @@index([createdById], map: "ClientPurchaseOrder_createdById_fkey")
   @@index([dispatchAddressId])
   @@index([billingAddressId])
+}
+
+// The client PO's terms and conditions: copied from the quotation's offer terms
+// when the PO is registered, then edited, added to or removed for this order.
+// Printed on the PO acceptance letter.
+model ClientPOTerm {
+  id                    String              @id @default(cuid())
+  clientPurchaseOrderId String
+  termNo                Int
+  termName              String
+  termValue             String              @db.Text
+  isIncluded            Boolean             @default(true)
+  clientPurchaseOrder   ClientPurchaseOrder @relation(fields: [clientPurchaseOrderId], references: [id], onDelete: Cascade)
+
+  @@index([clientPurchaseOrderId])
 }
 
 model ClientPOItem {
@@ -2424,17 +2446,18 @@ model POAcceptance {
   gstRate                   Decimal?               @db.Decimal(5, 2)
   isInterState              Boolean                @default(false)
   freight                   Decimal?               @db.Decimal(14, 2)
-  freightTaxApplicable      Boolean                @default(false)
+  freightTaxApplicable      Boolean                @default(true)
   packingForwarding         Decimal?               @db.Decimal(14, 2)
-  packingTaxApplicable      Boolean                @default(false)
+  packingTaxApplicable      Boolean                @default(true)
   insurance                 Decimal?               @db.Decimal(14, 2)
-  insuranceTaxApplicable    Boolean                @default(false)
+  insuranceTaxApplicable    Boolean                @default(true)
   otherCharges              Decimal?               @db.Decimal(14, 2)
-  otherChargesTaxApplicable Boolean                @default(false)
+  otherChargesTaxApplicable Boolean                @default(true)
+  otherChargesDescription   String?
   testingCharges            Decimal?               @db.Decimal(14, 2)
-  testingTaxApplicable      Boolean                @default(false)
+  testingTaxApplicable      Boolean                @default(true)
   tpiCharges                Decimal?               @db.Decimal(14, 2)
-  tpiTaxApplicable          Boolean                @default(false)
+  tpiTaxApplicable          Boolean                @default(true)
   additionalChargesTotal    Decimal?               @db.Decimal(14, 2)
   subtotal                  Decimal?               @db.Decimal(14, 2)
   taxableAmount             Decimal?               @db.Decimal(14, 2)
@@ -2693,12 +2716,12 @@ model OrderProcessingItem {
   requiredLabTests     String?        @db.LongText
   // A test the client requires that is not one of the 11 standard lab tests.
   // Free text, carried onto the lab letter alongside the fixed list.
-  otherLabTests        String?
+  otherLabTests        String?  @db.Text
   // A specification the product must COMPLY with (as opposed to
   // additionalPipeSpec, which is what gets stencilled on the pipe). Added at
   // processing time; SalesOrderItem.additionalSpec is inherited read-only from
   // the quotation and cannot be amended there.
-  additionalSpec       String?
+  additionalSpec       String?  @db.Text
   status               String         @default("PENDING")
   processedAt          DateTime?
   processedById        String?
@@ -2762,6 +2785,8 @@ model Tender {
   createdById    String?
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
+  // Soft delete: set by DELETE /api/tenders/[id]; every tender read filters it.
+  deletedAt      DateTime?
   quotations     Quotation[]      @relation("TenderQuotations")
   salesOrders    SalesOrder[]     @relation("TenderSalesOrders")
   company        CompanyMaster?   @relation(fields: [companyId], references: [id])

@@ -21,6 +21,7 @@ Operates on `quotation`.
 The header `remarks` line is copied onto the new revision along with the
 other header fields — a revision starts as the previous document, remark
 included.
+- Soft-deleted revisions: the version count includes them (`@@unique([quotationNo, version])` keeps their numbers taken), but a deleted DRAFT does not count as the open draft that blocks a new revision (RC-03). A deleted quotation cannot itself be revised or used as the copy source.
 
 ## Gotchas
 
@@ -30,6 +31,14 @@ included.
   from the source item, not by spreading it. Any column added to
   `QuotationItem` has to be added to that list too, or the revision silently
   loses it — `isRegret` is in the list for exactly this reason.
+
+## Sandbox preview (temporary, from 5 Oct 2026)
+
+`route.ts` is currently a gate: the sandbox login gets `route.sandbox.ts`
+— the behaviour this doc describes — and every other user gets
+`route.legacy`, the version from before the 03/10/26 meeting fixes. See
+`src/lib/sandbox/preview.ts.md`. Going live: replace this file with the
+`.sandbox` copy and delete both copies; then delete this section.
 
 ## Related
 

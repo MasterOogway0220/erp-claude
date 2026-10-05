@@ -15,7 +15,9 @@ straight to the record.
 ## How it works
 
 Debounced queries to `/api/search`, results grouped by type with the document
-number and a label, each linking to its detail page.
+number and a label, each linking to its detail page. `entityIcons` maps a
+result `type` to its icon (`Tender` uses the gavel, as on New Quotation); an
+unknown type falls back to a plain document icon.
 
 The type→route mapping lives in the component (and a similar map in
 `topbar.tsx`), so a new searchable document type needs its route added there

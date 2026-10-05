@@ -75,11 +75,20 @@ matches the rest of the header fields here.
 
 PUT calls `rememberClientItems` after the update, same as POST — an ID added
 while editing a non-standard quotation is remembered too.
+- **DELETE** is a soft delete (DRAFT only): it sets `deletedAt` via `softDeleteData()` from `src/lib/soft-delete.ts` and keeps the row, items, terms and email log. It used to hard-delete them in a transaction, which also failed with an unexplained error once a client PO pointed at the draft. GET, PUT, PATCH and a second DELETE treat a soft-deleted quotation as not found (404), and the revision history leaves it out.
 
 ## Gotchas
 
 - `params` is a `Promise` (Next.js 16) and must be awaited.
 - Errors return `error.message`, so thrown text reaches the user's toast.
+
+## Sandbox preview (temporary, from 5 Oct 2026)
+
+`route.ts` is currently a gate: the sandbox login gets `route.sandbox.ts`
+— the behaviour this doc describes — and every other user gets
+`route.legacy`, the version from before the 03/10/26 meeting fixes. See
+`src/lib/sandbox/preview.ts.md`. Going live: replace this file with the
+`.sandbox` copy and delete both copies; then delete this section.
 
 ## Related
 

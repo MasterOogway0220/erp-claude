@@ -45,6 +45,11 @@ Naming: `YYYYMMDDHHMMSS_snake_case_description`.
 
 | Migration | What and why |
 |---|---|
+| `20261005094000_client_po_terms` | New `ClientPOTerm` table — a client PO's own terms (copied from the quotation's offer terms at registration, then edited), cascade on client PO delete. Additive. |
+| `20261005093000_cpo_other_charge_and_address_text` | `ClientPurchaseOrder.otherChargesDescription` / `billingAddressText` / `dispatchAddressText` and `POAcceptance.otherChargesDescription`, all nullable. What the "Others" charge is, and typed one-off addresses. Additive. |
+| `20261005092000_tender_soft_delete` | `Tender.deletedAt` DATETIME(3) NULL — tenders soft-delete like quotations. Additive. |
+| `20261005091000_processing_text_columns` | `OrderProcessingItem.otherLabTests` and `additionalSpec` VARCHAR(191) → TEXT. The live MySQL is non-strict and silently cut longer pasted spec clauses to 191 characters. Widening only; no value changes. |
+| `20261005090000_charge_tax_default_true` | The six `*TaxApplicable` flags on `ClientPurchaseOrder` and `POAcceptance` default to true. Column defaults only; existing rows unchanged. Under GST, freight/packing/insurance on a goods supply are part of the taxable value. |
 | `20260924120000_user_is_sandbox` | `User.isSandbox` BOOLEAN NOT NULL DEFAULT false — the sandbox login flag (see `src/lib/sandbox/`). Additive; every existing user stays `false`. After deploying any later migration, trigger a sandbox refresh so the `sbx_*` copies pick up the new structure. |
 | `20260919130000_client_item_master` | New `ClientItemMaster` table — the customer's own item IDs on non-standard quotations, unique per customer + ID, cascade on customer delete. Additive. |
 | `20260919120000_quotation_remarks` | `Quotation.remarks` TEXT NULL — the customer-facing "Remarks:" line the client's QTN-Rev.2 format reserves between the Total row and OFFER TERMS. The PDF had printed the bare heading since July with nothing to put behind it. Additive. |

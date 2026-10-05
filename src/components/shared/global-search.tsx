@@ -21,6 +21,7 @@ import {
   Users,
   Building,
   History,
+  Gavel,
 } from "lucide-react";
 
 // ==================== Types ====================
@@ -41,6 +42,7 @@ interface GroupedResults {
 
 const entityIcons: Record<string, React.ReactNode> = {
   Quotation: <FileText className="h-4 w-4 text-green-500" />,
+  Tender: <Gavel className="h-4 w-4 text-blue-600" />,
   "Order": <ShoppingCart className="h-4 w-4 text-purple-500" />,
   "Purchase Order": <Package className="h-4 w-4 text-orange-500" />,
   GRN: <Warehouse className="h-4 w-4 text-teal-500" />,

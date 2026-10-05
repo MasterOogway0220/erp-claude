@@ -122,6 +122,10 @@ authoritative, need maintaining, and teach nothing.
   inquiry-number formatting.
 - [`quotations/listing.ts`](./src/lib/quotations/listing.ts.md) — revision
   collapsing and tender inclusion.
+- [`quotations/terms.ts`](./src/lib/quotations/terms.ts.md) — read a
+  quotation's "Payment" / "Delivery" offer-term row by name.
+- [`tenders/items.ts`](./src/lib/tenders/items.ts.md) — BOQ line rows for
+  tender create and tender edit.
 - [`quotations/pricing.ts`](./src/lib/quotations/pricing.ts.md) — the price
   gate.
 
@@ -129,6 +133,8 @@ authoritative, need maintaining, and teach nothing.
 - [`masters/spec-import.ts`](./src/lib/masters/spec-import.ts.md) — the
   sectioned column-pool Excel layout. **Read before touching any master
   import.**
+- [`masters/product-names.ts`](./src/lib/masters/product-names.ts.md) — the
+  trimmed, case-blind product key the product picker de-duplicates on.
 - [`fitting-flange-sizes.ts`](./src/lib/fitting-flange-sizes.ts.md) —
   **generated**; the size pools and product routing.
 - [`weight-calculation.ts`](./src/lib/weight-calculation.ts.md)
@@ -136,6 +142,10 @@ authoritative, need maintaining, and teach nothing.
   date inputs; why `toISOString()` shifted dates a day.
 - [`calc/po-totals.ts`](./src/lib/calc/po-totals.ts.md) — GST split and landed
   totals.
+- [`calc/cpo-charges.ts`](./src/lib/calc/cpo-charges.ts.md) — client PO
+  additional charges and their real tax-flag field names.
+- [`calc/cpo-balance.ts`](./src/lib/calc/cpo-balance.ts.md) — split client PO
+  lines must together fit the quoted balance.
 - [`amount-in-words.ts`](./src/lib/amount-in-words.ts.md) — Indian vs Western
   grouping.
 - [`document-numbering.ts`](./src/lib/document-numbering.ts.md) — the counter
@@ -149,6 +159,8 @@ authoritative, need maintaining, and teach nothing.
   field names `PRItem` does not have.
 - [`purchase/rfq-reminders.ts`](./src/lib/purchase/rfq-reminders.ts.md)
 - [`po-acceptance/advance-cpo.ts`](./src/lib/po-acceptance/advance-cpo.ts.md)
+- [`po-acceptance/letter.ts`](./src/lib/po-acceptance/letter.ts.md) — one
+  include + mapper for the acceptance letter, shared by the PDF and email routes.
 - [`business-logic/auto-pr-generation.ts`](./src/lib/business-logic/auto-pr-generation.ts.md)
 - [`business-logic/technical-requirements.ts`](./src/lib/business-logic/technical-requirements.ts.md)
   — carries the client's inspection/testing requirements from Order Processing
@@ -162,6 +174,8 @@ authoritative, need maintaining, and teach nothing.
 ### Quality and warehouse
 - [`quality/qap.ts`](./src/lib/quality/qap.ts.md) — QAP rules and the test
   glossary.
+- [`quality/witness-percent.ts`](./src/lib/quality/witness-percent.ts.md) —
+  whole-number witness % for Int columns on a non-strict MySQL.
 - [`location-tag.ts`](./src/lib/location-tag.ts.md)
 
 ### PDF — [shared notes](./src/lib/pdf/README.md)
@@ -180,6 +194,8 @@ binary in the deployment any more.
 **Documents**
 - [`pdf/quotation-pdf.tsx`](./src/lib/pdf/quotation-pdf.tsx.md)
 - [`pdf/issue-slip-pdf.tsx`](./src/lib/pdf/issue-slip-pdf.tsx.md)
+- [`pdf/po-acceptance-pdf.tsx`](./src/lib/pdf/po-acceptance-pdf.tsx.md) — the
+  PO acceptance letter download; the HTML twin stays for the email.
 - [`pdf/lab-letter-pdf.tsx`](./src/lib/pdf/lab-letter-pdf.tsx.md) — the covering letter sent to an
   external testing lab with a batch of material.
 - [`pdf/client-status-report-pdf.tsx`](./src/lib/pdf/client-status-report-pdf.tsx.md) — order progress per line,
@@ -230,7 +246,13 @@ binary in the deployment any more.
   [refresh](./src/lib/sandbox/refresh.ts.md) ·
   [tables](./src/lib/sandbox/tables.ts.md) ·
   [context](./src/lib/sandbox/context.ts.md) ·
-  [headers](./src/lib/sandbox/headers.ts.md). Also
+  [headers](./src/lib/sandbox/headers.ts.md) ·
+  [preview](./src/lib/sandbox/preview.ts.md) (with
+  [`preview-gate.tsx`](./src/components/sandbox/preview-gate.tsx.md)) — the
+  **temporary sandbox preview** of the 03/10/26 meeting fixes: 39 pages,
+  routes and components are gates; `X.sandbox.*` holds the new code (documented
+  by `X`'s own doc) and `X.legacy.*` the unchanged code served to everyone
+  else. The copies have no docs of their own. Also
   [`api/sandbox`](./src/app/api/sandbox/route.ts.md),
   [`api/cron/sandbox-refresh`](./src/app/api/cron/sandbox-refresh/route.ts.md),
   [`sandbox-banner.tsx`](./src/components/layout/sandbox-banner.tsx.md),

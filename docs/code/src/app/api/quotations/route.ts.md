@@ -17,6 +17,10 @@ Operates on `quotation`, `tender`, `customerMaster`, `customerContact`, `buyerMa
 - Gated by `checkAccess("quotation", "read")`, `checkAccess("quotation", "write")`. **Authentication only** — role enforcement is disabled app-wide.
 - Company-scoped with `companyFilter(companyId)`.
 - Allocates a document number with `generateDocumentNumber()` (per company, per financial year).
+- `?search=` uses `quotationSearchWhere` / `tenderSearchWhere` from
+  `src/lib/quotations/listing.ts`: our number, customer, the client's enquiry
+  no. / reference, and the source tender's number or the client's tender ref.
+- The list excludes soft-deleted quotations and soft-deleted tenders (`deletedAt: null`).
 - Writes an audit row. Audit failures are swallowed and never block the operation.
 
 ### Item rates on create
@@ -59,6 +63,14 @@ It runs after the save, outside the transaction, and cannot fail the request.
 - Errors return `error.message`, so thrown text reaches the user's toast.
 - Sending `unitRate: 0` and omitting `unitRate` are different requests now.
   Anything that rebuilds an item payload must preserve the distinction.
+
+## Sandbox preview (temporary, from 5 Oct 2026)
+
+`route.ts` is currently a gate: the sandbox login gets `route.sandbox.ts`
+— the behaviour this doc describes — and every other user gets
+`route.legacy`, the version from before the 03/10/26 meeting fixes. See
+`src/lib/sandbox/preview.ts.md`. Going live: replace this file with the
+`.sandbox` copy and delete both copies; then delete this section.
 
 ## Related
 

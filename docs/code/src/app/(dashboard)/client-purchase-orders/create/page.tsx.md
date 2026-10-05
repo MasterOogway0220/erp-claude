@@ -39,6 +39,39 @@ Renders the `/client-purchase-orders/create` screen. 1,922 lines.
   the quoted balance, mirroring the existing mandatory rate remark. Without it a
   part-order could not be explained once the quotation balance had moved on.
 
+- **Terms & Conditions.** When a quotation is picked, its offer terms (from
+  `/api/quotations/[id]/balance`) are copied into an editable list below the
+  items: each row can be re-worded, renamed, unticked (kept but not printed) or
+  removed, and rows can be added. The list is sent as `terms` and stored as
+  the order's own `ClientPOTerm` rows; the PO acceptance letter prints the
+  ticked ones. Payment Terms and Delivery Terms are also pre-filled from the
+  quotation's "Payment" / "Delivery" rows (`termValue`), because the
+  quotation's structured payment/delivery-terms fields are never filled.
+- **Typed addresses.** Billing and Dispatch Address each have "— Enter
+  manually —": the saved-site FK is cleared and a textarea takes a one-off
+  address (`billingAddressText` / `dispatchAddressText`), so a domestic
+  customer's new site no longer has to be created in the master first.
+  Changing the customer clears them, and the terms.
+- **What "Others" is.** The Others charge row has a description input, sent as
+  `otherChargesDescription`.
+- **Copy line.** Each line has a Copy button that inserts a copy under it, so
+  one quoted line can become two or more PO lines when the client's PO splits
+  it (own PO Sl. No., item code, qty, CDD). The copy starts with qty 0 and blank
+  PO refs and can be removed again. It keeps `id` (the quotation item id, sent
+  as `quotationItemId`) and gets its own `rowKey` for React keys; lookups by
+  row use the object, not `id`. Copies of one line must together fit its
+  balance (`firstOverBalance`, checked here and again by the API). The qty
+  remark is required per quoted line, judged on the copies' total: lines that
+  together order the full balance need no remark.
+- **Additional charges.** Six fixed charges (freight, TPI, testing, packing &
+  forwarding, insurance, others), each with a "Tax Applicable" switch that
+  decides whether it joins the GST base. The list and the POST field names
+  come from `src/lib/calc/cpo-charges.ts`; all six switches start **on**. The
+  page used to build each flag's name as `key + "TaxApplicable"`, which is
+  wrong for three of them (`tpiCharges` → `tpiTaxApplicable`, not
+  `tpiChargesTaxApplicable`), so TPI, testing and P&F were always saved as
+  not taxable while the on-screen total included their GST. Fixed 5 Oct 2026.
+
 `deliveryDate` is sent equal to the committed date: it is the column the detail
 screen renders as the CDD and the floor for per-item CDDs, and carrying two
 dates that can disagree is worse than one.
@@ -48,11 +81,21 @@ dates that can disagree is worse than one.
 - Large file (1,922 lines). Read the section you are changing rather than pattern-matching from a sibling.
 - Any `Select` needs a non-empty `SelectItem` value; the codebase uses a `"NONE"` sentinel mapped to `""`.
 - Role gating in the UI is cosmetic — the API is the boundary, and its role checks are currently disabled.
+- `quotations` is wrapped in `useMemo`. Without it, `quotationData?.quotations ?? []` is a new array on every render while the query loads; the customer-filter effect depends on it and sets state, so the page re-renders forever and React aborts with error #185 ("Maximum update depth exceeded"). This crashed the page on every open from 23 Aug to 5 Oct 2026.
+
+## Sandbox preview (temporary, from 5 Oct 2026)
+
+`page.tsx` is currently a gate: the sandbox login gets `page.sandbox.tsx`
+— the behaviour this doc describes — and every other user gets
+`page.legacy`, the version from before the 03/10/26 meeting fixes. See
+`src/lib/sandbox/preview.ts.md`. Going live: replace this file with the
+`.sandbox` copy and delete both copies; then delete this section.
 
 ## Related
 
 - [Module overview](../README.md)
 - `src/components/shared/` — `DataTable`, `PageHeader`, `SmartCombobox`
 - `src/lib/dates.ts` — `deliveryScheduleToDate`
+- `src/lib/calc/cpo-charges.ts` — `DEFAULT_CHARGES`, `chargePayload`
 - `src/app/api/masters/customer-contacts/route.ts`,
   `src/app/api/upload/route.ts`

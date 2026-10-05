@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkAccess } from "@/lib/rbac";
-import { generatePOAcceptanceLetterHtml } from "@/lib/pdf/po-acceptance-template";
+import { generatePOAcceptanceLetterHtml } from "@/lib/pdf/po-acceptance-template.legacy";
 
 export async function GET(
   request: NextRequest,

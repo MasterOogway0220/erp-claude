@@ -17,6 +17,7 @@ Operates on `quotation`, `companyMaster`, `quotationEmailLog`.
 - **Not company-scoped.** Either catalogue data (deliberately global) or scoped via a parent record — verify which before changing.
 - Writes an audit row. Audit failures are swallowed and never block the operation.
 - Sends mail through `mailer()`. **SMTP is not configured in production**, so this currently fails with a message naming the missing variables.
+- A soft-deleted quotation (`deletedAt` set) is treated as not found.
 
 ## Gotchas
 
@@ -30,6 +31,14 @@ Operates on `quotation`, `companyMaster`, `quotationEmailLog`.
 - Named `.tsx` because it contains JSX — a route file with JSX must not be `.ts`.
 - Confirm the company-scoping story before reusing this as a template.
 - Errors return `error.message`, so thrown text reaches the user's toast.
+
+## Sandbox preview (temporary, from 5 Oct 2026)
+
+`route.tsx` is currently a gate: the sandbox login gets `route.sandbox.tsx`
+— the behaviour this doc describes — and every other user gets
+`route.legacy`, the version from before the 03/10/26 meeting fixes. See
+`src/lib/sandbox/preview.ts.md`. Going live: replace this file with the
+`.sandbox` copy and delete both copies; then delete this section.
 
 ## Related
 

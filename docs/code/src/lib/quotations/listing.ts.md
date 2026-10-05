@@ -24,6 +24,8 @@ no status, revision or conversion state, so it cannot satisfy those filters.
 |---|---|
 | `shouldIncludeTenders(filters)` | True only when no quotation-specific filter is active. |
 | `collapseRevisions(rows)` | Keeps the first row per `quotationNo`. |
+| `quotationSearchWhere(search)` | The `OR` array matching our quotation number, the customer name, the client's enquiry number (`inquiryNo`), their reference (`customerReference`), and the source tender's `tenderRef` / `tenderNo`. |
+| `tenderSearchWhere(search)` | The `OR` array for the tender rows in the quotation list: `tenderNo`, `tenderRef` (the client's own tender number), organisation, project, customer name. |
 
 ## How it works
 
@@ -55,6 +57,18 @@ and then show nothing.
 
 The Original and Revisions tabs, and `showAll`, deliberately bypass this and
 show every row.
+
+### `quotationSearchWhere` / `tenderSearchWhere`
+
+Sales staff are usually asked about an order by the client's number, not ours:
+the enquiry reference on the client's RFQ, or the tender number their
+procurement portal issued. Until 5 Oct 2026 the list searched only our
+quotation number and the customer name, and the tender rows here did not match
+`tenderRef` (the standalone tender list did). Both builders are plain `where`
+fragments so they can be tested without a database.
+
+Note that `shouldIncludeTenders` still drops tender rows under any status,
+revision or conversion filter, search or not.
 
 ## Domain notes
 

@@ -16,6 +16,10 @@ Renders the `/quotations/create/nonstandard` screen. 1794 lines.
 - Reads `useSearchParams`, so it **must sit inside a `<Suspense>` boundary** — Next.js 16 fails the build otherwise.
 - Calls: `/api/masters/buyers`, `/api/masters/customers`, `/api/masters/customers/${formData.customerId}/terms`, `/api/masters/material-codes`, `/api/masters/material-codes/${dup.id}`, `/api/masters/material-codes/check-duplicate`, `/api/masters/units` (via `useUnits`), `/api/offer-term-templates`, `/api/quotations/${editId}`.
 - Master dropdowns read through `useReferenceQuery` (ten minutes) rather than a hand-rolled `useQuery` (60 seconds). This mattered more than it looks: the form shares `["customers"]` with the app-wide hook, and the shorter window was the one driving refetches for every other screen too. Buyers and item codes keep the customer id in their key, so they stay a per-customer list — only the window widened.
+- Under the read-only customer **Address**, the selected customer's **GSTIN**
+  (GST registration number) is shown when the master has one, so the person
+  quoting can see which registered entity they are quoting without leaving the
+  form. Display only; nothing is saved from it.
 - The per-item **Unit** dropdown is populated from Unit Master via
   [`useUnits()`](../../../../../../hooks/use-units.ts.md). It used to be a
   module-level `UOM_OPTIONS` array, identical to and separate from the
@@ -88,6 +92,14 @@ notes) are not copied onto it.
 - Role gating in the UI is cosmetic — the API is the boundary, and its role checks are currently disabled.
 - The Unit select injects the item's stored value as an extra option when Unit Master no longer contains it, so editing an old quotation shows the saved unit rather than a blank.
 - **Currency and GST rate are still hardcoded** here (`CURRENCY_OPTIONS`, `GST_RATES`) despite populated `CurrencyMaster` and `TaxMaster` tables.
+
+## Sandbox preview (temporary, from 5 Oct 2026)
+
+`page.tsx` is currently a gate: the sandbox login gets `page.sandbox.tsx`
+— the behaviour this doc describes — and every other user gets
+`page.legacy`, the version from before the 03/10/26 meeting fixes. See
+`src/lib/sandbox/preview.ts.md`. Going live: replace this file with the
+`.sandbox` copy and delete both copies; then delete this section.
 
 ## Related
 

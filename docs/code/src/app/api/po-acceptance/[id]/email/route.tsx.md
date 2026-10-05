@@ -17,6 +17,12 @@ Operates on `pOAcceptance`, `pOAcceptanceEmailLog`.
 - **Not company-scoped.** Either catalogue data (deliberately global) or scoped via a parent record — verify which before changing.
 - Writes an audit row. Audit failures are swallowed and never block the operation.
 - Sends mail through `mailer()`. **SMTP is not configured in production**, so this currently fails with a message naming the missing variables.
+- The letter embedded in the mail body is the HTML template
+  (`po-acceptance-template.ts`), fed by `LETTER_INCLUDE` + `letterData` from
+  `src/lib/po-acceptance/letter.ts` — the same pair the PDF download uses, so
+  the emailed and downloaded letters carry the same fields (logo, the client's
+  PO line refs, our follow-up person). `letterData` makes the logo URL
+  absolute: a relative `src` is a broken image in a mail client.
 
 ## Gotchas
 
@@ -25,8 +31,17 @@ Operates on `pOAcceptance`, `pOAcceptanceEmailLog`.
 - Confirm the company-scoping story before reusing this as a template.
 - Errors return `error.message`, so thrown text reaches the user's toast.
 
+## Sandbox preview (temporary, from 5 Oct 2026)
+
+`route.tsx` is currently a gate: the sandbox login gets `route.sandbox.tsx`
+— the behaviour this doc describes — and every other user gets
+`route.legacy`, the version from before the 03/10/26 meeting fixes. See
+`src/lib/sandbox/preview.ts.md`. Going live: replace this file with the
+`.sandbox` copy and delete both copies; then delete this section.
+
 ## Related
 
 - `src/lib/rbac.ts`, `src/lib/prisma.ts`
 - `src/lib/mailer.ts`
+- `src/lib/po-acceptance/letter.ts`, `src/lib/pdf/po-acceptance-template.ts`
 - [Module overview](../../README.md)

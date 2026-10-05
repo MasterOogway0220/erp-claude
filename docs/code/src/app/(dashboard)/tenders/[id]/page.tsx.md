@@ -12,12 +12,22 @@ Renders the `/tenders/[id]` screen. 790 lines.
 
 - `"use client"` — runs in the browser.
 - Calls: `/api/tenders/${id}`, `/api/tenders/${id}/documents`, `/api/tenders/${id}/documents/${docId}`.
+- An **Edit** button (to `/tenders/create?editId=<id>`) shows while the tender is undecided; it is hidden once it is won, lost or no-bid (`isTerminal`).
+- A **Delete** button (soft delete, after a `confirm()`) shows only while no quotation or sales order has been raised from the tender; the API enforces the same rule and returns to the tender list on success.
 
 ## Gotchas
 
 - Large file (790 lines). Read the section you are changing rather than pattern-matching from a sibling.
 - Any `Select` needs a non-empty `SelectItem` value; the codebase uses a `"NONE"` sentinel mapped to `""`.
 - Role gating in the UI is cosmetic — the API is the boundary, and its role checks are currently disabled.
+
+## Sandbox preview (temporary, from 5 Oct 2026)
+
+`page.tsx` is currently a gate: the sandbox login gets `page.sandbox.tsx`
+— the behaviour this doc describes — and every other user gets
+`page.legacy`, the version from before the 03/10/26 meeting fixes. See
+`src/lib/sandbox/preview.ts.md`. Going live: replace this file with the
+`.sandbox` copy and delete both copies; then delete this section.
 
 ## Related
 

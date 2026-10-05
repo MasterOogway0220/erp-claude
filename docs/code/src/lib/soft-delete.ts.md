@@ -5,14 +5,16 @@
 
 ## Why this exists
 
-Master data cannot be hard-deleted. A customer, vendor, product or size may be
-referenced by quotations and orders going back years; removing the row breaks
-those documents, and a quotation that no longer renders is a commercial
-problem.
+The helpers for soft deletion: a row is marked deleted by setting `deletedAt`
+instead of being removed, and reads exclude it.
 
-So deletion sets `deletedAt`. This file gives the two halves of that pattern
-one name each, because the failure mode of hand-writing them is a query that
-forgets the filter and shows deleted masters in a dropdown.
+**What actually soft-deletes today (5 Oct 2026): quotations and tenders.**
+`DELETE /api/quotations/[id]` (DRAFT only) and `DELETE /api/tenders/[id]` (no
+quotation or sales order raised from it) call `softDeleteData()`, and every
+quotation and tender read in the app filters `deletedAt: null`. About 17 models carry a
+`deletedAt` column, but the master DELETE routes still hard-delete or
+deactivate; nothing else reads or writes `deletedAt`. An earlier version of
+this doc described masters as soft-deleted; they are not.
 
 ## What it does
 
@@ -50,5 +52,5 @@ traceability and because a client can ask about a three-year-old quotation.
 
 ## Related
 
-- `src/app/api/masters/**` — the main consumers.
+- `src/app/api/quotations/[id]/route.ts`, `src/app/api/tenders/[id]/route.ts` — the callers of `softDeleteData`.
 - `prisma/schema.prisma` — models carrying `deletedAt`.

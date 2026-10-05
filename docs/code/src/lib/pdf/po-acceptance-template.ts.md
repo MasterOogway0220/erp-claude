@@ -18,6 +18,18 @@ formally accepted, which is why the sales order cannot be created before it.
 
 HTML for the acceptance: client and order references, accepted items, the
 commercial summary, the committed delivery date, and three named contacts.
+Exports the `POAcceptanceData`, `CompanyInfo` and `CustomerInfo` types that
+`po-acceptance-pdf.tsx` (the downloadable PDF) also takes.
+
+This HTML is what the acceptance **email** embeds. The download is the
+react-pdf twin; keep the two showing the same content. Since 5 Oct 2026 both
+print the company logo above the name, the client's **PO Sl. No.** and **PO
+Item Code** per line, and **our follow-up person** (`ourContact`: the user who
+issued the letter) in the signature block instead of an anonymous "Authorized
+Signatory". When the client PO has its own terms list (`terms`), the letter
+prints it as "Terms & Conditions" instead of the bare Payment / Delivery lines.
+The `summary` rows (material value, charges with what "Others" is, GST,
+round-off) sit between the item lines and the Total.
 
 ## How it works
 
@@ -52,6 +64,9 @@ uploaded back against the record (`signedCopyPath`).
 ## Related
 
 - `src/lib/po-acceptance/advance-cpo.ts`
-- `src/app/api/po-acceptance/[id]/pdf/route.ts`, `email/route.tsx`,
+- `src/lib/po-acceptance/letter.ts` — builds this template's input.
+- `src/lib/pdf/po-acceptance-pdf.tsx` — the PDF twin.
+- `src/app/api/po-acceptance/[id]/pdf/route.tsx`, `email/route.tsx`,
   `finalize/route.ts`
+- Test: `src/lib/pdf/po-acceptance-pdf.test.ts`
 - `src/app/(dashboard)/po-acceptance/[id]/page.tsx` — signed-copy upload.

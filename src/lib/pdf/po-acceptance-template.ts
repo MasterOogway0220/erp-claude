@@ -1,6 +1,6 @@
 // PO Acceptance Letter PDF Template — Portrait A4
 
-interface CompanyInfo {
+export interface CompanyInfo {
   companyName: string;
   regAddressLine1?: string | null;
   regAddressLine2?: string | null;
@@ -14,7 +14,7 @@ interface CompanyInfo {
   companyLogoUrl?: string | null;
 }
 
-interface CustomerInfo {
+export interface CustomerInfo {
   name: string;
   contactPerson?: string | null;
   addressLine1?: string | null;
@@ -26,7 +26,7 @@ interface CustomerInfo {
   gstNo?: string | null;
 }
 
-interface POAcceptanceData {
+export interface POAcceptanceData {
   acceptanceNo: string;
   acceptanceDate: string | Date;
   committedDeliveryDate: string | Date;
@@ -53,6 +53,10 @@ interface POAcceptanceData {
   };
   items: {
     sNo: number;
+    // The client's own line number and item code from their PO, so they can
+    // match this letter to their order line by line.
+    poSlNo?: string | null;
+    poItemCode?: string | null;
     product?: string | null;
     material?: string | null;
     additionalSpec?: string | null;
@@ -64,6 +68,14 @@ interface POAcceptanceData {
     amount: number;
   }[];
   customer: CustomerInfo;
+  // Our person following this order up: the user who issued the letter.
+  // Printed in the signature block; absent = anonymous "Authorized Signatory".
+  ourContact?: { name: string; email?: string | null; phone?: string | null } | null;
+  // The client PO's included terms (copied from the quotation and edited at
+  // registration). When present they replace the payment/delivery lines.
+  terms?: { termName: string; termValue: string }[] | null;
+  // What the Total is made of: material value, charges, GST, round-off.
+  summary?: { label: string; amount: number }[] | null;
 }
 
 function formatDate(date: string | Date | null | undefined): string {
@@ -109,6 +121,8 @@ export function generatePOAcceptanceLetterHtml(
   const itemRows = data.items.map((item) => `
     <tr>
       <td style="padding:6px 8px;border:1px solid #d1d5db;text-align:center;">${item.sNo}</td>
+      <td style="padding:6px 8px;border:1px solid #d1d5db;text-align:center;">${escapeHtml(item.poSlNo) || "-"}</td>
+      <td style="padding:6px 8px;border:1px solid #d1d5db;">${escapeHtml(item.poItemCode) || "-"}</td>
       <td style="padding:6px 8px;border:1px solid #d1d5db;">
         ${escapeHtml(item.product) || "-"}
         ${item.material ? `<br><span style="font-size:11px;color:#666;">${escapeHtml(item.material)}${item.additionalSpec ? ` / ${escapeHtml(item.additionalSpec)}` : ""}</span>` : ""}
@@ -155,6 +169,7 @@ export function generatePOAcceptanceLetterHtml(
 </head>
 <body>
   <div class="header">
+    ${company.companyLogoUrl ? `<img src="${escapeHtml(company.companyLogoUrl)}" alt="" style="max-height:50px;object-fit:contain;margin-bottom:6px;">` : ""}
     <h1>${escapeHtml(company.companyName)}</h1>
     <p>${escapeHtml(companyAddress)}</p>
     ${company.telephoneNo ? `<p>Tel: ${escapeHtml(company.telephoneNo)} | Email: ${escapeHtml(company.email)}</p>` : ""}
@@ -190,6 +205,8 @@ export function generatePOAcceptanceLetterHtml(
     <thead>
       <tr style="background:#f1f5f9;">
         <th style="padding:6px 8px;border:1px solid #d1d5db;text-align:center;width:40px;">S.No</th>
+        <th style="padding:6px 8px;border:1px solid #d1d5db;text-align:center;">PO Sl. No.</th>
+        <th style="padding:6px 8px;border:1px solid #d1d5db;">PO Item Code</th>
         <th style="padding:6px 8px;border:1px solid #d1d5db;">Product Description</th>
         <th style="padding:6px 8px;border:1px solid #d1d5db;text-align:center;">Size</th>
         <th style="padding:6px 8px;border:1px solid #d1d5db;text-align:center;">Qty</th>
@@ -202,14 +219,20 @@ export function generatePOAcceptanceLetterHtml(
       ${itemRows}
     </tbody>
     <tfoot>
+      ${(data.summary ?? []).map((r) => `<tr><td colspan="8" style="padding:4px 8px;border:1px solid #d1d5db;text-align:right;">${escapeHtml(r.label)}</td><td style="padding:4px 8px;border:1px solid #d1d5db;text-align:right;">${formatCurrency(r.amount, currency)}</td></tr>`).join("")}
       <tr style="background:#f8fafc;font-weight:bold;">
-        <td colspan="6" style="padding:6px 8px;border:1px solid #d1d5db;text-align:right;">Total:</td>
+        <td colspan="8" style="padding:6px 8px;border:1px solid #d1d5db;text-align:right;">Total:</td>
         <td style="padding:6px 8px;border:1px solid #d1d5db;text-align:right;">${formatCurrency(data.clientPO.grandTotal, currency)}</td>
       </tr>
     </tfoot>
   </table>
 
-  ${data.clientPO.paymentTerms || data.clientPO.deliveryTerms ? `
+  ${data.terms?.length ? `
+  <div class="section-title">Terms &amp; Conditions</div>
+  <table>
+    ${data.terms.map((t) => `<tr><td style="padding:4px 8px;width:160px;font-weight:bold;vertical-align:top;">${escapeHtml(t.termName)}</td><td style="padding:4px 8px;">${escapeHtml(t.termValue)}</td></tr>`).join("")}
+  </table>
+  ` : data.clientPO.paymentTerms || data.clientPO.deliveryTerms ? `
   <div class="section-title">Terms</div>
   <table>
     ${data.clientPO.paymentTerms ? `<tr><td style="padding:4px 8px;width:140px;font-weight:bold;">Payment Terms:</td><td style="padding:4px 8px;">${escapeHtml(data.clientPO.paymentTerms)}</td></tr>` : ""}
@@ -240,7 +263,10 @@ export function generatePOAcceptanceLetterHtml(
     <p>Thanking you,</p>
     <p style="margin-top:40px;">
       <strong>For ${escapeHtml(company.companyName)}</strong><br>
-      <span style="color:#64748b;">Authorized Signatory</span>
+      ${data.ourContact ? `${escapeHtml(data.ourContact.name)}<br>
+      <span style="color:#64748b;">Follow-up contact</span><br>
+      ${data.ourContact.email ? `${escapeHtml(data.ourContact.email)}<br>` : ""}
+      ${data.ourContact.phone ? `${escapeHtml(data.ourContact.phone)}` : ""}` : `<span style="color:#64748b;">Authorized Signatory</span>`}
     </p>
   </div>
 
