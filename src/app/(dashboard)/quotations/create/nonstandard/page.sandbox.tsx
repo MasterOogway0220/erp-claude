@@ -38,7 +38,7 @@ import { toast } from "sonner";
 import { PageLoading } from "@/components/shared/page-loading";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useUnits } from "@/hooks/use-units";
-import { fillBlankCurrencyTerm } from "@/lib/quotations/currency";
+import { fillBlankCurrencyTerm, followCurrencyTerm } from "@/lib/quotations/currency";
 import { toDateInput } from "@/lib/dates";
 import { useReferenceQuery } from "@/hooks/use-api-query";
 
@@ -382,6 +382,9 @@ function NonStandardQuotationPage() {
 
   // Track the quotationType + customer combo that was last used to populate terms
   const termsLoadedForKey = useRef<string | null>(null);
+  // The terms of the tender this quotation is raised from (?tenderId=), when
+  // it has any: they take the place of the defaults the loader below picks.
+  const tenderTermsRef = useRef<typeof terms | null>(null);
 
   // A reload here lands after the currency effect has already run, so without
   // this a blank Currency term stays empty and prints as a blank "Currency :"
@@ -389,7 +392,8 @@ function NonStandardQuotationPage() {
   // exist at all.
   const fillCurrencyTerm = (list: any[]) => fillBlankCurrencyTerm(list, formData.currency);
 
-  // Load terms: customer-specific first, then fall back to global templates
+  // Load terms: the source tender's if it has any, else customer-specific,
+  // else the global templates
   useEffect(() => {
     if (!templatesData?.templates) return;
 
@@ -402,14 +406,16 @@ function NonStandardQuotationPage() {
 
     // Reload terms when quotationType or customer changes
     if (termsLoadedForKey.current !== termsKey || termsLoadedForKey.current === null) {
-      if (formData.customerId) {
+      if (tenderTermsRef.current) {
+        setTerms(followCurrencyTerm(tenderTermsRef.current.map((t) => ({ ...t })), formData.currency));
+      } else if (formData.customerId) {
         fetch(`/api/masters/customers/${formData.customerId}/terms?quotationType=${formData.quotationType}`)
           .then((res) => res.json())
           .then((data) => {
             // Discard stale responses: quotationType flips DOMESTIC→EXPORT right after
             // customer selection, so the DOMESTIC request can resolve after the EXPORT
             // one and overwrite the correct terms
-            if (termsLoadedForKey.current !== termsKey) return;
+            if (termsLoadedForKey.current !== termsKey || tenderTermsRef.current) return;
             if (data.terms?.length > 0) {
               setTerms(fillCurrencyTerm(data.terms.map((t: any) => ({
                 termName: t.termName,
@@ -431,7 +437,7 @@ function NonStandardQuotationPage() {
             }
           })
           .catch(() => {
-            if (termsLoadedForKey.current !== termsKey) return;
+            if (termsLoadedForKey.current !== termsKey || tenderTermsRef.current) return;
             setTerms(fillCurrencyTerm(
               templatesData.templates.map((t: any) => ({
                 termName: t.termName,
@@ -621,6 +627,18 @@ function NonStandardQuotationPage() {
           kindAttention: tender.projectName || prev.kindAttention,
           sourceTenderId: tender.id,
         }));
+        // The tender's own terms. The loader re-applies them on the customer
+        // and market-type changes this prefill sets off, instead of defaults.
+        if (tender.terms?.length > 0) {
+          tenderTermsRef.current = tender.terms.map((t: { termName: string; termValue: string; isIncluded: boolean; isCustom: boolean }) => ({
+            termName: t.termName,
+            termValue: t.termValue,
+            isIncluded: t.isIncluded,
+            isCustom: t.isCustom,
+            isHeadingEditable: t.isCustom,
+          }));
+          setTerms(followCurrencyTerm(tenderTermsRef.current!.map((t) => ({ ...t })), termCurrencyRef.current));
+        }
         if (tender.items?.length > 0) {
           setItems(
             tender.items.map((ti: any) => ({

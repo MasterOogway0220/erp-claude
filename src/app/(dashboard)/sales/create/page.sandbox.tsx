@@ -48,12 +48,14 @@ interface SOItem {
   od: number;
   wt: number;
   ends: string;
+  uom: string;
   quantity: number;
   unitRate: number;
   amount: number;
   deliveryDate: string;
   unitWeight?: number;
   totalWeightMT?: number;
+  itemDescription?: string;
 }
 
 export default function CreateSalesOrderPageWrapper() {
@@ -117,12 +119,16 @@ function CreateSalesOrderPage() {
             od: parseFloat(item.od) || 0,
             wt: parseFloat(item.wt) || 0,
             ends: item.ends || "",
+            uom: item.uom || "Mtr",
             quantity: parseFloat(item.quantity) || 0,
             unitRate: parseFloat(item.unitRate) || 0,
             amount: parseFloat(item.amount) || 0,
             deliveryDate: format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), "yyyy-MM-dd"),
             unitWeight: parseFloat(item.unitWeight) || undefined,
             totalWeightMT: parseFloat(item.totalWeightMT) || undefined,
+            // A non-standard line's own text; its product reads only
+            // "Non-Standard Item".
+            itemDescription: item.itemDescription || undefined,
           }));
         setItems(quotationItems);
 
@@ -176,7 +182,7 @@ function CreateSalesOrderPage() {
         // The tender's BOQ lines become the order lines; rates are entered here.
         if (tender.items?.length > 0) {
           setItems(
-            tender.items.map((ti: { product?: string; material?: string; additionalSpec?: string; size?: string; sizeLabel?: string; quantity?: string | number }) => ({
+            tender.items.map((ti: { product?: string; material?: string; additionalSpec?: string; size?: string; sizeLabel?: string; uom?: string | null; quantity?: string | number }) => ({
               product: ti.product || "",
               material: ti.material || "",
               additionalSpec: ti.additionalSpec || "",
@@ -184,6 +190,7 @@ function CreateSalesOrderPage() {
               od: 0,
               wt: 0,
               ends: "",
+              uom: ti.uom || "Mtr",
               quantity: parseFloat(String(ti.quantity ?? "")) || 0,
               unitRate: 0,
               amount: 0,
@@ -206,6 +213,7 @@ function CreateSalesOrderPage() {
         od: 0,
         wt: 0,
         ends: "",
+        uom: "Mtr",
         quantity: 0,
         unitRate: 0,
         amount: 0,
@@ -497,6 +505,11 @@ function CreateSalesOrderPage() {
                           });
                         }}
                       />
+                      {item.itemDescription && (
+                        <p className="mt-1 whitespace-pre-line text-xs text-muted-foreground">
+                          {item.itemDescription}
+                        </p>
+                      )}
                     </div>
                     <div className="md:col-span-2">
                       <Label className="text-xs">Size</Label>
@@ -534,7 +547,7 @@ function CreateSalesOrderPage() {
                       )}
                     </div>
                     <div className="md:col-span-1">
-                      <Label className="text-xs">Qty (Mtr)</Label>
+                      <Label className="text-xs">Qty ({item.uom})</Label>
                       <Input
                         type="number"
                         step="0.001"

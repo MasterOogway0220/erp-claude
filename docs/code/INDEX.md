@@ -40,7 +40,7 @@ authoritative, need maintaining, and teach nothing.
 ## Start here
 
 1. [`prisma/schema.prisma`](./prisma/schema.prisma.md) — the document chain
-   and all 112 models. **Read this first.**
+   and all 115 models. **Read this first.**
 2. [`src/app/api/README.md`](./src/app/api/README.md) — the pattern every route
    follows.
 3. [`src/lib/masters/spec-import.ts`](./src/lib/masters/spec-import.ts.md) —
@@ -114,8 +114,8 @@ authoritative, need maintaining, and teach nothing.
 - [`quotations/client-items.ts`](./src/lib/quotations/client-items.ts.md) —
   why the customer's item IDs on non-standard quotations remember themselves.
 - [`quotations/currency.ts`](./src/lib/quotations/currency.ts.md) — update
-  currency resolution and the blank Currency-term fill; both born from live
-  incidents.
+  currency resolution, the blank Currency-term fill (both born from live
+  incidents), and keeping a copied Currency term on the document's currency.
 - [`quotations/deal-owner.ts`](./src/lib/quotations/deal-owner.ts.md) — why an
   omitted field must not mean "erase this".
 - [`quotations/display.ts`](./src/lib/quotations/display.ts.md) — size and
@@ -123,7 +123,8 @@ authoritative, need maintaining, and teach nothing.
 - [`quotations/listing.ts`](./src/lib/quotations/listing.ts.md) — revision
   collapsing and tender inclusion.
 - [`quotations/terms.ts`](./src/lib/quotations/terms.ts.md) — read a
-  quotation's "Payment" / "Delivery" offer-term row by name.
+  quotation's "Payment" / "Delivery" offer-term row by name; shape edited
+  term lists for storage on a client PO or a tender.
 - [`tenders/items.ts`](./src/lib/tenders/items.ts.md) — BOQ line rows for
   tender create and tender edit.
 - [`quotations/pricing.ts`](./src/lib/quotations/pricing.ts.md) — the price
@@ -144,6 +145,8 @@ authoritative, need maintaining, and teach nothing.
   totals.
 - [`calc/cpo-charges.ts`](./src/lib/calc/cpo-charges.ts.md) — client PO
   additional charges and their real tax-flag field names.
+- [`calc/cpo-totals.ts`](./src/lib/calc/cpo-totals.ts.md) — totals worked the
+  client PO's way (GST only on charges ticked taxable, rounded to the rupee).
 - [`calc/cpo-balance.ts`](./src/lib/calc/cpo-balance.ts.md) — split client PO
   lines must together fit the quoted balance.
 - [`amount-in-words.ts`](./src/lib/amount-in-words.ts.md) — Indian vs Western
@@ -249,8 +252,8 @@ binary in the deployment any more.
   [headers](./src/lib/sandbox/headers.ts.md) ·
   [preview](./src/lib/sandbox/preview.ts.md) (with
   [`preview-gate.tsx`](./src/components/sandbox/preview-gate.tsx.md)) — the
-  **temporary sandbox preview** of the 03/10/26 meeting fixes: 39 pages,
-  routes and components are gates; `X.sandbox.*` holds the new code (documented
+  **temporary sandbox preview** of the 03/10/26 meeting fixes (and the 6 Oct
+  follow-ups): 40 pages, routes and components are gates; `X.sandbox.*` holds the new code (documented
   by `X`'s own doc) and `X.legacy.*` the unchanged code served to everyone
   else. The copies have no docs of their own. Also
   [`api/sandbox`](./src/app/api/sandbox/route.ts.md),

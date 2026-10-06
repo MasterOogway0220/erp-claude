@@ -79,6 +79,9 @@ export async function POST(request: NextRequest) {
         wt: cpoItem.wt,
         ends: cpoItem.ends,
         uom: cpoItem.uom,
+        // A non-standard line's own text (its product reads only
+        // "Non-Standard Item"); null when the client PO line has none.
+        itemDescription: cpoItem.itemDescription,
         quantity: qtyOrdered,
         unitRate: unitRate,
         amount: qtyOrdered * unitRate,

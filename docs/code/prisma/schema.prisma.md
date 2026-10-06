@@ -1,6 +1,6 @@
 # prisma/schema.prisma
 
-> 112 models and 44 enums — the whole data model. This is the map of the
+> 115 models and 44 enums — the whole data model. This is the map of the
 > business; read it before anything else.
 
 ## Why this exists
@@ -60,7 +60,7 @@ of the three companies sells it.
 baked into `src/lib/fitting-flange-sizes.ts` at build time.
 
 ### Sales
-`Quotation` → `QuotationItem` / `QuotationTerm`, `Tender`,
+`Quotation` → `QuotationItem` / `QuotationTerm`, `Tender` → `TenderTerm`,
 `ClientPurchaseOrder` → `ClientPOItem`, `POAcceptance`, `SalesOrder` →
 `SalesOrderItem`, `OrderProcessingItem`, `StockReservation`.
 
@@ -173,6 +173,16 @@ the vendor PO. Before that column existed, purchase saw only product / material
 item code, copied from `ClientPOItem` when the sales order is created, so
 Order Processing does not ask for them a second time.
 
+`OrderProcessingItem.labTestingBy` (`INHOUSE` / `TPI_AGENCY`) and
+`labTestingAgencyId` (FK to `InspectionAgencyMaster`) say who carries out the
+line's lab testing. That is separate from `tpiType`, which says who does the
+inspection; before these columns, testing had no "who" at all.
+`ClientPOItem.itemDescription` and `SalesOrderItem.itemDescription` (TEXT)
+carry a non-standard line's own description, copied from
+`QuotationItem.itemDescription`; its `product` reads only "Non-Standard Item".
+All four columns are from migration
+`20261006110000_processing_testing_and_line_descriptions`.
+
 ### Client PO registration
 
 `ClientPurchaseOrder.deliverySchedule` is the client's written delivery period
@@ -187,6 +197,14 @@ ones print on the PO acceptance letter (migration
 hold a typed one-off address, used instead of the saved-site FK, which stays
 null; `otherChargesDescription` (also on `POAcceptance`) says what the
 "Others" charge is (migration `20261005093000_cpo_other_charge_and_address_text`).
+
+`TenderTerm` is the same idea for a tender: its terms and conditions, started
+from the Offer Terms list or the customer's defaults, edited on the tender,
+and copied into a quotation raised from it (migration
+`20261006100000_tender_terms`). Unlike `ClientPOTerm` it keeps `isCustom` — a
+row added with "Add Custom Term" stays renamable and removable — and its
+`termValue` is VARCHAR(191) like `QuotationTerm`'s, so a copied value always
+fits (the live MySQL is non-strict and would cut a longer one silently).
 
 The six additional charges each have an amount and a `*TaxApplicable` flag
 (on both `ClientPurchaseOrder` and `POAcceptance`) deciding whether it joins

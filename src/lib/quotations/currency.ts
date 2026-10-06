@@ -42,3 +42,22 @@ export function fillBlankCurrencyTerm<
       : t
   );
 }
+
+/**
+ * Make every "Currency" term name the document's currency, for terms that came
+ * from somewhere else: a tender's terms copied onto a quotation, or Export
+ * defaults ("USD ($)") loaded for a EUR tender. Unlike fillBlankCurrencyTerm
+ * this replaces a value naming another currency, so the line cannot contradict
+ * the header. A value that already starts with the code ("USD ($)" on a USD
+ * document) is kept as written.
+ */
+export function followCurrencyTerm<
+  T extends { termName: string; termValue: string }
+>(terms: T[], currency: string): T[] {
+  return terms.map((t) =>
+    t.termName.toLowerCase().includes("currency") &&
+    !t.termValue.trim().toUpperCase().startsWith(currency.toUpperCase())
+      ? { ...t, termValue: currency }
+      : t
+  );
+}

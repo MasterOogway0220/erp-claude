@@ -25,14 +25,30 @@ Renders the `/sales/create` screen. 578 lines.
   A newly picked quotation's values replace the previous one's; a response
   that arrives after the user has picked another quotation is ignored. Quotations record these terms as offer-term
   rows; the structured payment/delivery-terms fields are never filled.
+  A leading ": " on a stored value is dropped (see `termValue`).
 - Opened with `?tenderId=`, the tender's BOQ lines (product, material,
-  additional spec, size, qty) become the order lines; rates are entered here.
+  additional spec, size, qty, unit) become the order lines; rates are entered here.
   Before 5 Oct 2026 only the customer and project were copied.
+- Each line keeps its **unit** (`uom`) from the quotation line or the tender
+  line, and sends it with the order. Pipe is sold by length (`Mtr`, metres);
+  fittings and flanges by count (`Nos`, numbers/pieces). The quantity label
+  reads "Qty (Nos)", "Qty (Mtr)" … per line. When the source line has no unit,
+  and on a line added with "Add Item", the unit is `Mtr` — what the screen
+  always showed. Before 6 Oct 2026 the unit was dropped: order lines were
+  stored without one and every line said "Qty (Mtr)".
+- A **non-standard** quotation line is free text: its product reads only
+  "Non-Standard Item" and the item itself is its `itemDescription`. That text
+  is copied onto the order line, shown under the product, and sent with the
+  order. Before 6 Oct 2026 the text was dropped, leaving the order line's
+  product as just "Non-Standard Item".
 
 ## Gotchas
 
 - Any `Select` needs a non-empty `SelectItem` value; the codebase uses a `"NONE"` sentinel mapped to `""`.
 - Role gating in the UI is cosmetic — the API is the boundary, and its role checks are currently disabled.
+- The unit and the non-standard description are shown, not editable: a line
+  added by hand is always `Mtr`, and changing a line's product keeps its unit
+  and description.
 
 ## Sandbox preview (temporary, from 5 Oct 2026)
 
@@ -46,3 +62,4 @@ Renders the `/sales/create` screen. 578 lines.
 
 - [Module overview](../README.md)
 - `src/components/shared/` — `DataTable`, `PageHeader`, `SmartCombobox`
+- `src/app/api/sales-orders/route.ts` — POST stores each line's `uom` and `itemDescription`.

@@ -60,9 +60,11 @@ interface SalesOrder {
     wt: number;
     ends?: string;
     quantity: number;
+    uom?: string | null;
     unitRate: number;
     amount: number;
     deliveryDate?: string;
+    itemDescription?: string | null;
     stockReservations?: Array<{
       id: string;
       reservedQtyMtr: number;
@@ -329,7 +331,7 @@ export default function SalesOrderDetailPage() {
                 <TableHead>Product</TableHead>
                 <TableHead>Material</TableHead>
                 <TableHead>Size</TableHead>
-                <TableHead className="text-right">Qty (Mtr)</TableHead>
+                <TableHead className="text-right">Qty</TableHead>
                 <TableHead className="text-right">Rate</TableHead>
                 <TableHead className="text-right">Amount</TableHead>
                 <TableHead>Delivery</TableHead>
@@ -347,10 +349,22 @@ export default function SalesOrderDetailPage() {
                 return (
                   <TableRow key={item.id}>
                     <TableCell>{item.sNo}</TableCell>
-                    <TableCell className="font-medium">{item.product}</TableCell>
+                    <TableCell className="font-medium">
+                      {item.product}
+                      {/* a non-standard line's own text; its product reads only "Non-Standard Item" */}
+                      {item.itemDescription && (
+                        <div className="whitespace-pre-line text-xs font-normal text-muted-foreground">
+                          {item.itemDescription}
+                        </div>
+                      )}
+                    </TableCell>
                     <TableCell>{item.material}</TableCell>
                     <TableCell className="font-mono text-sm">{item.sizeLabel}</TableCell>
-                    <TableCell className="text-right">{Number(item.quantity).toFixed(3)}</TableCell>
+                    {/* Each line's own unit. Lines saved before units were kept have none;
+                        the column used to say Mtr for every line, so they still read Mtr. */}
+                    <TableCell className="text-right">
+                      {Number(item.quantity).toFixed(3)} {item.uom || "Mtr"}
+                    </TableCell>
                     <TableCell className="text-right">{Number(item.unitRate).toFixed(2)}</TableCell>
                     <TableCell className="text-right font-medium">
                       {Number(item.amount).toFixed(2)}

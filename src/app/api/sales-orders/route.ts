@@ -227,6 +227,10 @@ export async function POST(request: NextRequest) {
               od: item.od ? parseFloat(item.od) : null,
               wt: item.wt ? parseFloat(item.wt) : null,
               ends: item.ends || null,
+              // The line's unit (Nos/Mtr) and a non-standard line's own
+              // description. Callers that do not send them store null, as before.
+              uom: item.uom || null,
+              itemDescription: item.itemDescription || null,
               quantity: parseFloat(item.quantity),
               unitRate: parseFloat(item.unitRate),
               amount: parseFloat(item.quantity) * parseFloat(item.unitRate),

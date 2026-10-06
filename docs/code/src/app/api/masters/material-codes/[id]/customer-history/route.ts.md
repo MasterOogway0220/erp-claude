@@ -14,6 +14,8 @@ Operates on `quotationItem`, `clientPOItem`.
 ## How it works
 
 - **Not company-scoped.** Either catalogue data (deliberately global) or scoped via a parent record — verify which before changing.
+- The last-quote lookup skips soft-deleted quotations (`deletedAt: null`,
+  added 6 Oct 2026), so a deleted draft's rate is not shown as the last price.
 
 ## Gotchas
 

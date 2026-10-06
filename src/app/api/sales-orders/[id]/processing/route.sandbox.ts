@@ -91,6 +91,9 @@ export async function GET(
           poSlNo: item.poSlNo,
           poItemCode: item.poItemCode,
           product: item.product,
+          // A non-standard line's own words; its product reads only
+          // "Non-Standard Item".
+          itemDescription: item.itemDescription,
           material: item.material,
           additionalSpec: item.additionalSpec,
           sizeLabel: item.sizeLabel,
@@ -173,6 +176,13 @@ export async function POST(
       tpiRequired: processingData.tpiRequired || false,
       tpiType: processingData.tpiType || null,
       labTestingRequired: processingData.labTestingRequired || false,
+      // Who carries out the lab testing — separate from tpiType, which says
+      // who inspects. An agency is kept only with TPI_AGENCY.
+      labTestingBy: processingData.labTestingBy || null,
+      labTestingAgencyId:
+        processingData.labTestingBy === "TPI_AGENCY"
+          ? processingData.labTestingAgencyId || null
+          : null,
       pmiRequired: processingData.pmiRequired || false,
       pmiType: processingData.pmiType || null,
       ndtRequired: processingData.ndtRequired || false,
@@ -244,7 +254,15 @@ export async function POST(
       data: { processingStatus: newStatus },
     });
 
-    return NextResponse.json({ ...result, appliedToCount: written.length });
+    // Same shape as GET: the screen keeps this as the item's record. Sent as
+    // the stored JSON text, the tests reloaded unticked and the next save
+    // wrote them as NULL.
+    return NextResponse.json({
+      ...result,
+      ndtTests: parseStringArray(result.ndtTests),
+      requiredLabTests: parseStringArray(result.requiredLabTests),
+      appliedToCount: written.length,
+    });
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
     console.error("Error saving processing item:", error);

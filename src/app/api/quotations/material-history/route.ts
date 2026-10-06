@@ -54,6 +54,8 @@ export async function GET(request: NextRequest) {
         quotation: {
           customerId: { in: customerIds },
           ...companyFilter(companyId),
+          // A soft-deleted quotation's price is not history.
+          deletedAt: null,
         },
       },
       select: {

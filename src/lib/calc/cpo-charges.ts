@@ -39,3 +39,23 @@ export function chargePayload(charges: AdditionalCharge[]): Record<string, numbe
     charges.find((c) => c.key === "otherCharges")?.description?.trim() || null;
   return payload;
 }
+
+/**
+ * GST on a client PO, as the POST route stores it. An export — a non-INR order
+ * not delivered in India — is zero-rated, so its rate comes back 0 whatever
+ * rate the request sent. Otherwise IGST at the full rate across state lines,
+ * CGST + SGST at half each within one.
+ */
+export function cpoGst(o: {
+  taxableAmount: number;
+  gstRate: number;
+  currency: string;
+  isDomesticDelivery: boolean;
+  isInterState: boolean;
+}): { gstRate: number; cgst: number; sgst: number; igst: number } {
+  const gstRate = o.currency === "INR" || o.isDomesticDelivery ? o.gstRate : 0;
+  if (!(gstRate > 0)) return { gstRate, cgst: 0, sgst: 0, igst: 0 };
+  if (o.isInterState) return { gstRate, cgst: 0, sgst: 0, igst: (o.taxableAmount * gstRate) / 100 };
+  const half = (o.taxableAmount * gstRate) / 200;
+  return { gstRate, cgst: half, sgst: half, igst: 0 };
+}

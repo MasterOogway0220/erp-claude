@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { DEFAULT_CHARGES, chargePayload } from "./cpo-charges";
+import { DEFAULT_CHARGES, chargePayload, cpoGst } from "./cpo-charges";
 
 /**
  * The client PO form used to derive each tax flag's name from its amount
@@ -51,5 +51,24 @@ describe("client PO additional charges", () => {
     expect(chargePayload(withDesc).otherChargesDescription).toBe("Crane hire");
     expect(chargePayload(DEFAULT_CHARGES).otherChargesDescription).toBeNull();
     expect(route, "otherChargesDescription not read by POST").toMatch(/\botherChargesDescription\b,/);
+  });
+});
+
+/**
+ * The create screen showed "GST not applicable" on an export yet posted its
+ * 18% default, and the POST added GST whenever the rate was above 0.
+ */
+describe("client PO GST", () => {
+  it("charges no GST on an export, whatever rate the form sent", () => {
+    const order = { taxableAmount: 1000, gstRate: 18, isInterState: true };
+    expect(cpoGst({ ...order, currency: "USD", isDomesticDelivery: false })).toEqual({ gstRate: 0, cgst: 0, sgst: 0, igst: 0 });
+    // A foreign-currency order delivered to an Indian site is a domestic supply.
+    expect(cpoGst({ ...order, currency: "USD", isDomesticDelivery: true })).toEqual({ gstRate: 18, cgst: 0, sgst: 0, igst: 180 });
+  });
+
+  it("splits GST into CGST + SGST within a state and IGST across states", () => {
+    const inr = { taxableAmount: 1000, gstRate: 18, currency: "INR", isDomesticDelivery: false };
+    expect(cpoGst({ ...inr, isInterState: false })).toEqual({ gstRate: 18, cgst: 90, sgst: 90, igst: 0 });
+    expect(cpoGst({ ...inr, isInterState: true })).toEqual({ gstRate: 18, cgst: 0, sgst: 0, igst: 180 });
   });
 });

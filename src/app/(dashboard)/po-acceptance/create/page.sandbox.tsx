@@ -31,7 +31,7 @@ import {
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { PageLoading } from "@/components/shared/page-loading";
-import { computePOTotals } from "@/lib/calc/po-totals";
+import { cpoTotals } from "@/lib/calc/cpo-totals";
 import { formatDate, toDateInput } from "@/lib/dates";
 
 interface ClientPO {
@@ -45,7 +45,8 @@ interface ClientPO {
   paymentTerms: string | null;
   deliveryTerms: string | null;
   currency: string;
-  grandTotal: number | null;
+  // A Decimal: the list API sends it as a string ("15945"), not a number.
+  grandTotal: string | null;
   status: string;
   customer: { id: string; name: string; city: string | null };
   quotation: { id: string; quotationNo: string };
@@ -64,6 +65,7 @@ interface CpoItem {
   id: string;
   sNo: number;
   description: string;
+  itemDescription: string | null;
   qtyOrdered: number;
   unitRate: number;
   amount: number;
@@ -98,7 +100,10 @@ interface CpoDetail {
   items?: Array<{
     id: string;
     sNo: number;
-    description: string | null;
+    product: string | null;
+    sizeLabel: string | null;
+    // A non-standard line's own text; its product reads "Non-Standard Item".
+    itemDescription: string | null;
     qtyOrdered: number | null;
     unitRate: number | null;
     amount: number | null;
@@ -232,7 +237,9 @@ function CreatePOAcceptanceContent() {
       (cpoDetail?.items ?? []).map((item) => ({
         id: item.id,
         sNo: item.sNo,
-        description: item.description ?? "",
+        // A client PO line has no description column; it reads as product + size.
+        description: [item.product, item.sizeLabel].filter(Boolean).join(" "),
+        itemDescription: item.itemDescription?.trim() || null,
         qtyOrdered: Number(item.qtyOrdered ?? 0),
         unitRate: Number(item.unitRate ?? 0),
         amount: Number(item.amount ?? 0),
@@ -242,28 +249,31 @@ function CreatePOAcceptanceContent() {
   const cpoCurrency = cpoDetail?.currency ?? "INR";
   const cpoIsDomesticDelivery = Boolean(cpoDetail?.isDomesticDelivery);
 
-  /** Charges stay editable form state — the CPO only seeds them once. */
+  /**
+   * Charges stay editable form state — the CPO only seeds them once. Every
+   * charge field comes from the PO just loaded: its NULL is 0 / unticked (GST
+   * rate 18), never the previously picked PO's value.
+   */
   useEffect(() => {
     if (!cpoDetail) return;
-    const num = (v: number | null | undefined, fallback: number) =>
-      v !== null && v !== undefined ? Number(v) : fallback;
+    const num = (v: number | null | undefined) => Number(v ?? 0);
     setForm((prev) => ({
       ...prev,
-      gstRate: num(cpoDetail.gstRate, prev.gstRate),
-      isInterState: Boolean(cpoDetail.isInterState ?? prev.isInterState),
-      freight: num(cpoDetail.freight, prev.freight),
-      freightTaxApplicable: Boolean(cpoDetail.freightTaxApplicable ?? prev.freightTaxApplicable),
-      packingForwarding: num(cpoDetail.packingForwarding, prev.packingForwarding),
-      packingTaxApplicable: Boolean(cpoDetail.packingTaxApplicable ?? prev.packingTaxApplicable),
-      insurance: num(cpoDetail.insurance, prev.insurance),
-      insuranceTaxApplicable: Boolean(cpoDetail.insuranceTaxApplicable ?? prev.insuranceTaxApplicable),
-      otherCharges: num(cpoDetail.otherCharges, prev.otherCharges),
-      otherChargesTaxApplicable: Boolean(cpoDetail.otherChargesTaxApplicable ?? prev.otherChargesTaxApplicable),
+      gstRate: Number(cpoDetail.gstRate ?? 18),
+      isInterState: Boolean(cpoDetail.isInterState),
+      freight: num(cpoDetail.freight),
+      freightTaxApplicable: Boolean(cpoDetail.freightTaxApplicable),
+      packingForwarding: num(cpoDetail.packingForwarding),
+      packingTaxApplicable: Boolean(cpoDetail.packingTaxApplicable),
+      insurance: num(cpoDetail.insurance),
+      insuranceTaxApplicable: Boolean(cpoDetail.insuranceTaxApplicable),
+      otherCharges: num(cpoDetail.otherCharges),
+      otherChargesTaxApplicable: Boolean(cpoDetail.otherChargesTaxApplicable),
       otherChargesDescription: prev.otherChargesDescription || cpoDetail.otherChargesDescription || "",
-      testingCharges: num(cpoDetail.testingCharges, prev.testingCharges),
-      testingTaxApplicable: Boolean(cpoDetail.testingTaxApplicable ?? prev.testingTaxApplicable),
-      tpiCharges: num(cpoDetail.tpiCharges, prev.tpiCharges),
-      tpiTaxApplicable: Boolean(cpoDetail.tpiTaxApplicable ?? prev.tpiTaxApplicable),
+      testingCharges: num(cpoDetail.testingCharges),
+      testingTaxApplicable: Boolean(cpoDetail.testingTaxApplicable),
+      tpiCharges: num(cpoDetail.tpiCharges),
+      tpiTaxApplicable: Boolean(cpoDetail.tpiTaxApplicable),
       // Keep a date the user already typed.
       committedDeliveryDate:
         prev.committedDeliveryDate ||
@@ -411,62 +421,53 @@ function CreatePOAcceptanceContent() {
   const contactsByDept = (dept: string) =>
     contacts.filter((c) => c.department === dept);
 
-  /** Compute PO totals from CPO items + current charge form fields */
+  /** GST applies when: INR currency, OR international but domestic delivery */
+  const gstApplies = cpoCurrency === "INR" || cpoIsDomesticDelivery;
+
+  /**
+   * Totals worked as the client PO works them: GST on the material value plus
+   * only the charges ticked Taxable, every charge in the total, rounded to the
+   * rupee. Charges go in the client PO route's order so the sums match it.
+   */
   const totals = useMemo(
     () =>
-      computePOTotals({
-        items: cpoItems.map((i) => ({
-          qty: Number(i.qtyOrdered),
-          unitRate: Number(i.unitRate),
-        })),
-        currency: (cpoCurrency ?? "INR") as "INR" | "USD",
-        isInternational: cpoCurrency === "USD",
-        isDomesticDelivery: Boolean(cpoIsDomesticDelivery),
-        gstRate: Number(form.gstRate ?? 0),
-        isInterState: Boolean(form.isInterState),
-        charges: {
-          freight: Number(form.freight ?? 0),
-          packing: Number(form.packingForwarding ?? 0),
-          insurance: Number(form.insurance ?? 0),
-          other: Number(form.otherCharges ?? 0),
-          testing: Number(form.testingCharges ?? 0),
-          tpi: Number(form.tpiCharges ?? 0),
-        },
+      cpoTotals({
+        subtotal: cpoItems.reduce((sum, i) => sum + i.qtyOrdered * i.unitRate, 0),
+        charges: [
+          { amount: form.freight, taxApplicable: form.freightTaxApplicable },
+          { amount: form.tpiCharges, taxApplicable: form.tpiTaxApplicable },
+          { amount: form.testingCharges, taxApplicable: form.testingTaxApplicable },
+          { amount: form.packingForwarding, taxApplicable: form.packingTaxApplicable },
+          { amount: form.insurance, taxApplicable: form.insuranceTaxApplicable },
+          { amount: form.otherCharges, taxApplicable: form.otherChargesTaxApplicable },
+        ],
+        gstRate: gstApplies ? form.gstRate : 0,
+        isInterState: form.isInterState,
       }),
     [
       cpoItems,
-      cpoCurrency,
-      cpoIsDomesticDelivery,
+      gstApplies,
       form.gstRate,
       form.isInterState,
       form.freight,
-      form.packingForwarding,
-      form.insurance,
-      form.otherCharges,
-      form.testingCharges,
+      form.freightTaxApplicable,
       form.tpiCharges,
+      form.tpiTaxApplicable,
+      form.testingCharges,
+      form.testingTaxApplicable,
+      form.packingForwarding,
+      form.packingTaxApplicable,
+      form.insurance,
+      form.insuranceTaxApplicable,
+      form.otherCharges,
+      form.otherChargesTaxApplicable,
     ]
   );
 
   /** Sync computed totals into form so they're included in the submit payload */
   useEffect(() => {
-    const grandTotalRaw = totals.taxableAmount + totals.cgst + totals.sgst + totals.igst;
-    const roundOff = +(Math.round(grandTotalRaw) - grandTotalRaw).toFixed(2);
-    setForm((prev) => ({
-      ...prev,
-      subtotal: totals.subtotal,
-      additionalChargesTotal: totals.additionalChargesTotal,
-      taxableAmount: totals.taxableAmount,
-      cgst: totals.cgst,
-      sgst: totals.sgst,
-      igst: totals.igst,
-      roundOff,
-      grandTotal: totals.grandTotal,
-    }));
+    setForm((prev) => ({ ...prev, ...totals }));
   }, [totals]);
-
-  /** GST applies when: INR currency, OR international but domestic delivery */
-  const gstApplies = cpoCurrency === "INR" || cpoIsDomesticDelivery;
 
   /** Step 1 is valid when CPO + both required dates are filled */
   const step1Valid =
@@ -594,9 +595,12 @@ function CreatePOAcceptanceContent() {
                       <div className="text-xs text-muted-foreground">Order Value</div>
                       <div className="text-sm font-medium">
                         {selectedCPO.currency === "INR" ? "₹" : selectedCPO.currency}{" "}
-                        {selectedCPO.grandTotal?.toLocaleString("en-IN", {
-                          minimumFractionDigits: 2,
-                        }) || "-"}
+                        {selectedCPO.grandTotal != null
+                          ? Number(selectedCPO.grandTotal).toLocaleString("en-IN", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })
+                          : "-"}
                       </div>
                     </div>
                     <div>
@@ -949,7 +953,14 @@ function CreatePOAcceptanceContent() {
                         {cpoItems.map((item) => (
                           <tr key={item.id} className="border-t">
                             <td className="px-3 py-2 text-muted-foreground">{item.sNo}</td>
-                            <td className="px-3 py-2">{item.description || "—"}</td>
+                            <td className="px-3 py-2">
+                              {item.description || "—"}
+                              {item.itemDescription && (
+                                <div className="text-xs text-muted-foreground whitespace-pre-line">
+                                  {item.itemDescription}
+                                </div>
+                              )}
+                            </td>
                             <td className="px-3 py-2 text-right">{item.qtyOrdered.toLocaleString("en-IN")}</td>
                             <td className="px-3 py-2 text-right">
                               {cpoCurrency === "INR" ? "₹" : cpoCurrency}{" "}

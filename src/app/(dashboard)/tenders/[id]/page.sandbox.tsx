@@ -93,6 +93,7 @@ interface Tender {
   customer: { id: string; name: string; city: string | null } | null;
   createdBy: { name: string } | null;
   items: TenderItem[];
+  terms?: { id: string; termName: string; termValue: string; isIncluded: boolean }[];
   documents: TenderDocument[];
   createdAt: string;
   updatedAt: string;
@@ -666,6 +667,25 @@ export default function TenderDetailPage({
           )}
         </CardContent>
       </Card>
+
+      {/* The tender's terms; a quotation raised from it starts with them. */}
+      {tender.terms?.some((t) => t.isIncluded) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Terms &amp; Conditions</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1.5">
+            {tender.terms
+              .filter((t) => t.isIncluded)
+              .map((t) => (
+                <div key={t.id} className="grid grid-cols-[180px_1fr] gap-3 text-sm">
+                  <span className="font-medium">{t.termName}</span>
+                  <span className="text-muted-foreground whitespace-pre-wrap">{t.termValue}</span>
+                </div>
+              ))}
+          </CardContent>
+        </Card>
+      )}
 
       {((tender.quotations && tender.quotations.length > 0) || (tender.salesOrders && tender.salesOrders.length > 0)) && (
         <Card>

@@ -15,8 +15,9 @@ export async function GET(
     const quotation = await prisma.quotation.findUnique({
       where: { id, deletedAt: null },
       include: {
-        customer: { select: { id: true, name: true, contactPerson: true, currency: true, state: true, gstNo: true } },
+        customer: { select: { id: true, name: true, contactPerson: true, currency: true, state: true, gstNo: true, customerType: true } },
         company: { select: { regState: true } },
+        buyer: { select: { buyerName: true, email: true, mobile: true, telephone: true } },
         paymentTerms: { select: { name: true } },
         deliveryTerms: { select: { name: true } },
         // The offer terms, which a client PO copies and edits for the order.
@@ -54,7 +55,12 @@ export async function GET(
       return {
         id: item.id,
         sNo: item.sNo,
+        // The client's own serial for the line, as the quotation printed it.
+        slNo: item.slNo,
         product: item.product,
+        // A non-standard line's own description (its product is often just
+        // "Non-Standard Item").
+        itemDescription: item.itemDescription,
         material: item.material,
         additionalSpec: item.additionalSpec,
         sizeLabel: item.sizeLabel,
@@ -86,6 +92,15 @@ export async function GET(
         id: quotation.id,
         quotationNo: quotation.quotationNo,
         customer: quotation.customer,
+        // The customer's buyer the quotation was addressed to; phone as the
+        // quotation prints it (mobile, else telephone).
+        buyer: quotation.buyer
+          ? {
+              name: quotation.buyer.buyerName,
+              email: quotation.buyer.email,
+              phone: quotation.buyer.mobile || quotation.buyer.telephone || null,
+            }
+          : null,
         currency: quotation.currency,
         paymentTerms: quotation.paymentTerms?.name || null,
         deliveryTerms: quotation.deliveryTerms?.name || null,

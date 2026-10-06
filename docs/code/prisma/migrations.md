@@ -1,6 +1,6 @@
 # prisma/migrations/
 
-> 30 hand-written SQL migrations. **`prisma migrate dev` does not work on this
+> 40 hand-written SQL migrations. **`prisma migrate dev` does not work on this
 > host** — read this before adding one.
 
 ## Why they are hand-written
@@ -45,6 +45,8 @@ Naming: `YYYYMMDDHHMMSS_snake_case_description`.
 
 | Migration | What and why |
 |---|---|
+| `20261006110000_processing_testing_and_line_descriptions` | `OrderProcessingItem.labTestingBy` / `labTestingAgencyId` (FK to `InspectionAgencyMaster`, ON DELETE SET NULL): who does a line's lab testing, in-house or a TPI agency. Also `ClientPOItem.itemDescription` and `SalesOrderItem.itemDescription` (TEXT): a non-standard line's own description. All nullable, so additive. Applied 2026-10-06 together with the sandbox twins, then a parity check. |
+| `20261006100000_tender_terms` | New `TenderTerm` table — a tender's own terms (started from the Offer Terms list or the customer's defaults, copied into a quotation raised from the tender), cascade on tender delete. Additive. The sandbox copy `sbx_TenderTerm` was created in the same run, so the sandbox login never sees the table missing. |
 | `20261005094000_client_po_terms` | New `ClientPOTerm` table — a client PO's own terms (copied from the quotation's offer terms at registration, then edited), cascade on client PO delete. Additive. |
 | `20261005093000_cpo_other_charge_and_address_text` | `ClientPurchaseOrder.otherChargesDescription` / `billingAddressText` / `dispatchAddressText` and `POAcceptance.otherChargesDescription`, all nullable. What the "Others" charge is, and typed one-off addresses. Additive. |
 | `20261005092000_tender_soft_delete` | `Tender.deletedAt` DATETIME(3) NULL — tenders soft-delete like quotations. Additive. |

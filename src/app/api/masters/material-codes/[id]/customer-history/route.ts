@@ -24,7 +24,8 @@ export async function GET(
     const lastQuoteItem = await prisma.quotationItem.findFirst({
       where: {
         materialCodeId,
-        quotation: { customerId },
+        // A soft-deleted quotation's price is not history.
+        quotation: { customerId, deletedAt: null },
       },
       orderBy: { quotation: { quotationDate: "desc" } },
       include: {

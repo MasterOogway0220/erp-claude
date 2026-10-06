@@ -27,9 +27,15 @@ the two letters identical.
 
 ## How it works
 
-Straight field mapping, with three decisions:
+Straight field mapping, with these decisions:
 
 - Decimal columns become numbers (`Number(...)`); null totals stay null.
+- A line's `product` is its `itemDescription` (trimmed) when it has one, else
+  its `product`. A non-standard line — one quoted as free text rather than
+  picked from the product catalogue — has the product "Non-Standard Item", and
+  the description the user typed is the item. Before 6 Oct 2026 the letter
+  printed just "Non-Standard Item" for such lines. Both letters take it from
+  here, so the PDF and the email agree.
 - `terms` are the client PO's own terms (copied from the quotation and edited
   at registration), only the ticked ones.
 - `ourContact` is `createdBy`: the person who issued the letter follows the
@@ -48,6 +54,10 @@ delivery date. See `src/lib/pdf/po-acceptance-template.ts.md`.
 
 `createdById` is required on `POAcceptance`, so `ourContact` is always
 present for a real row; the templates still handle it missing.
+
+A multi-line description keeps its line breaks in the PDF (react-pdf honours
+`\n`). The HTML email copy does not convert `\n` to `<br>`, so there the lines
+run together on one line.
 
 ## Related
 

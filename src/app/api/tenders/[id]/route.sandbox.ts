@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 import { tenderItemRows } from "@/lib/tenders/items";
+import { tenderTermRows } from "@/lib/quotations/terms";
 import { softDeleteData } from "@/lib/soft-delete";
 
 export async function GET(
@@ -21,6 +22,7 @@ export async function GET(
         customer: { select: { id: true, name: true, city: true } },
         createdBy: { select: { name: true } },
         items: { orderBy: { sNo: "asc" } },
+        terms: { orderBy: { termNo: "asc" } },
         documents: {
           orderBy: { uploadedAt: "desc" },
           include: { uploadedBy: { select: { name: true } } },
@@ -113,14 +115,22 @@ export async function PATCH(
     if (body.status) updateData.status = body.status;
 
     // `items` (when sent) replaces every BOQ line — the edit screen sends the
-    // whole grid. Callback-form transaction: the sandbox router rejects the
-    // array form for every user.
+    // whole grid. `terms` likewise; the detail page's status-only PATCH sends
+    // neither, so it leaves both alone. Callback-form transaction: the sandbox
+    // router rejects the array form for every user.
     const updated = await prisma.$transaction(async (tx) => {
       if (Array.isArray(body.items)) {
         await tx.tenderItem.deleteMany({ where: { tenderId: id } });
         const rows = tenderItemRows(body.items);
         if (rows.length) {
           await tx.tenderItem.createMany({ data: rows.map((r) => ({ ...r, tenderId: id })) });
+        }
+      }
+      if (Array.isArray(body.terms)) {
+        await tx.tenderTerm.deleteMany({ where: { tenderId: id } });
+        const termRows = tenderTermRows(body.terms);
+        if (termRows.length) {
+          await tx.tenderTerm.createMany({ data: termRows.map((r) => ({ ...r, tenderId: id })) });
         }
       }
       return tx.tender.update({ where: { id }, data: updateData });

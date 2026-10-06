@@ -21,8 +21,8 @@ Operates on `clientPurchaseOrder`, `salesOrder`.
 
 ## What is carried across
 
-Beyond the commercial fields, the sales order inherits three things that used to
-be lost at this boundary:
+Beyond the commercial fields (the unit, `uom`, among them), the sales order
+inherits four things that used to be lost at this boundary:
 
 - `poSlNo` / `poItemCode` per line — the client's own line number and item
   code, so Order Processing does not ask for them a second time.
@@ -30,6 +30,11 @@ be lost at this boundary:
   The column existed but nothing ever wrote it.
 - `dispatchAddressId` and `deliverySchedule` — the ship-to site and the written
   delivery period.
+- `itemDescription` per line (from 6 Oct 2026) — a non-standard line's own
+  text; its product reads only "Non-Standard Item". Copied from
+  `ClientPOItem.itemDescription`, so it is null for a client PO line without
+  one, including every line saved by the legacy client PO route, which never
+  writes it.
 
 ## Gotchas
 

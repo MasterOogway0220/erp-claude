@@ -22,6 +22,17 @@ Operates on `salesOrder`, `salesOrderItem`, `orderProcessingItem`.
   client's own line number and item code, registered on the client PO and copied
   onto the SO. The form pre-fills from them; they used to be typed a second time
   here, and the two copies could silently disagree.
+- **GET** returns each line's `itemDescription`: a non-standard line's own
+  description, whose `product` reads only "Non-Standard Item".
+- **POST** replies with the saved row in the GET's shape — `ndtTests` and
+  `requiredLabTests` parsed to arrays — plus `appliedToCount`. The screen
+  keeps the reply as the item's record. Until 6 Oct 2026 the reply carried
+  the stored JSON text, the screen read that as no tests, and its next save
+  wrote them as NULL.
+- **POST** writes `labTestingBy` (`INHOUSE` / `TPI_AGENCY`: who carries out
+  the lab testing, separate from `tpiType`, who inspects) and
+  `labTestingAgencyId`, which is stored only with `TPI_AGENCY` so a line
+  switched to in-house drops its agency.
 - **POST** accepts `salesOrderItemIds` alongside `salesOrderItemId`: one save
   can write the same requirement set to several lines. On a 30-line order where
   every line shares an inspection regime, filling the form 30 times was the
@@ -39,7 +50,8 @@ Operates on `salesOrder`, `salesOrderItem`, `orderProcessingItem`.
   (`src/lib/quality/witness-percent.ts`): the columns are Int, and the live
   MySQL runs in non-strict mode, so 12.5 was silently stored as 12.
 - The PO references are **not** copied to the other targets — they are that
-  line's own client references. Everything else is.
+  line's own client references. Everything else is, the lab-testing fields
+  included.
 - Gated by `checkAccess("salesOrder", "read")`, `checkAccess("salesOrder", "write")`. **Authentication only** — role enforcement is disabled app-wide.
 - **Not company-scoped.** Either catalogue data (deliberately global) or scoped via a parent record — verify which before changing.
 
@@ -62,10 +74,15 @@ Operates on `salesOrder`, `salesOrderItem`, `orderProcessingItem`.
 `src/lib/sandbox/preview.ts.md`. Going live: replace this file with the
 `.sandbox` copy and delete both copies; then delete this section.
 
+The 6 Oct 2026 changes (the reply shape, the lab-testing fields,
+`itemDescription`) are in the `.sandbox` copy only.
+
 ## Related
 
 - `src/components/order-wizard/ProcessStep.tsx` — the only caller.
 - `src/lib/business-logic/technical-requirements.ts` — supplies the array
   parser this route reads `ndtTests` / `requiredLabTests` with.
+- Migration `20261006110000_processing_testing_and_line_descriptions` —
+  `labTestingBy`, `labTestingAgencyId`, `SalesOrderItem.itemDescription`.
 - `src/lib/rbac.ts`, `src/lib/prisma.ts`
 - [Module overview](../../README.md)

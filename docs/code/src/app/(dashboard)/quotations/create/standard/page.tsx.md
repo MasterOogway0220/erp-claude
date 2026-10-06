@@ -91,6 +91,18 @@ a quotation and pressing Save must be a no-op.** The pieces:
 - The tender prefill effect is create-only (`editId` guard) so a URL carrying
   both `tenderId` and `editId` cannot race the populate and replace saved
   items.
+- A quotation raised from a tender that has its own Terms & Conditions
+  (`TenderTerm`, from 6 Oct 2026) starts with them, not with the customer's
+  or template defaults. The prefill stores them in `tenderTermsRef`. The
+  terms loader then re-applies them on every reload, because the prefill
+  itself sets the customer, and the customer's type flips the market type,
+  and each change re-runs the loader. Stale customer-terms responses are
+  dropped once tender terms are present. Rows keep `isCustom`;
+  `isHeadingEditable` follows it, as on every saved quotation. The tender's
+  Currency row is set to this quotation's currency on every application
+  (`followCurrencyTerm`). A USD tender quoted in INR therefore does not print
+  "Currency : USD ($)", nor write it back into the customer's default terms
+  on save. A tender without terms changes nothing.
 - The unit rate round-trips as a **string**, and `""` is not `"0"`. The
   populate effect uses `item.unitRate == null ? "" : String(item.unitRate)`,
   so a line deliberately quoted at zero reopens showing `0` rather than blank.

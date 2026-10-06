@@ -79,7 +79,9 @@ notes) are not copied onto it.
   survives load, a sole buyer is not auto-assigned to a buyer-less quotation,
   zero-terms quotations do not gain template terms, dates go through
   `toDateInput`, terms loads go through `fillBlankCurrencyTerm`, and the
-  tender prefill is create-only.
+  tender prefill is create-only. A quotation raised from a tender that has its
+  own Terms & Conditions starts with them (`tenderTermsRef`), as on the
+  standard page, with the Currency row set to this quotation's currency.
 - **Regret and zero rates** work exactly as on the standard page (see its doc
   for the full explanation): a **Regret** checkbox sits beside each row's Unit
   Rate for lines the company declines to quote, ticking it clears the rate and

@@ -4,6 +4,7 @@ import { checkAccess, companyFilter } from "@/lib/rbac";
 import { generateDocumentNumber } from "@/lib/document-numbering";
 import { createAuditLog } from "@/lib/audit";
 import { tenderItemRows } from "@/lib/tenders/items";
+import { tenderTermRows } from "@/lib/quotations/terms";
 
 export async function GET(request: NextRequest) {
   try {
@@ -68,7 +69,7 @@ export async function POST(request: NextRequest) {
       tenderSource, tenderRef, organization, projectName, location,
       closingDate, openingDate, estimatedValue, currency,
       emdRequired, emdAmount, emdType,
-      customerId, remarks, items,
+      customerId, remarks, items, terms,
     } = body;
 
     const tenderNo = await generateDocumentNumber("TENDER", companyId);
@@ -94,6 +95,7 @@ export async function POST(request: NextRequest) {
         status: "IDENTIFIED",
         createdById: session.user.id,
         items: items && items.length > 0 ? { create: tenderItemRows(items) } : undefined,
+        terms: { create: tenderTermRows(terms) },
       },
       include: {
         items: { orderBy: { sNo: "asc" } },

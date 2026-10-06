@@ -23,6 +23,18 @@ Operates on `quotation`.
   raise a PO against it and it must not appear as orderable balance.
 - A soft-deleted quotation (`deletedAt` set) is treated as not found.
 - The `quotation` block includes `terms` (`termName`, `termValue`, `isIncluded`, in `termNo` order): the client PO create screen copies them as the order's editable terms and reads Payment / Delivery from them.
+- The `quotation` block also carries `buyer`: `{ name, email, phone }` for the
+  quotation's buyer (a `BuyerMaster` row — the customer's purchasing contact
+  the offer was addressed to), or `null` when none was picked. `phone` is the
+  buyer's mobile, else telephone, the same choice the quotation PDF prints as
+  "Contact no.". Added on 6 Oct 2026 for the client PO create screen.
+- `quotation.customer` includes `customerType` (DOMESTIC / INTERNATIONAL).
+  The client PO create screen uses it to decide whether GST applies, the same
+  key the client PO POST uses (6 Oct 2026).
+- Each item also carries `slNo` — the client's own serial for the line as the
+  quotation printed it ("3", "1a"; `sNo` stays our positional number) — and
+  `itemDescription`, a non-standard line's own text, whose `product` is often
+  just "Non-Standard Item". Both are null when not set.
 
 ## Gotchas
 

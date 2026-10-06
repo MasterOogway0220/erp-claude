@@ -19,6 +19,13 @@ Operates on `salesOrder`, `customerMaster`, `invoice`.
 - Allocates a document number with `generateDocumentNumber()` (per company, per financial year).
 - Writes inside `$transaction`. Item updates follow the delete-and-recreate pattern, so **a field the caller omits is lost**.
 - Writes an audit row. Audit failures are swallowed and never block the operation.
+- **POST** stores each line's `uom` (its unit: `Nos` for pieces, `Mtr` for
+  metres of pipe) and `itemDescription` (a non-standard line's own text; its
+  product reads only "Non-Standard Item") when the caller sends them. The
+  sandbox Create Order screen does, from 6 Oct 2026. A caller that does not —
+  the legacy screen every other user gets — stores null in both, exactly the
+  rows it stored before. This route is shared by both screens, not gated, so
+  the change is additive only.
 
 ## Gotchas
 

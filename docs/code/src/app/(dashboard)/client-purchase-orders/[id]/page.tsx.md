@@ -22,9 +22,23 @@ registration. Each item shows its qty remark under the ordered quantity, which
 is the record of why a line was part-ordered.
 
 Billing and Dispatch Address rows show the typed address when one was entered,
-else the saved site; the Dispatch row is new (it was never shown). A
-**Terms & Conditions** card lists the order's ticked terms. The "Others" charge
-shows what it is for when a description was given.
+else the saved site; the Dispatch row is new (it was never shown). A typed
+address keeps the line breaks it was entered with. A saved site prints as one
+line: name (or label), address line 1, city, state, `PIN:`, `GST:` — before
+6 Oct 2026 it left out the street and the PIN code, so a site read as little
+more than a city. A **Terms & Conditions** card lists the order's ticked terms.
+The "Others" charge shows what it is for when a description was given.
+
+A line's `itemDescription` — a non-standard line's own text, whose product is
+often just "Non-Standard Item" — shows under the product, line breaks kept,
+both in the items table and in the Start Order Processing dialog.
+
+**Start Order Processing** (which creates the sales order) shows only once the
+P.O. acceptance — our formal acknowledgement of the client's order, raised
+from `/po-acceptance` — is ISSUED, the order is not cancelled and no live sales
+order exists. `/api/sales-orders/from-cpo` refuses any earlier attempt with
+"PO Acceptance must be issued before creating a Sales Order"; the button used
+to show on every non-cancelled order and fail with that error when clicked.
 
 The items table shows the client's own **Sl. No. (PO)** and **Item Code (PO)**
 next to our S.No. They are captured at registration and carried to the sales

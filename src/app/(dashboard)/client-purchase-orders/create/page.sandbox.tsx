@@ -22,6 +22,12 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Table,
   TableBody,
   TableCell,
@@ -47,6 +53,7 @@ import { termValue } from "@/lib/quotations/terms";
 import { format } from "date-fns";
 import { deliveryScheduleToDate } from "@/lib/dates";
 import { PageLoading } from "@/components/shared/page-loading";
+import { formatDispatchAddress, type DispatchAddress } from "@/components/shared/dispatch-address-select";
 
 interface Customer {
   id: string;
@@ -65,19 +72,44 @@ interface Quotation {
   customer: { name: string };
 }
 
-interface DispatchAddress {
-  id: string;
-  label: string | null;
-  companyName: string | null;
-  addressLine1: string | null;
-  city: string | null;
-  state: string | null;
-  pincode: string | null;
-  contactPerson: string | null;
-  contactNumber: string | null;
-  gstNo: string | null;
-  isDefault: boolean;
-}
+const INDIAN_STATES = [
+  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
+  "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
+  "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram",
+  "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu",
+  "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal",
+  "Andaman and Nicobar Islands", "Chandigarh", "Dadra and Nagar Haveli and Daman and Diu",
+  "Delhi", "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry",
+];
+
+// The "+ Add new address" form: the fields of the customer master's
+// dispatch-address dialog (src/components/shared/dispatch-address-select.tsx).
+const EMPTY_ADDRESS = {
+  label: "",
+  companyName: "",
+  addressLine1: "",
+  addressLine2: "",
+  city: "",
+  state: "",
+  pincode: "",
+  contactPerson: "",
+  contactNumber: "",
+  gstNo: "",
+};
+
+// Select value of "+ Add new address" in the Billing / Dispatch Address selects.
+const NEW_ADDRESS = "NEW";
+
+// A saved site as text for the "Enter manually" box: everything its preview
+// shows, so editing starts from the whole address including the GSTIN.
+const siteText = (a: DispatchAddress) =>
+  [
+    formatDispatchAddress(a),
+    [a.contactPerson, a.contactNumber].filter(Boolean).join(" · "),
+    a.gstNo ? `GST: ${a.gstNo}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
 
 // A contact held on the customer master. The order-specific contact is picked
 // from here so the acceptance letter and every follow-up have an email and a
@@ -110,6 +142,12 @@ interface BalanceItem {
   amount: number;
   delivery: string | null;
   remark: string | null;
+  // The client's enquiry Sl. No. for the line, shown as "Enq. …" so two
+  // quoted lines with the same product and size can be told apart.
+  slNo: string | null;
+  // A non-standard line's real text (its product only reads "Non-Standard
+  // Item"); shown under the product and carried onto the order line.
+  itemDescription: string | null;
   previousOrders: { cpoNo: string; qtyOrdered: number }[];
 }
 
@@ -125,6 +163,9 @@ interface SelectedItem extends BalanceItem {
   // Set only on a copied row. `id` stays the quotation item id (it is sent as
   // quotationItemId), so a copy needs its own identity for keys and lookups.
   rowKey?: string;
+  // Set once the user types this line's CDD. Until then the CDD is derived
+  // from the quoted delivery period (itemCdd) and follows the P.O. date.
+  cddTyped?: boolean;
 }
 
 interface QuotationMeta {
@@ -137,6 +178,7 @@ interface QuotationMeta {
     currency: string;
     state: string | null;
     gstNo: string | null;
+    customerType?: string | null;
   };
   currency: string;
   paymentTerms: string | null;
@@ -146,6 +188,8 @@ interface QuotationMeta {
   clientState: string | null;
   taxRate: number | null;
   terms?: OrderTerm[];
+  // The quotation's buyer (BuyerMaster): the order contact when present.
+  buyer: { name: string; email: string | null; phone: string | null } | null;
 }
 
 // One row of the order's terms, copied from the quotation and edited here.
@@ -238,6 +282,10 @@ function CreateClientPOPage() {
   const [terms, setTerms] = useState<OrderTerm[]>([]);
   const [billingManual, setBillingManual] = useState(false);
   const [dispatchManual, setDispatchManual] = useState(false);
+  // Which select opened the "+ Add new address" dialog (null = closed).
+  const [newAddressFor, setNewAddressFor] = useState<"billing" | "dispatch" | null>(null);
+  const [newAddress, setNewAddress] = useState(EMPTY_ADDRESS);
+  const [savingAddress, setSavingAddress] = useState(false);
 
   const [charges, setCharges] = useState<AdditionalCharge[]>(
     DEFAULT_CHARGES.map((c) => ({ ...c }))
@@ -313,19 +361,32 @@ function CreateClientPOPage() {
     };
   }, [formData.customerId]);
 
-  // CDD = P.O. date + the delivery schedule, until the user overrides it.
+  // A line's CDD: the date typed on it, else its quoted delivery period
+  // ("6 To 8 Weeks") counted from the P.O. date, so it follows that date.
+  const itemCdd = (item: SelectedItem) =>
+    item.cddTyped
+      ? item.itemDeliveryDate
+      : deliveryScheduleToDate(item.delivery, formData.clientPoDate);
+  // The latest CDD among the lines being ordered.
+  const latestItemCdd = balanceItems
+    .filter((item) => item.selected && item.qtyOrdered > 0)
+    .map(itemCdd)
+    .reduce((latest, d) => (d > latest ? d : latest), "");
+
+  // CDD = P.O. date + the delivery schedule, until the user overrides it. A
+  // schedule with no period falls back to the latest line CDD, so the order
+  // still carries a CDD for the P.O. acceptance to pick up.
   useEffect(() => {
     if (cddEdited) return;
-    const derived = deliveryScheduleToDate(
-      formData.deliverySchedule,
-      formData.clientPoDate
-    );
+    const derived =
+      deliveryScheduleToDate(formData.deliverySchedule, formData.clientPoDate) ||
+      latestItemCdd;
     setFormData((prev) =>
       prev.committedDeliveryDate === derived
         ? prev
         : { ...prev, committedDeliveryDate: derived }
     );
-  }, [formData.deliverySchedule, formData.clientPoDate, cddEdited]);
+  }, [formData.deliverySchedule, formData.clientPoDate, cddEdited, latestItemCdd]);
 
   const fetchQuotationBalance = useCallback(
     async (quotationId: string) => {
@@ -377,19 +438,27 @@ function CreateClientPOPage() {
         // Auto-fill form fields from quotation
         const derivedCurrency: string = q.currency || "INR";
         const derivedIntl = derivedCurrency !== "INR";
-        setIsInternational(derivedIntl);
+        // GST and the Domestic Delivery switch follow the customer type, which
+        // is what the POST route saves as the order currency, not the
+        // quotation's currency (the two can differ).
+        setIsInternational(q.customer?.customerType === "INTERNATIONAL");
         setFormData((prev) => ({
           ...prev,
           customerId: q.customer.id,
           quotationId,
-          contactPerson: prev.contactPerson || q.customer.contactPerson || "",
+          // The contact and terms below are set from each quotation picked,
+          // not kept from an earlier pick, so switching quotation replaces
+          // them. The contact is the quotation's buyer when it has one.
+          contactPerson: q.buyer?.name || q.customer.contactPerson || "",
+          contactEmail: q.buyer?.email || "",
+          contactPhone: q.buyer?.phone || "",
           // The quotation records these as its "Payment" / "Delivery" offer-term
           // rows; the structured fields are a fallback that is never filled.
-          paymentTerms: prev.paymentTerms || q.paymentTerms || termValue(q.terms, "payment"),
-          deliveryTerms: prev.deliveryTerms || q.deliveryTerms || termValue(q.terms, "delivery"),
+          paymentTerms: q.paymentTerms || termValue(q.terms, "payment"),
+          deliveryTerms: q.deliveryTerms || termValue(q.terms, "delivery"),
           // The quoted delivery period is the starting point for the schedule
           // the client actually ordered against.
-          deliverySchedule: prev.deliverySchedule || q.deliveryPeriod || "",
+          deliverySchedule: q.deliveryPeriod || "",
           currency: derivedCurrency,
           exchangeRate: derivedIntl ? prev.exchangeRate : null,
         }));
@@ -466,6 +535,63 @@ function CreateClientPOPage() {
     // Try to auto-fill client state from customer
     if (selectedCustomer?.state) {
       setClientState(selectedCustomer.state);
+    }
+  };
+
+  // A pick in the Billing / Dispatch Address select (and its Edit button).
+  // "MANUAL" while a saved site is picked starts the box from that site: an
+  // edit for this P.O. only, the saved site is not changed. NEW_ADDRESS opens
+  // the add-address dialog and leaves the current pick alone.
+  const pickAddress = (kind: "billing" | "dispatch", value: string) => {
+    if (value === NEW_ADDRESS) {
+      setNewAddress(EMPTY_ADDRESS);
+      setNewAddressFor(kind);
+      return;
+    }
+    const idKey = kind === "billing" ? "billingAddressId" : "dispatchAddressId";
+    const textKey = kind === "billing" ? "billingAddressText" : "dispatchAddressText";
+    if (kind === "billing") setBillingManual(value === "MANUAL");
+    else setDispatchManual(value === "MANUAL");
+    setFormData((prev) => {
+      const picked = dispatchAddresses.find((a) => a.id === prev[idKey]);
+      return {
+        ...prev,
+        [idKey]: value === "NONE" || value === "MANUAL" ? "" : value,
+        [textKey]: value === "MANUAL" && picked ? siteText(picked) : prev[textKey],
+      };
+    });
+  };
+
+  // "+ Add new address": saved to the customer (the same list as the master's
+  // dispatch addresses) so later orders can pick it too, then picked in the
+  // select that opened the dialog.
+  const saveNewAddress = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newAddressFor) return;
+    if (!newAddress.addressLine1.trim() && !newAddress.city.trim()) {
+      toast.error("Please enter at least address or city");
+      return;
+    }
+    setSavingAddress(true);
+    try {
+      const res = await fetch(`/api/masters/customers/${formData.customerId}/dispatch-addresses`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newAddress),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to save address");
+      }
+      const saved: DispatchAddress = await res.json();
+      setDispatchAddresses((prev) => [...prev, saved]);
+      pickAddress(newAddressFor, saved.id);
+      setNewAddressFor(null);
+      toast.success("Address saved to the customer");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to save address");
+    } finally {
+      setSavingAddress(false);
     }
   };
 
@@ -589,7 +715,7 @@ function CreateClientPOPage() {
     const isInterState = !!(supplierState && clientState && supplierState.toLowerCase() !== clientState.toLowerCase());
 
     // GST applies only for INR orders, or USD orders with domestic delivery
-    const gstApplies = formData.currency === "INR" || formData.isDomesticDelivery;
+    const gstApplies = !isInternational || formData.isDomesticDelivery;
 
     let cgst = 0;
     let sgst = 0;
@@ -620,7 +746,7 @@ function CreateClientPOPage() {
       roundOff,
       grandTotal,
     };
-  }, [balanceItems, charges, gstRate, supplierState, clientState, formData.currency, formData.isDomesticDelivery]);
+  }, [balanceItems, charges, gstRate, supplierState, clientState, formData.currency, formData.isDomesticDelivery, isInternational]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -728,6 +854,7 @@ function CreateClientPOPage() {
           items: selectedItems.map((item) => ({
             quotationItemId: item.id,
             product: item.product,
+            itemDescription: item.itemDescription,
             material: item.material,
             additionalSpec: item.additionalSpec,
             sizeLabel: item.sizeLabel,
@@ -741,7 +868,7 @@ function CreateClientPOPage() {
             rateRemark: item.rateRemark || null,
             qtyRemark: item.qtyRemark || null,
             amount: item.qtyOrdered * item.negotiatedRate,
-            deliveryDate: item.itemDeliveryDate || null,
+            deliveryDate: itemCdd(item) || null,
             remark: item.remark,
             poSlNo: item.poSlNo || null,
             poItemCode: item.poItemCode || null,
@@ -992,7 +1119,8 @@ function CreateClientPOPage() {
                 />
                 {!cddEdited && formData.committedDeliveryDate && (
                   <p className="text-xs text-muted-foreground">
-                    Calculated from the delivery schedule — edit to override.
+                    Calculated from the delivery schedule, or else the latest
+                    item CDD — edit to override.
                   </p>
                 )}
               </div>
@@ -1036,13 +1164,7 @@ function CreateClientPOPage() {
               <Label>Billing Address</Label>
               <Select
                 value={billingManual ? "MANUAL" : formData.billingAddressId || "NONE"}
-                onValueChange={(value) => {
-                  setBillingManual(value === "MANUAL");
-                  setFormData((prev) => ({
-                    ...prev,
-                    billingAddressId: value === "NONE" || value === "MANUAL" ? "" : value,
-                  }));
-                }}
+                onValueChange={(value) => pickAddress("billing", value)}
                 disabled={!formData.customerId || dispatchAddressesLoading}
               >
                 <SelectTrigger>
@@ -1064,6 +1186,7 @@ function CreateClientPOPage() {
                         "Unnamed address"}
                     </SelectItem>
                   ))}
+                  <SelectItem value={NEW_ADDRESS}>+ Add new address</SelectItem>
                 </SelectContent>
               </Select>
               {billingManual && (
@@ -1076,6 +1199,16 @@ function CreateClientPOPage() {
               )}
               {selectedBillingAddress && (
                 <div className="rounded-md border bg-muted/40 px-3 py-2 text-xs text-muted-foreground space-y-0.5">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="float-right h-6 px-2 text-xs"
+                    title="Edit for this P.O. only — the saved address is not changed"
+                    onClick={() => pickAddress("billing", "MANUAL")}
+                  >
+                    Edit
+                  </Button>
                   {selectedBillingAddress.companyName && (
                     <div className="font-medium text-foreground">
                       {selectedBillingAddress.companyName}
@@ -1143,13 +1276,7 @@ function CreateClientPOPage() {
               <Label>Dispatch Address</Label>
               <Select
                 value={dispatchManual ? "MANUAL" : formData.dispatchAddressId || "NONE"}
-                onValueChange={(value) => {
-                  setDispatchManual(value === "MANUAL");
-                  setFormData((prev) => ({
-                    ...prev,
-                    dispatchAddressId: value === "NONE" || value === "MANUAL" ? "" : value,
-                  }));
-                }}
+                onValueChange={(value) => pickAddress("dispatch", value)}
                 disabled={!formData.customerId || dispatchAddressesLoading}
               >
                 <SelectTrigger>
@@ -1173,12 +1300,13 @@ function CreateClientPOPage() {
                         "Unnamed address"}
                     </SelectItem>
                   ))}
+                  <SelectItem value={NEW_ADDRESS}>+ Add new address</SelectItem>
                 </SelectContent>
               </Select>
               {formData.customerId && !dispatchAddressesLoading && dispatchAddresses.length === 0 && (
                 <p className="text-xs text-muted-foreground">
-                  No saved sites for this customer — add them under Masters →
-                  Customer / Vendor → Dispatch Addresses.
+                  No saved sites for this customer — save one with
+                  &quot;+ Add new address&quot;.
                 </p>
               )}
               {dispatchManual && (
@@ -1191,6 +1319,16 @@ function CreateClientPOPage() {
               )}
               {selectedDispatchAddress && (
                 <div className="rounded-md border bg-muted/40 px-3 py-2 text-xs text-muted-foreground space-y-0.5">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="float-right h-6 px-2 text-xs"
+                    title="Edit for this P.O. only — the saved address is not changed"
+                    onClick={() => pickAddress("dispatch", "MANUAL")}
+                  >
+                    Edit
+                  </Button>
                   {selectedDispatchAddress.companyName && (
                     <div className="font-medium text-foreground">
                       {selectedDispatchAddress.companyName}
@@ -1327,7 +1465,7 @@ function CreateClientPOPage() {
                         <TableHead className="w-[180px]">Rate Remark</TableHead>
                         <TableHead className="text-right">Amount</TableHead>
                         <TableHead>Item CDD</TableHead>
-                        <TableHead className="w-[70px]" />
+                        <TableHead className="w-[70px]">Split</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1351,7 +1489,19 @@ function CreateClientPOPage() {
                                 onCheckedChange={() => toggleItemSelection(index)}
                               />
                             </TableCell>
-                            <TableCell>{item.sNo}</TableCell>
+                            <TableCell>
+                              {item.sNo}
+                              {item.rowKey && (
+                                <Badge variant="outline" className="ml-1 px-1 py-0 text-[10px]">
+                                  split
+                                </Badge>
+                              )}
+                              {item.slNo && (
+                                <div className="text-[10px] text-muted-foreground">
+                                  Enq. {item.slNo}
+                                </div>
+                              )}
+                            </TableCell>
                             <TableCell>
                               <Input
                                 value={item.poSlNo ?? ""}
@@ -1381,6 +1531,11 @@ function CreateClientPOPage() {
                                 <div className="font-medium text-sm">
                                   {item.product || "-"}
                                 </div>
+                                {item.itemDescription && (
+                                  <div className="max-w-xs whitespace-pre-line text-xs text-muted-foreground">
+                                    {item.itemDescription}
+                                  </div>
+                                )}
                                 {item.material && (
                                   <div className="text-xs text-muted-foreground">
                                     {item.material}
@@ -1509,13 +1664,12 @@ function CreateClientPOPage() {
                                 <Input
                                   type="date"
                                   className="w-[140px]"
-                                  value={item.itemDeliveryDate}
+                                  value={itemCdd(item)}
                                   onChange={(e) => {
                                     const updated = [...balanceItems];
-                                    updated[index] = { ...updated[index], itemDeliveryDate: e.target.value };
+                                    updated[index] = { ...updated[index], itemDeliveryDate: e.target.value, cddTyped: true };
                                     setBalanceItems(updated);
                                   }}
-                                  min={formData.committedDeliveryDate || undefined}
                                 />
                               )}
                             </TableCell>
@@ -1673,6 +1827,9 @@ function CreateClientPOPage() {
                             <TableCell>{item.sNo}</TableCell>
                             <TableCell>
                               <div className="font-medium text-sm">{item.product || "-"}</div>
+                              {item.itemDescription && (
+                                <div className="max-w-xs whitespace-pre-line text-xs text-muted-foreground">{item.itemDescription}</div>
+                              )}
                               {item.material && (
                                 <div className="text-xs text-muted-foreground">{item.material}{item.additionalSpec ? ` / ${item.additionalSpec}` : ""}</div>
                               )}
@@ -2090,6 +2247,153 @@ function CreateClientPOPage() {
           </Button>
         </div>
       </form>
+
+      {/* "+ Add new address" from the Billing or Dispatch Address select.
+          Kept outside the P.O. <form>: React bubbles a portal's submit event
+          to its React parents, so inside it saving the address would also
+          submit the P.O. */}
+      <Dialog
+        open={newAddressFor !== null}
+        onOpenChange={(open) => {
+          if (!open) setNewAddressFor(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+          <form onSubmit={saveNewAddress}>
+            <DialogHeader>
+              <DialogTitle>New Customer Address</DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="na-label">Address Label</Label>
+                  <Input
+                    id="na-label"
+                    value={newAddress.label}
+                    onChange={(e) => setNewAddress({ ...newAddress, label: e.target.value })}
+                    placeholder='e.g. "Head Office", "Site - Pune"'
+                    maxLength={191}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="na-company">Company Name</Label>
+                  <Input
+                    id="na-company"
+                    value={newAddress.companyName}
+                    onChange={(e) => setNewAddress({ ...newAddress, companyName: e.target.value })}
+                    placeholder="If different from the client name"
+                    maxLength={191}
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="na-addr1">Address Line 1</Label>
+                <Input
+                  id="na-addr1"
+                  value={newAddress.addressLine1}
+                  onChange={(e) => setNewAddress({ ...newAddress, addressLine1: e.target.value })}
+                  placeholder="Street address, building, floor"
+                  maxLength={191}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="na-addr2">Address Line 2</Label>
+                <Input
+                  id="na-addr2"
+                  value={newAddress.addressLine2}
+                  onChange={(e) => setNewAddress({ ...newAddress, addressLine2: e.target.value })}
+                  placeholder="Area, landmark (optional)"
+                  maxLength={191}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="na-city">City</Label>
+                  <Input
+                    id="na-city"
+                    value={newAddress.city}
+                    onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
+                    placeholder="City"
+                    maxLength={191}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="na-state">State</Label>
+                  <Select
+                    value={newAddress.state}
+                    onValueChange={(v) => setNewAddress({ ...newAddress, state: v })}
+                  >
+                    <SelectTrigger id="na-state">
+                      <SelectValue placeholder="Select state" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {INDIAN_STATES.map((s) => (
+                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="na-pin">PIN Code</Label>
+                  <Input
+                    id="na-pin"
+                    value={newAddress.pincode}
+                    onChange={(e) => setNewAddress({ ...newAddress, pincode: e.target.value })}
+                    placeholder="6-digit PIN"
+                    maxLength={6}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="na-contact">Contact Person</Label>
+                  <Input
+                    id="na-contact"
+                    value={newAddress.contactPerson}
+                    onChange={(e) => setNewAddress({ ...newAddress, contactPerson: e.target.value })}
+                    placeholder="Contact name"
+                    maxLength={191}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="na-phone">Contact Number</Label>
+                  <Input
+                    id="na-phone"
+                    value={newAddress.contactNumber}
+                    onChange={(e) => setNewAddress({ ...newAddress, contactNumber: e.target.value })}
+                    placeholder="+91 XXXXX XXXXX"
+                    maxLength={191}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="na-gst">GST No.</Label>
+                  <Input
+                    id="na-gst"
+                    value={newAddress.gstNo}
+                    onChange={(e) => setNewAddress({ ...newAddress, gstNo: e.target.value.toUpperCase() })}
+                    placeholder="e.g. 27AAAAA0000A1Z5"
+                    maxLength={15}
+                    className="font-mono"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t">
+              <Button type="button" variant="outline" onClick={() => setNewAddressFor(null)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={savingAddress}>
+                {savingAddress ? "Saving..." : "Save & Select Address"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

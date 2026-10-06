@@ -27,7 +27,11 @@ The POST body carries, besides the commercial fields:
 customer master default), `billingAddressId` (bill-to party, separate from
 `dispatchAddressId`; null = the customer master address),
 `clientPoDocumentPath` / `clientPoDocumentName` (the client's signed P.O. copy),
-and per item `qtyRemark` (why the ordered qty differs from the quoted balance).
+and per item `qtyRemark` (why the ordered qty differs from the quoted balance)
+and `itemDescription` (a non-standard line's own text, copied from the
+quotation line because its `product` is often just "Non-Standard Item";
+trimmed, blank stored as null). GET `/api/client-purchase-orders/[id]` returns
+it with the other line fields.
 
 Quantity and rate are still validated against the quotation balance here — the
 screen's checks are convenience, this is the boundary.
@@ -44,6 +48,20 @@ The six additional-charge tax flags are read as `freightTaxApplicable`,
 `tpiTaxApplicable`, `testingTaxApplicable`, `packingTaxApplicable`,
 `insuranceTaxApplicable`, `otherChargesTaxApplicable`; a missing flag counts as
 false. The screen takes these names from `src/lib/calc/cpo-charges.ts`.
+
+GST comes from `cpoGst` in the same file: IGST at the full rate when the
+supplier and client states differ, CGST + SGST at half the rate each when they
+match. **An export carries no GST** — export of goods is zero-rated. When the
+order's currency is not INR and `isDomesticDelivery` is false, `gstRate`,
+`cgst`, `sgst` and `igst` are stored as null whatever rate the request sent.
+The currency here is the one this route stores — set from the customer type
+(INTERNATIONAL → USD, otherwise INR), not taken from the request. An overseas
+client delivered to an Indian site (`isDomesticDelivery` true) is a domestic
+supply and is charged GST. Until 6 Oct 2026 the POST added GST whenever the
+rate was above 0, while the create screen showed "GST not applicable" for an
+export yet still posted its GST rate field (18% by default) — so the stored
+grand total would have carried GST the screen never showed. No non-INR client
+PO existed in live data at the time.
 
 POST also stores `otherChargesDescription` (what "Others" is), `terms` (the
 order's terms list, numbered and trimmed by `orderTermRows` from

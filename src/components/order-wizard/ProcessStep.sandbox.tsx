@@ -51,6 +51,9 @@ interface SalesOrderItem {
   poSlNo: string | null;
   poItemCode: string | null;
   product: string;
+  // A non-standard line's own description; its product reads only
+  // "Non-Standard Item", so this is shown in its place when set.
+  itemDescription: string | null;
   material: string;
   // Inherited read-only from the quotation. Shown next to the compliance spec
   // the processor adds, so the two are not confused.
@@ -76,6 +79,8 @@ interface ProcessingRecord {
   tpiRequired: boolean;
   tpiType: string | null;
   labTestingRequired: boolean;
+  labTestingBy: string | null;
+  labTestingAgencyId: string | null;
   pmiRequired: boolean;
   pmiType: string | null;
   ndtRequired: boolean;
@@ -109,6 +114,10 @@ interface ProcessingData {
   tpiRequired: boolean;
   tpiType: string;
   labTestingRequired: boolean;
+  // Who carries out the lab testing: "INHOUSE", or "TPI_AGENCY" with the
+  // agency below. Separate from tpiType, which says who inspects.
+  labTestingBy: string;
+  labTestingAgencyId: string;
   pmiRequired: boolean;
   pmiType: string;
   ndtRequired: boolean;
@@ -137,6 +146,8 @@ const defaultFormData: ProcessingData = {
   tpiRequired: false,
   tpiType: "",
   labTestingRequired: false,
+  labTestingBy: "",
+  labTestingAgencyId: "",
   pmiRequired: false,
   pmiType: "",
   ndtRequired: false,
@@ -181,6 +192,8 @@ function recordToFormData(
     tpiRequired: rec.tpiRequired,
     tpiType: rec.tpiType ?? "",
     labTestingRequired: rec.labTestingRequired,
+    labTestingBy: rec.labTestingBy ?? "",
+    labTestingAgencyId: rec.labTestingAgencyId ?? "",
     pmiRequired: rec.pmiRequired,
     pmiType: rec.pmiType ?? "",
     ndtRequired: rec.ndtRequired,
@@ -261,6 +274,10 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
   // form for an item is built inside callbacks that captured an older `qap`,
   // and a stale read there would silently drop the default.
   const orderInspectionTypeRef = useRef("");
+  // The QAP card is read once. fetchData runs again after every multi-item
+  // save, mark-processed, reopen and allotment, and re-reading the QAP there
+  // threw away card edits not yet saved with "Save QAP".
+  const qapLoadedRef = useRef(false);
 
   /**
    * Build the form for an item: its saved configuration if it has one, else the
@@ -314,8 +331,10 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
       });
       setItems(data.items);
       signalCompletion(data.items);
-      const qapRes = await fetch(`/api/sales-orders/${id}/qap`);
-      if (qapRes.ok) {
+      const qapRes = qapLoadedRef.current
+        ? null
+        : await fetch(`/api/sales-orders/${id}/qap`);
+      if (qapRes?.ok) {
         const q = await qapRes.json();
         orderInspectionTypeRef.current = q.orderInspectionType ?? "";
         setQap({
@@ -329,6 +348,7 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
             : "",
           qapRemarks: q.qapRemarks ?? "",
         });
+        qapLoadedRef.current = true;
       }
       return data.items as ProcessingItem[];
     } catch {
@@ -449,8 +469,12 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
   // Save draft
   // -----------------------------------------------------------------------
 
-  const saveDraft = useCallback(async () => {
-    if (!items[currentIndex]) return;
+  // Resolves to the reloaded item list when the save also wrote other items,
+  // else null. Navigation builds the next form from it: the `items` it
+  // captured predate the save, so an "apply to other items" copy opened from
+  // them showed the old values and the next save overwrote the copy.
+  const saveDraft = useCallback(async (): Promise<ProcessingItem[] | null | false> => {
+    if (!items[currentIndex]) return null;
     setSaving(true);
     try {
       const res = await fetch(`/api/sales-orders/${id}/processing`, {
@@ -479,11 +503,16 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
       });
       if (applyTargets.length > 0) {
         // Several rows changed — reload so their step indicators are honest.
-        await fetchData();
+        const reloaded = await fetchData();
+        // Copies saved but not reloaded: `items` still holds their old
+        // values. Keep the targets and stay put (false); the next save
+        // re-applies the copy and reloads.
+        if (!reloaded) return false;
         setApplyTargets([]);
         toast.success(
           `Draft saved and applied to ${applyTargets.length} other item(s)`
         );
+        return reloaded;
       } else {
         toast.success("Draft saved");
       }
@@ -494,6 +523,7 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
     } finally {
       setSaving(false);
     }
+    return null;
   }, [id, currentIndex, items, formData, applyTargets, fetchData]);
 
   // -----------------------------------------------------------------------
@@ -589,13 +619,15 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
 
   const goNext = useCallback(async () => {
     if (currentIndex >= items.length - 1) return;
-    await saveDraft();
+    const saved = await saveDraft();
+    if (saved === false) return;
+    const list = saved ?? items;
     setApplyTargets([]);
     const next = currentIndex + 1;
     setCurrentIndex(next);
-    setFormData(formFor(items[next]));
-    if (items[next]?.processing?.status === "PROCESSED") {
-      fetchAllotmentAnalysis(items[next].salesOrderItem.id);
+    setFormData(formFor(list[next]));
+    if (list[next]?.processing?.status === "PROCESSED") {
+      fetchAllotmentAnalysis(list[next].salesOrderItem.id);
     } else {
       setAllotmentAnalysis(null);
       setAllotmentConfirmed(false);
@@ -605,13 +637,15 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
 
   const goPrev = useCallback(async () => {
     if (currentIndex <= 0) return;
-    await saveDraft();
+    const saved = await saveDraft();
+    if (saved === false) return;
+    const list = saved ?? items;
     setApplyTargets([]);
     const prev = currentIndex - 1;
     setCurrentIndex(prev);
-    setFormData(formFor(items[prev]));
-    if (items[prev]?.processing?.status === "PROCESSED") {
-      fetchAllotmentAnalysis(items[prev].salesOrderItem.id);
+    setFormData(formFor(list[prev]));
+    if (list[prev]?.processing?.status === "PROCESSED") {
+      fetchAllotmentAnalysis(list[prev].salesOrderItem.id);
     } else {
       setAllotmentAnalysis(null);
       setAllotmentConfirmed(false);
@@ -622,12 +656,14 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
   const jumpToItem = useCallback(
     async (index: number) => {
       if (index === currentIndex) return;
-      await saveDraft();
+      const saved = await saveDraft();
+      if (saved === false) return;
+      const list = saved ?? items;
       setApplyTargets([]);
       setCurrentIndex(index);
-      setFormData(formFor(items[index]));
-      if (items[index]?.processing?.status === "PROCESSED") {
-        fetchAllotmentAnalysis(items[index].salesOrderItem.id);
+      setFormData(formFor(list[index]));
+      if (list[index]?.processing?.status === "PROCESSED") {
+        fetchAllotmentAnalysis(list[index].salesOrderItem.id);
       } else {
         setAllotmentAnalysis(null);
         setAllotmentConfirmed(false);
@@ -893,7 +929,7 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
             <span className="font-medium">#{soItem.sNo}</span>
             <Separator orientation="vertical" className="h-4" />
             <span>
-              {soItem.product} {soItem.material}
+              {soItem.itemDescription || soItem.product} {soItem.material}
             </span>
             <Separator orientation="vertical" className="h-4" />
             <span>{soItem.sizeLabel}</span>
@@ -1190,20 +1226,90 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
                     )}
                   </div>
 
-                  {/* Lab Testing */}
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      id="labTestingRequired"
-                      checked={formData.labTestingRequired}
-                      onCheckedChange={(checked) =>
-                        setFormData({
-                          ...formData,
-                          labTestingRequired: !!checked,
-                        })
-                      }
-                      disabled={isProcessed}
-                    />
-                    <Label htmlFor="labTestingRequired">Lab Testing</Label>
+                  {/* Lab Testing — and who carries it out: in-house, or a TPI
+                      agency. Not the same question as the inspection type. */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="labTestingRequired"
+                        checked={formData.labTestingRequired}
+                        onCheckedChange={(checked) =>
+                          setFormData({
+                            ...formData,
+                            labTestingRequired: !!checked,
+                            // No testing, so nobody to carry it out.
+                            labTestingBy: checked ? formData.labTestingBy : "",
+                            labTestingAgencyId: checked
+                              ? formData.labTestingAgencyId
+                              : "",
+                            // The Lab Tests card hides here; tests left behind
+                            // would still print on the PR / vendor PO.
+                            ...(!checked && formData.tpiType !== "TPI_CLIENT_QA"
+                              ? { requiredLabTests: [], otherLabTests: "" }
+                              : {}),
+                          })
+                        }
+                        disabled={isProcessed}
+                      />
+                      <Label htmlFor="labTestingRequired">Lab Testing</Label>
+                    </div>
+                    {formData.labTestingRequired && (
+                      <div className="ml-6 grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <Label className="text-xs" htmlFor="labTestingBy">
+                            Testing by
+                          </Label>
+                          <Select
+                            value={formData.labTestingBy}
+                            onValueChange={(v) =>
+                              setFormData({
+                                ...formData,
+                                labTestingBy: v,
+                                // In-house testing has no agency.
+                                labTestingAgencyId:
+                                  v === "TPI_AGENCY"
+                                    ? formData.labTestingAgencyId
+                                    : "",
+                              })
+                            }
+                            disabled={isProcessed}
+                          >
+                            <SelectTrigger id="labTestingBy" className="h-8 text-sm">
+                              <SelectValue placeholder="Select" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="INHOUSE">In-house</SelectItem>
+                              <SelectItem value="TPI_AGENCY">TPI agency</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        {formData.labTestingBy === "TPI_AGENCY" && (
+                          <div className="space-y-1">
+                            <Label className="text-xs" htmlFor="labTestingAgencyId">
+                              Testing agency
+                            </Label>
+                            <Select
+                              value={formData.labTestingAgencyId}
+                              onValueChange={(v) =>
+                                setFormData({ ...formData, labTestingAgencyId: v })
+                              }
+                              disabled={isProcessed}
+                            >
+                              <SelectTrigger id="labTestingAgencyId" className="h-8 text-sm">
+                                <SelectValue placeholder="Select agency" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {agencies.map((a) => (
+                                  <SelectItem key={a.id} value={a.id}>
+                                    {a.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* PMI Inspection */}
@@ -1380,9 +1486,26 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
                       </div>
                     )}
                   </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
 
-                  <Separator />
-
+          {/* Section: Lab Tests (conditional). Shown whenever lab testing is
+              ticked, in-house or by an agency, and for TPI / client QA as
+              before; it used to live in the TPI card above, so an in-house
+              item could not name its tests or get a lab letter. */}
+          {(formData.labTestingRequired ||
+            formData.tpiType === "TPI_CLIENT_QA") && (
+            <>
+              <Separator />
+              <Card className="bg-muted/30 border-muted">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm uppercase tracking-wide">
+                    Lab Tests
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   {/* Lab Tests Required */}
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">

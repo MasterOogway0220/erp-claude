@@ -22,6 +22,10 @@ how its history is found even when the ID was typed rather than picked.
 
 - Gated by `checkAccess("quotation", "read")`. **Authentication only** — role enforcement is disabled app-wide.
 - Company-scoped with `companyFilter(companyId)`.
+- The "last quoted" lookup skips soft-deleted quotations (`deletedAt: null`,
+  added 6 Oct 2026). Otherwise a deleted draft's rate would still show as the
+  last price. Today only the sandbox login soft-deletes; other users'
+  deletes still remove the row.
 
 ## Gotchas
 

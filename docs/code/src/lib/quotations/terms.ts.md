@@ -1,6 +1,7 @@
 # src/lib/quotations/terms.ts
 
-> Reads one of a quotation's offer-term rows ("Payment", "Delivery") by name.
+> Reads one of a quotation's offer-term rows ("Payment", "Delivery") by name,
+> and shapes edited term lists (client PO, tender) into rows to store.
 
 ## Why this exists
 
@@ -19,14 +20,30 @@ a client PO) as rows to store: `{ termNo, termName, termValue, isIncluded }`,
 numbered 1..n, trimmed, rows with neither name nor value dropped, `isIncluded`
 defaulting to true.
 
+`tenderTermRows(terms)` — the same for a tender's terms, plus `isCustom`
+(defaulting to false). The tender form works like the quotation forms:
+template rows can only be ticked and given a value, rows added with "Add Custom
+Term" can also be renamed and removed. Without the flag a saved custom row
+would come back as a fixed one, on the tender and on a quotation raised from
+it. Kept separate from `orderTermRows` because `ClientPOTerm` has no such
+column and Prisma rejects an unknown field.
+
 `termValue(terms, name)` — the trimmed `termValue` of the first row whose
-`termName`, lower-cased and trimmed, starts with `name` lower-cased; `""` when
-there is none or `terms` is missing.
+`termName`, lower-cased and trimmed, starts with `name` lower-cased, with any
+leading colons and whitespace removed; `""` when there is none or `terms` is
+missing.
 
 ## How it works
 
 "Starts with" so that "Payment" also finds a row named "Payment Terms". First
 match wins.
+
+The leading colon is stripped because some stored values begin with one (live,
+6 Oct 2026: ": 50% advance against Proforma Invoice & Balance prior to
+dispatch"), and before that date an order's Payment Terms pre-filled with the
+": " included. Only the start is touched — "Ex-works: Mumbai" keeps its colon —
+and a value that is nothing but colons and spaces becomes `""`, so Create
+Order's `termValue(...) || previous value` fallback still applies.
 
 ## Domain notes
 
@@ -40,7 +57,8 @@ A renamed template row ("Terms of payment") would no longer match.
 
 ## Related
 
-- `src/app/(dashboard)/sales/create/page.tsx` — pre-fills Payment Terms and Delivery Schedule.
-- `src/app/(dashboard)/client-purchase-orders/create/page.tsx` — pre-fills Payment / Delivery Terms.
+- `src/app/(dashboard)/sales/create/page.tsx` — pre-fills Payment Terms and Delivery Schedule (`termValue`, sandbox copy only).
+- `src/app/(dashboard)/client-purchase-orders/create/page.tsx` — pre-fills Payment / Delivery Terms (`termValue`, sandbox copy only).
 - `src/app/api/client-purchase-orders/route.ts` — stores the order's terms via `orderTermRows`.
+- `src/app/api/tenders/route.ts`, `src/app/api/tenders/[id]/route.ts` — store a tender's terms via `tenderTermRows`.
 - Test: `src/lib/quotations/terms.test.ts`.

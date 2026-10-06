@@ -5,6 +5,7 @@ import { generateDocumentNumber } from "@/lib/document-numbering";
 import { checkAccess, companyFilter } from "@/lib/rbac";
 import { getRate } from "@/lib/fx/get-rate";
 import { firstOverBalance } from "@/lib/calc/cpo-balance";
+import { cpoGst } from "@/lib/calc/cpo-charges";
 import { orderTermRows } from "@/lib/quotations/terms";
 
 export async function GET(request: NextRequest) {
@@ -281,24 +282,16 @@ export async function POST(request: NextRequest) {
 
     const taxableAmount = subtotal + taxableCharges;
 
-    // GST calculation based on state comparison
-    const parsedGstRate = gstRate ? parseFloat(gstRate) : 0;
+    // GST calculation based on state comparison. None on an export (non-INR,
+    // not delivered in India), whatever rate the form sent.
     const isInterState = !!(supplierState && clientState && supplierState.toLowerCase() !== clientState.toLowerCase());
-
-    let cgst = 0;
-    let sgst = 0;
-    let igst = 0;
-
-    if (parsedGstRate > 0) {
-      if (isInterState) {
-        // Inter-state: full IGST
-        igst = (taxableAmount * parsedGstRate) / 100;
-      } else {
-        // Intra-state: split into CGST + SGST
-        cgst = (taxableAmount * parsedGstRate) / 200;
-        sgst = (taxableAmount * parsedGstRate) / 200;
-      }
-    }
+    const { gstRate: parsedGstRate, cgst, sgst, igst } = cpoGst({
+      taxableAmount,
+      gstRate: gstRate ? parseFloat(gstRate) : 0,
+      currency: resolvedCurrency,
+      isDomesticDelivery: Boolean(body.isDomesticDelivery),
+      isInterState,
+    });
 
     // Non-taxable charges still add to total
     const nonTaxableCharges = additionalChargesTotal - taxableCharges;
@@ -380,6 +373,7 @@ export async function POST(request: NextRequest) {
             hsnCode: item.hsnCode || null,
             poSlNo: item.poSlNo ?? null,
             poItemCode: item.poItemCode ?? null,
+            itemDescription: item.itemDescription?.trim() || null,
             rateRemark: item.rateRemark ?? null,
             qtyRemark: item.qtyRemark ?? null,
             qtyOrdered: parseFloat(item.qtyOrdered),

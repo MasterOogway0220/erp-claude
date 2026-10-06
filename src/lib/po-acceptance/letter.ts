@@ -120,7 +120,9 @@ export function letterData(
         sNo: item.sNo,
         poSlNo: item.poSlNo,
         poItemCode: item.poItemCode,
-        product: item.product,
+        // A non-standard line's product reads only "Non-Standard Item"; its
+        // own description is what the client ordered.
+        product: item.itemDescription?.trim() || item.product,
         material: item.material,
         additionalSpec: item.additionalSpec,
         sizeLabel: item.sizeLabel,

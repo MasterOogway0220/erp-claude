@@ -1,7 +1,7 @@
 # src/lib/quotations/currency.ts
 
-> Two small guards that stop a quotation's currency from being silently
-> rewritten or printed blank.
+> Small guards that stop a document's currency from being silently
+> rewritten, printed blank, or contradicted by its Currency term.
 
 ## Why this exists
 
@@ -31,10 +31,19 @@ resolveUpdateCurrency("", "USD")         // "USD" — blank means "not told", ke
 resolveUpdateCurrency(undefined, null)   // "INR" — nothing known anywhere
 fillBlankCurrencyTerm(terms, "USD")      // fills only *blank* terms whose name
                                          // contains "currency" (case-insensitive)
+followCurrencyTerm(terms, "EUR")         // "USD ($)" -> "EUR"; blank -> "EUR"
+followCurrencyTerm(terms, "USD")         // "USD ($)" kept as written
 ```
 
 `fillBlankCurrencyTerm` never overwrites a non-empty value — a value someone
 typed by hand ("USD ($)", "US Dollar") is theirs.
+
+`followCurrencyTerm` is for terms that came from somewhere else, where a
+non-blank value can name the wrong currency: a tender's terms copied onto a
+quotation (tender in USD, quotation in INR), or the Export defaults, whose
+Currency row reads "USD ($)", loaded for a EUR tender. It replaces any value
+that does not already start with the document's code and keeps one that does
+("USD ($)" stays on a USD document).
 
 ## How it works
 
@@ -71,6 +80,9 @@ the customer sees.
 - `src/app/api/quotations/[id]/route.ts` — PUT uses `resolveUpdateCurrency`.
 - `src/app/(dashboard)/quotations/create/standard/page.tsx`,
   `src/app/(dashboard)/quotations/create/nonstandard/page.tsx` — both wrap
-  their term loads in `fillBlankCurrencyTerm`.
+  their term loads in `fillBlankCurrencyTerm`, and a tender's terms in
+  `followCurrencyTerm`.
+- `src/app/(dashboard)/tenders/create/page.tsx` — the tender form's default
+  terms and its currency switch go through `followCurrencyTerm`.
 - `src/lib/quotations/deal-owner.ts` — the same "absent ≠ clear" rule on a
   different field; these files are siblings in spirit.

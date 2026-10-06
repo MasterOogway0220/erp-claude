@@ -352,6 +352,7 @@ model InspectionAgencyMaster {
   labLetters           LabLetter[]
   qualityRequirements  QualityRequirement[]
   salesOrdersQap       SalesOrder[]         @relation("SOQapTpiAgency")
+  labTestingItems      OrderProcessingItem[] @relation("OPILabTestingAgency")
 }
 
 model QualityRequirement {
@@ -1034,6 +1035,9 @@ model SalesOrderItem {
   // for the client's own line number and item code a second time.
   poSlNo                   String?
   poItemCode               String?
+  // A non-standard line's own description, carried from the quotation or
+  // the client PO line; product reads only "Non-Standard Item".
+  itemDescription          String?                   @db.Text
   allotmentSource          String?
   allotmentStatus          String                    @default("PENDING")
   procurementAllocQty      Decimal?                  @db.Decimal(10, 3)
@@ -1198,6 +1202,9 @@ model ClientPOItem {
   remark                String?
   poSlNo                String?
   poItemCode            String?
+  // A non-standard line's own description (its product reads only
+  // "Non-Standard Item"), copied from QuotationItem.itemDescription.
+  itemDescription       String?             @db.Text
   rateRemark            String?             @db.Text
   // Why the ordered qty differs from the quoted qty. Mandatory on the
   // registration screen whenever qtyOrdered != the quotation balance, so a
@@ -2705,6 +2712,10 @@ model OrderProcessingItem {
   tpiRequired          Boolean        @default(false)
   tpiType              String?
   labTestingRequired   Boolean        @default(false)
+  // Who carries out the lab testing: INHOUSE, or TPI_AGENCY with labTestingAgencyId.
+  // Separate from tpiType, which says who does the inspection.
+  labTestingBy         String?
+  labTestingAgencyId   String?
   pmiRequired          Boolean        @default(false)
   pmiType              String?
   ndtRequired          Boolean        @default(false)
@@ -2731,10 +2742,12 @@ model OrderProcessingItem {
   company              CompanyMaster  @relation(fields: [companyId], references: [id])
   processedBy          User?          @relation("OrderProcessedBy", fields: [processedById], references: [id])
   salesOrderItem       SalesOrderItem @relation(fields: [salesOrderItemId], references: [id], onDelete: Cascade)
+  labTestingAgency     InspectionAgencyMaster? @relation("OPILabTestingAgency", fields: [labTestingAgencyId], references: [id])
 
   @@index([salesOrderItemId])
   @@index([companyId])
   @@index([processedById], map: "OrderProcessingItem_processedById_fkey")
+  @@index([labTestingAgencyId])
 }
 
 model WarehouseItemDetail {
@@ -2794,6 +2807,7 @@ model Tender {
   customer       CustomerMaster?  @relation("TenderCustomer", fields: [customerId], references: [id])
   documents      TenderDocument[]
   items          TenderItem[]
+  terms          TenderTerm[]
 
   @@index([companyId])
   @@index([tenderNo])
@@ -2817,6 +2831,24 @@ model TenderItem {
   amount         Decimal? @db.Decimal(14, 2)
   remarks        String?
   tender         Tender   @relation(fields: [tenderId], references: [id], onDelete: Cascade)
+
+  @@index([tenderId])
+}
+
+// The tender's terms and conditions, kept like a quotation's offer terms:
+// started from the Offer Terms list or the customer's defaults, edited on the
+// tender, and copied into a quotation raised from it. termValue stays
+// VARCHAR(191) like QuotationTerm's, so a copied value always fits.
+model TenderTerm {
+  id         String  @id @default(cuid())
+  tenderId   String
+  termNo     Int
+  termName   String
+  termValue  String
+  isIncluded Boolean @default(true)
+  // Added with "Add Custom Term": its name can be edited and it can be removed.
+  isCustom   Boolean @default(false)
+  tender     Tender  @relation(fields: [tenderId], references: [id], onDelete: Cascade)
 
   @@index([tenderId])
 }

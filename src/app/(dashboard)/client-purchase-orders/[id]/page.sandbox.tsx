@@ -107,6 +107,9 @@ interface ClientPODetail {
     poSlNo: string | null;
     poItemCode: string | null;
     product: string | null;
+    // A non-standard line's own description; its product is often just
+    // "Non-Standard Item".
+    itemDescription: string | null;
     material: string | null;
     additionalSpec: string | null;
     sizeLabel: string | null;
@@ -268,7 +271,8 @@ export default function ClientPODetailPage({
             Acceptance: {clientPO.poAcceptance.acceptanceNo} →
           </Button>
         )}
-        {clientPO.status !== "CANCELLED" && !linkedSO && (
+        {/* /api/sales-orders/from-cpo refuses until the acceptance is issued. */}
+        {clientPO.status !== "CANCELLED" && !linkedSO && clientPO.poAcceptance?.status === "ISSUED" && (
           <Button variant="outline" onClick={() => setShowCreateSODialog(true)}>
             Start Order Processing
           </Button>
@@ -317,12 +321,14 @@ export default function ClientPODetailPage({
               <DetailRow
                 label="Billing Address"
                 value={clientPO.billingAddressText || addressLine(clientPO.billingAddress)}
+                multiline
               />
             )}
             {(clientPO.dispatchAddressText || clientPO.dispatchAddress) && (
               <DetailRow
                 label="Dispatch Address"
                 value={clientPO.dispatchAddressText || addressLine(clientPO.dispatchAddress)}
+                multiline
               />
             )}
             {clientPO.clientPoDocumentPath && (
@@ -419,6 +425,11 @@ export default function ClientPODetailPage({
                         <div className="font-medium text-sm">
                           {item.product || "-"}
                         </div>
+                        {item.itemDescription && (
+                          <div className="text-xs text-muted-foreground whitespace-pre-line">
+                            {item.itemDescription}
+                          </div>
+                        )}
                         {item.material && (
                           <div className="text-xs text-muted-foreground">
                             {item.material}
@@ -712,7 +723,12 @@ export default function ClientPODetailPage({
                 {clientPO.items.map((item: any) => (
                   <TableRow key={item.id}>
                     <TableCell>{item.sNo}</TableCell>
-                    <TableCell>{item.product || "-"} {item.material ? `/ ${item.material}` : ""}</TableCell>
+                    <TableCell>
+                      {item.product || "-"} {item.material ? `/ ${item.material}` : ""}
+                      {item.itemDescription && (
+                        <div className="text-xs text-muted-foreground whitespace-pre-line">{item.itemDescription}</div>
+                      )}
+                    </TableCell>
                     <TableCell>{item.sizeLabel || "-"}</TableCell>
                     <TableCell className="text-right">{item.qtyOrdered}</TableCell>
                     <TableCell className="text-right">{item.unitRate?.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</TableCell>
@@ -797,18 +813,21 @@ function DetailRow({
   label,
   value,
   highlight,
+  multiline,
 }: {
   label: string;
   value: string | null | undefined;
   highlight?: boolean;
+  // Keep the line breaks of a typed address.
+  multiline?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between">
-      <span className="text-sm text-muted-foreground">{label}</span>
+    <div className={`flex justify-between ${multiline ? "items-start gap-4" : "items-center"}`}>
+      <span className={`text-sm text-muted-foreground${multiline ? " shrink-0" : ""}`}>{label}</span>
       <span
         className={`text-sm ${
           highlight ? "font-semibold text-primary" : "text-foreground"
-        }`}
+        }${multiline ? " whitespace-pre-line" : ""}`}
       >
         {value || "-"}
       </span>
@@ -816,12 +835,12 @@ function DetailRow({
   );
 }
 
-/** A saved customer site as one line: name, city, state, GSTIN. */
+/** A saved customer site as one line: name, street, city, state, PIN, GSTIN. */
 function addressLine(
-  a: { label: string | null; companyName: string | null; city: string | null; state: string | null; gstNo: string | null } | null
+  a: { label: string | null; companyName: string | null; addressLine1: string | null; city: string | null; state: string | null; pincode: string | null; gstNo: string | null } | null
 ): string {
   if (!a) return "";
-  return [a.companyName || a.label, a.city, a.state, a.gstNo ? `GST: ${a.gstNo}` : null]
+  return [a.companyName || a.label, a.addressLine1, a.city, a.state, a.pincode ? `PIN: ${a.pincode}` : null, a.gstNo ? `GST: ${a.gstNo}` : null]
     .filter(Boolean)
     .join(", ");
 }

@@ -1,7 +1,8 @@
 "use client";
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toDateInput } from "@/lib/dates";
+import { followCurrencyTerm } from "@/lib/quotations/currency";
 import { PageLoading } from "@/components/shared/page-loading";
 import { useCustomers } from "@/hooks/use-masters";
 import { PageHeader } from "@/components/shared/page-header";
@@ -11,9 +12,10 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, Save, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Save, Plus, Trash2, ListChecks, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 
 interface Customer {
@@ -45,6 +47,20 @@ const emptyItem = (): TenderItem => ({
   amount: "",
   remarks: "",
 });
+
+// One Terms & Conditions row, as on the quotation forms: rows from the Offer
+// Terms list (or the customer's defaults) can only be ticked and given a
+// value; isCustom rows ("Add Custom Term") can also be renamed and removed.
+interface TenderTerm {
+  termName: string;
+  termValue: string;
+  isIncluded: boolean;
+  isCustom: boolean;
+}
+
+// A tender has no market-type field: an INR tender takes the Domestic offer
+// terms, any other currency the Export ones.
+const termsTypeFor = (currency: string) => (currency === "INR" ? "DOMESTIC" : "EXPORT");
 
 export default function CreateTenderPageWrapper() {
   return (
@@ -91,6 +107,20 @@ function CreateTenderPage() {
   // Remarks
   const [remarks, setRemarks] = useState("");
 
+  // Terms & Conditions
+  const [terms, setTerms] = useState<TenderTerm[]>([]);
+  const [showTerms, setShowTerms] = useState(false);
+  // "DOMESTIC|<customerId>": the default list the terms came from. Picking
+  // another customer, or moving between INR and another currency, reloads the
+  // defaults, as on the quotation forms. Edit mode sets it from the saved
+  // tender so its own terms are kept.
+  const termsKeyRef = useRef<string | null>(null);
+  // Edit mode: no defaults until the saved tender has been applied.
+  const [editLoaded, setEditLoaded] = useState(!editId);
+  // The currency the Currency term was last set for. The edit load sets it
+  // too, so applying a saved tender's currency does not rewrite its terms.
+  const termCurrencyRef = useRef(currency);
+
   const [saving, setSaving] = useState(false);
 
   // Tenders draw their number from the quotation series, so the quotation
@@ -113,6 +143,7 @@ function CreateTenderPage() {
         setProjectName(t.projectName || "");
         setLocation(t.location || "");
         setEstimatedValue(t.estimatedValue != null ? String(t.estimatedValue) : "");
+        termCurrencyRef.current = t.currency || "INR";
         setCurrency(t.currency || "INR");
         setCustomerId(t.customerId || "");
         setEmdRequired(!!t.emdRequired);
@@ -132,9 +163,69 @@ function CreateTenderPage() {
           remarks: i.remarks || "",
         }));
         setItems(loaded.length ? loaded : [emptyItem()]);
+        const saved: TenderTerm[] = (t.terms || []).map((x: TenderTerm) => ({
+          termName: x.termName,
+          termValue: x.termValue,
+          isIncluded: x.isIncluded,
+          isCustom: x.isCustom,
+        }));
+        // A tender saved before it had terms gets the defaults instead.
+        if (saved.length) {
+          setTerms(saved);
+          termsKeyRef.current = `${termsTypeFor(t.currency || "INR")}|${t.customerId || ""}`;
+        }
+        setEditLoaded(true);
       })
       .catch((e) => toast.error(e.message || "Failed to load tender"));
   }, [editId]);
+
+  // Default terms: the customer's saved list first, else the Offer Terms list
+  // for the market — the same order as the quotation forms.
+  useEffect(() => {
+    if (!editLoaded) return;
+    const type = termsTypeFor(currency);
+    const key = `${type}|${customerId}`;
+    if (termsKeyRef.current === key) return;
+    termsKeyRef.current = key;
+    (async () => {
+      let rows: TenderTerm[] = [];
+      if (customerId) {
+        rows = await fetch(`/api/masters/customers/${customerId}/terms?quotationType=${type}`)
+          .then((r) => (r.ok ? r.json() : null))
+          .then((d) =>
+            (d?.terms ?? []).map((x: { termName: string; termValue: string | null; isIncluded: boolean | null }) => ({
+              termName: x.termName,
+              termValue: x.termValue || "",
+              isIncluded: x.isIncluded ?? true,
+              isCustom: false,
+            }))
+          )
+          .catch(() => []);
+      }
+      if (!rows.length) {
+        const res = await fetch(`/api/offer-term-templates?quotationType=${type}`);
+        const data = res.ok ? await res.json() : null;
+        rows = (data?.templates ?? []).map((x: { termName: string; termDefaultValue: string | null }) => ({
+          termName: x.termName,
+          termValue: x.termDefaultValue || "",
+          isIncluded: true,
+          isCustom: false,
+        }));
+      }
+      // Dropped if the customer changed meanwhile, or the currency moved
+      // between INR and another one. The Currency row takes the latest
+      // currency: the Export defaults say "USD ($)" even on a EUR tender.
+      if (termsKeyRef.current === key) setTerms(followCurrencyTerm(rows, termCurrencyRef.current));
+    })().catch(() => {});
+  }, [editLoaded, currency, customerId]);
+
+  // A currency change that keeps the same list (USD to EUR) reloads nothing,
+  // so the Currency row is rewritten here, as on the quotation forms.
+  useEffect(() => {
+    if (termCurrencyRef.current === currency) return;
+    termCurrencyRef.current = currency;
+    setTerms((prev) => followCurrencyTerm(prev, currency));
+  }, [currency]);
 
   useEffect(() => {
     if (editId) return;
@@ -168,6 +259,18 @@ function CreateTenderPage() {
     setItems((prev) => prev.filter((_, i) => i !== index));
   }
 
+  function updateTerm(index: number, patch: Partial<TenderTerm>) {
+    setTerms((prev) => prev.map((t, i) => (i === index ? { ...t, ...patch } : t)));
+  }
+
+  function addCustomTerm() {
+    setTerms((prev) => [...prev, { termName: "", termValue: "", isIncluded: true, isCustom: true }]);
+  }
+
+  function removeTerm(index: number) {
+    setTerms((prev) => prev.filter((_, i) => i !== index));
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
@@ -199,6 +302,8 @@ function CreateTenderPage() {
             estimatedRate: item.estimatedRate || null,
             remarks: item.remarks || null,
           })),
+        // Always sent, even empty: on edit it replaces the saved list.
+        terms,
       };
 
       const res = await fetch(editId ? `/api/tenders/${editId}` : "/api/tenders", {
@@ -555,6 +660,81 @@ function CreateTenderPage() {
               </Table>
             </div>
           </CardContent>
+        </Card>
+
+        {/* Terms & Conditions — the quotation forms' card. Shown without a
+            customer, since a tender's customer is optional. */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setShowTerms((v) => !v)}
+                className="flex items-center gap-2 text-base font-semibold hover:text-primary transition-colors"
+              >
+                <ListChecks className="h-4 w-4 text-primary" />
+                Terms & Conditions
+                <ChevronDown className={`h-4 w-4 transition-transform ${showTerms ? "rotate-180" : ""}`} />
+                <span className="text-xs text-muted-foreground font-normal ml-1">
+                  ({terms.filter((t) => t.isIncluded).length} included)
+                </span>
+              </button>
+              {showTerms && (
+                <Button type="button" variant="outline" size="sm" onClick={addCustomTerm}>
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Custom Term
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          {showTerms && (
+            <CardContent>
+              <div className="space-y-0.5">
+                {terms.map((term, index) => (
+                  <div key={index} className="flex gap-3 items-start rounded-md py-0.5 px-2 hover:bg-muted/40 transition-colors">
+                    <Checkbox
+                      checked={term.isIncluded}
+                      onCheckedChange={() => updateTerm(index, { isIncluded: !term.isIncluded })}
+                      className="mt-1"
+                    />
+                    <div className="flex-1 grid grid-cols-[180px_1fr] gap-3 items-start">
+                      {term.isCustom ? (
+                        <Input
+                          value={term.termName}
+                          onChange={(e) => updateTerm(index, { termName: e.target.value })}
+                          placeholder="Term name"
+                          maxLength={191}
+                          className={!term.isIncluded ? "opacity-50" : ""}
+                        />
+                      ) : (
+                        <p className={`text-sm font-medium pt-2 ${!term.isIncluded ? "opacity-50" : ""}`}>
+                          {term.termName}
+                        </p>
+                      )}
+                      <Input
+                        value={term.termValue}
+                        onChange={(e) => updateTerm(index, { termValue: e.target.value })}
+                        placeholder="Term value..."
+                        maxLength={191}
+                        className={!term.isIncluded ? "opacity-50" : ""}
+                      />
+                    </div>
+                    {term.isCustom && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeTerm(index)}
+                        className="text-destructive hover:text-destructive mt-1 shrink-0"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          )}
         </Card>
 
         {/* Remarks */}

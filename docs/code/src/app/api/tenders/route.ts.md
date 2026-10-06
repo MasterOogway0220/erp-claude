@@ -18,6 +18,7 @@ Operates on `tender`.
 - Company-scoped with `companyFilter(companyId)`. The list excludes soft-deleted tenders (`deletedAt`).
 - Allocates a document number with `generateDocumentNumber()` (per company, per financial year).
 - POST builds the BOQ lines with `tenderItemRows` (`src/lib/tenders/items.ts`), the same mapping PATCH uses when a tender is edited.
+- POST stores the tender's Terms & Conditions (`TenderTerm`) from `terms` via `tenderTermRows` (`src/lib/quotations/terms.ts`): numbered, trimmed, blank rows dropped, `isCustom` kept. A missing `terms` stores none.
 - Writes an audit row. Audit failures are swallowed and never block the operation.
 
 ## Gotchas

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fillBlankCurrencyTerm, resolveUpdateCurrency } from "./currency";
+import { fillBlankCurrencyTerm, followCurrencyTerm, resolveUpdateCurrency } from "./currency";
 
 describe("resolveUpdateCurrency", () => {
   it("uses the currency the client sent", () => {
@@ -62,6 +62,40 @@ describe("fillBlankCurrencyTerm", () => {
     expect(fillBlankCurrencyTerm(terms, "AED")).toEqual([
       term("Payment", "30 days"),
       term("Currency", "AED"),
+    ]);
+    // input list is not mutated
+    expect(terms[1].termValue).toBe("");
+  });
+});
+
+// Terms copied from another document (a tender's onto a quotation) or loaded
+// for a different currency (Export defaults on a EUR tender) must not print a
+// Currency line that contradicts the header.
+describe("followCurrencyTerm", () => {
+  it("replaces a Currency value that names another currency", () => {
+    expect(followCurrencyTerm([{ termName: "Currency", termValue: "USD ($)" }], "EUR")).toEqual([
+      { termName: "Currency", termValue: "EUR" },
+    ]);
+    expect(followCurrencyTerm([{ termName: "Currency", termValue: "USD ($)" }], "INR")).toEqual([
+      { termName: "Currency", termValue: "INR" },
+    ]);
+  });
+
+  it("keeps a value that already names the currency, as written", () => {
+    expect(followCurrencyTerm([{ termName: "Currency", termValue: "USD ($)" }], "USD")).toEqual([
+      { termName: "Currency", termValue: "USD ($)" },
+    ]);
+    expect(followCurrencyTerm([{ termName: "currency", termValue: " usd " }], "USD")[0].termValue).toBe(" usd ");
+  });
+
+  it("fills a blank and leaves other rows alone", () => {
+    const terms = [
+      { termName: "Price", termValue: "Ex-works" },
+      { termName: "Price Currency", termValue: "" },
+    ];
+    expect(followCurrencyTerm(terms, "INR")).toEqual([
+      { termName: "Price", termValue: "Ex-works" },
+      { termName: "Price Currency", termValue: "INR" },
     ]);
     // input list is not mutated
     expect(terms[1].termValue).toBe("");

@@ -13,11 +13,19 @@ Renders the `/sales/[id]` screen. 409 lines.
 - `"use client"` — runs in the browser.
 - Calls: `/api/sales-orders/${id}`, `/api/sales-orders/${salesOrder.id}`.
 - The header's "Reference Quotation" number links to `/quotations/[id]`.
+- A line's `itemDescription` is shown under its product when set. That is a
+  non-standard line's own text: its product reads only "Non-Standard Item".
+  Order lines carry it from 6 Oct 2026 — the sandbox Create Order screen and
+  `/api/sales-orders/from-cpo` copy it; older lines have none.
 
 ## Gotchas
 
 - Any `Select` needs a non-empty `SelectItem` value; the codebase uses a `"NONE"` sentinel mapped to `""`.
 - Role gating in the UI is cosmetic — the API is the boundary, and its role checks are currently disabled.
+- The Line Items table shows each line's quantity with its own unit (`uom`,
+  kept on order lines since 6 Oct 2026). A line saved before that has no unit
+  and reads "Mtr", which is what the whole column used to say. Reservations
+  are still shown in Mtr for every line (`reservedQtyMtr`).
 
 ## Sandbox preview (temporary, from 5 Oct 2026)
 
