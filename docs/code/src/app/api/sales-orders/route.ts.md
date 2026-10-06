@@ -26,6 +26,10 @@ Operates on `salesOrder`, `customerMaster`, `invoice`.
   the legacy screen every other user gets — stores null in both, exactly the
   rows it stored before. This route is shared by both screens, not gated, so
   the change is additive only.
+- **POST** also stores `quotationItemId` per line when sent: the quoted line
+  a line was taken from (the sandbox Create Order screen sends it for lines
+  filled from a quotation). The order Review step compares each line with it.
+  Null from the legacy screen and for lines added by hand.
 
 ## Gotchas
 

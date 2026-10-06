@@ -16,6 +16,11 @@ Operates on `quotation`, `companyMaster`.
 - Gated by `checkAccess("quotation", "read")`. **Authentication only** — role enforcement is disabled app-wide.
 - **Not company-scoped.** Either catalogue data (deliberately global) or scoped via a parent record — verify which before changing.
 - A soft-deleted quotation (`deletedAt` set) is treated as not found.
+- Offer-term values are passed through `cleanTermValue` before rendering.
+  Some customers' saved terms begin with ": " and the template prints its own
+  colon after the term name, so those printed "Price : : Ex-Godown" (seen on a
+  live non-standard quotation, 6 Oct 2026). Only the PDF changes; the stored
+  terms keep their colon.
 
 ## Gotchas
 

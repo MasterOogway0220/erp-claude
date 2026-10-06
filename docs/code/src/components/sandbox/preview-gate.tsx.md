@@ -15,7 +15,7 @@ the sandbox account only, until the owner switches them on for everyone.
 props through. While the session is loading it renders `fallback`
 (`<PageLoading />` by default; components pass `null`).
 
-Used by every gated `page.tsx` and by `ProcessStep.tsx` and
+Used by every gated `page.tsx` and by `ProcessStep.tsx`, `ReviewStep.tsx` and
 `product-material-select.tsx`:
 
 ```tsx

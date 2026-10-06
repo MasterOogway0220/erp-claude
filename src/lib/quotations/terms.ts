@@ -12,7 +12,16 @@ export function termValue(
 ): string {
   const want = name.toLowerCase();
   const row = (terms ?? []).find((t) => t.termName.trim().toLowerCase().startsWith(want));
-  return row?.termValue?.replace(/^[\s:]+/, "").trim() ?? "";
+  return cleanTermValue(row?.termValue);
+}
+
+/**
+ * A stored term value without the leading colon (and spaces) some values begin
+ * with. PDFs print a term as "Name : value", so ": Ex-Godown" came out as
+ * "Price : : Ex-Godown". Colons inside the value are kept; missing → "".
+ */
+export function cleanTermValue(value: string | null | undefined): string {
+  return (value ?? "").replace(/^[\s:]+/, "").trim();
 }
 
 /**

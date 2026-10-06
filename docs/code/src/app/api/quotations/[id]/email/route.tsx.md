@@ -18,6 +18,10 @@ Operates on `quotation`, `companyMaster`, `quotationEmailLog`.
 - Writes an audit row. Audit failures are swallowed and never block the operation.
 - Sends mail through `mailer()`. **SMTP is not configured in production**, so this currently fails with a message naming the missing variables.
 - A soft-deleted quotation (`deletedAt` set) is treated as not found.
+- Offer-term values go through `cleanTermValue` before the HTML is built, as in
+  the PDF route: some customers' saved terms begin with ": ", and the
+  templates print their own colon, so the emailed copy read "Price : :
+  Ex-Godown" (6 Oct 2026). Stored terms are not changed.
 
 ## Gotchas
 

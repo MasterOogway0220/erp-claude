@@ -12,7 +12,7 @@ wizard walks that in three steps.
 OrderWizard.tsx      the shell — step state, navigation, submit
   ├─ ProcessStep     per-item quality requirements (largest, 1,677 lines)
   ├─ AllotmentStep   assign physical stock to order lines (1,072 lines)
-  └─ ReviewStep      confirm and commit (840 lines)
+  └─ ReviewStep      check the client PO against the quotation (wizard step 1)
 ```
 
 ## Why a wizard
@@ -35,8 +35,9 @@ a heat number, so allotment is what ties a client's order to specific mill
 certificates. Whatever cannot be allotted is a shortfall, and that shortfall
 feeds `auto-pr-generation.ts` to raise a purchase requisition.
 
-**ReviewStep** commits — writing the processing items, reservations and status
-changes.
+**ReviewStep** is where the order starts: the client's PO against the
+reference quotation, line by line, with Edit Order and the PO accept / reject
+(see `ReviewStep.tsx.md`).
 
 ## Gotchas that apply across the wizard
 

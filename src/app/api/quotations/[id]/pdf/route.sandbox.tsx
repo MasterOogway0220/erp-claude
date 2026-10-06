@@ -5,6 +5,7 @@ import { checkAccess } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 import { QuotationPDF } from "@/lib/pdf/quotation-pdf";
 import { displayInquiryNo } from "@/lib/quotations/display";
+import { cleanTermValue } from "@/lib/quotations/terms";
 
 // Cold start + cross-region DB latency can push the first render well past
 // 30s; a killed function surfaces to the user as a failed download.
@@ -79,7 +80,12 @@ export async function GET(
 
     const pdfBuffer = await renderToBuffer(
       React.createElement(QuotationPDF, {
-        quotation,
+        // Some customers' saved terms begin with ": ", which printed after the
+        // template's own colon as "Price : : Ex-Godown".
+        quotation: {
+          ...quotation,
+          terms: quotation.terms.map((t) => ({ ...t, termValue: cleanTermValue(t.termValue) })),
+        },
         company: resolvedCompany,
         variant: pdfVariant,
         watermark: !isFinal,

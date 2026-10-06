@@ -25,6 +25,7 @@ import { Plus, Trash2, Save, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { termValue } from "@/lib/quotations/terms";
+import { deliveryScheduleToDate } from "@/lib/dates";
 import { PageLoading } from "@/components/shared/page-loading";
 
 interface Customer {
@@ -56,7 +57,18 @@ interface SOItem {
   unitWeight?: number;
   totalWeightMT?: number;
   itemDescription?: string;
+  // A line taken from a quotation: its quoted line, and the quoted delivery
+  // period its date is counted from until a date is typed on the line.
+  quotationItemId?: string;
+  quotedDelivery?: string;
+  dateTyped?: boolean;
 }
+
+// A quoted period ("6 To 8 Weeks") counted from the client's PO date, or from
+// today while there is none; today + 30 days when the period gives no date.
+const quotedLineDate = (period: string | null | undefined, poDate: string) =>
+  deliveryScheduleToDate(period, poDate || new Date()) ||
+  format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), "yyyy-MM-dd");
 
 export default function CreateSalesOrderPageWrapper() {
   return (
@@ -123,12 +135,14 @@ function CreateSalesOrderPage() {
             quantity: parseFloat(item.quantity) || 0,
             unitRate: parseFloat(item.unitRate) || 0,
             amount: parseFloat(item.amount) || 0,
-            deliveryDate: format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), "yyyy-MM-dd"),
+            deliveryDate: quotedLineDate(item.delivery, formData.customerPoDate),
             unitWeight: parseFloat(item.unitWeight) || undefined,
             totalWeightMT: parseFloat(item.totalWeightMT) || undefined,
             // A non-standard line's own text; its product reads only
             // "Non-Standard Item".
             itemDescription: item.itemDescription || undefined,
+            quotationItemId: item.id,
+            quotedDelivery: item.delivery || undefined,
           }));
         setItems(quotationItems);
 
@@ -156,7 +170,7 @@ function CreateSalesOrderPage() {
         setFormData((prev) => ({ ...prev, quotationId }));
       }
     },
-    [quotations]
+    [quotations, formData.customerPoDate]
   );
 
   // Auto-select quotation from URL param once quotations are loaded
@@ -232,6 +246,8 @@ function CreateSalesOrderPage() {
     setItems((prev) => {
       const updatedItems = [...prev];
       updatedItems[index] = { ...updatedItems[index], [field]: value };
+      // A date typed on the line no longer follows the Customer PO date.
+      if (field === "deliveryDate") updatedItems[index].dateTyped = true;
       if (field === "quantity" || field === "unitRate") {
         const qty = field === "quantity" ? (parseFloat(value) || 0) : updatedItems[index].quantity;
         const rate = field === "unitRate" ? (parseFloat(value) || 0) : updatedItems[index].unitRate;
@@ -400,9 +416,18 @@ function CreateSalesOrderPage() {
                   id="customerPoDate"
                   type="date"
                   value={formData.customerPoDate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, customerPoDate: e.target.value })
-                  }
+                  onChange={(e) => {
+                    const poDate = e.target.value;
+                    setFormData({ ...formData, customerPoDate: poDate });
+                    // Lines dated from their quoted period count from the PO date.
+                    setItems((prev) =>
+                      prev.map((it) =>
+                        it.quotedDelivery && !it.dateTyped
+                          ? { ...it, deliveryDate: quotedLineDate(it.quotedDelivery, poDate) }
+                          : it
+                      )
+                    );
+                  }}
                 />
               </div>
 

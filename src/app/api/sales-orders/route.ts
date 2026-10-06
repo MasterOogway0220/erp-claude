@@ -231,6 +231,9 @@ export async function POST(request: NextRequest) {
               // description. Callers that do not send them store null, as before.
               uom: item.uom || null,
               itemDescription: item.itemDescription || null,
+              // The quoted line a line was taken from (the order Review step
+              // compares against it); null from callers that do not send it.
+              quotationItemId: item.quotationItemId || null,
               quantity: parseFloat(item.quantity),
               unitRate: parseFloat(item.unitRate),
               amount: parseFloat(item.quantity) * parseFloat(item.unitRate),

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
 import { generateStandardQuotationHtml } from "@/lib/pdf/quotation-standard-template";
 import { generateNonStandardQuotationHtml } from "@/lib/pdf/quotation-nonstandard-template";
+import { cleanTermValue } from "@/lib/quotations/terms";
 import nodemailer from "nodemailer";
 import { mailFrom, mailer } from "@/lib/mailer";
 
@@ -87,8 +88,14 @@ export async function POST(
       ? generateNonStandardQuotationHtml
       : generateStandardQuotationHtml;
 
-    // Generate the quotation HTML (QUOTED version) to embed inline in the email
-    const quotationHtml = generateHtml(quotation as any, companyInfo as any, "QUOTED");
+    // Generate the quotation HTML (QUOTED version) to embed inline in the email.
+    // Some saved terms begin with ": ", which the template's own colon turned
+    // into "Price : : Ex-Godown".
+    const quotationHtml = generateHtml(
+      { ...quotation, terms: quotation.terms.map((t) => ({ ...t, termValue: cleanTermValue(t.termValue) })) } as any,
+      companyInfo as any,
+      "QUOTED"
+    );
 
     // Create email transporter
     const transporter = mailer();

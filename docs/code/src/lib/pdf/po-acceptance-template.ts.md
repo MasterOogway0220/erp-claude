@@ -60,6 +60,10 @@ uploaded back against the record (`signedCopyPath`).
 - Issuing advances the parent CPO — see `po-acceptance/advance-cpo.ts`, which
   exists because that rule was previously implemented on only one of three
   routes.
+- The "To:" address keeps its line breaks (`\n` → `<br>`): a billing address
+  typed on the client PO is several lines, and in one `<p>` they ran together
+  (6 Oct 2026). Only the sandbox routes use this file; everyone else gets
+  `po-acceptance-template.legacy.ts`.
 
 ## Related
 

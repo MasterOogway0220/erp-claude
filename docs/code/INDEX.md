@@ -149,6 +149,9 @@ authoritative, need maintaining, and teach nothing.
   client PO's way (GST only on charges ticked taxable, rounded to the rupee).
 - [`calc/cpo-balance.ts`](./src/lib/calc/cpo-balance.ts.md) — split client PO
   lines must together fit the quoted balance.
+- [`calc/po-vs-quotation.ts`](./src/lib/calc/po-vs-quotation.ts.md) — an
+  order's lines against the quoted lines they came from (split parts summed),
+  for the order Review step.
 - [`amount-in-words.ts`](./src/lib/amount-in-words.ts.md) — Indian vs Western
   grouping.
 - [`document-numbering.ts`](./src/lib/document-numbering.ts.md) — the counter
@@ -253,7 +256,7 @@ binary in the deployment any more.
   [preview](./src/lib/sandbox/preview.ts.md) (with
   [`preview-gate.tsx`](./src/components/sandbox/preview-gate.tsx.md)) — the
   **temporary sandbox preview** of the 03/10/26 meeting fixes (and the 6 Oct
-  follow-ups): 40 pages, routes and components are gates; `X.sandbox.*` holds the new code (documented
+  follow-ups): 41 pages, routes and components are gates; `X.sandbox.*` holds the new code (documented
   by `X`'s own doc) and `X.legacy.*` the unchanged code served to everyone
   else. The copies have no docs of their own. Also
   [`api/sandbox`](./src/app/api/sandbox/route.ts.md),

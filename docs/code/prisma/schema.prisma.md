@@ -183,6 +183,16 @@ carry a non-standard line's own description, copied from
 All four columns are from migration
 `20261006110000_processing_testing_and_line_descriptions`.
 
+`SalesOrderItem.quotationItemId` (FK to `QuotationItem`, ON DELETE SET NULL,
+nullable) is the quoted line an order line came from: copied from
+`ClientPOItem.quotationItemId` when an order is made from a client PO, sent by
+the Create Order screen for lines taken from a quotation. Several order lines
+can share one when the client split a quoted line. The order Review step
+compares each line with it instead of pairing lines by S.No. Null on lines
+added by hand, on orders made before migration
+`20261006130000_sales_order_item_quotation_link`, and on orders from the
+legacy Create Order screen, which does not send it.
+
 ### Client PO registration
 
 `ClientPurchaseOrder.deliverySchedule` is the client's written delivery period

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { termValue, orderTermRows, tenderTermRows } from "./terms";
+import { termValue, orderTermRows, tenderTermRows, cleanTermValue } from "./terms";
 
 // A client PO keeps its own copy of the quotation's terms, edited for the
 // order: rows renamed, re-worded, added, removed, or unticked.
@@ -93,5 +93,24 @@ describe("termValue", () => {
     ).toBe("50% advance against Proforma Invoice & Balance prior to dispatch");
     expect(termValue([{ termName: "Delivery", termValue: "  :  Ex-works: Mumbai " }], "delivery")).toBe("Ex-works: Mumbai");
     expect(termValue([{ termName: "Payment", termValue: " : " }], "payment")).toBe("");
+  });
+});
+
+// PDFs print a term as "Name : value"; a stored value that already begins
+// with ": " came out as "Price : : Ex-Godown".
+describe("cleanTermValue", () => {
+  it("drops a leading colon and the spaces around it", () => {
+    expect(cleanTermValue(": Ex-Godown, Navi Mumbai, India")).toBe("Ex-Godown, Navi Mumbai, India");
+    expect(cleanTermValue(" :: 2% Extra ")).toBe("2% Extra");
+  });
+
+  it("keeps a value without one, and colons inside the value", () => {
+    expect(cleanTermValue("18% GST extra")).toBe("18% GST extra");
+    expect(cleanTermValue("Ex-works: Mumbai")).toBe("Ex-works: Mumbai");
+  });
+
+  it("returns an empty string for a missing value", () => {
+    expect(cleanTermValue(null)).toBe("");
+    expect(cleanTermValue(undefined)).toBe("");
   });
 });

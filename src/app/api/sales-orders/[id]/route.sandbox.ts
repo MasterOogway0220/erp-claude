@@ -270,14 +270,14 @@ export async function PUT(
       });
 
       // The edit form (ReviewStep) carries none of a line's unit, non-standard
-      // description or client PO refs, and the delete-and-recreate below would
-      // null them. Keep them from the line being replaced, matched by its id.
-      // A line added in the edit has no id and starts without them.
+      // description, client PO refs or quoted line, and the delete-and-recreate
+      // below would null them. Keep them from the line being replaced, matched
+      // by its id. A line added in the edit has no id and starts without them.
       const kept = new Map(
         (
           await tx.salesOrderItem.findMany({
             where: { salesOrderId: id },
-            select: { id: true, uom: true, itemDescription: true, poSlNo: true, poItemCode: true },
+            select: { id: true, uom: true, itemDescription: true, poSlNo: true, poItemCode: true, quotationItemId: true },
           })
         ).map((r) => [r.id, r])
       );
@@ -288,6 +288,7 @@ export async function PUT(
           itemDescription: k?.itemDescription ?? null,
           poSlNo: k?.poSlNo ?? null,
           poItemCode: k?.poItemCode ?? null,
+          quotationItemId: k?.quotationItemId ?? null,
         };
       };
 

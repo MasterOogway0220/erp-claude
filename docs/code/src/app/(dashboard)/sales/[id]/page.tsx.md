@@ -24,8 +24,14 @@ Renders the `/sales/[id]` screen. 409 lines.
 - Role gating in the UI is cosmetic — the API is the boundary, and its role checks are currently disabled.
 - The Line Items table shows each line's quantity with its own unit (`uom`,
   kept on order lines since 6 Oct 2026). A line saved before that has no unit
-  and reads "Mtr", which is what the whole column used to say. Reservations
-  are still shown in Mtr for every line (`reservedQtyMtr`).
+  and reads "Mtr", which is what the whole column used to say.
+- The Reserved column and its Shortfall carry the same unit. They are counted
+  the way the reserve API counts: the line's `reservedQtyMtr` summed against
+  the line quantity. Stock is kept in metres and allotment never records
+  pieces, so for a Nos line that sum is whatever was reserved against it, not
+  a converted piece count; pieces-based allotment was not built (owner's
+  choice, 6 Oct 2026). Until then both read "Mtr" on every line, so a Nos line
+  showed "Shortfall: 1371.000 Mtr".
 
 ## Sandbox preview (temporary, from 5 Oct 2026)
 

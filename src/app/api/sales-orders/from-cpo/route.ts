@@ -82,6 +82,9 @@ export async function POST(request: NextRequest) {
         // A non-standard line's own text (its product reads only
         // "Non-Standard Item"); null when the client PO line has none.
         itemDescription: cpoItem.itemDescription,
+        // The quoted line, so the order Review step can compare a split line's
+        // parts with it instead of pairing lines by S.No.
+        quotationItemId: cpoItem.quotationItemId,
         quantity: qtyOrdered,
         unitRate: unitRate,
         amount: qtyOrdered * unitRate,

@@ -589,6 +589,7 @@ model QuotationItem {
   // ClientItemMaster).
   materialCodeLabel String?
   clientPOItems     ClientPOItem[]
+  salesOrderItems   SalesOrderItem[]
   fitting           FittingMaster?      @relation(fields: [fittingId], references: [id])
   flange            FlangeMaster?       @relation(fields: [flangeId], references: [id])
   materialCode      MaterialCodeMaster? @relation(fields: [materialCodeId], references: [id])
@@ -1038,6 +1039,11 @@ model SalesOrderItem {
   // A non-standard line's own description, carried from the quotation or
   // the client PO line; product reads only "Non-Standard Item".
   itemDescription          String?                   @db.Text
+  // The quotation line this order line came from, directly or through a
+  // client PO line; a split line's parts share one. Null on lines added by
+  // hand, on orders made before 6 Oct 2026 and on orders from the legacy
+  // Create Order screen (it does not send it).
+  quotationItemId          String?
   allotmentSource          String?
   allotmentStatus          String                    @default("PENDING")
   procurementAllocQty      Decimal?                  @db.Decimal(10, 3)
@@ -1045,6 +1051,7 @@ model SalesOrderItem {
   orderProcessing          OrderProcessingItem?
   fitting                  FittingMaster?            @relation(fields: [fittingId], references: [id])
   flange                   FlangeMaster?             @relation(fields: [flangeId], references: [id])
+  quotationItem            QuotationItem?            @relation(fields: [quotationItemId], references: [id], onDelete: SetNull)
   salesOrder               SalesOrder                @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
   stockReservations        StockReservation[]
   warehouseIntimationItems WarehouseIntimationItem[]
@@ -1052,6 +1059,7 @@ model SalesOrderItem {
   @@index([salesOrderId])
   @@index([fittingId])
   @@index([flangeId])
+  @@index([quotationItemId])
 }
 
 model StockReservation {

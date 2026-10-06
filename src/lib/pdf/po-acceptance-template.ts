@@ -183,7 +183,7 @@ export function generatePOAcceptanceLetterHtml(
       <p><span class="info-label">To:</span></p>
       <p><strong>${escapeHtml(data.customer.name)}</strong></p>
       ${data.customer.contactPerson ? `<p>Attn: ${escapeHtml(data.customer.contactPerson)}</p>` : ""}
-      <p>${escapeHtml(customerAddress)}</p>
+      <p>${escapeHtml(customerAddress).replace(/\n/g, "<br>")}</p>
       ${data.customer.gstNo ? `<p>GSTIN: ${escapeHtml(data.customer.gstNo)}</p>` : ""}
     </div>
     <div class="info-block" style="text-align:right;">

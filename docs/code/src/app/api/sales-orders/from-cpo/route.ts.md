@@ -22,7 +22,7 @@ Operates on `clientPurchaseOrder`, `salesOrder`.
 ## What is carried across
 
 Beyond the commercial fields (the unit, `uom`, among them), the sales order
-inherits four things that used to be lost at this boundary:
+inherits five things that used to be lost at this boundary:
 
 - `poSlNo` / `poItemCode` per line — the client's own line number and item
   code, so Order Processing does not ask for them a second time.
@@ -35,6 +35,12 @@ inherits four things that used to be lost at this boundary:
   `ClientPOItem.itemDescription`, so it is null for a client PO line without
   one, including every line saved by the legacy client PO route, which never
   writes it.
+- `quotationItemId` per line (from 6 Oct 2026) — the quoted line the client PO
+  line came from. The order Review step (sandbox copy) compares each line with
+  it, so the parts of a quoted line split on the client PO are summed against
+  it instead of being paired with other lines by S.No. Every client PO line has
+  one, so every order made here after this change is linked; other screens
+  ignore it.
 
 ## Gotchas
 

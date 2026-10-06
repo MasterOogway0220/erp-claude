@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import type { CompanyInfo, POAcceptanceData } from "@/lib/pdf/po-acceptance-template";
+import { cleanTermValue } from "@/lib/quotations/terms";
 
 /**
  * Everything the PO acceptance letter prints, loaded and shaped once for both
@@ -33,6 +34,8 @@ export const LETTER_INCLUDE = {
       items: { orderBy: { sNo: "asc" } },
       // The order's own terms; unticked ones are not printed.
       terms: { where: { isIncluded: true }, orderBy: { termNo: "asc" } },
+      // The saved site the PO bills to; the letter is addressed there.
+      billingAddress: true,
     },
   },
   company: true,
@@ -73,6 +76,52 @@ export function letterSummary(
     { label: "Round Off", amount: n(cpo.roundOff) },
   ];
   return rows.filter((r, i) => i === 0 || r.amount !== 0);
+}
+
+type AddressLines = {
+  addressLine1: string | null;
+  addressLine2: string | null;
+  city: string | null;
+  state: string | null;
+  gstNo: string | null;
+};
+
+/**
+ * Who the letter is addressed to: the billing address on the client PO — a
+ * typed one printed as written (it carries its own GSTIN line), else the saved
+ * site picked — and the customer master address when the PO names neither.
+ * A GSTIN is per state, so a site without its own gets the customer's only when
+ * it is in the customer's state.
+ */
+export function letterAddressee<C extends { name: string } & AddressLines>(
+  customer: C,
+  site: (AddressLines & { companyName: string | null; pincode: string | null }) | null,
+  typed: string | null | undefined
+): C {
+  if (typed?.trim()) {
+    // Typed as "Billing name, address, GSTIN": the first line is who the PO
+    // bills (possibly not the customer master's entity), the rest its address.
+    const [first, ...rest] = typed.trim().split(/\r?\n/);
+    return {
+      ...customer,
+      name: first.trim(),
+      addressLine1: rest.join("\n").trim() || null,
+      addressLine2: null,
+      city: null,
+      state: null,
+      gstNo: null,
+    };
+  }
+  if (!site) return customer;
+  return {
+    ...customer,
+    name: site.companyName?.trim() || customer.name,
+    addressLine1: site.addressLine1,
+    addressLine2: site.addressLine2,
+    city: [site.city, site.pincode].filter(Boolean).join(" - ") || null,
+    state: site.state,
+    gstNo: site.gstNo || (site.state && site.state === customer.state ? customer.gstNo : null),
+  };
 }
 
 /**
@@ -132,9 +181,9 @@ export function letterData(
         unitRate: Number(item.unitRate),
         amount: Number(item.amount),
       })),
-      customer: cpo.customer,
+      customer: letterAddressee(cpo.customer, cpo.billingAddress ?? null, cpo.billingAddressText),
       ourContact: acceptance.createdBy,
-      terms: cpo.terms.map((t) => ({ termName: t.termName, termValue: t.termValue })),
+      terms: cpo.terms.map((t) => ({ termName: t.termName, termValue: cleanTermValue(t.termValue) })),
       // The acceptance's own description wins (it can be edited there), else the PO's.
       summary: letterSummary(cpo, acceptance.otherChargesDescription || cpo.otherChargesDescription),
     },

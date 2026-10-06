@@ -41,6 +41,16 @@ Renders the `/sales/create` screen. 578 lines.
   is copied onto the order line, shown under the product, and sent with the
   order. Before 6 Oct 2026 the text was dropped, leaving the order line's
   product as just "Non-Standard Item".
+- **Line delivery dates.** A line taken from a quotation is dated from its
+  quoted delivery period (`delivery`, e.g. "6 To 8 Weeks" → 8 weeks), counted
+  from the Customer PO Date, or from today while that is blank
+  (`deliveryScheduleToDate`, the rule the client PO screen uses). Changing the
+  Customer PO Date moves those dates; typing a date on a line stops that line
+  following it (`dateTyped`). A period that gives no date (blank, "as per
+  site") and tender lines get today + 30 days. Before 6 Oct 2026 every line
+  got today + 30 days whatever was quoted.
+- Each line taken from a quotation also sends `quotationItemId`, the quoted
+  line, which the order Review step compares it with.
 
 ## Gotchas
 
@@ -62,4 +72,5 @@ Renders the `/sales/create` screen. 578 lines.
 
 - [Module overview](../README.md)
 - `src/components/shared/` — `DataTable`, `PageHeader`, `SmartCombobox`
-- `src/app/api/sales-orders/route.ts` — POST stores each line's `uom` and `itemDescription`.
+- `src/app/api/sales-orders/route.ts` — POST stores each line's `uom`, `itemDescription` and `quotationItemId`.
+- `src/lib/dates.ts` — `deliveryScheduleToDate`.

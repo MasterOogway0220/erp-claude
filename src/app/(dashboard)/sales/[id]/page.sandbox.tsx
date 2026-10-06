@@ -374,6 +374,8 @@ export default function SalesOrderDetailPage() {
                         ? formatDate(item.deliveryDate, "dd MMM yyyy")
                         : "—"}
                     </TableCell>
+                    {/* In the line's unit, counted the way the reserve API counts
+                        (reserved quantity against the line quantity). */}
                     <TableCell>
                       <div className="text-sm">
                         <div
@@ -381,11 +383,11 @@ export default function SalesOrderDetailPage() {
                             shortfall > 0 ? "text-yellow-600 font-medium" : "text-green-600"
                           }
                         >
-                          {reservedQty.toFixed(3)} Mtr
+                          {reservedQty.toFixed(3)} {item.uom || "Mtr"}
                         </div>
                         {shortfall > 0 && (
                           <div className="text-xs text-muted-foreground">
-                            Shortfall: {shortfall.toFixed(3)} Mtr
+                            Shortfall: {shortfall.toFixed(3)} {item.uom || "Mtr"}
                           </div>
                         )}
                       </div>
