@@ -144,14 +144,6 @@ than one.
 - Role gating in the UI is cosmetic — the API is the boundary, and its role checks are currently disabled.
 - `quotations` is wrapped in `useMemo`. Without it, `quotationData?.quotations ?? []` is a new array on every render while the query loads; the customer-filter effect depends on it and sets state, so the page re-renders forever and React aborts with error #185 ("Maximum update depth exceeded"). This crashed the page on every open from 23 Aug to 5 Oct 2026.
 
-## Sandbox preview (temporary, from 5 Oct 2026)
-
-`page.tsx` is currently a gate: the sandbox login gets `page.sandbox.tsx`
-— the behaviour this doc describes — and every other user gets
-`page.legacy`, the version from before the 03/10/26 meeting fixes. See
-`src/lib/sandbox/preview.ts.md`. Going live: replace this file with the
-`.sandbox` copy and delete both copies; then delete this section.
-
 ## Related
 
 - [Module overview](../README.md)

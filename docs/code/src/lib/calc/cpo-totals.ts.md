@@ -74,13 +74,11 @@ round-off as "+-0.00".
 - Pass the charges in the client PO route's order (freight, TPI, testing,
   P&F, insurance, others) and the floating-point sums are bit-identical to its
   own.
-- `po-totals.ts` is the older all-charges-taxed version. The legacy
-  acceptance page (`page.legacy.tsx`) still uses it until the sandbox preview
-  goes live.
+- `po-totals.ts` is the older all-charges-taxed version.
 
 ## Related
 
-- `src/app/(dashboard)/po-acceptance/create/page.sandbox.tsx` — the caller.
+- `src/app/(dashboard)/po-acceptance/create/page.tsx` — the caller.
 - `src/app/api/client-purchase-orders/route.ts` (POST) — the arithmetic this
   mirrors.
 - `src/lib/calc/po-totals.ts` — the older version.

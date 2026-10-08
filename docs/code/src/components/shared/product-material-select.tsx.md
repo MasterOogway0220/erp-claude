@@ -70,14 +70,6 @@ sub-master is empty.
 - A failed fetch resets the promise so the next mount retries, but returns `[]`
   meanwhile — empty dropdowns rather than an error.
 
-## Sandbox preview (temporary, from 5 Oct 2026)
-
-`product-material-select.tsx` is currently a gate: the sandbox login gets `product-material-select.sandbox.tsx`
-— the behaviour this doc describes — and every other user gets
-`product-material-select.legacy`, the version from before the 03/10/26 meeting fixes. See
-`src/lib/sandbox/preview.ts.md`. Going live: replace this file with the
-`.sandbox` copy and delete both copies; then delete this section.
-
 ## Related
 
 - `src/components/shared/smart-combobox.tsx`

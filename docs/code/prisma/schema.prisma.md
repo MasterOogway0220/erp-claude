@@ -189,9 +189,8 @@ nullable) is the quoted line an order line came from: copied from
 the Create Order screen for lines taken from a quotation. Several order lines
 can share one when the client split a quoted line. The order Review step
 compares each line with it instead of pairing lines by S.No. Null on lines
-added by hand, on orders made before migration
-`20261006130000_sales_order_item_quotation_link`, and on orders from the
-legacy Create Order screen, which does not send it.
+added by hand and on orders made before the Create Order screen started
+sending it (6 Oct 2026 on the sandbox, 8 Oct 2026 for everyone else).
 
 ### Client PO registration
 

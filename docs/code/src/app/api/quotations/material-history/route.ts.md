@@ -24,8 +24,8 @@ how its history is found even when the ID was typed rather than picked.
 - Company-scoped with `companyFilter(companyId)`.
 - The "last quoted" lookup skips soft-deleted quotations (`deletedAt: null`,
   added 6 Oct 2026). Otherwise a deleted draft's rate would still show as the
-  last price. Today only the sandbox login soft-deletes; other users'
-  deletes still remove the row.
+  last price. Quotation deletes are soft deletes for every user from 8 Oct
+  2026.
 
 ## Gotchas
 

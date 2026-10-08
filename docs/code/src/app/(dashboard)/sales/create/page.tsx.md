@@ -60,14 +60,6 @@ Renders the `/sales/create` screen. 578 lines.
   added by hand is always `Mtr`, and changing a line's product keeps its unit
   and description.
 
-## Sandbox preview (temporary, from 5 Oct 2026)
-
-`page.tsx` is currently a gate: the sandbox login gets `page.sandbox.tsx`
-— the behaviour this doc describes — and every other user gets
-`page.legacy`, the version from before the 03/10/26 meeting fixes. See
-`src/lib/sandbox/preview.ts.md`. Going live: replace this file with the
-`.sandbox` copy and delete both copies; then delete this section.
-
 ## Related
 
 - [Module overview](../README.md)

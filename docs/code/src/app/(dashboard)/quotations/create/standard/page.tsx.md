@@ -137,14 +137,6 @@ with `typeof value === "string"` before using it as a lookup key.
 - **Currency and GST rate are still hardcoded** here (`CURRENCY_OPTIONS`, `GST_RATES`) even though `CurrencyMaster` (4 rows) and `TaxMaster` (9 rows) exist and are populated. Changing them in Masters does nothing to this form.
 - Rows whose length/uom were already nulled by pre-fix saves stay null — the fix stops future loss, it cannot restore past loss (the audit diff did not track `length`/`ends`/`uom` until now).
 
-## Sandbox preview (temporary, from 5 Oct 2026)
-
-`page.tsx` is currently a gate: the sandbox login gets `page.sandbox.tsx`
-— the behaviour this doc describes — and every other user gets
-`page.legacy`, the version from before the 03/10/26 meeting fixes. See
-`src/lib/sandbox/preview.ts.md`. Going live: replace this file with the
-`.sandbox` copy and delete both copies; then delete this section.
-
 ## Related
 
 - [Module overview](../../README.md)

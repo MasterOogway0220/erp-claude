@@ -22,7 +22,7 @@ Operates on `salesOrder`.
   each line's `uom`, `itemDescription`, `poSlNo`, `poItemCode` and
   `quotationItemId` (the quoted line it came from) from the line it replaces,
   matched by the line `id` the form sends. The form does not save them (the
-  sandbox form sends `uom`, which is ignored here), so before 6 Oct 2026 an edit erased the units, a non-standard line's
+  form sends `uom`, which is ignored here), so before 6 Oct 2026 an edit erased the units, a non-standard line's
   description, and the client's PO line number and item code. A line added
   during the edit has no id and starts without them.
 - Status changes validated against a transition map; invalid moves are refused.
@@ -32,15 +32,6 @@ Operates on `salesOrder`.
 
 - `params` is a `Promise` (Next.js 16) and must be awaited.
 - Errors return `error.message`, so thrown text reaches the user's toast.
-
-## Sandbox preview (temporary, from 6 Oct 2026)
-
-`route.ts` is currently a gate: the sandbox login gets `route.sandbox.ts`
-— the behaviour this doc describes — and every other user gets
-`route.legacy`, the version from before 6 Oct 2026, whose PUT still erases
-those line fields. See `src/lib/sandbox/preview.ts.md`. Going live:
-replace this file with the `.sandbox` copy and delete both copies; then delete
-this section.
 
 ## Related
 

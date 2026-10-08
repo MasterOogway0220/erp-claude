@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import { DEFAULT_CHARGES, chargePayload, cpoGst } from "./cpo-charges";
 
@@ -10,13 +10,10 @@ import { DEFAULT_CHARGES, chargePayload, cpoGst } from "./cpo-charges";
  * never reached the server and GST was computed on too small a base.
  */
 describe("client PO additional charges", () => {
-  // During the sandbox preview route.ts is a gate and the POST lives in
-  // route.sandbox.ts; after go-live it is route.ts again.
-  const dir = path.resolve(__dirname, "../../app/api/client-purchase-orders");
-  const routeFile = existsSync(path.join(dir, "route.sandbox.ts"))
-    ? path.join(dir, "route.sandbox.ts")
-    : path.join(dir, "route.ts");
-  const route = readFileSync(routeFile, "utf8");
+  const route = readFileSync(
+    path.resolve(__dirname, "../../app/api/client-purchase-orders/route.ts"),
+    "utf8"
+  );
 
   it("names every tax flag the way the POST route reads it", () => {
     for (const c of DEFAULT_CHARGES) {

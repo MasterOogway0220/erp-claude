@@ -28,8 +28,8 @@ quoted line the client split into several PO lines (100 + 20 of a quoted 120)
 is one row with its parts summed, labelled with their S.Nos ("1, 2"), and still
 flagged when a part is at a rate other than the quoted one; a line
 added by hand is its own row with nothing quoted; a quoted line the client did
-not order is not listed. Orders with no links — made before 6 Oct 2026, or on
-the legacy Create Order screen, which does not send them — are paired by
+not order is not listed. Orders with no links — made before 6 Oct 2026 on
+the sandbox, or before 8 Oct 2026 by everyone else — are paired by
 S.No, as before; on those, a split or part order still shows variances that
 are not real.
 
@@ -50,15 +50,6 @@ Lines with no unit (older orders) read Mtr, as the screen always did.
   PUT keeps them from the line being replaced, matched by its id. A line added
   in the edit has none of them.
 - Shares wizard state with the other steps through `OrderWizard`.
-
-## Sandbox preview (temporary, from 6 Oct 2026)
-
-`ReviewStep.tsx` is a gate: the sandbox login gets `ReviewStep.sandbox.tsx` —
-the behaviour this doc describes — and every other user gets
-`ReviewStep.legacy.tsx`, the file as it was before (pairing by S.No, every
-quantity labelled Mtr). See `src/lib/sandbox/preview.ts.md`. Going live:
-replace this file with the `.sandbox` copy and delete both copies; then delete
-this section.
 
 ## Related
 

@@ -23,8 +23,8 @@ difference of each, and `hasVariance` (any difference over 0.01).
 - An order line without one, among lines that have it, was added by hand: its
   own row with nothing quoted (all quotation values 0).
 - Quoted lines nobody ordered are not listed.
-- If no order line carries a link (orders made before 6 Oct 2026, or on the
-  legacy Create Order screen), lines are paired by S.No exactly as the screen
+- If no order line carries a link (orders made before the link existed: 6 Oct
+  2026 on the sandbox, 8 Oct 2026 for everyone else), lines are paired by S.No exactly as the screen
   always did.
 
 ## How it works
@@ -45,7 +45,7 @@ Pure: callers convert the API's decimal strings to numbers first.
 
 ## Related
 
-- `src/components/order-wizard/ReviewStep.tsx` (sandbox copy) — the only caller.
+- `src/components/order-wizard/ReviewStep.tsx` — the only caller.
 - `src/lib/calc/cpo-balance.ts` — the same "one quoted line, several PO lines"
   idea at client PO registration.
 - Test: `src/lib/calc/po-vs-quotation.test.ts`.

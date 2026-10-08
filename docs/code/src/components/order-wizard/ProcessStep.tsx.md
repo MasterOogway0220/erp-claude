@@ -12,7 +12,7 @@ to be fetched in the same `Promise.all` as the order's QAP; only the QAP fetch
 remains there, since that one is genuinely per-order while the agency master is
 the same list every inspection screen shows.
 
-A large file: 1,843 lines in the sandbox copy. Every field maps to a column on `OrderProcessingItem`; the picklists come from `src/lib/constants/order-processing.ts`. What is ticked here decides which inspections, tests and certificates the order needs, and therefore what the client eventually receives in the dossier.
+A large file: 1858 lines. Every field maps to a column on `OrderProcessingItem`; the picklists come from `src/lib/constants/order-processing.ts`. What is ticked here decides which inspections, tests and certificates the order needs, and therefore what the client eventually receives in the dossier.
 
 ## What was added to close the order-processing gaps
 
@@ -106,19 +106,6 @@ A large file: 1,843 lines in the sandbox copy. Every field maps to a column on `
   list is re-read after every multi-item save, Mark as Processed, Reopen and
   Confirm Allotment; until 6 Oct 2026 the QAP was re-read with it, throwing
   away card edits not yet saved with "Save QAP".
-
-## Sandbox preview (temporary, from 5 Oct 2026)
-
-`ProcessStep.tsx` is currently a gate: the sandbox login gets `ProcessStep.sandbox.tsx`
-— the behaviour this doc describes — and every other user gets
-`ProcessStep.legacy`, the version from before the 03/10/26 meeting fixes. See
-`src/lib/sandbox/preview.ts.md`. Going live: replace this file with the
-`.sandbox` copy and delete both copies; then delete this section.
-
-The 6 Oct 2026 changes (who does the lab testing, the Lab Tests card, the
-three save fixes under Gotchas, the non-standard description) are in the
-`.sandbox` copy only: other users keep the old behaviour, defects included,
-until go-live.
 
 ## Related
 

@@ -22,14 +22,13 @@ Operates on `salesOrder`, `customerMaster`, `invoice`.
 - **POST** stores each line's `uom` (its unit: `Nos` for pieces, `Mtr` for
   metres of pipe) and `itemDescription` (a non-standard line's own text; its
   product reads only "Non-Standard Item") when the caller sends them. The
-  sandbox Create Order screen does, from 6 Oct 2026. A caller that does not —
-  the legacy screen every other user gets — stores null in both, exactly the
-  rows it stored before. This route is shared by both screens, not gated, so
-  the change is additive only.
+  Create Order screen does (sandbox from 6 Oct 2026, everyone from 8 Oct
+  2026). A caller that does not stores null in both.
 - **POST** also stores `quotationItemId` per line when sent: the quoted line
-  a line was taken from (the sandbox Create Order screen sends it for lines
+  a line was taken from (the Create Order screen sends it for lines
   filled from a quotation). The order Review step compares each line with it.
-  Null from the legacy screen and for lines added by hand.
+  Null for lines added by hand and on orders made before 8 Oct 2026 by
+  non-sandbox users.
 
 ## Gotchas
 

@@ -95,14 +95,6 @@ notes) are not copied onto it.
 - The Unit select injects the item's stored value as an extra option when Unit Master no longer contains it, so editing an old quotation shows the saved unit rather than a blank.
 - **Currency and GST rate are still hardcoded** here (`CURRENCY_OPTIONS`, `GST_RATES`) despite populated `CurrencyMaster` and `TaxMaster` tables.
 
-## Sandbox preview (temporary, from 5 Oct 2026)
-
-`page.tsx` is currently a gate: the sandbox login gets `page.sandbox.tsx`
-— the behaviour this doc describes — and every other user gets
-`page.legacy`, the version from before the 03/10/26 meeting fixes. See
-`src/lib/sandbox/preview.ts.md`. Going live: replace this file with the
-`.sandbox` copy and delete both copies; then delete this section.
-
 ## Related
 
 - [Module overview](../../README.md)

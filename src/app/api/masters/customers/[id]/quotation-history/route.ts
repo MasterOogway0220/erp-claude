@@ -1,8 +1,61 @@
-// Sandbox preview (2026-10-05): the sandbox login gets the new version
-// (./route.sandbox), everyone else the unchanged one (./route.legacy).
-// Going live: replace this file with route.sandbox.ts and delete both copies.
-import { sandboxGate } from "@/lib/sandbox/preview";
-import * as next from "./route.sandbox";
-import * as legacy from "./route.legacy";
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 
-export const GET = sandboxGate(next.GET, legacy.GET);
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { authorized, response, companyId } = await checkAccess("masters", "read");
+    if (!authorized) return response!;
+
+    const { id } = await params;
+
+    const quotations = await prisma.quotation.findMany({
+      where: { customerId: id, ...companyFilter(companyId), deletedAt: null },
+      include: {
+        buyer: { select: { id: true, buyerName: true } },
+        items: {
+          select: {
+            product: true,
+            material: true,
+            sizeLabel: true,
+            quantity: true,
+            unitRate: true,
+            amount: true,
+          },
+        },
+        _count: { select: { items: true } },
+      },
+      orderBy: { quotationDate: "desc" },
+      take: 50,
+    });
+
+    const history = quotations.map((q) => ({
+      id: q.id,
+      quotationNo: q.quotationNo,
+      quotationDate: q.quotationDate,
+      status: q.status,
+      quotationCategory: q.quotationCategory,
+      quotationType: q.quotationType,
+      currency: q.currency,
+      buyerName: q.buyer?.buyerName || null,
+      itemCount: q._count.items,
+      totalValue: q.items.reduce((sum, item) => sum + Number(item.amount), 0),
+      itemsSummary: q.items.slice(0, 3).map((item) => ({
+        product: item.product,
+        material: item.material,
+        sizeLabel: item.sizeLabel,
+      })),
+    }));
+
+    return NextResponse.json({ history });
+  } catch (error) {
+    console.error("Error fetching quotation history:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch quotation history" },
+      { status: 500 }
+    );
+  }
+}

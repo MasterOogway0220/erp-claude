@@ -252,13 +252,7 @@ binary in the deployment any more.
   [refresh](./src/lib/sandbox/refresh.ts.md) ·
   [tables](./src/lib/sandbox/tables.ts.md) ·
   [context](./src/lib/sandbox/context.ts.md) ·
-  [headers](./src/lib/sandbox/headers.ts.md) ·
-  [preview](./src/lib/sandbox/preview.ts.md) (with
-  [`preview-gate.tsx`](./src/components/sandbox/preview-gate.tsx.md)) — the
-  **temporary sandbox preview** of the 03/10/26 meeting fixes (and the 6 Oct
-  follow-ups): 41 pages, routes and components are gates; `X.sandbox.*` holds the new code (documented
-  by `X`'s own doc) and `X.legacy.*` the unchanged code served to everyone
-  else. The copies have no docs of their own. Also
+  [headers](./src/lib/sandbox/headers.ts.md). Also
   [`api/sandbox`](./src/app/api/sandbox/route.ts.md),
   [`api/cron/sandbox-refresh`](./src/app/api/cron/sandbox-refresh/route.ts.md),
   [`sandbox-banner.tsx`](./src/components/layout/sandbox-banner.tsx.md),

@@ -36,7 +36,7 @@ missing.
 `cleanTermValue(value)` — that clean-up on its own: leading colons and
 whitespace removed, trimmed, `""` for a missing value. PDFs print a term as
 "Name : value", so a stored ": Ex-Godown" came out as "Price : : Ex-Godown";
-the sandbox quotation PDF route and the acceptance letter pass every term
+the quotation PDF route and the acceptance letter pass every term
 value through it at print time (6 Oct 2026). Stored values are not changed.
 
 ## How it works
@@ -63,9 +63,9 @@ A renamed template row ("Terms of payment") would no longer match.
 
 ## Related
 
-- `src/app/(dashboard)/sales/create/page.tsx` — pre-fills Payment Terms and Delivery Schedule (`termValue`, sandbox copy only).
-- `src/app/(dashboard)/client-purchase-orders/create/page.tsx` — pre-fills Payment / Delivery Terms (`termValue`, sandbox copy only).
+- `src/app/(dashboard)/sales/create/page.tsx` — pre-fills Payment Terms and Delivery Schedule (`termValue`).
+- `src/app/(dashboard)/client-purchase-orders/create/page.tsx` — pre-fills Payment / Delivery Terms (`termValue`).
 - `src/app/api/client-purchase-orders/route.ts` — stores the order's terms via `orderTermRows`.
 - `src/app/api/tenders/route.ts`, `src/app/api/tenders/[id]/route.ts` — store a tender's terms via `tenderTermRows`.
-- `src/app/api/quotations/[id]/pdf/route.tsx`, `src/lib/po-acceptance/letter.ts` — print through `cleanTermValue` (sandbox only).
+- `src/app/api/quotations/[id]/pdf/route.tsx`, `src/lib/po-acceptance/letter.ts` — print through `cleanTermValue`.
 - Test: `src/lib/quotations/terms.test.ts`.

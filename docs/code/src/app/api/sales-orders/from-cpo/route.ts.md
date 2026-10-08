@@ -33,10 +33,10 @@ inherits five things that used to be lost at this boundary:
 - `itemDescription` per line (from 6 Oct 2026) — a non-standard line's own
   text; its product reads only "Non-Standard Item". Copied from
   `ClientPOItem.itemDescription`, so it is null for a client PO line without
-  one, including every line saved by the legacy client PO route, which never
-  writes it.
+  one, including every line a non-sandbox user saved before 8 Oct 2026,
+  when their client PO screen did not write it yet.
 - `quotationItemId` per line (from 6 Oct 2026) — the quoted line the client PO
-  line came from. The order Review step (sandbox copy) compares each line with
+  line came from. The order Review step compares each line with
   it, so the parts of a quoted line split on the client PO are summed against
   it instead of being paired with other lines by S.No. Every client PO line has
   one, so every order made here after this change is linked; other screens

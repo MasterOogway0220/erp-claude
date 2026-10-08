@@ -24,9 +24,6 @@ describe("no array-form $transaction", () => {
       .map((f) => path.relative(src, f).split(path.sep).join("/"))
       // The router names the array form in its own error message.
       .filter((rel) => rel !== "lib/sandbox/router.ts")
-      // Sandbox preview: *.legacy.* files are the unchanged code still served
-      // to non-sandbox users until the preview goes live, bug included.
-      .filter((rel) => !/\.legacy\.tsx?$/.test(rel))
       .filter((rel) => {
         const text = readFileSync(path.join(src, rel), "utf8");
         // `$transaction(` followed by anything other than an async callback.

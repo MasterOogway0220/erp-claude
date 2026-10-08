@@ -15,7 +15,7 @@ Renders the `/sales/[id]` screen. 409 lines.
 - The header's "Reference Quotation" number links to `/quotations/[id]`.
 - A line's `itemDescription` is shown under its product when set. That is a
   non-standard line's own text: its product reads only "Non-Standard Item".
-  Order lines carry it from 6 Oct 2026 — the sandbox Create Order screen and
+  Order lines carry it from 6 Oct 2026 — the Create Order screen and
   `/api/sales-orders/from-cpo` copy it; older lines have none.
 
 ## Gotchas
@@ -32,14 +32,6 @@ Renders the `/sales/[id]` screen. 409 lines.
   a converted piece count; pieces-based allotment was not built (owner's
   choice, 6 Oct 2026). Until then both read "Mtr" on every line, so a Nos line
   showed "Shortfall: 1371.000 Mtr".
-
-## Sandbox preview (temporary, from 5 Oct 2026)
-
-`page.tsx` is currently a gate: the sandbox login gets `page.sandbox.tsx`
-— the behaviour this doc describes — and every other user gets
-`page.legacy`, the version from before the 03/10/26 meeting fixes. See
-`src/lib/sandbox/preview.ts.md`. Going live: replace this file with the
-`.sandbox` copy and delete both copies; then delete this section.
 
 ## Related
 
