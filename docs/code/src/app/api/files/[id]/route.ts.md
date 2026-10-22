@@ -24,3 +24,7 @@ No direct Prisma access — delegates or computes.
 
 - `src/lib/rbac.ts`, `src/lib/prisma.ts`
 - [Module overview](../README.md)
+
+## Security change (2026-10-22)
+
+Requires the file to belong to the caller's company (SUPER_ADMIN exempt), otherwise 404. Only PNG, JPEG, WEBP and PDF open inline; everything else is `attachment`. Sends `X-Content-Type-Options: nosniff`.

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkAuth } from "@/lib/rbac";
 
 const GSTIN_STATE_CODES: Record<string, string> = {
   "01": "Jammu & Kashmir",
@@ -55,7 +56,10 @@ const ENTITY_TYPE_MAP: Record<string, string> = {
 const GSTIN_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
 
 export async function GET(request: NextRequest) {
-  const gstin = request.nextUrl.searchParams.get("gstin")?.toUpperCase();
+  const { authorized, response } = await checkAuth();
+  if (!authorized) return response!;
+
+  const gstin =request.nextUrl.searchParams.get("gstin")?.toUpperCase();
 
   if (!gstin || !GSTIN_REGEX.test(gstin)) {
     return NextResponse.json({ error: "Invalid GSTIN format" }, { status: 400 });

@@ -1,5 +1,6 @@
 import { gunzipSync, gzipSync } from "node:zlib";
 import { prisma } from "@/lib/prisma";
+import { matchesSignature } from "./signatures";
 import {
   IMAGE_JPEG_QUALITY,
   IMAGE_MAX_EDGE,
@@ -71,7 +72,10 @@ export async function storeFile(
     );
   }
 
-  const mimeType = file.type || "application/octet-stream";
+  const mimeType = file.type;
+  if (!matchesSignature(mimeType, original)) {
+    throw new Error("Unsupported file type. Upload a PDF, an image (PNG, JPEG, WEBP) or an Excel/Word file.");
+  }
   const reduced = shouldDownscale(mimeType, original.length)
     ? await downscale(original, mimeType)
     : original;
@@ -106,7 +110,7 @@ export async function readStoredFile(id: string) {
   const row = await prisma.storedFile.findUnique({ where: { id } });
   if (!row) return null;
   const data = row.gzipped ? gunzipSync(Buffer.from(row.data)) : Buffer.from(row.data);
-  return { fileName: row.fileName, mimeType: row.mimeType, data };
+  return { fileName: row.fileName, mimeType: row.mimeType, companyId: row.companyId, data };
 }
 
 /** Best-effort cleanup — a missing row is not an error worth surfacing. */

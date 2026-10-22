@@ -29,3 +29,7 @@ $CRON_SECRET`; answers **503 if `CRON_SECRET` is unset**, 401 on a wrong token,
 ## Related
 
 - `src/lib/sandbox/refresh.ts`, `src/app/api/sandbox/route.ts`, `vercel.json`.
+
+## Security change (2026-10-22)
+
+Bearer check is constant-time (`bearerMatches`).

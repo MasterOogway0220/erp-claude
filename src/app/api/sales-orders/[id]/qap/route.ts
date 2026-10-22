@@ -7,11 +7,12 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { authorized, response } = await checkAccess("salesOrder", "read");
+  const { authorized, response, companyId } = await checkAccess("salesOrder", "read");
   if (!authorized) return response!;
+  if (!companyId) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const { id } = await params;
-  const so = await prisma.salesOrder.findUnique({
-    where: { id },
+  const so = await prisma.salesOrder.findFirst({
+    where: { id, companyId },
     select: {
       id: true,
       orderInspectionType: true,
@@ -32,11 +33,14 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const { authorized, response } = await checkAccess("salesOrder", "write");
+    const { authorized, response, companyId } = await checkAccess("salesOrder", "write");
     if (!authorized) return response!;
+    if (!companyId) return NextResponse.json({ error: "Not found" }, { status: 404 });
     const { id } = await params;
     const body = await req.json();
     const data = normalizeQapInput(body);
+    const owned = await prisma.salesOrder.findFirst({ where: { id, companyId }, select: { id: true } });
+    if (!owned) return NextResponse.json({ error: "Sales Order not found" }, { status: 404 });
     const updated = await prisma.salesOrder.update({ where: { id }, data });
     return NextResponse.json({
       id: updated.id,

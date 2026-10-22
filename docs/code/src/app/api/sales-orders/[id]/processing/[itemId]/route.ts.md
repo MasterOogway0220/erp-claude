@@ -26,3 +26,7 @@ Operates on `orderProcessingItem`, `salesOrderItem`, `salesOrder`.
 
 - `src/lib/rbac.ts`, `src/lib/prisma.ts`
 - [Module overview](../../../README.md)
+
+## Security change (2026-10-22)
+
+Lookups by id now include the caller's company (directly, or through the parent record). A record that belongs to another company returns 404 `Not found`, so existence is not leaked.

@@ -36,7 +36,10 @@ describe("getRate", () => {
     const spy = mockFetchOk(83.5);
     const result = await getRate("USD", "INR");
     expect(result).toEqual({ rate: 83.5, source: "live" });
-    expect(spy).toHaveBeenCalledWith(expect.stringContaining(`${FRANKFURTER}?from=USD&to=INR`));
+    expect(spy).toHaveBeenCalledWith(
+      expect.stringContaining(`${FRANKFURTER}?from=USD&to=INR`),
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
   });
 
   it("serves from cache on second call same day (no second fetch)", async () => {

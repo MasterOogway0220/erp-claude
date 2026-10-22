@@ -9,13 +9,14 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string; docId: string }> }
 ) {
   try {
-    const { authorized, response } = await checkAccess("tender", "delete");
+    const { authorized, response, companyId } = await checkAccess("tender", "delete");
     if (!authorized) return response!;
+    if (!companyId) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     const { id, docId } = await params;
 
     const doc = await prisma.tenderDocument.findFirst({
-      where: { id: docId, tenderId: id },
+      where: { id: docId, tenderId: id, tender: { companyId } },
     });
 
     if (!doc) {

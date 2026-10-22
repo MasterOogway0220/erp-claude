@@ -7,15 +7,16 @@ export async function PATCH(
   { params }: { params: Promise<{ itemId: string; heatId: string }> }
 ) {
   try {
-    const { authorized, response } = await checkAccess("inspectionPrep", "write");
+    const { authorized, response, companyId } = await checkAccess("inspectionPrep", "write");
     if (!authorized) return response!;
+    if (!companyId) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     const { itemId, heatId } = await params;
     const body = await request.json();
     const { heatNo, lengthMtr, pieces, make } = body;
 
     const heat = await prisma.heatEntry.update({
-      where: { id: heatId, inspectionPrepItemId: itemId },
+      where: { id: heatId, inspectionPrepItemId: itemId, inspectionPrepItem: { inspectionPrep: { companyId } } },
       data: {
         ...(heatNo !== undefined && { heatNo }),
         ...(lengthMtr !== undefined && { lengthMtr: parseFloat(lengthMtr) }),
@@ -48,12 +49,13 @@ export async function DELETE(
   { params }: { params: Promise<{ itemId: string; heatId: string }> }
 ) {
   try {
-    const { authorized, response } = await checkAccess("inspectionPrep", "write");
+    const { authorized, response, companyId } = await checkAccess("inspectionPrep", "write");
     if (!authorized) return response!;
+    if (!companyId) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     const { itemId, heatId } = await params;
 
-    await prisma.heatEntry.delete({ where: { id: heatId, inspectionPrepItemId: itemId } });
+    await prisma.heatEntry.delete({ where: { id: heatId, inspectionPrepItemId: itemId, inspectionPrepItem: { inspectionPrep: { companyId } } } });
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

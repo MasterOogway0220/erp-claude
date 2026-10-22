@@ -78,3 +78,7 @@ once; it is not consulted again.
 - `src/lib/fx/get-rate.test.ts` — uses both test seams.
 - `src/app/(dashboard)/quotations/create/standard/page.tsx` — currency
   conversion on the form.
+
+## Security change (2026-10-22)
+
+The Frankfurter request aborts after 5s (`AbortSignal.timeout`), then falls back to the cache as before.

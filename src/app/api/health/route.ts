@@ -7,6 +7,7 @@ import { NextResponse } from 'next/server';
 import { connect } from 'node:net';
 import { createConnection } from 'mariadb';
 import { prisma } from '@/lib/prisma';
+import { bearerMatches } from '@/lib/auth/secret-equal';
 
 function parsedDbUrl() {
   const dbUrl = process.env.DATABASE_URL || 'NOT SET';
@@ -71,6 +72,12 @@ export async function GET(request: Request) {
   // which is the symptom, never the cause. Run separately rather than after the
   // pool timeout so the two budgets cannot add up past the function's limit.
   if (new URL(request.url).searchParams.has('deep')) {
+    // The deep probe reveals the DB host, user and driver error text, so it
+    // needs the same bearer secret as the cron routes.
+    const secret = process.env.CRON_SECRET;
+    if (!bearerMatches(request.headers.get('authorization'), secret)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const dbUrl = process.env.DATABASE_URL;
     if (!dbUrl) return NextResponse.json({ error: 'DATABASE_URL not set' }, { status: 503 });
     const url = new URL(dbUrl);
@@ -99,8 +106,7 @@ export async function GET(request: Request) {
         status: 'unhealthy',
         timestamp: new Date().toISOString(),
         database: 'disconnected',
-        error: error instanceof Error ? error.message : 'Unknown error',
-        dbConfig: parsedDbUrl(),
+        error: 'database unreachable',
       },
       { status: 503 }
     );

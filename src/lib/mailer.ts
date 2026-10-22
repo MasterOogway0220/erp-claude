@@ -43,6 +43,11 @@ export function mailer() {
     // function times out instead of failing, so derive it from the port.
     secure: port === 465,
     auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+    // Without these a stalled SMTP server holds the serverless function until
+    // the platform kills it. 10s each fails the send fast with a readable error.
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 10_000,
   });
 
   // The sandbox login must never reach a real inbox. Its mail is logged and

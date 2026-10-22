@@ -24,11 +24,12 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { authorized, response } = await checkAccess("packingList", "read");
+    const { authorized, response, companyId } = await checkAccess("packingList", "read");
     if (!authorized) return response!;
+    if (!companyId) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    const packingList = await prisma.packingList.findUnique({
-      where: { id },
+    const packingList = await prisma.packingList.findFirst({
+      where: { id, companyId },
       include: {
         salesOrder: {
           include: {

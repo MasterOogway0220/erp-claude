@@ -32,7 +32,7 @@ export async function getRate(from: Currency, to: Currency): Promise<RateResult 
   if (todayHit) return { rate: todayHit.rate, source: "cache" };
 
   try {
-    const res = await fetch(`${FRANKFURTER_URL}?from=${from}&to=${to}`);
+    const res = await fetch(`${FRANKFURTER_URL}?from=${from}&to=${to}`, { signal: AbortSignal.timeout(5000) });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = (await res.json()) as { rates?: Record<string, number> };
     const rate = data.rates?.[to];

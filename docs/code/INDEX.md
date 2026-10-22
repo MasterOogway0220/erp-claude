@@ -4,7 +4,7 @@ Companion explainers for every code file, mirroring the source tree. See
 [CONVENTIONS.md](./CONVENTIONS.md) for structure and depth, and the repo root
 `CLAUDE.md` for the standing rule that keeps them true.
 
-## Coverage: 515 / 515 ✅
+## Coverage: 517 / 517 ✅
 
 Every `.ts`, `.tsx` and `.prisma` file under `src/`, `prisma/` and `scripts/`
 has a doc at the mirrored path. Test files are covered by the doc for what they
@@ -88,6 +88,8 @@ authoritative, need maintaining, and teach nothing.
 ## src/lib — complete
 
 ### Storage
+- [`storage/signatures.ts`](./src/lib/storage/signatures.ts.md) — which file
+  types may be stored, by leading bytes.
 - [`storage/policy.ts`](./src/lib/storage/policy.ts.md) — size cap, image
   downscaling, and the measured case for compressing only when it wins.
 - [`storage/files.ts`](./src/lib/storage/files.ts.md) — files as database rows;
@@ -100,6 +102,8 @@ authoritative, need maintaining, and teach nothing.
   lookup and insert shared by add and import.
 
 ### Auth and access
+- [`auth/secret-equal.ts`](./src/lib/auth/secret-equal.ts.md) — constant-time
+  compare for cron, setup and health secrets.
 - [`auth.ts`](./src/lib/auth.ts.md) — NextAuth config, 2FA hook, the JWT
   callbacks and the absolute session cap.
 - [`rbac.ts`](./src/lib/rbac.ts.md) — API gate and company scoping. **Role

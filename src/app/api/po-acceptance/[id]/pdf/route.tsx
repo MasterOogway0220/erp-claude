@@ -12,13 +12,14 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { authorized, response } = await checkAccess("poAcceptance", "read");
+    const { authorized, response, companyId } = await checkAccess("poAcceptance", "read");
     if (!authorized) return response!;
+    if (!companyId) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     const { id } = await params;
 
-    const acceptance = await prisma.pOAcceptance.findUnique({
-      where: { id },
+    const acceptance = await prisma.pOAcceptance.findFirst({
+      where: { id, companyId },
       include: LETTER_INCLUDE,
     });
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { RefreshBusyError, refreshSandboxCopy } from "@/lib/sandbox/refresh";
+import { bearerMatches } from "@/lib/auth/secret-equal";
 
 // Nightly rebuild of the sandbox login's sbx_* table copies from the real
 // tables, so Akash starts each day on current data. Wipes whatever he changed.
@@ -14,7 +15,7 @@ export async function GET(request: NextRequest) {
   if (!secret) {
     return NextResponse.json({ error: "CRON_SECRET is not configured" }, { status: 503 });
   }
-  if (request.headers.get("authorization") !== `Bearer ${secret}`) {
+  if (!bearerMatches(request.headers.get("authorization"), secret)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const databaseUrl = process.env.DATABASE_URL;

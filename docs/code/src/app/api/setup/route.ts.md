@@ -24,3 +24,7 @@ Operates on `user`, `companyMaster`, `financialYear`, `documentSequence`.
 
 - `src/lib/rbac.ts`, `src/lib/prisma.ts`
 - [Module overview](README.md)
+
+## Security change (2026-10-22)
+
+Secret is compared in constant time (`secretEquals`). The `Admin@123` default is gone: creating the first admin now needs `ADMIN_PASSWORD`, otherwise 503. An existing admin does not need it.

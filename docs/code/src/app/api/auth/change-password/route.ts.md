@@ -25,3 +25,7 @@ Operates on `user`.
 
 - `src/lib/rbac.ts`, `src/lib/prisma.ts`
 - [Module overview](../README.md)
+
+## Security change (2026-10-22)
+
+New password must be at least 12 characters (was 6).

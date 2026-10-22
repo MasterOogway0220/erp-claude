@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { mailFrom, mailer, mailerConfigured } from "@/lib/mailer";
 import { hasExpired, needsReminder } from "@/lib/purchase/rfq-reminders";
+import { bearerMatches } from "@/lib/auth/secret-equal";
 
 // Nudges vendors before an RFQ closes and marks the silent ones as no-response
 // once it has. Scheduled from vercel.json; see PURCHASE MODULE WORKFLOW,
@@ -16,13 +17,14 @@ export async function GET(request: NextRequest) {
   if (!secret) {
     return NextResponse.json({ error: "CRON_SECRET is not configured" }, { status: 503 });
   }
-  if (request.headers.get("authorization") !== `Bearer ${secret}`) {
+  if (!bearerMatches(request.headers.get("authorization"), secret)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const now = new Date();
   const reminded: string[] = [];
   const expired: string[] = [];
+  const failed: string[] = [];
 
   try {
     // Only RFQs that are actually out and still open can have pending vendors.
@@ -60,23 +62,37 @@ export async function GET(request: NextRequest) {
       // expiries above, and report the reminders that could not go out.
       if (!mailerConfigured() || !rv.vendor.email) continue;
 
-      const deadline = rv.rfq.submissionDeadline!;
-      await mailer().sendMail({
-        from: mailFrom("NPS Piping Solutions"),
-        to: rv.vendor.email,
-        subject: `Reminder: quotation for ${rv.rfq.rfqNo} closes ${deadline.toLocaleDateString("en-IN")}`,
-        text:
-          `Dear ${rv.vendor.name},\n\n` +
-          `This is a reminder that our RFQ ${rv.rfq.rfqNo} closes on ` +
-          `${deadline.toLocaleDateString("en-IN")}. We have not yet received your quotation.\n\n` +
-          `Kindly send it before the deadline.\n\nProcurement Department\nNPS Piping Solutions`,
-      });
-
-      await prisma.rFQVendor.update({
-        where: { id: rv.id },
+      // Claim the reminder before sending. The guard on the old lastReminderDate
+      // stops an overlapping run from claiming the same row, and a failed send
+      // hands the claim back, so the next run retries it.
+      const claim = await prisma.rFQVendor.updateMany({
+        where: { id: rv.id, lastReminderDate: rv.lastReminderDate },
         data: { reminderCount: { increment: 1 }, lastReminderDate: now },
       });
-      reminded.push(`${rv.rfq.rfqNo}/${rv.vendor.name}`);
+      if (claim.count === 0) continue;
+
+      const label = `${rv.rfq.rfqNo}/${rv.vendor.name}`;
+      const deadline = rv.rfq.submissionDeadline!;
+      try {
+        await mailer().sendMail({
+          from: mailFrom("NPS Piping Solutions"),
+          to: rv.vendor.email,
+          subject: `Reminder: quotation for ${rv.rfq.rfqNo} closes ${deadline.toLocaleDateString("en-IN")}`,
+          text:
+            `Dear ${rv.vendor.name},\n\n` +
+            `This is a reminder that our RFQ ${rv.rfq.rfqNo} closes on ` +
+            `${deadline.toLocaleDateString("en-IN")}. We have not yet received your quotation.\n\n` +
+            `Kindly send it before the deadline.\n\nProcurement Department\nNPS Piping Solutions`,
+        });
+        reminded.push(label);
+      } catch (err: any) {
+        console.error("RFQ reminder send failed:", label, err?.message || err);
+        await prisma.rFQVendor.updateMany({
+          where: { id: rv.id },
+          data: { reminderCount: rv.reminderCount, lastReminderDate: rv.lastReminderDate },
+        });
+        failed.push(label);
+      }
     }
 
     return NextResponse.json({
@@ -84,7 +100,7 @@ export async function GET(request: NextRequest) {
       reminded: reminded.length,
       expired: expired.length,
       mailConfigured: mailerConfigured(),
-      details: { reminded, expired },
+      details: { reminded, expired, failed },
     });
   } catch (error: any) {
     console.error("RFQ reminder job failed:", error?.message || error);

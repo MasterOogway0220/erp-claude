@@ -7,8 +7,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string; itemId: string }> }
 ) {
   try {
-    const { authorized, session, response } = await checkAccess("salesOrder", "write");
+    const { authorized, session, response, companyId } = await checkAccess("salesOrder", "write");
     if (!authorized) return response!;
+    if (!companyId) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     const { id, itemId } = await params;
     const body = await request.json();
@@ -19,8 +20,8 @@ export async function PATCH(
     }
 
     // Validate the processing item exists and belongs to this SO
-    const processingItem = await prisma.orderProcessingItem.findUnique({
-      where: { salesOrderItemId: itemId },
+    const processingItem = await prisma.orderProcessingItem.findFirst({
+      where: { salesOrderItemId: itemId, salesOrderItem: { salesOrderId: id, salesOrder: { companyId } } },
       include: {
         salesOrderItem: { select: { salesOrderId: true } },
       },

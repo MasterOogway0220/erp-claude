@@ -32,16 +32,17 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { authorized, response } = await checkAccess("quotation", "read");
+    const { authorized, response, companyId } = await checkAccess("quotation", "read");
     if (!authorized) return response!;
+    if (!companyId) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     const { searchParams } = new URL(request.url);
     const variant = searchParams.get("variant") || "auto";
     const isUnquoted = variant === "unquoted";
     const pdfVariant: "QUOTED" | "UNQUOTED" = isUnquoted ? "UNQUOTED" : "QUOTED";
 
-    const quotation = await prisma.quotation.findUnique({
-      where: { id, deletedAt: null },
+    const quotation = await prisma.quotation.findFirst({
+      where: { id, companyId, deletedAt: null },
       include: {
         customer: true,
         preparedBy: { select: { name: true, email: true, phone: true } },

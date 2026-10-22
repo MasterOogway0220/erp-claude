@@ -7,8 +7,9 @@ export async function PATCH(
   { params }: { params: Promise<{ heatId: string; mtcId: string }> }
 ) {
   try {
-    const { authorized, session, response } = await checkAccess("inspectionPrep", "write");
+    const { authorized, session, response, companyId } = await checkAccess("inspectionPrep", "write");
     if (!authorized) return response!;
+    if (!companyId) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     if (!(QA_ROLES as readonly string[]).includes(session.user.role)) {
       return NextResponse.json({ error: "Only QA/Manager can edit MTC documents" }, { status: 403 });
@@ -19,7 +20,7 @@ export async function PATCH(
     const { mtcNo, mtcDate, fileUrl } = body;
 
     const mtc = await prisma.heatMTCDocument.update({
-      where: { id: mtcId, heatEntryId: heatId },
+      where: { id: mtcId, heatEntryId: heatId, heatEntry: { inspectionPrepItem: { inspectionPrep: { companyId } } } },
       data: {
         ...(mtcNo !== undefined && { mtcNo }),
         ...(mtcDate !== undefined && { mtcDate: mtcDate ? new Date(mtcDate) : null }),
@@ -45,15 +46,16 @@ export async function DELETE(
   { params }: { params: Promise<{ heatId: string; mtcId: string }> }
 ) {
   try {
-    const { authorized, session, response } = await checkAccess("inspectionPrep", "write");
+    const { authorized, session, response, companyId } = await checkAccess("inspectionPrep", "write");
     if (!authorized) return response!;
+    if (!companyId) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     if (!(QA_ROLES as readonly string[]).includes(session.user.role)) {
       return NextResponse.json({ error: "Only QA/Manager can delete MTC documents" }, { status: 403 });
     }
 
     const { heatId, mtcId } = await params;
-    await prisma.heatMTCDocument.delete({ where: { id: mtcId, heatEntryId: heatId } });
+    await prisma.heatMTCDocument.delete({ where: { id: mtcId, heatEntryId: heatId, heatEntry: { inspectionPrepItem: { inspectionPrep: { companyId } } } } });
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

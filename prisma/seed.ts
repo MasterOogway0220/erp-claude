@@ -516,6 +516,11 @@ async function seedOfferTermTemplates() {
 }
 
 async function main() {
+  // This seed deletes every transactional table before reseeding. Refuse to run
+  // unless the operator says so explicitly; nothing in the environment sets it.
+  if (process.env.ALLOW_DESTRUCTIVE_SEED !== "1") {
+    throw new Error("seed.ts wipes transactional tables. Set ALLOW_DESTRUCTIVE_SEED=1 to run it on a dev database.");
+  }
   console.log("Starting seed...\n");
 
   // Clear existing data in reverse dependency order

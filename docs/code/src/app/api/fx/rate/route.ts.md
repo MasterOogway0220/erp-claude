@@ -23,3 +23,7 @@ Thin handler; see the source.
 
 - `src/lib/rbac.ts`, `src/lib/prisma.ts`
 - [Module overview](../README.md)
+
+## Security change (2026-10-22)
+
+Requires a logged-in session (401 otherwise).

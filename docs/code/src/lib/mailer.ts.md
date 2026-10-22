@@ -119,3 +119,7 @@ None — infrastructure.
   client-facing senders.
 - `src/app/api/cron/rfq-reminders/route.ts` — degrades rather than failing when
   mail is unconfigured.
+
+## Security change (2026-10-22)
+
+Transport has 10s connection, greeting and socket timeouts, so a stalled SMTP server fails fast.

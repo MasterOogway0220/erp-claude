@@ -72,3 +72,7 @@ None.
 
 - `src/lib/prisma.ts` — the pool whose timeout this endpoint exists to explain.
 - [Module overview](README.md)
+
+## Security change (2026-10-22)
+
+`?deep=1` requires `Authorization: Bearer $CRON_SECRET` (401 otherwise). The public unhealthy response no longer includes DB host or user, and the error text is generic.

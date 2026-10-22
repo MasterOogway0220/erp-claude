@@ -9,13 +9,14 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string; docId: string }> }
 ) {
   try {
-    const { authorized, response } = await checkAccess("supplierQuotation", "delete");
+    const { authorized, response, companyId } = await checkAccess("supplierQuotation", "delete");
     if (!authorized) return response!;
+    if (!companyId) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     const { id, docId } = await params;
 
     const doc = await prisma.supplierQuotationDocument.findFirst({
-      where: { id: docId, supplierQuotationId: id },
+      where: { id: docId, supplierQuotationId: id, supplierQuotation: { companyId } },
     });
 
     if (!doc) {

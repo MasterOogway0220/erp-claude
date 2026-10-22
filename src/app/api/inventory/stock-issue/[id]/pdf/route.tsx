@@ -23,11 +23,12 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { authorized, response } = await checkAccess("stockIssue", "read");
+    const { authorized, response, companyId } = await checkAccess("stockIssue", "read");
     if (!authorized) return response!;
+    if (!companyId) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    const stockIssue = await prisma.stockIssue.findUnique({
-      where: { id },
+    const stockIssue = await prisma.stockIssue.findFirst({
+      where: { id, companyId },
       include: {
         salesOrder: {
           select: {

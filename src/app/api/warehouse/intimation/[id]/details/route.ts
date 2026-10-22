@@ -8,13 +8,14 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { authorized, response } = await checkAccess("warehouseIntimation", "read");
+    const { authorized, response, companyId } = await checkAccess("warehouseIntimation", "read");
     if (!authorized) return response!;
+    if (!companyId) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     const { id } = await params;
 
-    const intimation = await prisma.warehouseIntimation.findUnique({
-      where: { id },
+    const intimation = await prisma.warehouseIntimation.findFirst({
+      where: { id, companyId },
       select: {
         id: true,
         mprNo: true,
@@ -87,8 +88,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { authorized, response } = await checkAccess("warehouseIntimation", "write");
+    const { authorized, response, companyId } = await checkAccess("warehouseIntimation", "write");
     if (!authorized) return response!;
+    if (!companyId) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     const { id } = await params;
     const body = await request.json();
@@ -100,7 +102,7 @@ export async function POST(
 
     // Validate item belongs to this intimation
     const item = await prisma.warehouseIntimationItem.findFirst({
-      where: { id: warehouseIntimationItemId, warehouseIntimationId: id },
+      where: { id: warehouseIntimationItemId, warehouseIntimationId: id, warehouseIntimation: { companyId } },
     });
 
     if (!item) {
@@ -112,7 +114,7 @@ export async function POST(
       if (detail.id) {
         // Update existing
         await prisma.warehouseItemDetail.update({
-          where: { id: detail.id },
+          where: { id: detail.id, warehouseIntimationItemId },
           data: {
             sNo: detail.sNo,
             lengthMtr: detail.lengthMtr ? parseFloat(detail.lengthMtr) : null,

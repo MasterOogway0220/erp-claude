@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getRate } from "@/lib/fx/get-rate";
+import { checkAuth } from "@/lib/rbac";
 
 export async function GET(req: NextRequest) {
+  const { authorized, response } = await checkAuth();
+  if (!authorized) return response!;
+
   const from = req.nextUrl.searchParams.get("from") as "USD" | "INR" | null;
   const to = req.nextUrl.searchParams.get("to") as "USD" | "INR" | null;
   if (!from || !to) return NextResponse.json({ error: "from, to required" }, { status: 400 });

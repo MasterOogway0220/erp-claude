@@ -1,22 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { secretEquals } from "@/lib/auth/secret-equal";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
-  const secret = req.headers.get("x-setup-secret");
-  if (!secret || secret !== process.env.SETUP_SECRET) {
+  if (!secretEquals(req.headers.get("x-setup-secret"), process.env.SETUP_SECRET)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const results: string[] = [];
 
-  // 1. Admin user
+  // 1. Admin user. No default password: the first admin must be set from the environment.
   const adminEmail = "admin@erp.com";
-  const adminPassword = process.env.ADMIN_PASSWORD || "Admin@123";
   const existingAdmin = await prisma.user.findUnique({ where: { email: adminEmail } });
   if (!existingAdmin) {
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    if (!adminPassword) {
+      return NextResponse.json({ error: "ADMIN_PASSWORD is not set" }, { status: 503 });
+    }
     const passwordHash = await bcrypt.hash(adminPassword, 10);
     await prisma.user.create({
       data: { email: adminEmail, name: "System Administrator", passwordHash, role: "SUPER_ADMIN", isActive: true },

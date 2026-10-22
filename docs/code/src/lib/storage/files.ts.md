@@ -126,3 +126,7 @@ described in `policy.ts`.
   `src/app/api/purchase/supplier-quotations/[id]/documents/route.ts` — the two
   routes that were throwing on a read-only filesystem.
 - `prisma/schema.prisma` → `StoredFile`.
+
+## Security change (2026-10-22)
+
+`storeFile` refuses any type not on the allowlist in `signatures.ts`, and refuses a body whose leading bytes do not match the claimed type. HTML and SVG are refused. `readStoredFile` now also returns `companyId`.

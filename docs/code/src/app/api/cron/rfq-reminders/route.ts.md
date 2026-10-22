@@ -26,3 +26,7 @@ Operates on `rFQVendor`.
 - `src/lib/rbac.ts`, `src/lib/prisma.ts`
 - `src/lib/mailer.ts`
 - [Module overview](../README.md)
+
+## Security change (2026-10-22)
+
+Reminder slot is claimed (`updateMany` guarded on the old `lastReminderDate`) before the mail is sent. A failed send gives the claim back, so the next run retries. One failing row no longer aborts the run; failures are listed under `details.failed`. Bearer check is constant-time.

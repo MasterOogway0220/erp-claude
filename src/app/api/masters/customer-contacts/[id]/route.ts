@@ -7,14 +7,15 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { authorized, response } = await checkAccess("customerContacts", "read");
+  const { authorized, response, companyId } = await checkAccess("customerContacts", "read");
   if (!authorized) return response!;
+  if (!companyId) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const { id } = await params;
 
   try {
-    const contact = await prisma.customerContact.findUnique({
-      where: { id },
+    const contact = await prisma.customerContact.findFirst({
+      where: { id, customer: { companyId } },
       include: {
         customer: { select: { id: true, name: true } },
       },
@@ -36,14 +37,18 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { authorized, response } = await checkAccess("customerContacts", "write");
+  const { authorized, response, companyId } = await checkAccess("customerContacts", "write");
   if (!authorized) return response!;
+  if (!companyId) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const { id } = await params;
 
   try {
     const body = await request.json();
     const { contactName, designation, email, phone, department, isActive } = body;
+
+    const owned = await prisma.customerContact.findFirst({ where: { id, customer: { companyId } }, select: { id: true } });
+    if (!owned) return NextResponse.json({ error: "Contact not found" }, { status: 404 });
 
     const contact = await prisma.customerContact.update({
       where: { id },
@@ -72,12 +77,15 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { authorized, response } = await checkAccess("customerContacts", "delete");
+  const { authorized, response, companyId } = await checkAccess("customerContacts", "delete");
   if (!authorized) return response!;
+  if (!companyId) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const { id } = await params;
 
   try {
+    const owned = await prisma.customerContact.findFirst({ where: { id, customer: { companyId } }, select: { id: true } });
+    if (!owned) return NextResponse.json({ error: "Contact not found" }, { status: 404 });
     await prisma.customerContact.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (error) {

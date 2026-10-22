@@ -16,8 +16,9 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const { authorized, session, response } = await checkAccess("poAcceptance", "write");
+    const { authorized, session, response, companyId } = await checkAccess("poAcceptance", "write");
     if (!authorized) return response!;
+    if (!companyId) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     const body = await request.json();
     const { to, cc, subject, message } = body;
@@ -34,8 +35,8 @@ export async function POST(
       );
     }
 
-    const acceptance = await prisma.pOAcceptance.findUnique({
-      where: { id },
+    const acceptance = await prisma.pOAcceptance.findFirst({
+      where: { id, companyId },
       include: LETTER_INCLUDE,
     });
 
@@ -90,6 +91,16 @@ export async function POST(
     };
     if (cc && cc.trim()) {
       mailOptions.cc = cc;
+    }
+
+    // A second send to the same address and subject within a minute is almost
+    // always a double-click or a retry. Refuse it rather than mail the customer twice.
+    const recentSend = await prisma.pOAcceptanceEmailLog.findFirst({
+      where: { poAcceptanceId: id, sentTo: to, subject: emailSubject, status: "SUCCESS", sentAt: { gte: new Date(Date.now() - 60_000) } },
+      select: { id: true },
+    });
+    if (recentSend) {
+      return NextResponse.json({ error: "This email was just sent to the same address. Wait a minute before sending it again." }, { status: 409 });
     }
 
     // Send

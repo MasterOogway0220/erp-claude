@@ -7,13 +7,14 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { authorized, response } = await checkAccess("clientPO", "read");
+    const { authorized, response, companyId } = await checkAccess("clientPO", "read");
     if (!authorized) return response!;
+    if (!companyId) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     const { id } = await params;
 
-    const quotation = await prisma.quotation.findUnique({
-      where: { id, deletedAt: null },
+    const quotation = await prisma.quotation.findFirst({
+      where: { id, companyId, deletedAt: null },
       include: {
         customer: { select: { id: true, name: true, contactPerson: true, currency: true, state: true, gstNo: true, customerType: true } },
         company: { select: { regState: true } },

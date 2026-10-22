@@ -39,3 +39,7 @@ because it runs outside Next.js.
 - `scripts/seed-new-masters.ts` — the correct master loader.
 - `src/lib/masters/spec-import.ts` — why the row-wise read was wrong.
 - `prisma/seed-production.ts` — the safe, idempotent one.
+
+## Security change (2026-10-22)
+
+Refuses to run unless `ALLOW_DESTRUCTIVE_SEED=1` is set, because it deletes transactional tables before reseeding.

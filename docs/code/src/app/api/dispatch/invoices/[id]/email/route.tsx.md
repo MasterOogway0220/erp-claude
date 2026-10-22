@@ -37,3 +37,7 @@ Operates on `invoice`, `companyMaster`, `invoiceEmailLog`.
 - `src/lib/mailer.ts`
 - `src/lib/pdf/render-pdf.ts`
 - [Module overview](../../../README.md)
+
+## Security change (2026-10-22)
+
+Refuses a second successful send to the same address and subject within 60s (409). Failed sends are not counted. Not atomic: two requests in the same instant can both pass.
