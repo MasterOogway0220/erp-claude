@@ -12,6 +12,10 @@ Renders the `/inventory` screen. 704 lines.
 
 - `"use client"` — runs in the browser.
 - Calls: `/api/inventory/grn`, `/api/inventory/stock`, `/api/inventory/stock-issue`, `/api/masters/vendors`, `/api/masters/warehouses`.
+- The Stock View header has two buttons: **Import Excel** (`ImportStockDialog`, which
+  posts to `/api/inventory/stock/import`) and **Add Stock** (`AddStockDialog`, which
+  posts to `/api/inventory/stock`). Both dialogs are rendered once, after `</Tabs>`,
+  and refresh the `inventory-stock` query on success.
 
 ## Gotchas
 

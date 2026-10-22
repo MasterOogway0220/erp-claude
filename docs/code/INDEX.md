@@ -4,7 +4,7 @@ Companion explainers for every code file, mirroring the source tree. See
 [CONVENTIONS.md](./CONVENTIONS.md) for structure and depth, and the repo root
 `CLAUDE.md` for the standing rule that keeps them true.
 
-## Coverage: 510 / 510 ✅
+## Coverage: 515 / 515 ✅
 
 Every `.ts`, `.tsx` and `.prisma` file under `src/`, `prisma/` and `scripts/`
 has a doc at the mirrored path. Test files are covered by the doc for what they
@@ -12,11 +12,11 @@ test.
 
 | Area | Files | Depth |
 |---|---:|---|
-| `src/lib` | 65 | Hand-written throughout |
+| `src/lib` | 67 | Hand-written throughout |
 | `prisma` + `scripts` | 12 | Hand-written |
-| `src/components` | 42 | Hand-written for shared/layout/wizard; grouped for `ui/` |
+| `src/components` | 44 | Hand-written for shared/layout/wizard; grouped for `ui/` |
 | Root, hooks, auth, layouts | 13 | Hand-written |
-| `src/app/api` | 212 | Hand-written module READMEs + per-route facts |
+| `src/app/api` | 213 | Hand-written module READMEs + per-route facts |
 | `src/app/(dashboard)` | 159 | Hand-written module READMEs + per-page facts |
 
 ### Two levels of depth, deliberately
@@ -92,6 +92,12 @@ authoritative, need maintaining, and teach nothing.
   downscaling, and the measured case for compressing only when it wins.
 - [`storage/files.ts`](./src/lib/storage/files.ts.md) — files as database rows;
   why disk storage silently lost every upload on Vercel.
+
+### Inventory entry
+- [`inventory/stock-rows.ts`](./src/lib/inventory/stock-rows.ts.md) — validates
+  a stock line and plans an Excel import; same heat on two racks is two lines.
+- [`inventory/stock-write.ts`](./src/lib/inventory/stock-write.ts.md) — duplicate
+  lookup and insert shared by add and import.
 
 ### Auth and access
 - [`auth.ts`](./src/lib/auth.ts.md) — NextAuth config, 2FA hook, the JWT

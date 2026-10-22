@@ -27,10 +27,13 @@ import {
   Plus,
   Filter,
   X,
+  Upload,
 } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
 import { WarehouseIntimationPanel } from "@/components/inventory/warehouse-intimation-panel";
+import { AddStockDialog } from "@/components/inventory/add-stock-dialog";
+import { ImportStockDialog } from "@/components/inventory/import-stock-dialog";
 
 const stockStatusColors: Record<string, string> = {
   UNDER_INSPECTION: "bg-yellow-500",
@@ -67,6 +70,8 @@ export default function InventoryPage() {
   const [bay, setBay] = useState<string>("all");
   const [vendorId, setVendorId] = useState<string>("all");
   const [selfStockFilter, setSelfStockFilter] = useState<string>("all"); // "all" | "true" | "false"
+  const [addStockOpen, setAddStockOpen] = useState(false);
+  const [importStockOpen, setImportStockOpen] = useState(false);
 
   // Reference data — warehouses and vendors change rarely, so they are cached
   // for far longer than the stock list and shared with every other screen
@@ -449,6 +454,16 @@ export default function InventoryPage() {
                     <SelectItem value="DISPATCHED">Dispatched</SelectItem>
                   </SelectContent>
                 </Select>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" onClick={() => setImportStockOpen(true)}>
+                    <Upload className="w-4 h-4 mr-2" />
+                    Import Excel
+                  </Button>
+                  <Button onClick={() => setAddStockOpen(true)}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Stock
+                  </Button>
+                </div>
               </div>
 
               {/* Location Mapping & Filters */}
@@ -651,6 +666,9 @@ export default function InventoryPage() {
           <WarehouseIntimationPanel embedded />
         </TabsContent>
       </Tabs>
+
+      <AddStockDialog open={addStockOpen} onOpenChange={setAddStockOpen} />
+      <ImportStockDialog open={importStockOpen} onOpenChange={setImportStockOpen} />
     </div>
   );
 }

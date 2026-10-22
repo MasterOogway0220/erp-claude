@@ -10,7 +10,9 @@ See [the API pattern](../README.md) for shared conventions.
 UNDER_INSPECTION → ACCEPTED / REJECTED / HOLD → RESERVED → DISPATCHED
 ```
 
-Material arrives on a **GRN** and lands `UNDER_INSPECTION`. QC release moves it
+Material arrives on a **GRN** and lands `UNDER_INSPECTION`. Stock entered by hand
+(`POST /api/inventory/stock`) or from the inventory sheet
+(`POST /api/inventory/stock/import`) also lands `UNDER_INSPECTION`, the same entry state. QC release moves it
 to `ACCEPTED`, which is what makes it reservable. Allotment against a sales
 order moves it to `RESERVED`. Dispatch moves it out.
 
