@@ -135,14 +135,14 @@ export default function IndustrySegmentPage() {
                       <TableCell className="font-medium">{s.name}</TableCell>
                       <TableCell>
                         <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" onClick={() => {
+                          <Button variant="ghost" size="icon" aria-label="Edit" onClick={() => {
                             setEditingId(s.id);
                             setForm({ name: s.name, category: s.category });
                             setDialogOpen(true);
                           }}>
                             <Pencil className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" onClick={() => {
+                          <Button variant="ghost" size="icon" aria-label="Delete" onClick={() => {
                             if (confirm(`Delete "${s.name}"?`)) deleteMutation.mutate(s.id);
                           }}>
                             <Trash2 className="h-4 w-4 text-destructive" />

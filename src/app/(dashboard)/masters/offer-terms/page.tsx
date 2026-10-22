@@ -382,14 +382,14 @@ function TermTable({
               </td>
               <td className="px-4 py-3">
                 <div className="flex justify-end gap-1">
-                  <Button variant="ghost" size="icon" onClick={() => onEdit(term)} title="Edit">
+                  <Button variant="ghost" size="icon" onClick={() => onEdit(term)} title="Edit" aria-label="Edit">
                     <Pencil className="h-4 w-4" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => onDelete(term)}
-                    title="Delete"
+                    title="Delete" aria-label="Delete"
                   >
                     <Trash2 className="h-4 w-4 text-red-500" />
                   </Button>

@@ -93,7 +93,7 @@ export default function MaterialSpecsListPage() {
             size="icon"
             className="h-8 w-8"
             onClick={() => router.push(`/quality/mtc/material-specs/${row.id}`)}
-            title="View"
+            title="View" aria-label="View"
           >
             <Eye className="h-4 w-4" />
           </Button>
@@ -102,7 +102,7 @@ export default function MaterialSpecsListPage() {
             size="icon"
             className="h-8 w-8"
             onClick={() => router.push(`/quality/mtc/material-specs/create?edit=${row.id}`)}
-            title="Edit"
+            title="Edit" aria-label="Edit"
           >
             <Pencil className="h-4 w-4" />
           </Button>

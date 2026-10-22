@@ -181,7 +181,7 @@ export default function QualityRequirementsPage() {
             size="icon"
             className="h-8 w-8"
             onClick={() => router.push(`/quality/requirements/${row.id}/edit`)}
-            title="Edit"
+            title="Edit" aria-label="Edit"
           >
             <Pencil className="h-3.5 w-3.5" />
           </Button>
@@ -190,7 +190,7 @@ export default function QualityRequirementsPage() {
             size="icon"
             className="h-8 w-8 text-destructive hover:text-destructive"
             onClick={() => setDeleteTarget(row)}
-            title="Delete"
+            title="Delete" aria-label="Delete"
           >
             <Trash2 className="h-3.5 w-3.5" />
           </Button>

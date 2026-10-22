@@ -929,7 +929,7 @@ function NonStandardQuotationPage() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <PageHeader
-          title="Non-Standard Quotation"
+          title="Non-Standard Quotation" aria-label="Non-Standard Quotation"
           description="Free-text item descriptions for non-standard items"
         />
       </div>
@@ -970,7 +970,7 @@ function NonStandardQuotationPage() {
                   <Button
                     type="button"
                     variant="outline"
-                    size="icon"
+                    size="icon" aria-label="Add"
                     className="shrink-0"
                     onClick={() => setShowAddCustomerModal(true)}
                   >
@@ -1008,7 +1008,7 @@ function NonStandardQuotationPage() {
                     <Button
                       type="button"
                       variant="outline"
-                      size="icon"
+                      size="icon" aria-label="Add"
                       className="shrink-0"
                       onClick={() => setShowAddBuyerModal(true)}
                     >
@@ -1250,7 +1250,7 @@ function NonStandardQuotationPage() {
                     </DropdownMenu>
                   )}
                   {items.length > 1 && (
-                    <Button type="button" variant="ghost" size="icon" onClick={() => removeItem(index)}>
+                    <Button type="button" variant="ghost" size="icon" aria-label="Delete" onClick={() => removeItem(index)}>
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   )}
@@ -1554,7 +1554,7 @@ function NonStandardQuotationPage() {
                       <Button
                         type="button"
                         variant="ghost"
-                        size="icon"
+                        size="icon" aria-label="Delete"
                         onClick={() => removeCustomTerm(index)}
                         className="text-destructive hover:text-destructive mt-1 shrink-0"
                       >

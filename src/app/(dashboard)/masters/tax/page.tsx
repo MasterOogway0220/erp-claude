@@ -239,7 +239,7 @@ export default function TaxMasterPage() {
       cell: (row) => (
         <Button
           variant="ghost"
-          size="icon"
+          size="icon" aria-label="Edit"
           onClick={() => handleOpenEdit(row)}
         >
           <Pencil className="h-4 w-4" />

@@ -432,13 +432,13 @@ export default function AdminPage() {
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => openEditDialog(user)}
-                                title="Edit user"
+                                title="Edit user" aria-label="Edit user"
                               >
                                 <Pencil className="h-4 w-4" />
                               </Button>
                               <Button
                                 variant="ghost"
-                                size="icon"
+                                size="icon" aria-label={user.isActive ? "Deactivate user" : "Activate user"}
                                 onClick={() => openDeactivateDialog(user)}
                                 title={
                                   user.isActive

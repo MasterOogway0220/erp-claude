@@ -778,7 +778,7 @@ export default function CustomerCreatePage() {
                   <Button
                     type="button"
                     variant="ghost"
-                    size="icon"
+                    size="icon" aria-label="Close"
                     className="h-8 w-8"
                     onClick={() => setTerms(terms.filter((_, idx) => idx !== i))}
                   >
@@ -829,7 +829,7 @@ export default function CustomerCreatePage() {
                     <Button
                       type="button"
                       variant="ghost"
-                      size="icon"
+                      size="icon" aria-label="Close"
                       className="h-7 w-7"
                       onClick={() => removeDispatchAddress(i)}
                     >

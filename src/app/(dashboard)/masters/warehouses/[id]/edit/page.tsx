@@ -278,7 +278,7 @@ export default function WarehouseEditPage() {
                       {idx === 0 ? "Primary Location" : `Location ${idx + 1}`}
                     </div>
                     {idx > 0 && (
-                      <Button type="button" variant="ghost" size="icon" onClick={() => removeAddress(idx)}>
+                      <Button type="button" variant="ghost" size="icon" aria-label="Delete" onClick={() => removeAddress(idx)}>
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     )}

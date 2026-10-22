@@ -171,7 +171,7 @@ function ReportCard({ report }: { report: ReportItem }) {
             <h3 className="text-sm font-semibold text-foreground group-hover:text-foreground/90">
               {report.title}
             </h3>
-            <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 -translate-x-1 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0 shrink-0" />
+            <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
           </div>
           <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed line-clamp-2">
             {report.description}

@@ -422,7 +422,7 @@ export default function AlertsPage() {
                                 size="icon"
                                 className="h-8 w-8 text-muted-foreground hover:text-green-600"
                                 onClick={() => handleMarkRead(alert.id)}
-                                title="Mark as read"
+                                title="Mark as read" aria-label="Mark as read"
                               >
                                 <CheckCheck className="h-4 w-4" />
                               </Button>
@@ -432,7 +432,7 @@ export default function AlertsPage() {
                               size="icon"
                               className="h-8 w-8 text-muted-foreground hover:text-red-600"
                               onClick={() => handleDismiss(alert.id)}
-                              title="Dismiss"
+                              title="Dismiss" aria-label="Dismiss"
                             >
                               <XCircle className="h-4 w-4" />
                             </Button>

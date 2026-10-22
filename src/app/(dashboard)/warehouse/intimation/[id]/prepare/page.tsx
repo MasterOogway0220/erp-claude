@@ -448,7 +448,7 @@ export default function PrepareMaterialPage({
                         </TableCell>
                         <TableCell>
                           <Button
-                            size="icon"
+                            size="icon" aria-label="Delete"
                             variant="ghost"
                             className="h-8 w-8 text-destructive"
                             onClick={() => deleteRow(idx)}

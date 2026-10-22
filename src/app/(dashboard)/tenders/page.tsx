@@ -267,7 +267,7 @@ export default function TendersPage() {
                     <TableCell>
                       <Button
                         variant="ghost"
-                        size="icon"
+                        size="icon" aria-label="View"
                         onClick={(e) => {
                           e.stopPropagation();
                           router.push(`/tenders/${tender.id}`);

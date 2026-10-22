@@ -84,7 +84,7 @@ export function ImportStockDialog({
         <DialogHeader>
           <DialogTitle>Import stock from Excel</DialogTitle>
           <DialogDescription>
-            Upload the inventory sheet (.xlsx, .xls or .csv). The file is checked first; nothing is saved until you confirm.
+            Upload the inventory sheet (.xlsx or .csv). The file is checked first; nothing is saved until you confirm.
           </DialogDescription>
         </DialogHeader>
 
@@ -94,7 +94,7 @@ export function ImportStockDialog({
             <input
               id="stock-import-file"
               type="file"
-              accept=".xlsx,.xls,.csv"
+              accept=".xlsx,.csv"
               className="block w-full text-sm"
               onChange={(e) => {
                 setFile(e.target.files?.[0] ?? null);

@@ -213,7 +213,7 @@ function FileUploadSection({
                   <Button
                     type="button"
                     variant="ghost"
-                    size="icon"
+                    size="icon" aria-label="Delete"
                     className="h-6 w-6 shrink-0 text-destructive hover:text-destructive"
                     onClick={() => onRemove(index)}
                   >

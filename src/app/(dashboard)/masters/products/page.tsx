@@ -379,8 +379,8 @@ function PipesPanel() {
                   <TableCell>{p.ends || "-"}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="icon" onClick={() => openDialog(p)}><Pencil className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="icon" onClick={() => { if (confirm("Delete this product specification?")) deleteMutation.mutate(p.id); }}>
+                      <Button variant="ghost" size="icon" aria-label="Edit" onClick={() => openDialog(p)}><Pencil className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" aria-label="Delete" onClick={() => { if (confirm("Delete this product specification?")) deleteMutation.mutate(p.id); }}>
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>
@@ -599,8 +599,8 @@ function SizesPanel() {
                         <TableCell className="text-right">{s.weight}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            <Button variant="ghost" size="icon" onClick={() => router.push(`/masters/sizes/${s.id}/edit`)}><Pencil className="h-4 w-4" /></Button>
-                            <Button variant="ghost" size="icon" onClick={() => { if (confirm("Delete this size?")) deleteMutation.mutate(s.id); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                            <Button variant="ghost" size="icon" aria-label="Edit" onClick={() => router.push(`/masters/sizes/${s.id}/edit`)}><Pencil className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" aria-label="Delete" onClick={() => { if (confirm("Delete this size?")) deleteMutation.mutate(s.id); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -680,8 +680,8 @@ function LengthsPanel() {
                   <TableCell className="font-medium">{l.label}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="icon" onClick={() => router.push(`/masters/lengths/${l.id}/edit`)}><Pencil className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="icon" onClick={() => { if (confirm("Delete this length?")) deleteMutation.mutate(l.id); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      <Button variant="ghost" size="icon" aria-label="Edit" onClick={() => router.push(`/masters/lengths/${l.id}/edit`)}><Pencil className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" aria-label="Delete" onClick={() => { if (confirm("Delete this length?")) deleteMutation.mutate(l.id); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -717,7 +717,7 @@ function UnitsPanel() {
     { key: "name", header: "Name", sortable: true },
     { key: "isActive", header: "Status", cell: (row) => <Badge variant={row.isActive ? "default" : "secondary"}>{row.isActive ? "Active" : "Inactive"}</Badge> },
     { key: "actions", header: "Actions", cell: (row) => (
-      <Button variant="ghost" size="icon" onClick={() => router.push(`/masters/units/${row.id}/edit`)}><Pencil className="h-4 w-4" /></Button>
+      <Button variant="ghost" size="icon" aria-label="Edit" onClick={() => router.push(`/masters/units/${row.id}/edit`)}><Pencil className="h-4 w-4" /></Button>
     )},
   ];
 

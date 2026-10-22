@@ -493,7 +493,7 @@ export default function CreateSupplierQuotationPage() {
                         <TableCell>
                           <Button
                             variant="ghost"
-                            size="icon"
+                            size="icon" aria-label="Delete"
                             className="h-8 w-8"
                             onClick={() => removeItem(item.id)}
                             disabled={items.length <= 1}
@@ -559,7 +559,7 @@ export default function CreateSupplierQuotationPage() {
                   {charge.isCustom && (
                     <Button
                       variant="ghost"
-                      size="icon"
+                      size="icon" aria-label="Delete"
                       className="h-8 w-8 shrink-0"
                       onClick={() => removeCharge(charge.id)}
                     >

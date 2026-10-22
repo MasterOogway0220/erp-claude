@@ -3,7 +3,8 @@
 //
 // Pure: no database, no request objects. The routes decide what to write.
 
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
+import { Readable } from "node:stream";
 
 export type MtcType = "MTC_3_1" | "MTC_3_2";
 
@@ -227,6 +228,7 @@ export function planStockImport(
 
   sheetRows.forEach((sheetRow, i) => {
     const line = i + 2; // header is line 1
+    if (Object.values(sheetRow).every((v) => v === null || v === undefined || v === "")) return;
     const result = normalizeStockRow(fromSheetRow(sheetRow));
     if (!result.ok) {
       plan.issues.push({ line, error: result.error });
@@ -246,10 +248,49 @@ export function planStockImport(
   return plan;
 }
 
-// Read the first sheet of an uploaded .xlsx/.xls/.csv file.
-export function readStockSheet(buf: Buffer): Record<string, unknown>[] {
-  const wb = XLSX.read(buf, { type: "buffer", cellDates: true });
-  const sheet = wb.Sheets[wb.SheetNames[0]];
+// Excel cell -> plain value. Formulas give their result, rich text its text.
+function cellValue(v: ExcelJS.CellValue): unknown {
+  if (v === null || v === undefined) return null;
+  if (v instanceof Date) return v;
+  if (typeof v === "object") {
+    if ("result" in v) return cellValue(v.result as ExcelJS.CellValue);
+    if ("richText" in v) return v.richText.map((t) => t.text).join("");
+    if ("text" in v) return String(v.text);
+    return null;
+  }
+  return v;
+}
+
+// Read the first sheet of an uploaded .xlsx or .csv file. Blank rows are kept so
+// that line numbers match the sheet; planStockImport skips them.
+// exceljs reads UTC midnight for a date cell; take its calendar day so the
+// local-date rule in normalizeStockRow gives the same day in any timezone.
+export async function readStockSheet(buf: Buffer, fileName = ""): Promise<Record<string, unknown>[]> {
+  const wb = new ExcelJS.Workbook();
+  if (/\.csv$/i.test(fileName)) {
+    await wb.csv.read(Readable.from(buf));
+  } else {
+    await wb.xlsx.load(buf as unknown as Parameters<typeof wb.xlsx.load>[0]);
+  }
+  const sheet = wb.worksheets[0];
   if (!sheet) return [];
-  return XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: null, raw: true });
+
+  const headers: string[] = [];
+  sheet.getRow(1).eachCell({ includeEmpty: false }, (cell, col) => {
+    headers[col] = String(cellValue(cell.value) ?? "").trim();
+  });
+
+  const rows: Record<string, unknown>[] = [];
+  sheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
+    if (rowNumber === 1) return;
+    const obj: Record<string, unknown> = {};
+    headers.forEach((h, col) => {
+      if (!h) return;
+      let v = cellValue(row.getCell(col).value);
+      if (v instanceof Date) v = new Date(v.getUTCFullYear(), v.getUTCMonth(), v.getUTCDate());
+      obj[h] = v;
+    });
+    rows.push(obj);
+  });
+  return rows;
 }

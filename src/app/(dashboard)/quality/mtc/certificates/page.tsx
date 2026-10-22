@@ -112,13 +112,13 @@ export default function MTCCertificatesListPage() {
             size="icon"
             className="h-8 w-8"
             onClick={() => router.push(`/quality/mtc/certificates/${row.id}`)}
-            title="View"
+            title="View" aria-label="View"
           >
             <Eye className="h-4 w-4" />
           </Button>
           <Button
             variant="ghost"
-            size="icon"
+            size="icon" aria-label="Download PDF"
             className="h-8 w-8"
             onClick={async () => {
               try {

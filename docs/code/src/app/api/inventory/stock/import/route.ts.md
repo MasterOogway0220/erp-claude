@@ -60,3 +60,7 @@ dry run shows the rejects first, so the user decides before anything is written.
 - `src/lib/inventory/stock-write.ts` — the lookup and insert.
 - `src/components/inventory/import-stock-dialog.tsx` — the caller, which always previews first.
 - `src/lib/audit.ts` — the audit call.
+
+## Change (2026-10-22, follow-up 2)
+
+Accepts `.xlsx` and `.csv` only. `readStockSheet` is awaited with the file name, so `.csv` is read as CSV.

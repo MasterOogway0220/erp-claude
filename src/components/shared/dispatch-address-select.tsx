@@ -284,7 +284,7 @@ export function DispatchAddressSelect({
           className="shrink-0"
           onClick={() => setIsNewDialogOpen(true)}
           disabled={disabled}
-          title="Add new address"
+          title="Add new address" aria-label="Add new address"
         >
           <Plus className="h-4 w-4" />
         </Button>

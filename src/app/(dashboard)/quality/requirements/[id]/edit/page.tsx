@@ -374,7 +374,7 @@ export default function EditQualityRequirementPage() {
                       <Button
                         type="button"
                         variant="ghost"
-                        size="icon"
+                        size="icon" aria-label="Delete"
                         className="h-5 w-5 text-destructive"
                         onClick={() => setFormData((prev) => ({ ...prev, qapDocumentPath: "" }))}
                       >

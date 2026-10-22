@@ -150,7 +150,7 @@ export default function CompanyMasterPage() {
                       <div className="flex justify-end gap-1">
                         <Button
                           variant="ghost"
-                          size="icon"
+                          size="icon" aria-label="Edit"
                           className="h-8 w-8"
                           onClick={() =>
                             router.push(`/masters/company/${company.id}/edit`)
@@ -161,7 +161,7 @@ export default function CompanyMasterPage() {
                         {isSuperAdmin && (
                           <Button
                             variant="ghost"
-                            size="icon"
+                            size="icon" aria-label="Delete"
                             className="h-8 w-8 text-destructive hover:text-destructive"
                             onClick={() => setDeleteId(company.id)}
                           >

@@ -619,7 +619,7 @@ function MaterialSpecCreateContent() {
                       <TableCell>
                         <Button
                           variant="ghost"
-                          size="icon"
+                          size="icon" aria-label="Delete"
                           className="h-8 w-8 text-destructive hover:text-destructive"
                           onClick={() => removeChemicalElement(el.id)}
                         >
@@ -742,7 +742,7 @@ function MaterialSpecCreateContent() {
                       <TableCell>
                         <Button
                           variant="ghost"
-                          size="icon"
+                          size="icon" aria-label="Delete"
                           className="h-8 w-8 text-destructive hover:text-destructive"
                           onClick={() => removeMechanicalProperty(prop.id)}
                         >

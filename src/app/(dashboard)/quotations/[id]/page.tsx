@@ -453,7 +453,7 @@ export default function QuotationDetailPage() {
     <div className="space-y-6 max-w-7xl">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => router.back()}>
+        <Button variant="ghost" size="icon" aria-label="Back" onClick={() => router.back()}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1">
@@ -488,7 +488,7 @@ export default function QuotationDetailPage() {
             </Button>
             <Button
               variant="destructive"
-              size="icon"
+              size="icon" aria-label="Delete"
               onClick={() => {
                 if (confirm("Are you sure you want to delete this draft quotation?")) {
                   deleteMutation.mutate();
@@ -1075,7 +1075,7 @@ export default function QuotationDetailPage() {
                     </div>
                     <Button
                       variant="ghost"
-                      size="icon"
+                      size="icon" aria-label="Delete"
                       className="text-destructive hover:text-destructive mt-1"
                       onClick={() => handleDeleteTerm(index)}
                     >

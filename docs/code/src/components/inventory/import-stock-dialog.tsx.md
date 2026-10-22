@@ -43,3 +43,7 @@ Exports `ImportStockDialog({ open, onOpenChange })`.
 - `src/app/api/inventory/stock/import/route.ts` — the POST it calls.
 - `src/lib/inventory/stock-rows.ts` — the plan it displays.
 - `src/app/(dashboard)/inventory/page.tsx` — opens this dialog.
+
+## Change (2026-10-22, follow-up 2)
+
+The file picker accepts `.xlsx` and `.csv` only (`.xls` removed: the new reader cannot read it).

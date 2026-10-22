@@ -246,7 +246,7 @@ export function DataTable<T extends Record<string, any>>({
               className="h-7 w-7"
               onClick={() => setPage(0)}
               disabled={page === 0}
-              title="First page"
+              title="First page" aria-label="First page"
             >
               <ChevronsLeft className="h-3.5 w-3.5" />
             </Button>
@@ -258,7 +258,7 @@ export function DataTable<T extends Record<string, any>>({
               className="h-7 w-7"
               onClick={() => setPage(page - 1)}
               disabled={page === 0}
-              title="Previous page"
+              title="Previous page" aria-label="Previous page"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
             </Button>
@@ -277,7 +277,7 @@ export function DataTable<T extends Record<string, any>>({
                   <Button
                     key={p}
                     variant={page === p ? "default" : "ghost"}
-                    size="icon"
+                    size="icon" aria-label={`Page ${p}`}
                     className={`h-7 w-7 text-xs ${
                       page === p
                         ? ""
@@ -303,7 +303,7 @@ export function DataTable<T extends Record<string, any>>({
               className="h-7 w-7"
               onClick={() => setPage(page + 1)}
               disabled={page >= totalPages - 1}
-              title="Next page"
+              title="Next page" aria-label="Next page"
             >
               <ChevronRight className="h-3.5 w-3.5" />
             </Button>
@@ -315,7 +315,7 @@ export function DataTable<T extends Record<string, any>>({
               className="h-7 w-7"
               onClick={() => setPage(totalPages - 1)}
               disabled={page >= totalPages - 1}
-              title="Last page"
+              title="Last page" aria-label="Last page"
             >
               <ChevronsRight className="h-3.5 w-3.5" />
             </Button>

@@ -363,10 +363,10 @@ export default function MaterialCodesPage() {
       header: "",
       cell: (row) => (
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenEdit(row)} title="Edit">
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenEdit(row)} title="Edit" aria-label="Edit">
             <Pencil className="h-3.5 w-3.5" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDuplicate(row)} title="Duplicate">
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDuplicate(row)} title="Duplicate" aria-label="Duplicate">
             <Copy className="h-3.5 w-3.5" />
           </Button>
           <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(row)} title="Delete">

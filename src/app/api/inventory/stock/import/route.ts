@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
     const dryRun = form.get("dryRun") !== "false";
 
-    const sheetRows = readStockSheet(Buffer.from(await file.arrayBuffer()));
+    const sheetRows = await readStockSheet(Buffer.from(await file.arrayBuffer()), file.name);
     if (sheetRows.length === 0) {
       return NextResponse.json({ error: "The file has no data rows" }, { status: 400 });
     }

@@ -158,12 +158,12 @@ export default function EmployeesPage() {
         <div className="flex gap-1">
           <Button
             variant="ghost"
-            size="icon"
+            size="icon" aria-label="Edit"
             onClick={() => router.push(`/masters/employees/${row.id}/edit`)}
           >
             <Pencil className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => setDeleteId(row.id)}>
+          <Button variant="ghost" size="icon" aria-label="Delete" onClick={() => setDeleteId(row.id)}>
             <Trash2 className="h-4 w-4 text-destructive" />
           </Button>
         </div>

@@ -816,13 +816,13 @@ export default function TenderDetailPage({
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
                         <a href={doc.filePath} target="_blank" rel="noopener noreferrer">
-                          <Button variant="ghost" size="icon" className="h-7 w-7">
+                          <Button variant="ghost" size="icon" aria-label="Download" className="h-7 w-7">
                             <Download className="h-3.5 w-3.5" />
                           </Button>
                         </a>
                         <Button
                           variant="ghost"
-                          size="icon"
+                          size="icon" aria-label="Delete"
                           className="h-7 w-7 text-destructive hover:text-destructive"
                           onClick={() => handleDeleteDocument(doc.id)}
                         >

@@ -287,7 +287,7 @@ export function Sidebar() {
       {/* Desktop: collapse toggle */}
       <Button
         variant="ghost"
-        size="icon"
+        size="icon" aria-label="Previous"
         className={cn(
           "h-6 w-6 shrink-0 text-muted-foreground/60 hover:text-foreground hover:bg-accent/50 hidden md:flex",
           isCollapsed && "hidden"
@@ -300,7 +300,7 @@ export function Sidebar() {
       {isCollapsed && (
         <Button
           variant="ghost"
-          size="icon"
+          size="icon" aria-label="Next"
           className="h-6 w-6 mx-auto hidden md:flex text-muted-foreground/60 hover:text-foreground hover:bg-accent/50 absolute right-1 top-4"
           onClick={toggle}
         >
@@ -310,7 +310,7 @@ export function Sidebar() {
       {/* Mobile close */}
       <Button
         variant="ghost"
-        size="icon"
+        size="icon" aria-label="Close"
         className="h-7 w-7 md:hidden text-muted-foreground hover:text-foreground"
         onClick={() => setMobileOpen(false)}
       >
@@ -380,7 +380,7 @@ export function Sidebar() {
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
-                  size="icon"
+                  size="icon" aria-label="Back to super admin"
                   className="h-7 w-7 shrink-0 text-muted-foreground hover:text-primary"
                   onClick={async () => {
                     await fetch("/api/company/switch", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ companyId: null }) });
@@ -397,7 +397,7 @@ export function Sidebar() {
             <TooltipTrigger asChild>
               <Button
                 variant="ghost"
-                size="icon"
+                size="icon" aria-label="Log out"
                 className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
                 onClick={logout}
               >
@@ -429,7 +429,7 @@ export function Sidebar() {
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
-                  size="icon"
+                  size="icon" aria-label="Back to super admin"
                   className="h-6 w-6 text-muted-foreground hover:text-primary"
                   onClick={async () => {
                     await fetch("/api/company/switch", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ companyId: null }) });
@@ -446,7 +446,7 @@ export function Sidebar() {
             <TooltipTrigger asChild>
               <Button
                 variant="ghost"
-                size="icon"
+                size="icon" aria-label="Log out"
                 className="h-6 w-6 text-muted-foreground hover:text-destructive"
                 onClick={logout}
               >

@@ -335,7 +335,7 @@ export function WarehouseIntimationPanel({ embedded = false }: { embedded?: bool
                         </Button>
                         <Button
                           variant="ghost"
-                          size="icon"
+                          size="icon" aria-label="View"
                           className="h-7 w-7"
                           onClick={() => router.push(`/warehouse/intimation/${mpr.id}`)}
                         >

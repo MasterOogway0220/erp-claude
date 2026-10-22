@@ -80,7 +80,7 @@ function ComparePageContent() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <PageHeader
-          title="Revision Comparison"
+          title="Revision Comparison" aria-label="Revision Comparison"
           description={`Comparing Rev.${left.version} with Rev.${right.version}`}
         />
       </div>

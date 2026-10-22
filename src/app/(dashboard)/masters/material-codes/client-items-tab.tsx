@@ -108,7 +108,7 @@ export function ClientItemsTab() {
       key: "actions", header: "",
       cell: (r) => (
         <div className="flex justify-end gap-1">
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(r)} title="Edit"><Pencil className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(r)} title="Edit" aria-label="Edit"><Pencil className="h-4 w-4" /></Button>
           <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(r)} title="Delete"><Trash2 className="h-4 w-4" /></Button>
         </div>
       ),

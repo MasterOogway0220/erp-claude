@@ -336,7 +336,7 @@ export default function QuotationsPage() {
                     <div className="flex justify-end gap-2">
                       <Button
                         variant="ghost"
-                        size="icon"
+                        size="icon" aria-label="View"
                         onClick={() => router.push(`/tenders/${tender.id}`)}
                       >
                         <Eye className="h-4 w-4" />
@@ -421,14 +421,14 @@ export default function QuotationsPage() {
                     <div className="flex justify-end gap-2">
                       <Button
                         variant="ghost"
-                        size="icon"
+                        size="icon" aria-label="View"
                         onClick={() => router.push(`/quotations/${quotation.id}`)}
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" title="Download PDF" disabled={downloadingId === quotation.id}>
+                          <Button variant="ghost" size="icon" title="Download PDF" aria-label="Download PDF" disabled={downloadingId === quotation.id}>
                             {downloadingId === quotation.id
                               ? <Loader2 className="h-4 w-4 animate-spin" />
                               : <Download className="h-4 w-4" />}

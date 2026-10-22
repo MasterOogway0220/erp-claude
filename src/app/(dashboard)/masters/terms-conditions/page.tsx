@@ -140,8 +140,8 @@ function PaymentTermsTab() {
     { key: "isActive", header: "Status", cell: (r) => <Switch checked={r.isActive} onCheckedChange={(v) => handleToggle(r, v)} /> },
     { key: "actions" as any, header: "Actions", cell: (r) => (
       <div className="flex gap-1">
-        <Button variant="ghost" size="icon" onClick={() => openEdit(r)}><Pencil className="h-4 w-4" /></Button>
-        <Button variant="ghost" size="icon" onClick={() => handleDelete(r)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+        <Button variant="ghost" size="icon" aria-label="Edit" onClick={() => openEdit(r)}><Pencil className="h-4 w-4" /></Button>
+        <Button variant="ghost" size="icon" aria-label="Delete" onClick={() => handleDelete(r)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
     )},
   ];
@@ -258,8 +258,8 @@ function DeliveryTermsTab() {
     { key: "isActive", header: "Status", cell: (r) => <Switch checked={r.isActive} onCheckedChange={(v) => handleToggle(r, v)} /> },
     { key: "actions" as any, header: "Actions", cell: (r) => (
       <div className="flex gap-1">
-        <Button variant="ghost" size="icon" onClick={() => openEdit(r)}><Pencil className="h-4 w-4" /></Button>
-        <Button variant="ghost" size="icon" onClick={() => handleDelete(r)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+        <Button variant="ghost" size="icon" aria-label="Edit" onClick={() => openEdit(r)}><Pencil className="h-4 w-4" /></Button>
+        <Button variant="ghost" size="icon" aria-label="Delete" onClick={() => handleDelete(r)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
     )},
   ];
@@ -377,8 +377,8 @@ function TaxRatesTab() {
     { key: "isActive", header: "Status", cell: (r) => <Switch checked={r.isActive} onCheckedChange={(v) => handleToggle(r, v)} /> },
     { key: "actions" as any, header: "Actions", cell: (r) => (
       <div className="flex gap-1">
-        <Button variant="ghost" size="icon" onClick={() => openEdit(r)}><Pencil className="h-4 w-4" /></Button>
-        <Button variant="ghost" size="icon" onClick={() => handleDelete(r)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+        <Button variant="ghost" size="icon" aria-label="Edit" onClick={() => openEdit(r)}><Pencil className="h-4 w-4" /></Button>
+        <Button variant="ghost" size="icon" aria-label="Delete" onClick={() => handleDelete(r)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
     )},
   ];
@@ -500,8 +500,8 @@ function InspectionAgenciesTab() {
     { key: "isActive", header: "Status", cell: (r) => <Switch checked={r.isActive} onCheckedChange={(v) => handleToggle(r, v)} /> },
     { key: "actions" as any, header: "Actions", cell: (r) => (
       <div className="flex gap-1">
-        <Button variant="ghost" size="icon" onClick={() => openEdit(r)}><Pencil className="h-4 w-4" /></Button>
-        <Button variant="ghost" size="icon" onClick={() => handleDelete(r)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+        <Button variant="ghost" size="icon" aria-label="Edit" onClick={() => openEdit(r)}><Pencil className="h-4 w-4" /></Button>
+        <Button variant="ghost" size="icon" aria-label="Delete" onClick={() => handleDelete(r)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
     )},
   ];

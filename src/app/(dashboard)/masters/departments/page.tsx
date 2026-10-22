@@ -108,10 +108,10 @@ export default function DepartmentMasterPage() {
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => { setEditingId(d.id); setName(d.name); setDialogOpen(true); }}>
+                      <Button variant="ghost" size="icon" aria-label="Edit" onClick={() => { setEditingId(d.id); setName(d.name); setDialogOpen(true); }}>
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => { if (confirm(`Delete "${d.name}"?`)) deleteMutation.mutate(d.id); }}>
+                      <Button variant="ghost" size="icon" aria-label="Delete" onClick={() => { if (confirm(`Delete "${d.name}"?`)) deleteMutation.mutate(d.id); }}>
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>

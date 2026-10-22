@@ -1066,7 +1066,7 @@ function StandardQuotationPage() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <PageHeader
-          title="Standard Quotation"
+          title="Standard Quotation" aria-label="Standard Quotation"
           description="Pipes, Fittings, Flanges from masters"
         />
       </div>
@@ -1107,7 +1107,7 @@ function StandardQuotationPage() {
                   <Button
                     type="button"
                     variant="outline"
-                    size="icon"
+                    size="icon" aria-label="Add"
                     className="shrink-0"
                     onClick={() => setShowAddCustomerModal(true)}
                   >
@@ -1145,7 +1145,7 @@ function StandardQuotationPage() {
                     <Button
                       type="button"
                       variant="outline"
-                      size="icon"
+                      size="icon" aria-label="Add"
                       className="shrink-0"
                       onClick={() => setShowAddBuyerModal(true)}
                     >
@@ -1475,7 +1475,7 @@ function StandardQuotationPage() {
                         </DropdownMenu>
                       )}
                       {items.length > 1 && (
-                        <Button type="button" variant="ghost" size="icon" onClick={() => removeItem(index)}>
+                        <Button type="button" variant="ghost" size="icon" aria-label="Delete" onClick={() => removeItem(index)}>
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       )}
@@ -2132,7 +2132,7 @@ function StandardQuotationPage() {
                       <Button
                         type="button"
                         variant="ghost"
-                        size="icon"
+                        size="icon" aria-label="Delete"
                         onClick={() => removeCustomTerm(index)}
                         className="text-destructive hover:text-destructive mt-1 shrink-0"
                       >

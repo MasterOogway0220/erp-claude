@@ -646,7 +646,7 @@ function CreateTenderPage() {
                         <Button
                           type="button"
                           variant="ghost"
-                          size="icon"
+                          size="icon" aria-label="Delete"
                           onClick={() => removeItem(index)}
                           disabled={items.length === 1}
                           className="text-destructive hover:text-destructive"
@@ -723,7 +723,7 @@ function CreateTenderPage() {
                       <Button
                         type="button"
                         variant="ghost"
-                        size="icon"
+                        size="icon" aria-label="Delete"
                         onClick={() => removeTerm(index)}
                         className="text-destructive hover:text-destructive mt-1 shrink-0"
                       >

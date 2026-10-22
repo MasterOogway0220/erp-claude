@@ -1681,7 +1681,7 @@ function CreateClientPOPage() {
                                     variant="ghost"
                                     size="icon"
                                     className="h-7 w-7"
-                                    title="Copy line (split into another PO line)"
+                                    title="Copy line (split into another PO line)" aria-label="Copy line (split into another PO line)"
                                     onClick={() => copyRow(index)}
                                   >
                                     <Copy className="h-3.5 w-3.5" />
@@ -1693,7 +1693,7 @@ function CreateClientPOPage() {
                                     variant="ghost"
                                     size="icon"
                                     className="h-7 w-7"
-                                    title="Remove copied line"
+                                    title="Remove copied line" aria-label="Remove copied line"
                                     onClick={() => removeRow(index)}
                                   >
                                     <Trash2 className="h-3.5 w-3.5" />
@@ -1980,7 +1980,7 @@ function CreateClientPOPage() {
                         type="button"
                         variant="ghost"
                         size="icon"
-                        title="Remove term"
+                        title="Remove term" aria-label="Remove term"
                         onClick={() => setTerms((prev) => prev.filter((_, i) => i !== index))}
                         className="text-destructive hover:text-destructive mt-0.5 shrink-0"
                       >

@@ -328,7 +328,7 @@ export default function VendorsPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          title="Approve Vendor"
+                          title="Approve Vendor" aria-label="Approve Vendor"
                           onClick={() => handleApprovalDialog(vendor, "approve")}
                         >
                           <ThumbsUp className="h-4 w-4 text-green-600" />
@@ -338,7 +338,7 @@ export default function VendorsPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          title="Reject Vendor"
+                          title="Reject Vendor" aria-label="Reject Vendor"
                           onClick={() => handleApprovalDialog(vendor, "reject")}
                         >
                           <ThumbsDown className="h-4 w-4 text-orange-600" />
@@ -346,7 +346,7 @@ export default function VendorsPage() {
                       )}
                       <Button
                         variant="ghost"
-                        size="icon"
+                        size="icon" aria-label="Edit"
                         onClick={() =>
                           router.push(`/masters/vendors/${vendor.id}/edit`)
                         }
@@ -355,7 +355,7 @@ export default function VendorsPage() {
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon">
+                          <Button variant="ghost" size="icon" aria-label="Delete">
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         </AlertDialogTrigger>

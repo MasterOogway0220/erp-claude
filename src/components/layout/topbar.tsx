@@ -215,7 +215,7 @@ export function TopBar() {
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
-            size="icon"
+            size="icon" aria-label="Open menu"
             className="md:hidden h-9 w-9"
             onClick={() => setMobileOpen(true)}
           >
@@ -270,7 +270,7 @@ export function TopBar() {
                 variant="ghost"
                 size="icon"
                 className="relative h-8 w-8 text-muted-foreground hover:text-foreground transition-colors"
-                title="Notifications"
+                title="Notifications" aria-label="Notifications"
               >
                 <Bell className="h-4 w-4" />
                 {alertCount > 0 && (

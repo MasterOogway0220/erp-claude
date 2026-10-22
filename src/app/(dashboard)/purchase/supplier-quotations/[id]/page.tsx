@@ -361,7 +361,7 @@ export default function SupplierQuotationDetailPage({
                             <Download className="h-3.5 w-3.5" />
                           </a>
                           <Button
-                            size="icon"
+                            size="icon" aria-label="Delete"
                             variant="ghost"
                             className="h-7 w-7 text-destructive hover:text-destructive"
                             onClick={() => handleDeleteDoc(selectedDoc.id)}

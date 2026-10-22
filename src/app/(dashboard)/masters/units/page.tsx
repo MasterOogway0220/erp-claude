@@ -55,7 +55,7 @@ export default function UnitsPage() {
       cell: (row: Unit) => (
         <Button
           variant="ghost"
-          size="icon"
+          size="icon" aria-label="Edit"
           onClick={() => router.push(`/masters/units/${row.id}/edit`)}
         >
           <Pencil className="h-4 w-4" />

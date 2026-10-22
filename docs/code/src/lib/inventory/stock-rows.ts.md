@@ -98,3 +98,7 @@ Types: `StockRow`, `ImportPlan`, `ImportIssue`, `MtcType` (`"MTC_3_1" | "MTC_3_2
 - `src/app/api/inventory/stock/route.ts` - POST (manual add).
 - `src/app/api/inventory/stock/import/route.ts` - POST (sheet import, dry run by default).
 - `prisma/schema.prisma` -> `InventoryStock`, `MTCType`.
+
+## Change (2026-10-22, follow-up 2)
+
+`readStockSheet` is async and reads with exceljs (was xlsx). It reads `.xlsx` and `.csv` only; the old `.xls` format is refused. Blank rows are kept so line numbers match the sheet, and `planStockImport` skips them silently. Excel dates (UTC midnight) are taken by their calendar day.

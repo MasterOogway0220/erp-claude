@@ -183,7 +183,7 @@ export default function POAcceptanceListPage() {
                       <TableCell>
                         <Button
                           variant="ghost"
-                          size="icon"
+                          size="icon" aria-label="View"
                           className="h-8 w-8"
                           onClick={(e) => {
                             e.stopPropagation();

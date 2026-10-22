@@ -16,7 +16,7 @@ export default function CreateQuotationPage() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <PageHeader
-          title="Create Quotation"
+          title="Create Quotation" aria-label="Create Quotation"
           description="Select the type of quotation you want to create"
         />
       </div>

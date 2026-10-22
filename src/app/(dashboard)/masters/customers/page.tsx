@@ -196,14 +196,14 @@ export default function CustomersPage() {
                       <div className="flex justify-end gap-1">
                         <Button
                           variant="ghost"
-                          size="icon"
+                          size="icon" aria-label="Edit"
                           onClick={() => router.push(`/masters/customers/${c.id}/edit`)}
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
-                          size="icon"
+                          size="icon" aria-label="Delete"
                           onClick={() => setDeleteId(c.id)}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />

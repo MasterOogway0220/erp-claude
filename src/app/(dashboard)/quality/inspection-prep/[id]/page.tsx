@@ -698,7 +698,7 @@ function ItemHeatCard({
                         <TableCell>{heat.make || "-"}</TableCell>
                         <TableCell>
                           <Button
-                            size="icon"
+                            size="icon" aria-label="Delete"
                             variant="ghost"
                             className="h-8 w-8 text-destructive"
                             onClick={() => handleDeleteHeat(heat.id)}
@@ -924,7 +924,7 @@ function MtcHeatBlock({ heat, prepId, itemId, isQA, onRefresh }: MtcHeatBlockPro
                 {isQA && (
                   <TableCell className="py-1.5">
                     <Button
-                      size="icon"
+                      size="icon" aria-label="Delete"
                       variant="ghost"
                       className="h-7 w-7 text-destructive"
                       onClick={() => handleDeleteMtc(mtc.id)}
