@@ -62,7 +62,7 @@ export default function MTCCertificatesListPage() {
       key: "customer",
       header: "Customer",
       cell: (row) => (
-        <span className="text-sm">{row.customer?.name || row.customerName || "—"}</span>
+        <span className="text-sm">{row.customer?.name || row.customerName || "-"}</span>
       ),
     },
     {
@@ -70,7 +70,7 @@ export default function MTCCertificatesListPage() {
       header: "Material Spec",
       cell: (row) => (
         <span className="text-sm font-mono">
-          {row.materialSpec || row.materialSpecRef?.materialSpec || "—"}
+          {row.materialSpec || row.materialSpecRef?.materialSpec || "-"}
         </span>
       ),
     },
@@ -79,7 +79,7 @@ export default function MTCCertificatesListPage() {
       header: "PO/Quotation Ref",
       cell: (row) => (
         <span className="text-sm font-mono">
-          {row.poNo || row.quotationNo || "—"}
+          {row.poNo || row.quotationNo || "-"}
         </span>
       ),
     },

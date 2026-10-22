@@ -272,21 +272,21 @@ export default function StockDetailPage() {
           <CardHeader><CardTitle>Stock Details</CardTitle></CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              <div><div className="text-sm text-muted-foreground">Product</div><div className="font-medium">{stock.product || "—"}</div></div>
-              <div><div className="text-sm text-muted-foreground">Specification</div><div>{stock.specification || "—"}</div></div>
-              <div><div className="text-sm text-muted-foreground">Size</div><div className="font-mono">{stock.sizeLabel || "—"}</div></div>
+              <div><div className="text-sm text-muted-foreground">Product</div><div className="font-medium">{stock.product || "-"}</div></div>
+              <div><div className="text-sm text-muted-foreground">Specification</div><div>{stock.specification || "-"}</div></div>
+              <div><div className="text-sm text-muted-foreground">Size</div><div className="font-mono">{stock.sizeLabel || "-"}</div></div>
               <div><div className="text-sm text-muted-foreground">Quantity (Mtr)</div><div className="font-medium">{Number(stock.quantityMtr).toFixed(3)}</div></div>
               <div><div className="text-sm text-muted-foreground">Pieces</div><div>{stock.pieces}</div></div>
-              <div><div className="text-sm text-muted-foreground">Make</div><div>{stock.make || "—"}</div></div>
-              <div><div className="text-sm text-muted-foreground">Ends</div><div>{stock.ends || "—"}</div></div>
-              <div><div className="text-sm text-muted-foreground">Length</div><div>{stock.length || "—"}</div></div>
-              <div><div className="text-sm text-muted-foreground">Dimension Std</div><div>{stock.dimensionStd || "—"}</div></div>
+              <div><div className="text-sm text-muted-foreground">Make</div><div>{stock.make || "-"}</div></div>
+              <div><div className="text-sm text-muted-foreground">Ends</div><div>{stock.ends || "-"}</div></div>
+              <div><div className="text-sm text-muted-foreground">Length</div><div>{stock.length || "-"}</div></div>
+              <div><div className="text-sm text-muted-foreground">Dimension Std</div><div>{stock.dimensionStd || "-"}</div></div>
             </div>
             <Separator />
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              <div><div className="text-sm text-muted-foreground">MTC No.</div><div>{stock.mtcNo || "—"}</div></div>
-              <div><div className="text-sm text-muted-foreground">MTC Type</div><div>{stock.mtcType?.replace(/_/g, " ") || "—"}</div></div>
-              <div><div className="text-sm text-muted-foreground">TPI Agency</div><div>{stock.tpiAgency || "—"}</div></div>
+              <div><div className="text-sm text-muted-foreground">MTC No.</div><div>{stock.mtcNo || "-"}</div></div>
+              <div><div className="text-sm text-muted-foreground">MTC Type</div><div>{stock.mtcType?.replace(/_/g, " ") || "-"}</div></div>
+              <div><div className="text-sm text-muted-foreground">TPI Agency</div><div>{stock.tpiAgency || "-"}</div></div>
             </div>
           </CardContent>
         </Card>
@@ -366,32 +366,32 @@ export default function StockDetailPage() {
                           <TableCell>
                             {pipeEditing ? (
                               <Input type="number" step="0.001" value={row.length} onChange={(e) => updatePipeRow(idx, "length", e.target.value)} className="h-8 w-24" placeholder="0.000" />
-                            ) : <span>{row.length ? Number(row.length).toFixed(3) : "—"}</span>}
+                            ) : <span>{row.length ? Number(row.length).toFixed(3) : "-"}</span>}
                           </TableCell>
                           <TableCell>
                             {pipeEditing ? (
                               <Input value={row.heatNo} onChange={(e) => updatePipeRow(idx, "heatNo", e.target.value)} className="h-8" />
-                            ) : <span>{row.heatNo || "—"}</span>}
+                            ) : <span>{row.heatNo || "-"}</span>}
                           </TableCell>
                           <TableCell>
                             {pipeEditing ? (
                               <Input value={row.make} onChange={(e) => updatePipeRow(idx, "make", e.target.value)} className="h-8" />
-                            ) : <span>{row.make || "—"}</span>}
+                            ) : <span>{row.make || "-"}</span>}
                           </TableCell>
                           <TableCell>
                             {pipeEditing ? (
                               <Input value={row.mtcNo} onChange={(e) => updatePipeRow(idx, "mtcNo", e.target.value)} className="h-8" />
-                            ) : <span>{row.mtcNo || "—"}</span>}
+                            ) : <span>{row.mtcNo || "-"}</span>}
                           </TableCell>
                           <TableCell>
                             {pipeEditing ? (
                               <Input type="date" value={row.mtcDate} onChange={(e) => updatePipeRow(idx, "mtcDate", e.target.value)} className="h-8" />
-                            ) : <span>{row.mtcDate ? formatDate(row.mtcDate, "dd MMM yyyy") : "—"}</span>}
+                            ) : <span>{row.mtcDate ? formatDate(row.mtcDate, "dd MMM yyyy") : "-"}</span>}
                           </TableCell>
                           <TableCell>
                             {pipeEditing ? (
                               <Input value={row.bundleNo} onChange={(e) => updatePipeRow(idx, "bundleNo", e.target.value)} className="h-8" />
-                            ) : <span>{row.bundleNo || "—"}</span>}
+                            ) : <span>{row.bundleNo || "-"}</span>}
                           </TableCell>
                           <TableCell>
                             {pipeEditing ? (
@@ -401,7 +401,7 @@ export default function StockDetailPage() {
                           <TableCell>
                             {pipeEditing ? (
                               <Input value={row.remarks} onChange={(e) => updatePipeRow(idx, "remarks", e.target.value)} className="h-8" placeholder="Optional" />
-                            ) : <span className="text-sm text-muted-foreground">{row.remarks || "—"}</span>}
+                            ) : <span className="text-sm text-muted-foreground">{row.remarks || "-"}</span>}
                           </TableCell>
                           {pipeEditing && (
                             <TableCell>
@@ -443,7 +443,7 @@ export default function StockDetailPage() {
                     <TableCell>{format(new Date(insp.inspectionDate), "dd MMM yyyy")}</TableCell>
                     <TableCell>{insp.inspector?.name}</TableCell>
                     <TableCell><Badge className={insp.overallResult === "PASS" ? "bg-green-500" : insp.overallResult === "FAIL" ? "bg-red-500" : "bg-yellow-500"}>{insp.overallResult}</Badge></TableCell>
-                    <TableCell>{insp.remarks || "—"}</TableCell>
+                    <TableCell>{insp.remarks || "-"}</TableCell>
                   </TableRow>
                 ))}</TableBody></Table>
             ) : <div className="text-center text-muted-foreground py-8">No inspections recorded</div>}
@@ -473,7 +473,7 @@ export default function StockDetailPage() {
                   <TableRow key={ncr.id}>
                     <TableCell><Link href={`/quality/ncr/${ncr.id}`} className="text-blue-600 hover:underline font-mono">{ncr.ncrNo}</Link></TableCell>
                     <TableCell>{format(new Date(ncr.ncrDate), "dd MMM yyyy")}</TableCell>
-                    <TableCell>{ncr.nonConformanceType || "—"}</TableCell>
+                    <TableCell>{ncr.nonConformanceType || "-"}</TableCell>
                     <TableCell><Badge className={ncr.status === "CLOSED" ? "bg-green-500" : ncr.status === "UNDER_INVESTIGATION" ? "bg-yellow-500" : "bg-red-500"}>{ncr.status.replace(/_/g, " ")}</Badge></TableCell>
                   </TableRow>
                 ))}</TableBody></Table>
@@ -489,7 +489,7 @@ export default function StockDetailPage() {
                     <TableCell className="font-mono">{mtc.mtcNo}</TableCell>
                     <TableCell>{mtc.heatNo}</TableCell>
                     <TableCell>{format(new Date(mtc.uploadDate), "dd MMM yyyy")}</TableCell>
-                    <TableCell>{mtc.remarks || "—"}</TableCell>
+                    <TableCell>{mtc.remarks || "-"}</TableCell>
                   </TableRow>
                 ))}</TableBody></Table>
             ) : <div className="text-center text-muted-foreground py-8">No MTC documents</div>}
@@ -504,9 +504,9 @@ export default function StockDetailPage() {
                     <TableCell><Link href={`/quality/lab-reports/${lr.id}`} className="text-blue-600 hover:underline font-mono">{lr.reportNo}</Link></TableCell>
                     <TableCell>{{ CHEMICAL: "Chemical", MECHANICAL: "Mechanical", HYDRO: "Hydro", IMPACT: "Impact", IGC: "IGC" }[lr.reportType as string] || lr.reportType}</TableCell>
                     <TableCell><Badge className={lr.result === "PASS" ? "bg-green-500" : lr.result === "FAIL" ? "bg-red-500" : "bg-yellow-500"}>{lr.result || "PENDING"}</Badge></TableCell>
-                    <TableCell>{lr.labName || "—"}</TableCell>
+                    <TableCell>{lr.labName || "-"}</TableCell>
                     <TableCell>{format(new Date(lr.reportDate), "dd MMM yyyy")}</TableCell>
-                    <TableCell>{lr.filePath ? <a href={lr.filePath} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">{lr.fileName || "View"}</a> : "—"}</TableCell>
+                    <TableCell>{lr.filePath ? <a href={lr.filePath} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">{lr.fileName || "View"}</a> : "-"}</TableCell>
                   </TableRow>
                 ))}</TableBody></Table>
             ) : (

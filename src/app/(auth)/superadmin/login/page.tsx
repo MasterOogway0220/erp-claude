@@ -107,19 +107,9 @@ export default function SuperAdminLoginPage() {
       {/* Left Panel - Dark Theme */}
       <div
         className="hidden lg:flex lg:w-1/2 xl:w-[55%] relative overflow-hidden flex-col justify-between p-12 text-white"
-        style={{
-          background: "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)",
-        }}
+        style={{ background: "#0f172a" }}
       >
-        {/* Grid pattern overlay */}
-        <div
-          className="absolute inset-0 opacity-[0.06]"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M0 0h1v1H0V0zm20 0h1v1h-1V0zM0 20h1v1H0v-1zm20 20h1v1h-1v-1z'/%3E%3C/g%3E%3C/svg%3E")`,
-          }}
-        />
-
-        {/* Top */}
+                {/* Top */}
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500/20 border border-red-500/30">

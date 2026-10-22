@@ -72,6 +72,9 @@
   "overrides": {
     "@prisma/adapter-mariadb": {
       "mariadb": "$mariadb"
+    },
+    "next-auth": {
+      "nodemailer": "$nodemailer"
     }
   }
 }

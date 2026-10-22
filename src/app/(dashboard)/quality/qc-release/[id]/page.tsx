@@ -68,7 +68,7 @@ export default function QCReleaseDetailPage({ params }: { params: Promise<{ id: 
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Released By</span>
-              <span>{qcRelease.releasedBy?.name || "—"}</span>
+              <span>{qcRelease.releasedBy?.name || "-"}</span>
             </div>
             {qcRelease.remarks && (
               <div className="flex justify-between">
@@ -90,20 +90,20 @@ export default function QCReleaseDetailPage({ params }: { params: Promise<{ id: 
                 href={`/quality/inspections/${qcRelease.inspection?.id}`}
                 className="font-mono text-blue-600 hover:underline"
               >
-                {qcRelease.inspection?.inspectionNo || "—"}
+                {qcRelease.inspection?.inspectionNo || "-"}
               </Link>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Heat No.</span>
-              <span className="font-mono">{qcRelease.inventoryStock?.heatNo || "—"}</span>
+              <span className="font-mono">{qcRelease.inventoryStock?.heatNo || "-"}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Product</span>
-              <span>{qcRelease.inventoryStock?.product || "—"}</span>
+              <span>{qcRelease.inventoryStock?.product || "-"}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Size</span>
-              <span>{qcRelease.inventoryStock?.sizeLabel || "—"}</span>
+              <span>{qcRelease.inventoryStock?.sizeLabel || "-"}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Qty (Mtr)</span>
@@ -111,7 +111,7 @@ export default function QCReleaseDetailPage({ params }: { params: Promise<{ id: 
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Stock Status</span>
-              <Badge>{qcRelease.inventoryStock?.status?.replace(/_/g, " ") || "—"}</Badge>
+              <Badge>{qcRelease.inventoryStock?.status?.replace(/_/g, " ") || "-"}</Badge>
             </div>
           </CardContent>
         </Card>

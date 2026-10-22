@@ -33,3 +33,7 @@ anywhere.
 - `src/components/providers/query-provider.tsx`
 - `src/app/(dashboard)/layout.tsx` — the application chrome.
 - `src/app/(auth)/layout.tsx` — deliberately no chrome.
+
+## Change (2026-10-22, frontend and API follow-up)
+
+Font is IBM Plex Sans / IBM Plex Mono (was Geist, which the design rules ban). The CSS variables are `--font-plex-sans` and `--font-plex-mono`, mapped in `globals.css`.

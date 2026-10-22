@@ -308,7 +308,7 @@ export default function MTCCertificateDetailPage() {
         title={`MTC: ${cert.certificateNo || "Draft"}`}
         badge={cert.status}
         badgeVariant={sc.variant}
-        description={`Date: ${cert.certificateDate ? format(new Date(cert.certificateDate), "dd MMM yyyy") : "—"} | Revision: ${cert.revision || 0}`}
+        description={`Date: ${cert.certificateDate ? format(new Date(cert.certificateDate), "dd MMM yyyy") : "-"} | Revision: ${cert.revision || 0}`}
       >
         <div className="flex gap-2 flex-wrap">
           <Button variant="outline" onClick={() => router.back()}>
@@ -364,45 +364,45 @@ export default function MTCCertificateDetailPage() {
             <div>
               <Label className="text-muted-foreground text-xs">Customer</Label>
               <div className="font-medium">
-                {cert.customer?.name || cert.customerName || "—"}
+                {cert.customer?.name || cert.customerName || "-"}
               </div>
             </div>
             <div>
               <Label className="text-muted-foreground text-xs">PO No</Label>
-              <div className="font-mono font-medium">{cert.poNo || "—"}</div>
+              <div className="font-mono font-medium">{cert.poNo || "-"}</div>
             </div>
             <div>
               <Label className="text-muted-foreground text-xs">PO Date</Label>
               <div>
                 {cert.poDate
                   ? formatDate(cert.poDate, "dd MMM yyyy")
-                  : "—"}
+                  : "-"}
               </div>
             </div>
             <div>
               <Label className="text-muted-foreground text-xs">
                 Quotation No
               </Label>
-              <div className="font-mono">{cert.quotationNo || "—"}</div>
+              <div className="font-mono">{cert.quotationNo || "-"}</div>
             </div>
             <div>
               <Label className="text-muted-foreground text-xs">
                 Project Name
               </Label>
-              <div>{cert.projectName || "—"}</div>
+              <div>{cert.projectName || "-"}</div>
             </div>
             <div>
               <Label className="text-muted-foreground text-xs">
                 Other Reference
               </Label>
-              <div>{cert.otherReference || "—"}</div>
+              <div>{cert.otherReference || "-"}</div>
             </div>
             <div>
               <Label className="text-muted-foreground text-xs">
                 Certificate No
               </Label>
               <div className="font-mono font-medium">
-                {cert.certificateNo || "—"}
+                {cert.certificateNo || "-"}
               </div>
             </div>
             <div>
@@ -412,7 +412,7 @@ export default function MTCCertificateDetailPage() {
               <div>
                 {cert.certificateDate
                   ? format(new Date(cert.certificateDate), "dd MMM yyyy")
-                  : "—"}
+                  : "-"}
               </div>
             </div>
             <div>
@@ -420,32 +420,32 @@ export default function MTCCertificateDetailPage() {
                 Material Spec
               </Label>
               <div className="font-mono">
-                {cert.materialSpecRef?.materialSpec || cert.materialSpec || "—"}
+                {cert.materialSpecRef?.materialSpec || cert.materialSpec || "-"}
               </div>
             </div>
             <div>
               <Label className="text-muted-foreground text-xs">
                 Additional Requirement
               </Label>
-              <div>{cert.additionalRequirement || "—"}</div>
+              <div>{cert.additionalRequirement || "-"}</div>
             </div>
             <div>
               <Label className="text-muted-foreground text-xs">
                 Starting Material
               </Label>
-              <div>{cert.startingMaterial || "—"}</div>
+              <div>{cert.startingMaterial || "-"}</div>
             </div>
             <div>
               <Label className="text-muted-foreground text-xs">
                 Heat Treatment
               </Label>
-              <div>{cert.heatTreatment || "—"}</div>
+              <div>{cert.heatTreatment || "-"}</div>
             </div>
             <div>
               <Label className="text-muted-foreground text-xs">
                 Issued Against
               </Label>
-              <div>{cert.issuedAgainst || "—"}</div>
+              <div>{cert.issuedAgainst || "-"}</div>
             </div>
             <div>
               <Label className="text-muted-foreground text-xs">Revision</Label>
@@ -502,37 +502,37 @@ export default function MTCCertificateDetailPage() {
                       {item.itemNo || idx + 1}
                     </TableCell>
                     <TableCell className="text-sm max-w-[200px] truncate">
-                      {item.description || "—"}
+                      {item.description || "-"}
                     </TableCell>
                     <TableCell className="text-sm">
-                      {item.constructionType || "—"}
+                      {item.constructionType || "-"}
                     </TableCell>
                     <TableCell className="text-sm">
-                      {item.dimensionStandard || "—"}
+                      {item.dimensionStandard || "-"}
                     </TableCell>
                     <TableCell className="text-center text-sm font-mono">
-                      {item.sizeOD1 || "—"}
+                      {item.sizeOD1 || "-"}
                     </TableCell>
                     <TableCell className="text-center text-sm font-mono">
-                      {item.sizeWT1 || "—"}
+                      {item.sizeWT1 || "-"}
                     </TableCell>
                     <TableCell className="text-center text-sm font-mono">
-                      {item.sizeOD2 || "—"}
+                      {item.sizeOD2 || "-"}
                     </TableCell>
                     <TableCell className="text-center text-sm font-mono">
-                      {item.sizeWT2 || "—"}
+                      {item.sizeWT2 || "-"}
                     </TableCell>
                     <TableCell className="text-center text-sm font-mono">
-                      {item.quantity || "—"}
+                      {item.quantity || "-"}
                     </TableCell>
                     <TableCell className="font-mono text-sm">
-                      {item.heatNo || "—"}
+                      {item.heatNo || "-"}
                     </TableCell>
                     <TableCell className="text-sm">
-                      {item.rawMaterial || "—"}
+                      {item.rawMaterial || "-"}
                     </TableCell>
                     <TableCell className="text-sm">
-                      {item.clientItemCode || "—"}
+                      {item.clientItemCode || "-"}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -568,7 +568,7 @@ export default function MTCCertificateDetailPage() {
                     /* min row */
                     <tr key={`${item.id}-min`} className="bg-muted/40">
                       <td rowSpan={4} className="border px-2 py-1 text-center font-semibold bg-muted/60">{item.itemNo || idx + 1}</td>
-                      <td rowSpan={4} className="border px-2 py-1 font-mono text-xs">{item.heatNo || "—"}</td>
+                      <td rowSpan={4} className="border px-2 py-1 font-mono text-xs">{item.heatNo || "-"}</td>
                       <td className="border px-1 py-0.5 text-center italic text-muted-foreground">min.</td>
                       {sorted.map((r: any) => <td key={r.id} className="border px-1 py-0.5 text-center text-muted-foreground">{fmtVal(r.minValue)}</td>)}
                     </tr>,
@@ -658,7 +658,7 @@ export default function MTCCertificateDetailPage() {
                         /* min row */
                         <tr key={`${item.id}-min`} className="bg-muted/40">
                           <td rowSpan={3} className="border px-2 py-1 text-center font-semibold bg-muted/60">{item.itemNo || idx + 1}</td>
-                          <td rowSpan={3} className="border px-2 py-1 font-mono">{item.heatNo || "—"}</td>
+                          <td rowSpan={3} className="border px-2 py-1 font-mono">{item.heatNo || "-"}</td>
                           <td className="border px-1 py-0.5 text-center italic text-muted-foreground">min.</td>
                           <td rowSpan={3} className="border px-1 py-0.5 text-center font-semibold">{item.orientation || "L"}</td>
                           <td rowSpan={3} className="border px-1 py-0.5 text-center font-semibold">{item.specimenForm || "S"}</td>
@@ -735,13 +735,13 @@ export default function MTCCertificateDetailPage() {
                           {item.itemNo || idx + 1}
                         </TableCell>
                         <TableCell className="font-mono text-sm">
-                          {item.heatNo || "—"}
+                          {item.heatNo || "-"}
                         </TableCell>
                         <TableCell className="text-sm">
-                          {r.testTemperature || "—"}
+                          {r.testTemperature || "-"}
                         </TableCell>
                         <TableCell className="text-sm">
-                          {r.specimenSize || "—"}
+                          {r.specimenSize || "-"}
                         </TableCell>
                         <TableCell className="text-center p-1">
                           {isDraft ? (

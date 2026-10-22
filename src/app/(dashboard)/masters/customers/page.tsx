@@ -168,9 +168,9 @@ export default function CustomersPage() {
                         {c.companyType === "BOTH" ? "Buyer & Vendor" : c.companyType === "SUPPLIER" ? "Vendor" : "Buyer"}
                       </Badge>
                     </TableCell>
-                    <TableCell>{c.email || "—"}</TableCell>
-                    <TableCell>{c.city || "—"}</TableCell>
-                    <TableCell className="font-mono text-xs">{c.gstNo || "—"}</TableCell>
+                    <TableCell>{c.email || "-"}</TableCell>
+                    <TableCell>{c.city || "-"}</TableCell>
+                    <TableCell className="font-mono text-xs">{c.gstNo || "-"}</TableCell>
                     <TableCell>
                       <div className="flex gap-1 flex-wrap">
                         {c.tags?.map((t: any) => (

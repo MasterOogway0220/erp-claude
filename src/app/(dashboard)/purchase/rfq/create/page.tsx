@@ -171,7 +171,7 @@ function CreateRFQContent() {
   // Build item description from fields
   const itemDesc = (item: PRItem) => {
     const parts = [item.material, item.additionalSpec, item.sizeLabel].filter(Boolean);
-    return parts.join(" | ") || "—";
+    return parts.join(" | ") || "-";
   };
 
   if (loading) {
@@ -214,7 +214,7 @@ function CreateRFQContent() {
                 ) : (
                   prs.map((pr) => (
                     <SelectItem key={pr.id} value={pr.id}>
-                      {pr.prNo} — {format(new Date(pr.prDate), "dd MMM yyyy")}
+                      {pr.prNo}: {format(new Date(pr.prDate), "dd MMM yyyy")}
                       {pr.salesOrder ? ` (SO: ${pr.salesOrder.soNo})` : ""}
                     </SelectItem>
                   ))
@@ -259,7 +259,7 @@ function CreateRFQContent() {
                             {item.sNo || index + 1}
                           </TableCell>
                           <TableCell className="font-medium">
-                            {item.product || "—"}
+                            {item.product || "-"}
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground">
                             {itemDesc(item)}
@@ -267,9 +267,9 @@ function CreateRFQContent() {
                           <TableCell className="text-right">
                             {parseFloat(String(item.quantity))}
                           </TableCell>
-                          <TableCell>{item.uom || "—"}</TableCell>
+                          <TableCell>{item.uom || "-"}</TableCell>
                           <TableCell className="text-sm text-muted-foreground">
-                            {item.remarks || "—"}
+                            {item.remarks || "-"}
                           </TableCell>
                         </TableRow>
                       ))
@@ -340,12 +340,12 @@ function CreateRFQContent() {
                       <TableCell className="font-medium">
                         {vendor.name}
                       </TableCell>
-                      <TableCell>{vendor.city || "—"}</TableCell>
+                      <TableCell>{vendor.city || "-"}</TableCell>
                       <TableCell className="text-sm">
-                        {vendor.email || "—"}
+                        {vendor.email || "-"}
                       </TableCell>
                       <TableCell className="text-sm">
-                        {vendor.phone || "—"}
+                        {vendor.phone || "-"}
                       </TableCell>
                     </TableRow>
                   ))

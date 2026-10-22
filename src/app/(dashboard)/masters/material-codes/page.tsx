@@ -175,7 +175,7 @@ export default function MaterialCodesPage() {
       rate: item.rate || "",
     });
     setIsDialogOpen(true);
-    toast.info("Duplicated — enter a new Item Code");
+    toast.info("Duplicated: enter a new Item Code");
   };
 
   const handleOpenEdit = (item: MaterialCode) => {
@@ -268,7 +268,7 @@ export default function MaterialCodesPage() {
 
   // Compute amount for display
   const formatRate = (rate: string | null) => {
-    if (!rate) return "—";
+    if (!rate) return "-";
     return `₹ ${parseFloat(rate).toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
   };
 
@@ -293,7 +293,7 @@ export default function MaterialCodesPage() {
       header: "Product Description",
       cell: (row) => (
         <span className="text-sm max-w-[250px] truncate block">
-          {row.description || "—"}
+          {row.description || "-"}
         </span>
       ),
     },
@@ -307,25 +307,25 @@ export default function MaterialCodesPage() {
             {row.materialGrade}
           </Badge>
         ) : (
-          "—"
+          "-"
         ),
     },
     {
       key: "size",
       header: "Size",
-      cell: (row) => row.size || "—",
+      cell: (row) => row.size || "-",
     },
     {
       key: "schedule",
       header: "Schedule",
       sortable: true,
-      cell: (row) => row.schedule || "—",
+      cell: (row) => row.schedule || "-",
     },
     {
       key: "standard",
       header: "Standard",
       sortable: true,
-      cell: (row) => row.standard || "—",
+      cell: (row) => row.standard || "-",
     },
     {
       key: "unit",
@@ -336,7 +336,7 @@ export default function MaterialCodesPage() {
             {row.unit}
           </Badge>
         ) : (
-          "—"
+          "-"
         ),
     },
     {

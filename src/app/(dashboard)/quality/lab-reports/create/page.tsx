@@ -281,7 +281,7 @@ export default function CreateLabReportPage() {
                     <SelectItem value="NONE">None</SelectItem>
                     {purchaseOrders.map((po: any) => (
                       <SelectItem key={po.id} value={po.id}>
-                        {po.poNo} — {po.vendor?.name}
+                        {po.poNo}: {po.vendor?.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -303,7 +303,7 @@ export default function CreateLabReportPage() {
                       .filter((s) => s.heatNo)
                       .map((s: any) => (
                         <SelectItem key={s.id} value={s.id}>
-                          {s.heatNo} — {s.product} {s.sizeLabel} ({s.status})
+                          {s.heatNo}: {s.product} {s.sizeLabel} ({s.status})
                         </SelectItem>
                       ))}
                   </SelectContent>

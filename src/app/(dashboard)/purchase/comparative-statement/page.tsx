@@ -59,7 +59,7 @@ export default function ComparativeStatementListPage() {
       key: "rfq",
       header: "RFQ Reference",
       cell: (row) => (
-        <span className="font-mono text-sm">{row.rfq?.rfqNo || "—"}</span>
+        <span className="font-mono text-sm">{row.rfq?.rfqNo || "-"}</span>
       ),
     },
     {
@@ -67,7 +67,7 @@ export default function ComparativeStatementListPage() {
       header: "PR Reference",
       cell: (row) => (
         <span className="font-mono text-sm">
-          {row.purchaseRequisition?.prNo || "—"}
+          {row.purchaseRequisition?.prNo || "-"}
         </span>
       ),
     },
@@ -88,7 +88,7 @@ export default function ComparativeStatementListPage() {
     {
       key: "selectedVendor",
       header: "Selected Vendor",
-      cell: (row) => row.selectedVendor?.name || "—",
+      cell: (row) => row.selectedVendor?.name || "-",
     },
     {
       key: "actions",

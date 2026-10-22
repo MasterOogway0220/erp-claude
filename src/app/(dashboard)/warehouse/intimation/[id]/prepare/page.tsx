@@ -251,7 +251,7 @@ export default function PrepareMaterialPage({
   return (
     <div className="space-y-6">
       <PageHeader
-        title={`Prepare Material — ${mprNo}`}
+        title={`Prepare Material: ${mprNo}`}
         description="Enter per-pipe details for each item"
       />
 
@@ -435,7 +435,7 @@ export default function PrepareMaterialPage({
                             value={row.mtcNo}
                             disabled
                             className="h-8 bg-muted"
-                            placeholder="—"
+                            placeholder="-"
                           />
                         </TableCell>
                         <TableCell>
@@ -443,7 +443,7 @@ export default function PrepareMaterialPage({
                             value={row.mtcDate}
                             disabled
                             className="h-8 bg-muted"
-                            placeholder="—"
+                            placeholder="-"
                           />
                         </TableCell>
                         <TableCell>

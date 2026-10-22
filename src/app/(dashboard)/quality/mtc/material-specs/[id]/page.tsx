@@ -129,26 +129,26 @@ export default function MaterialSpecDetailPage() {
               <Label className="text-muted-foreground text-xs">
                 Description
               </Label>
-              <div>{spec.description || "—"}</div>
+              <div>{spec.description || "-"}</div>
             </div>
             <div>
               <Label className="text-muted-foreground text-xs">
                 Starting Material
               </Label>
-              <div>{spec.startingMaterial || "—"}</div>
+              <div>{spec.startingMaterial || "-"}</div>
             </div>
             <div>
               <Label className="text-muted-foreground text-xs">
                 Heat Treatment
               </Label>
-              <div>{spec.heatTreatment || "—"}</div>
+              <div>{spec.heatTreatment || "-"}</div>
             </div>
             <div>
               <Label className="text-muted-foreground text-xs">
                 Heat Treatment Type
               </Label>
               <div>
-                {spec.heatTreatmentType?.replace(/_/g, " ") || "—"}
+                {spec.heatTreatmentType?.replace(/_/g, " ") || "-"}
               </div>
             </div>
             <div>
@@ -156,14 +156,14 @@ export default function MaterialSpecDetailPage() {
                 Construction Type
               </Label>
               <Badge variant="outline">
-                {spec.constructionType || "—"}
+                {spec.constructionType || "-"}
               </Badge>
             </div>
             <div>
               <Label className="text-muted-foreground text-xs">
                 Dimension Standard
               </Label>
-              <div>{spec.dimensionStandard || "—"}</div>
+              <div>{spec.dimensionStandard || "-"}</div>
             </div>
           </div>
           {spec.defaultNotes && (
@@ -209,20 +209,20 @@ export default function MaterialSpecDetailPage() {
                         {el.element}
                       </TableCell>
                       <TableCell className="text-center font-mono">
-                        {el.minValue != null ? Number(el.minValue).toFixed(4) : "—"}
+                        {el.minValue != null ? Number(el.minValue).toFixed(4) : "-"}
                       </TableCell>
                       <TableCell className="text-center font-mono">
-                        {el.maxValue != null ? Number(el.maxValue).toFixed(4) : "—"}
+                        {el.maxValue != null ? Number(el.maxValue).toFixed(4) : "-"}
                       </TableCell>
                       <TableCell className="text-center font-mono text-blue-600">
                         {el.resultMinValue != null
                           ? Number(el.resultMinValue).toFixed(4)
-                          : "—"}
+                          : "-"}
                       </TableCell>
                       <TableCell className="text-center font-mono text-blue-600">
                         {el.resultMaxValue != null
                           ? Number(el.resultMaxValue).toFixed(4)
-                          : "—"}
+                          : "-"}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -263,22 +263,22 @@ export default function MaterialSpecDetailPage() {
                       <TableCell className="font-medium">
                         {mp.propertyName}
                       </TableCell>
-                      <TableCell>{mp.unit || "—"}</TableCell>
+                      <TableCell>{mp.unit || "-"}</TableCell>
                       <TableCell className="text-center font-mono">
-                        {mp.minValue != null ? Number(mp.minValue).toFixed(2) : "—"}
+                        {mp.minValue != null ? Number(mp.minValue).toFixed(2) : "-"}
                       </TableCell>
                       <TableCell className="text-center font-mono">
-                        {mp.maxValue != null ? Number(mp.maxValue).toFixed(2) : "—"}
+                        {mp.maxValue != null ? Number(mp.maxValue).toFixed(2) : "-"}
                       </TableCell>
                       <TableCell className="text-center font-mono text-blue-600">
                         {mp.resultMinValue != null
                           ? Number(mp.resultMinValue).toFixed(2)
-                          : "—"}
+                          : "-"}
                       </TableCell>
                       <TableCell className="text-center font-mono text-blue-600">
                         {mp.resultMaxValue != null
                           ? Number(mp.resultMaxValue).toFixed(2)
-                          : "—"}
+                          : "-"}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -310,22 +310,22 @@ export default function MaterialSpecDetailPage() {
                 <TableBody>
                   {impactProps.map((ip: any) => (
                     <TableRow key={ip.id}>
-                      <TableCell>{ip.testTemperature || "—"}</TableCell>
-                      <TableCell>{ip.specimenSize || "—"}</TableCell>
+                      <TableCell>{ip.testTemperature || "-"}</TableCell>
+                      <TableCell>{ip.specimenSize || "-"}</TableCell>
                       <TableCell className="text-center font-mono">
                         {ip.minEnergy != null
                           ? Number(ip.minEnergy).toFixed(2)
-                          : "—"}
+                          : "-"}
                       </TableCell>
                       <TableCell className="text-center font-mono text-blue-600">
                         {ip.resultMinValue != null
                           ? Number(ip.resultMinValue).toFixed(2)
-                          : "—"}
+                          : "-"}
                       </TableCell>
                       <TableCell className="text-center font-mono text-blue-600">
                         {ip.resultMaxValue != null
                           ? Number(ip.resultMaxValue).toFixed(2)
-                          : "—"}
+                          : "-"}
                       </TableCell>
                     </TableRow>
                   ))}

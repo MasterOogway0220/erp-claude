@@ -668,14 +668,14 @@ function NonStandardQuotationPage() {
       if (!res.ok) {
         if (res.status === 401) {
           throw new Error(
-            "Your session expired, so the quotation was NOT saved. Your data is still on this page — log in again in a NEW tab, then come back here and press Save."
+            "Your session expired, so the quotation was NOT saved. Your data is still on this page: log in again in a NEW tab, then come back here and press Save."
           );
         }
         const err = await res.json().catch(() => null);
         if (res.status >= 500) {
           console.error("Save failed:", err?.error);
           throw new Error(
-            "The server could not save the quotation (temporary server/database problem). Your data is still on this page — wait a minute and press Save again."
+            "The server could not save the quotation (temporary server/database problem). Your data is still on this page: wait a minute and press Save again."
           );
         }
         throw new Error(err?.error || "Failed to save quotation");
@@ -1170,7 +1170,7 @@ function NonStandardQuotationPage() {
                 <div className="flex h-9 items-center rounded-md border bg-muted px-3 text-sm">
                   {editId
                     ? editData?.quotation?.preparedBy?.name || "Unassigned"
-                    : currentUser?.name || "—"}
+                    : currentUser?.name || "-"}
                 </div>
               </div>
             </div>
@@ -1242,7 +1242,7 @@ function NonStandardQuotationPage() {
                                 });
                               }}
                             >
-                              Item #{i + 1}{src.itemDescription ? ` — ${src.itemDescription.substring(0, 40)}` : src.material ? ` — ${src.material}` : ""}
+                              Item #{i + 1}{src.itemDescription ? `: ${src.itemDescription.substring(0, 40)}` : src.material ? `: ${src.material}` : ""}
                             </DropdownMenuItem>
                           ) : null
                         )}
@@ -1286,7 +1286,7 @@ function NonStandardQuotationPage() {
                               return newItems;
                             });
                           }}
-                          displayFn={(ci: any) => `${ci.itemNo}${ci.description ? ` — ${ci.description.split("\n")[0].slice(0, 60)}` : ""}`}
+                          displayFn={(ci: any) => `${ci.itemNo}${ci.description ? `: ${ci.description.split("\n")[0].slice(0, 60)}` : ""}`}
                           filterFn={(ci: any, query) =>
                             ci.itemNo.toLowerCase().includes(query.toLowerCase()) ||
                             (ci.description || "").toLowerCase().includes(query.toLowerCase())
@@ -1341,7 +1341,7 @@ function NonStandardQuotationPage() {
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
                             {/* An older row can hold a UOM since removed from
-                                Unit Master (e.g. "MTR") — keep it selectable so
+                                Unit Master (e.g. "MTR"): keep it selectable so
                                 editing shows the stored value, not a blank. */}
                             {item.uom && !uomOptions.includes(item.uom) && (
                               <SelectItem value={item.uom}>{item.uom}</SelectItem>
@@ -1409,10 +1409,10 @@ function NonStandardQuotationPage() {
                             <SelectValue placeholder="Select past quote" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="NONE">— None —</SelectItem>
+                            <SelectItem value="NONE">- None -</SelectItem>
                             {pastQuotations.filter((pq: any) => pq.quotationCategory === "NON_STANDARD").map((pq: any) => (
                               <SelectItem key={pq.id} value={pq.quotationNo}>
-                                {pq.quotationNo} {pq.contactPerson ? `[${pq.contactPerson}]` : ""} ({pq.quotationDate ? new Date(pq.quotationDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "2-digit" }) : "—"})
+                                {pq.quotationNo} {pq.contactPerson ? `[${pq.contactPerson}]` : ""} ({pq.quotationDate ? new Date(pq.quotationDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "2-digit" }) : "-"})
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -1815,10 +1815,10 @@ function NonStandardQuotationPage() {
                   className="w-full grid grid-cols-[1fr_auto_auto_auto] gap-2 px-3 py-2 text-sm hover:bg-muted/60 rounded-md transition-colors text-left items-center"
                   onClick={() => selectPastQuoteItem(item)}
                 >
-                  <span className="font-medium truncate">{item.product || item.itemDescription || "—"}</span>
-                  <span className="text-muted-foreground text-xs">{item.sizeLabel || "—"}</span>
+                  <span className="font-medium truncate">{item.product || item.itemDescription || "-"}</span>
+                  <span className="text-muted-foreground text-xs">{item.sizeLabel || "-"}</span>
                   <span className="font-semibold text-primary whitespace-nowrap">
-                    {item.unitRate != null ? `₹${Number(item.unitRate).toLocaleString("en-IN")}` : "—"}
+                    {item.unitRate != null ? `₹${Number(item.unitRate).toLocaleString("en-IN")}` : "-"}
                   </span>
                   <span className="text-xs text-muted-foreground">{item.uom || "Unit"}</span>
                 </button>

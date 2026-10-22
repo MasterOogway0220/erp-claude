@@ -61,7 +61,7 @@ export default function EmployeesPage() {
         throw new Error(err.error || "Failed to update status");
       }
       invalidate(["employees"]);
-      toast.success(next ? "Employee activated — login enabled" : "Employee deactivated — login blocked");
+      toast.success(next ? "Employee activated: login enabled" : "Employee deactivated: login blocked");
     } catch (error: any) {
       toast.error(error.message || "Failed to update status");
     }
@@ -105,24 +105,24 @@ export default function EmployeesPage() {
       key: "department",
       header: "Department",
       sortable: true,
-      cell: (row: Employee) => row.department || "—",
+      cell: (row: Employee) => row.department || "-",
     },
     {
       key: "email",
       header: "Email",
-      cell: (row: Employee) => row.email || "—",
+      cell: (row: Employee) => row.email || "-",
     },
     {
       key: "mobile",
       header: "Mobile",
-      cell: (row: Employee) => row.mobile || "—",
+      cell: (row: Employee) => row.mobile || "-",
     },
     {
       key: "moduleAccess",
       header: "Module Access",
       cell: (row: Employee) =>
         row.moduleAccess.length === 0 ? (
-          <span className="text-muted-foreground text-xs">—</span>
+          <span className="text-muted-foreground text-xs">-</span>
         ) : row.moduleAccess.length === 8 ? (
           <Badge variant="secondary">All modules</Badge>
         ) : (

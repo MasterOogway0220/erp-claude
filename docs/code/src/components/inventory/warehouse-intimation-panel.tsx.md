@@ -48,3 +48,7 @@ Statuses: `PENDING` → `IN_PROGRESS` → `MATERIAL_READY` → `DISPATCHED`.
 - `src/app/(dashboard)/inventory/page.tsx` — the tab.
 - `src/app/(dashboard)/warehouse/intimation/page.tsx` — the thin route wrapper.
 - `src/lib/quality/qap.ts`
+
+## Change (2026-10-22, frontend and API follow-up)
+
+Status summary cards have no coloured left strip; the hover and click behaviour is unchanged.

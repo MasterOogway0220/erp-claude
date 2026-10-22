@@ -243,11 +243,11 @@ export default function LabReportDetailPage() {
               </div>
               <div>
                 <div className="text-sm text-muted-foreground">Item Code</div>
-                <div>{report.itemCode || "—"}</div>
+                <div>{report.itemCode || "-"}</div>
               </div>
               <div>
                 <div className="text-sm text-muted-foreground">Testing Laboratory</div>
-                <div>{report.labName || "—"}</div>
+                <div>{report.labName || "-"}</div>
               </div>
             </div>
             <Separator />
@@ -258,11 +258,11 @@ export default function LabReportDetailPage() {
               </div>
               <div>
                 <div className="text-sm text-muted-foreground">Test Date</div>
-                <div>{report.testDate ? formatDate(report.testDate, "dd MMM yyyy") : "—"}</div>
+                <div>{report.testDate ? formatDate(report.testDate, "dd MMM yyyy") : "-"}</div>
               </div>
               <div>
                 <div className="text-sm text-muted-foreground">Uploaded By</div>
-                <div>{report.uploadedBy?.name || "—"}</div>
+                <div>{report.uploadedBy?.name || "-"}</div>
               </div>
             </div>
             {report.remarks && (
@@ -298,7 +298,7 @@ export default function LabReportDetailPage() {
                     )}
                   </Link>
                 ) : (
-                  <div className="text-sm">—</div>
+                  <div className="text-sm">-</div>
                 )}
               </div>
               <div>
@@ -308,10 +308,10 @@ export default function LabReportDetailPage() {
                     href={`/inventory/stock/${report.inventoryStock.id}`}
                     className="text-blue-600 hover:underline text-sm"
                   >
-                    {report.inventoryStock.product} {report.inventoryStock.sizeLabel} — {report.inventoryStock.heatNo}
+                    {report.inventoryStock.product} {report.inventoryStock.sizeLabel}: {report.inventoryStock.heatNo}
                   </Link>
                 ) : (
-                  <div className="text-sm">—</div>
+                  <div className="text-sm">-</div>
                 )}
               </div>
               <div>
@@ -324,7 +324,7 @@ export default function LabReportDetailPage() {
                     {report.grn.grnNo}
                   </Link>
                 ) : (
-                  <div className="text-sm">—</div>
+                  <div className="text-sm">-</div>
                 )}
               </div>
             </CardContent>

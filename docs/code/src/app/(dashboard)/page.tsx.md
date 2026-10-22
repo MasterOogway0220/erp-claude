@@ -29,3 +29,7 @@ Cards link into the module they summarise.
 
 - `src/app/api/reports/**`
 - `src/components/layout/sidebar.tsx`
+
+## Change (2026-10-22, frontend and API follow-up)
+
+KPI cards have no coloured left strip. Each card's `borderAccent` value is still in the data but no longer rendered.

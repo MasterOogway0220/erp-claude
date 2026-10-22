@@ -162,7 +162,7 @@ function QualityPageInner() {
         const stock = row.inventoryStock as any;
         return (
           <span className="font-mono text-sm">
-            {stock?.heatNo || (row.grnItem as any)?.heatNo || "—"}
+            {stock?.heatNo || (row.grnItem as any)?.heatNo || "-"}
           </span>
         );
       },
@@ -179,12 +179,12 @@ function QualityPageInner() {
     {
       key: "inspector",
       header: "Inspector",
-      cell: (row) => (row.inspector as any)?.name || "—",
+      cell: (row) => (row.inspector as any)?.name || "-",
     },
     {
       key: "tpiAgency",
       header: "TPI Agency",
-      cell: (row) => (row.tpiAgency as any)?.name || "—",
+      cell: (row) => (row.tpiAgency as any)?.name || "-",
     },
   ];
 
@@ -210,18 +210,18 @@ function QualityPageInner() {
       key: "heatNo",
       header: "Heat No.",
       cell: (row) => (
-        <span className="font-mono text-sm">{(row.heatNo as string) || "—"}</span>
+        <span className="font-mono text-sm">{(row.heatNo as string) || "-"}</span>
       ),
     },
     {
       key: "nonConformanceType",
       header: "Type",
-      cell: (row) => (row.nonConformanceType as string)?.replace(/_/g, " ") || "—",
+      cell: (row) => (row.nonConformanceType as string)?.replace(/_/g, " ") || "-",
     },
     {
       key: "vendor",
       header: "Vendor",
-      cell: (row) => (row.vendor as any)?.name || "—",
+      cell: (row) => (row.vendor as any)?.name || "-",
     },
     {
       key: "status",
@@ -244,7 +244,7 @@ function QualityPageInner() {
       key: "heatNo",
       header: "Heat No.",
       cell: (row) => (
-        <span className="font-mono text-sm">{(row.heatNo as string) || "—"}</span>
+        <span className="font-mono text-sm">{(row.heatNo as string) || "-"}</span>
       ),
     },
     {
@@ -252,20 +252,20 @@ function QualityPageInner() {
       header: "Product / Size",
       cell: (row) => {
         const stock = row.inventoryStock as any;
-        return stock ? `${stock.product || ""} ${stock.sizeLabel || ""}`.trim() || "—" : "—";
+        return stock ? `${stock.product || ""} ${stock.sizeLabel || ""}`.trim() || "-" : "-";
       },
     },
     {
       key: "vendor",
       header: "Vendor",
-      cell: (row) => (row.purchaseOrder as any)?.vendor?.name || "—",
+      cell: (row) => (row.purchaseOrder as any)?.vendor?.name || "-",
     },
     {
       key: "purchaseOrder",
       header: "PO",
       cell: (row) => {
         const po = row.purchaseOrder as any;
-        return po ? <Link href={`/purchase/orders/${po.id}`} className="text-blue-600 hover:underline text-sm">{po.poNo}</Link> : "—";
+        return po ? <Link href={`/purchase/orders/${po.id}`} className="text-blue-600 hover:underline text-sm">{po.poNo}</Link> : "-";
       },
     },
     {
@@ -273,7 +273,7 @@ function QualityPageInner() {
       header: "GRN",
       cell: (row) => {
         const grn = row.grn as any;
-        return grn ? <Link href={`/inventory/grn/${grn.id}`} className="text-blue-600 hover:underline text-sm">{grn.grnNo}</Link> : "—";
+        return grn ? <Link href={`/inventory/grn/${grn.id}`} className="text-blue-600 hover:underline text-sm">{grn.grnNo}</Link> : "-";
       },
     },
     {
@@ -328,14 +328,14 @@ function QualityPageInner() {
     {
       key: "inspection",
       header: "Inspection No.",
-      cell: (row) => (row.inspection as any)?.inspectionNo || "—",
+      cell: (row) => (row.inspection as any)?.inspectionNo || "-",
     },
     {
       key: "heatNo",
       header: "Heat No.",
       cell: (row) => (
         <span className="font-mono text-sm">
-          {(row.inventoryStock as any)?.heatNo || "—"}
+          {(row.inventoryStock as any)?.heatNo || "-"}
         </span>
       ),
     },
@@ -351,7 +351,7 @@ function QualityPageInner() {
     {
       key: "releasedBy",
       header: "Released By",
-      cell: (row) => (row.releasedBy as any)?.name || "—",
+      cell: (row) => (row.releasedBy as any)?.name || "-",
     },
   ];
 
@@ -372,18 +372,18 @@ function QualityPageInner() {
       key: "heatNo",
       header: "Heat No.",
       cell: (row) => (
-        <span className="font-mono text-sm">{(row.heatNo as string) || "—"}</span>
+        <span className="font-mono text-sm">{(row.heatNo as string) || "-"}</span>
       ),
     },
     {
       key: "specification",
       header: "Specification",
-      cell: (row) => (row.specification as string) || "—",
+      cell: (row) => (row.specification as string) || "-",
     },
     {
       key: "clientName",
       header: "Client",
-      cell: (row) => (row.clientName as string) || "—",
+      cell: (row) => (row.clientName as string) || "-",
     },
     {
       key: "status",
@@ -427,7 +427,7 @@ function QualityPageInner() {
     {
       key: "itemCode",
       header: "Item Code",
-      cell: (row) => (row.itemCode as string) || "—",
+      cell: (row) => (row.itemCode as string) || "-",
     },
     {
       key: "purchaseOrder",
@@ -438,7 +438,7 @@ function QualityPageInner() {
           <Link href={`/purchase/orders/${po.id}`} className="text-blue-600 hover:underline text-sm">
             {po.poNo}
           </Link>
-        ) : "—";
+        ) : "-";
       },
     },
     {
@@ -458,7 +458,7 @@ function QualityPageInner() {
     {
       key: "uploadedBy",
       header: "Uploaded By",
-      cell: (row) => (row.uploadedBy as any)?.name || "—",
+      cell: (row) => (row.uploadedBy as any)?.name || "-",
     },
   ];
 

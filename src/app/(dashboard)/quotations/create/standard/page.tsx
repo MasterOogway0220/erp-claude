@@ -777,14 +777,14 @@ function StandardQuotationPage() {
       if (!res.ok) {
         if (res.status === 401) {
           throw new Error(
-            "Your session expired, so the quotation was NOT saved. Your data is still on this page — log in again in a NEW tab, then come back here and press Save."
+            "Your session expired, so the quotation was NOT saved. Your data is still on this page: log in again in a NEW tab, then come back here and press Save."
           );
         }
         const err = await res.json().catch(() => null);
         if (res.status >= 500) {
           console.error("Save failed:", err?.error);
           throw new Error(
-            "The server could not save the quotation (temporary server/database problem). Your data is still on this page — wait a minute and press Save again."
+            "The server could not save the quotation (temporary server/database problem). Your data is still on this page: wait a minute and press Save again."
           );
         }
         throw new Error(err?.error || "Failed to save quotation");
@@ -1307,7 +1307,7 @@ function StandardQuotationPage() {
                 <div className="flex h-9 items-center rounded-md border bg-muted px-3 text-sm">
                   {editId
                     ? editData?.quotation?.preparedBy?.name || "Unassigned"
-                    : currentUser?.name || "—"}
+                    : currentUser?.name || "-"}
                 </div>
               </div>
             </div>
@@ -1467,7 +1467,7 @@ function StandardQuotationPage() {
                                     });
                                   }}
                                 >
-                                  Item #{i + 1}{src.product ? ` — ${src.product}` : ""}
+                                  Item #{i + 1}{src.product ? `: ${src.product}` : ""}
                                 </DropdownMenuItem>
                               ) : null
                             )}
@@ -1521,7 +1521,7 @@ function StandardQuotationPage() {
                                 return newItems;
                               });
                             }}
-                            displayFn={(mc: any) => `${mc.code}${mc.description ? ` — ${mc.description}` : ""}`}
+                            displayFn={(mc: any) => `${mc.code}${mc.description ? `: ${mc.description}` : ""}`}
                             filterFn={(mc: any, query) =>
                               mc.code.toLowerCase().includes(query.toLowerCase()) ||
                               (mc.description || "").toLowerCase().includes(query.toLowerCase())
@@ -1778,7 +1778,7 @@ function StandardQuotationPage() {
                               !item.product
                                 ? "Select product first"
                                 : sizeOptions.length === 0
-                                  ? "No sizes in master — type manually"
+                                  ? "No sizes in master: type manually"
                                   : "Search sizes..."
                             }
                             disabled={!item.product}
@@ -1796,7 +1796,7 @@ function StandardQuotationPage() {
                             <SelectContent>
                               <SelectItem value="__none__">Select</SelectItem>
                               {/* An older quotation can hold a length that is not (or no longer) in
-                                  the master — keep it selectable so editing does not blank it. */}
+                                  the master: keep it selectable so editing does not blank it. */}
                               {item.length && !lengthOptions.includes(item.length) && (
                                 <SelectItem value={item.length}>{item.length}</SelectItem>
                               )}
@@ -1854,7 +1854,7 @@ function StandardQuotationPage() {
                         </SelectTrigger>
                         <SelectContent>
                           {/* An older row can hold a UOM since removed from
-                              Unit Master (e.g. "MTR") — keep it selectable so
+                              Unit Master (e.g. "MTR"): keep it selectable so
                               editing shows the stored value, not a blank. */}
                           {item.uom && !uomOptions.includes(item.uom) && (
                             <SelectItem value={item.uom}>{item.uom}</SelectItem>
@@ -1964,10 +1964,10 @@ function StandardQuotationPage() {
                           <SelectValue placeholder="Select past quote" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="NONE">— None —</SelectItem>
+                          <SelectItem value="NONE">- None -</SelectItem>
                           {pastQuotations.filter((pq: any) => pq.quotationCategory === "STANDARD").map((pq: any) => (
                             <SelectItem key={pq.id} value={pq.quotationNo}>
-                              {pq.quotationNo} {pq.contactPerson ? `[${pq.contactPerson}]` : ""} ({pq.quotationDate ? new Date(pq.quotationDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "2-digit" }) : "—"})
+                              {pq.quotationNo} {pq.contactPerson ? `[${pq.contactPerson}]` : ""} ({pq.quotationDate ? new Date(pq.quotationDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "2-digit" }) : "-"})
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -2394,10 +2394,10 @@ function StandardQuotationPage() {
                   className="w-full grid grid-cols-[1fr_auto_auto_auto] gap-2 px-3 py-2 text-sm hover:bg-muted/60 rounded-md transition-colors text-left items-center"
                   onClick={() => selectPastQuoteItem(item)}
                 >
-                  <span className="font-medium truncate">{item.product || item.itemDescription || "—"}</span>
-                  <span className="text-muted-foreground text-xs">{item.sizeLabel || "—"}</span>
+                  <span className="font-medium truncate">{item.product || item.itemDescription || "-"}</span>
+                  <span className="text-muted-foreground text-xs">{item.sizeLabel || "-"}</span>
                   <span className="font-semibold text-primary whitespace-nowrap">
-                    {item.unitRate != null ? `₹${Number(item.unitRate).toLocaleString("en-IN")}` : "—"}
+                    {item.unitRate != null ? `₹${Number(item.unitRate).toLocaleString("en-IN")}` : "-"}
                   </span>
                   <span className="text-xs text-muted-foreground">{item.uom || "Unit"}</span>
                 </button>

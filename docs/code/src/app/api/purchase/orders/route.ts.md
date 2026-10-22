@@ -30,3 +30,7 @@ Operates on `purchaseOrder`, `vendorMaster`, `purchaseRequisition`.
 - `src/lib/rbac.ts`, `src/lib/prisma.ts`
 - `src/lib/document-numbering.ts`
 - [Module overview](../README.md)
+
+## Change (2026-10-22, frontend and API follow-up)
+
+The list GET takes `pageSize` (default and cap 500) via `takeFrom`. Callers that pass no pageSize get the first 500 rows.

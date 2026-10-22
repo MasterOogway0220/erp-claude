@@ -345,7 +345,7 @@ export default function CreateSupplierQuotationPage() {
                         vendors.map((v) => (
                           <SelectItem key={v.id} value={v.id}>
                             {v.name}
-                            {v.city ? ` — ${v.city}` : ""}
+                            {v.city ? `: ${v.city}` : ""}
                           </SelectItem>
                         ))
                       )}

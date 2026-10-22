@@ -262,13 +262,13 @@ export default function VendorsPage() {
               data?.vendors?.map((vendor: Vendor) => (
                 <TableRow key={vendor.id}>
                   <TableCell className="font-medium">{vendor.name}</TableCell>
-                  <TableCell>{vendor.contactPerson || "—"}</TableCell>
-                  <TableCell>{vendor.city || "—"}</TableCell>
+                  <TableCell>{vendor.contactPerson || "-"}</TableCell>
+                  <TableCell>{vendor.city || "-"}</TableCell>
                   <TableCell className="font-mono text-xs">
-                    {vendor.gstNo || "—"}
+                    {vendor.gstNo || "-"}
                   </TableCell>
                   <TableCell className="max-w-xs truncate">
-                    {vendor.productsSupplied || "—"}
+                    {vendor.productsSupplied || "-"}
                   </TableCell>
                   <TableCell>
                     {vendor.vendorRating ? (
@@ -276,7 +276,7 @@ export default function VendorsPage() {
                     ) : vendor.performanceScore ? (
                       <Badge variant="outline">{vendor.performanceScore}/10</Badge>
                     ) : (
-                      "—"
+                      "-"
                     )}
                   </TableCell>
                   <TableCell>

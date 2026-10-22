@@ -134,7 +134,7 @@ export default function QualityRequirementsPage() {
         row.tpiAgency ? (
           <span className="text-sm">{row.tpiAgency.name}</span>
         ) : (
-          <span className="text-muted-foreground">—</span>
+          <span className="text-muted-foreground">-</span>
         ),
     },
     {
@@ -168,7 +168,7 @@ export default function QualityRequirementsPage() {
             View
           </a>
         ) : (
-          <span className="text-muted-foreground">—</span>
+          <span className="text-muted-foreground">-</span>
         ),
     },
     {

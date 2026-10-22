@@ -128,13 +128,13 @@ export default function SupplierQuotationsPage() {
                   >
                     <TableCell className="font-mono font-medium">{sq.sqNo}</TableCell>
                     <TableCell>{sq.vendor.name}</TableCell>
-                    <TableCell className="text-muted-foreground">{sq.vendorRef || "—"}</TableCell>
+                    <TableCell className="text-muted-foreground">{sq.vendorRef || "-"}</TableCell>
                     <TableCell>{format(new Date(sq.sqDate), "dd MMM yyyy")}</TableCell>
                     <TableCell className="text-center">{sq._count.items}</TableCell>
                     <TableCell className="text-right font-mono">
                       {sq.grandTotal
                         ? `₹ ${parseFloat(sq.grandTotal).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                        : "—"}
+                        : "-"}
                     </TableCell>
                     <TableCell>
                       <Badge

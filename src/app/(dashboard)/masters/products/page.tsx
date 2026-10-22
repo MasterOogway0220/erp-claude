@@ -185,7 +185,7 @@ const END_OPTIONS: Record<string, string[]> = {
   PIPES: ["BE", "PE", "NPTM", "BSPT"],
   FITTINGS: ["BW", "SW", "NPT"],
   FLANGES: ["RF", "FF", "RTJ"],
-  PLATES: [], // no end connection — keeps the select from offering pipe ends
+  PLATES: [], // no end connection: keeps the select from offering pipe ends
 };
 
 function PipesPanel() {
@@ -292,7 +292,7 @@ function PipesPanel() {
   };
 
   const getCategoryLabel = (val: string | null) =>
-    PRODUCT_CATEGORIES.find((c) => c.value === val)?.label || val || "—";
+    PRODUCT_CATEGORIES.find((c) => c.value === val)?.label || val || "-";
 
   return (
     <div className="space-y-4">
@@ -370,13 +370,13 @@ function PipesPanel() {
               data?.products?.map((p: ProductSpec) => (
                 <TableRow key={p.id}>
                   <TableCell>
-                    {p.category ? <Badge variant="secondary" className="text-xs">{getCategoryLabel(p.category)}</Badge> : "—"}
+                    {p.category ? <Badge variant="secondary" className="text-xs">{getCategoryLabel(p.category)}</Badge> : "-"}
                   </TableCell>
                   <TableCell className="font-medium">{p.product}</TableCell>
-                  <TableCell className="max-w-[200px] truncate">{p.material || "—"}</TableCell>
-                  <TableCell>{p.dimensionalStandard?.name || "—"}</TableCell>
-                  <TableCell>{p.size || "—"}</TableCell>
-                  <TableCell>{p.ends || "—"}</TableCell>
+                  <TableCell className="max-w-[200px] truncate">{p.material || "-"}</TableCell>
+                  <TableCell>{p.dimensionalStandard?.name || "-"}</TableCell>
+                  <TableCell>{p.size || "-"}</TableCell>
+                  <TableCell>{p.ends || "-"}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Button variant="ghost" size="icon" onClick={() => openDialog(p)}><Pencil className="h-4 w-4" /></Button>
@@ -416,7 +416,7 @@ function PipesPanel() {
                 <Select value={formData.category || "NONE"} onValueChange={(v) => setFormData({ ...formData, category: v === "NONE" ? "" : v })}>
                   <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="NONE">— None —</SelectItem>
+                    <SelectItem value="NONE">- None -</SelectItem>
                     {PRODUCT_CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
@@ -472,7 +472,7 @@ function PipesPanel() {
                   <Select value={formData.ends || "NONE"} onValueChange={(v) => setFormData({ ...formData, ends: v === "NONE" ? "" : v })}>
                     <SelectTrigger><SelectValue placeholder="End connection type" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="NONE">— None —</SelectItem>
+                      <SelectItem value="NONE">- None -</SelectItem>
                       {(END_OPTIONS[formData.category] ?? [...END_OPTIONS.PIPES, ...END_OPTIONS.FITTINGS, ...END_OPTIONS.FLANGES]).map((e) => (
                         <SelectItem key={e} value={e}>{e}</SelectItem>
                       ))}
@@ -863,7 +863,7 @@ function AdditionalSpecsPanel() {
         <div className="grid gap-1 flex-1">
           <Label className="text-xs">
             Additional Spec Name{" "}
-            <span className="text-muted-foreground font-normal">— adds under {targetProduct}</span>
+            <span className="text-muted-foreground font-normal">- adds under {targetProduct}</span>
           </Label>
           <Input
             value={newSpecName}

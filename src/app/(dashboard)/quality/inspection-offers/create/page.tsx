@@ -211,7 +211,7 @@ export default function CreateInspectionOfferPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label>Link Sales Order (optional — prefills QAP)</Label>
+                <Label>Link Sales Order (optional: prefills QAP)</Label>
                 <Select
                   value={formData.salesOrderId}
                   onValueChange={async (v) => {
@@ -236,7 +236,7 @@ export default function CreateInspectionOfferPage() {
                   <SelectContent>
                     {salesOrders.map((s) => (
                       <SelectItem key={s.id} value={s.id}>
-                        {s.soNo}{s.customerName ? ` — ${s.customerName}` : ""}
+                        {s.soNo}{s.customerName ? `: ${s.customerName}` : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>

@@ -22,7 +22,7 @@ import { QueryClient } from "@tanstack/react-query";
  */
 
 describe("the query cache is memory-only", () => {
-  it("a fresh client has no entries — what a page reload produces", () => {
+  it("a fresh client has no entries: what a page reload produces", () => {
     const client = new QueryClient();
     client.setQueryData(["customers"], { customers: [{ id: "1" }] });
     expect(client.getQueryData(["customers"])).toBeDefined();

@@ -147,7 +147,7 @@ export default function CreateDebitNotePage() {
               <SelectContent>
                 {invoices.map((inv) => (
                   <SelectItem key={inv.id} value={inv.id}>
-                    {inv.invoiceNo} — {inv.customer?.name} — ₹{Number(inv.totalAmount).toFixed(2)}
+                    {inv.invoiceNo}: {inv.customer?.name}: ₹{Number(inv.totalAmount).toFixed(2)}
                   </SelectItem>
                 ))}
               </SelectContent>

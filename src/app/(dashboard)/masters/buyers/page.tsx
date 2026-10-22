@@ -68,22 +68,22 @@ export default function BuyersPage() {
     {
       key: "customer",
       header: "Customer",
-      cell: (row) => row.customer?.name || "—",
+      cell: (row) => row.customer?.name || "-",
     },
     {
       key: "designation",
       header: "Designation",
-      cell: (row) => row.designation || "—",
+      cell: (row) => row.designation || "-",
     },
     {
       key: "email",
       header: "Email",
-      cell: (row) => row.email || "—",
+      cell: (row) => row.email || "-",
     },
     {
       key: "mobile",
       header: "Mobile",
-      cell: (row) => row.mobile || "—",
+      cell: (row) => row.mobile || "-",
     },
     {
       key: "isActive",

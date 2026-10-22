@@ -431,15 +431,15 @@ export default function NCRDetailPage() {
               </div>
               <div>
                 <div className="text-sm text-muted-foreground">Type</div>
-                <div>{ncr.nonConformanceType?.replace(/_/g, " ") || "—"}</div>
+                <div>{ncr.nonConformanceType?.replace(/_/g, " ") || "-"}</div>
               </div>
               <div>
                 <div className="text-sm text-muted-foreground">Heat No.</div>
-                <div className="font-mono">{ncr.heatNo || "—"}</div>
+                <div className="font-mono">{ncr.heatNo || "-"}</div>
               </div>
               <div>
                 <div className="text-sm text-muted-foreground">Vendor</div>
-                <div>{ncr.vendor?.name || "—"}</div>
+                <div>{ncr.vendor?.name || "-"}</div>
               </div>
             </div>
 
@@ -474,7 +474,7 @@ export default function NCRDetailPage() {
             <Separator />
             <div>
               <div className="text-sm text-muted-foreground">Description</div>
-              <div className="text-sm mt-1 whitespace-pre-wrap">{ncr.description || "—"}</div>
+              <div className="text-sm mt-1 whitespace-pre-wrap">{ncr.description || "-"}</div>
             </div>
 
             {(ncr.targetClosureDate || ncr.responsiblePerson) && (
@@ -486,12 +486,12 @@ export default function NCRDetailPage() {
                     <div>
                       {ncr.targetClosureDate
                         ? formatDate(ncr.targetClosureDate, "dd MMM yyyy")
-                        : "—"}
+                        : "-"}
                     </div>
                   </div>
                   <div>
                     <div className="text-sm text-muted-foreground">Responsible Person</div>
-                    <div>{ncr.responsiblePerson?.name || "—"}</div>
+                    <div>{ncr.responsiblePerson?.name || "-"}</div>
                   </div>
                 </div>
               </>
@@ -507,7 +507,7 @@ export default function NCRDetailPage() {
                   </div>
                   <div>
                     <div className="text-sm text-muted-foreground">Closed By</div>
-                    <div>{ncr.closedBy?.name || "—"}</div>
+                    <div>{ncr.closedBy?.name || "-"}</div>
                   </div>
                 </div>
               </>
@@ -522,12 +522,12 @@ export default function NCRDetailPage() {
                     <div>
                       {ncr.verifiedDate
                         ? formatDate(ncr.verifiedDate, "dd MMM yyyy")
-                        : "—"}
+                        : "-"}
                     </div>
                   </div>
                   <div>
                     <div className="text-sm text-muted-foreground">Verified By</div>
-                    <div>{ncr.verifiedBy?.name || "—"}</div>
+                    <div>{ncr.verifiedBy?.name || "-"}</div>
                   </div>
                 </div>
               </>
@@ -567,19 +567,19 @@ export default function NCRDetailPage() {
               <div>
                 <div className="text-sm text-muted-foreground font-medium">Root Cause</div>
                 <div className="text-sm mt-1 whitespace-pre-wrap p-3 rounded-md bg-muted/50">
-                  {ncr.rootCause || "—"}
+                  {ncr.rootCause || "-"}
                 </div>
               </div>
               <div>
                 <div className="text-sm text-muted-foreground font-medium">Corrective Action</div>
                 <div className="text-sm mt-1 whitespace-pre-wrap p-3 rounded-md bg-muted/50">
-                  {ncr.correctiveAction || "—"}
+                  {ncr.correctiveAction || "-"}
                 </div>
               </div>
               <div>
                 <div className="text-sm text-muted-foreground font-medium">Preventive Action</div>
                 <div className="text-sm mt-1 whitespace-pre-wrap p-3 rounded-md bg-muted/50">
-                  {ncr.preventiveAction || "—"}
+                  {ncr.preventiveAction || "-"}
                 </div>
               </div>
             </div>

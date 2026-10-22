@@ -33,3 +33,7 @@ Operates on `goodsReceiptNote`, `purchaseOrder`.
 ## Security change (2026-10-22, follow-up)
 
 The excess-receipt check now runs inside the transaction, after `SELECT ... FROM PurchaseOrder ... FOR UPDATE` on the PO row. Two receipts against the same PO are checked one after another. The warning behaviour is unchanged.
+
+## Change (2026-10-22, frontend and API follow-up)
+
+The list GET takes `pageSize` (default and cap 500) via `takeFrom`. Callers that pass no pageSize get the first 500 rows.

@@ -534,11 +534,11 @@ function CreatePOAcceptanceContent() {
       </div>
 
       <p className="text-sm text-muted-foreground">
-        Step {step} of {STEP_LABELS.length} — {STEP_LABELS[step - 1]}
+        Step {step} of {STEP_LABELS.length}: {STEP_LABELS[step - 1]}
       </p>
 
       {/* ══════════════════════════════════════
-          STEP 1 — Details & Contacts
+          STEP 1: Details & Contacts
       ══════════════════════════════════════ */}
       {step === 1 && (
         <div className="space-y-6">
@@ -570,7 +570,7 @@ function CreatePOAcceptanceContent() {
                     <SelectContent>
                       {clientPOs.map((cpo) => (
                         <SelectItem key={cpo.id} value={cpo.id}>
-                          {cpo.cpoNo} — {cpo.customer.name} — {cpo.clientPoNumber}
+                          {cpo.cpoNo}: {cpo.customer.name}: {cpo.clientPoNumber}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -924,7 +924,7 @@ function CreatePOAcceptanceContent() {
       )}
 
       {/* ══════════════════════════════════════
-          STEP 2 — Charges & Commercials
+          STEP 2: Charges & Commercials
       ══════════════════════════════════════ */}
       {step === 2 && (
         <div className="space-y-6">
@@ -954,7 +954,7 @@ function CreatePOAcceptanceContent() {
                           <tr key={item.id} className="border-t">
                             <td className="px-3 py-2 text-muted-foreground">{item.sNo}</td>
                             <td className="px-3 py-2">
-                              {item.description || "—"}
+                              {item.description || "-"}
                               {item.itemDescription && (
                                 <div className="text-xs text-muted-foreground whitespace-pre-line">
                                   {item.itemDescription}
@@ -1297,7 +1297,7 @@ function CreatePOAcceptanceContent() {
       )}
 
       {/* ══════════════════════════════════════
-          STEP 3 — Review & Submit
+          STEP 3: Review & Submit
       ══════════════════════════════════════ */}
       {step === 3 && (
         <div className="space-y-6">
@@ -1327,7 +1327,7 @@ function CreatePOAcceptanceContent() {
                   </div>
                   <div>
                     <dt className="text-muted-foreground">Project</dt>
-                    <dd className="font-medium">{selectedCPO.projectName || "—"}</dd>
+                    <dd className="font-medium">{selectedCPO.projectName || "-"}</dd>
                   </div>
                   <div>
                     <dt className="text-muted-foreground">Quotation No.</dt>
@@ -1356,7 +1356,7 @@ function CreatePOAcceptanceContent() {
                   <dd className="font-medium">
                     {form.acceptanceDate
                       ? format(new Date(form.acceptanceDate), "dd/MM/yyyy")
-                      : "—"}
+                      : "-"}
                   </dd>
                 </div>
                 <div>
@@ -1364,7 +1364,7 @@ function CreatePOAcceptanceContent() {
                   <dd className="font-medium">
                     {form.committedDeliveryDate
                       ? formatDate(form.committedDeliveryDate, "dd/MM/yyyy")
-                      : "—"}
+                      : "-"}
                   </dd>
                 </div>
                 {form.acceptanceDetails && (
@@ -1396,21 +1396,21 @@ function CreatePOAcceptanceContent() {
                 {/* Follow-Up */}
                 <div className="space-y-1">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Follow-Up</p>
-                  <p className="font-medium">{form.followUpName || "—"}</p>
+                  <p className="font-medium">{form.followUpName || "-"}</p>
                   {form.followUpEmail && <p className="text-muted-foreground">{form.followUpEmail}</p>}
                   {form.followUpPhone && <p className="text-muted-foreground">{form.followUpPhone}</p>}
                 </div>
                 {/* Quality */}
                 <div className="space-y-1">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Quality Inspection</p>
-                  <p className="font-medium">{form.qualityName || "—"}</p>
+                  <p className="font-medium">{form.qualityName || "-"}</p>
                   {form.qualityEmail && <p className="text-muted-foreground">{form.qualityEmail}</p>}
                   {form.qualityPhone && <p className="text-muted-foreground">{form.qualityPhone}</p>}
                 </div>
                 {/* Accounts */}
                 <div className="space-y-1">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Accounts</p>
-                  <p className="font-medium">{form.accountsName || "—"}</p>
+                  <p className="font-medium">{form.accountsName || "-"}</p>
                   {form.accountsEmail && <p className="text-muted-foreground">{form.accountsEmail}</p>}
                   {form.accountsPhone && <p className="text-muted-foreground">{form.accountsPhone}</p>}
                 </div>
@@ -1544,7 +1544,7 @@ function CreatePOAcceptanceContent() {
                 />
                 {!emailTo && (
                   <p className="text-xs text-muted-foreground">
-                    No recipient — add a contact
+                    No recipient: add a contact
                   </p>
                 )}
               </div>

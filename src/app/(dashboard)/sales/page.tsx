@@ -89,9 +89,9 @@ interface KpiTileProps {
   subtitleClass?: string;
 }
 
-function KpiTile({ title, value, subtitle, icon, borderColor, valueClass, subtitleClass }: KpiTileProps) {
+function KpiTile({ title, value, subtitle, icon, valueClass, subtitleClass }: KpiTileProps) {
   return (
-    <Card className={`border-l-4 ${borderColor}`}>
+    <Card>
       <CardContent className="p-3">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
@@ -186,7 +186,7 @@ export default function SalesOrdersPage() {
       header: "Customer PO",
       cell: (row) => (
         <div>
-          <div className="font-mono text-sm">{row.customerPoNo || "—"}</div>
+          <div className="font-mono text-sm">{row.customerPoNo || "-"}</div>
           {row.customerPoDate && (
             <div className="text-xs text-muted-foreground">
               {formatDate(row.customerPoDate, "dd MMM yyyy")}
@@ -200,7 +200,7 @@ export default function SalesOrdersPage() {
       header: "Quotation",
       cell: (row) => (
         <span className="font-mono text-sm">
-          {row.quotation?.quotationNo || "—"}
+          {row.quotation?.quotationNo || "-"}
         </span>
       ),
     },
@@ -263,7 +263,7 @@ export default function SalesOrdersPage() {
       header: "Customer PO",
       cell: (row) => (
         <div>
-          <div className="font-mono text-sm">{row.customerPoNo || "—"}</div>
+          <div className="font-mono text-sm">{row.customerPoNo || "-"}</div>
           {row.customerPoDate && (
             <div className="text-xs text-muted-foreground">
               {formatDate(row.customerPoDate, "dd MMM yyyy")}
@@ -277,7 +277,7 @@ export default function SalesOrdersPage() {
       header: "Reference Quotation",
       cell: (row) => (
         <span className="font-mono text-sm">
-          {row.quotation?.quotationNo || "—"}
+          {row.quotation?.quotationNo || "-"}
         </span>
       ),
     },

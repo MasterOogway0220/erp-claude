@@ -375,7 +375,7 @@ function CreatePOPage() {
                     <SelectItem value="NONE">None</SelectItem>
                     {salesOrders.map((so) => (
                       <SelectItem key={so.id} value={so.id}>
-                        {so.soNo}{(so as any).customer?.name ? ` — ${(so as any).customer.name}` : ""}
+                        {so.soNo}{(so as any).customer?.name ? `: ${(so as any).customer.name}` : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>

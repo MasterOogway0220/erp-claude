@@ -706,7 +706,7 @@ export default function TenderDetailPage({
                       <span className="font-medium">{q.quotationNo}</span>
                       <div className="flex items-center gap-3 text-muted-foreground">
                         <span>{q.quotationCategory === "NON_STANDARD" ? "Non-Std" : "Std"}</span>
-                        <span>{q.quotationDate ? new Date(q.quotationDate).toLocaleDateString("en-IN") : "—"}</span>
+                        <span>{q.quotationDate ? new Date(q.quotationDate).toLocaleDateString("en-IN") : "-"}</span>
                         <Badge variant="outline">{q.status}</Badge>
                       </div>
                     </div>
@@ -726,7 +726,7 @@ export default function TenderDetailPage({
                     >
                       <span className="font-medium">{so.soNo}</span>
                       <div className="flex items-center gap-3 text-muted-foreground">
-                        <span>{so.soDate ? new Date(so.soDate).toLocaleDateString("en-IN") : "—"}</span>
+                        <span>{so.soDate ? new Date(so.soDate).toLocaleDateString("en-IN") : "-"}</span>
                         <Badge variant="outline">{so.status}</Badge>
                       </div>
                     </div>

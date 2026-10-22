@@ -431,7 +431,7 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
       const data = await res.json();
       if (res.ok) {
         toast.success(
-          `Allotment confirmed${data.mprNo ? ` — MPR ${data.mprNo} created` : ""}${data.prNo ? ` — PR ${data.prNo} created` : ""}`
+          `Allotment confirmed${data.mprNo ? `: MPR ${data.mprNo} created` : ""}${data.prNo ? `: PR ${data.prNo} created` : ""}`
         );
         setAllotmentConfirmed(true);
         fetchProcessingData();
@@ -790,13 +790,13 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
             )}
           </span>
         ) : (
-          <span>Client PO {soInfo.customerPoNo || "—"}</span>
+          <span>Client PO {soInfo.customerPoNo || "-"}</span>
         )}
       </div>
 
       {/* Quality / QAP — order-level, rendered once */}
       <Card className="mb-4">
-        <CardHeader><CardTitle className="text-base">Quality / QAP (order-level — PRD §7)</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base">Quality / QAP (order-level: PRD §7)</CardTitle></CardHeader>
         <CardContent className="space-y-3">
           {/* Whether the ORDER is inspected by a third party / the client's QA,
               or by NPIPE's own QA. Chosen once here; every item processed after
@@ -1400,7 +1400,7 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
               <Card className="border-amber-300 bg-amber-50 dark:bg-amber-950/20">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm uppercase tracking-wide">
-                    TPI / Client QA — Inspection Parameters
+                    TPI / Client QA: Inspection Parameters
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -1714,7 +1714,7 @@ export function ProcessStep({ order, onComplete }: ProcessStepProps) {
                 </Button>
               ) : (
                 <div className="text-sm text-green-700 dark:text-green-400 text-center">
-                  Allotment confirmed —{" "}
+                  Allotment confirmed -{" "}
                   {allotmentSource === "STOCK"
                     ? "Warehouse notified"
                     : allotmentSource === "PROCUREMENT"

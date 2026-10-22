@@ -135,7 +135,7 @@ export function SmartCombobox<T>({
               5,626 rows (FITTING_SIZES.BW_REDUCING, the two-size butt-weld
               reducer pairs) inside a scroll box; typing filters it down
               immediately, but that first open is the one to watch. Virtualise
-              if it measures slow — a cap is the wrong fix, it hides the tail
+              if it measures slow: a cap is the wrong fix, it hides the tail
               by design. */}
           {filtered.map((item, i) => (
             <div

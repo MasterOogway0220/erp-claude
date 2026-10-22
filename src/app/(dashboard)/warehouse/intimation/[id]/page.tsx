@@ -618,7 +618,7 @@ export default function WarehouseIntimationDetailPage({
       {/* Generate Inspection Offer Dialog */}
       {showGenerateIODialog && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowGenerateIODialog(false)}>
-          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-lg w-full mx-4" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-card rounded-lg p-6 max-w-lg w-full mx-4" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-semibold mb-4">Generate Inspection Offer</h3>
             <p className="text-sm text-muted-foreground mb-4">Select items to include in the inspection offer:</p>
             <div className="space-y-2 mb-4">
@@ -634,7 +634,7 @@ export default function WarehouseIntimationDetailPage({
                       setSelectedIOItems(next);
                     }}
                   />
-                  <span className="text-sm">#{item.sNo} — {item.product} {item.sizeLabel || ""}</span>
+                  <span className="text-sm">#{item.sNo}: {item.product} {item.sizeLabel || ""}</span>
                 </label>
               ))}
             </div>

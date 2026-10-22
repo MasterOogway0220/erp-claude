@@ -56,12 +56,12 @@ export default function CreateNCRPage() {
 
   const getVendorName = (): string => {
     const grn = selectedStock?.grnItem?.grn;
-    return grn?.vendor?.name || "—";
+    return grn?.vendor?.name || "-";
   };
 
   const getPONo = (): string => {
     const grn = selectedStock?.grnItem?.grn;
-    return grn?.purchaseOrder?.poNo || "—";
+    return grn?.purchaseOrder?.poNo || "-";
   };
 
   const getVendorId = (): string | null => {
@@ -162,9 +162,9 @@ export default function CreateNCRPage() {
                 <div className="space-y-2">
                   <Label>Material Info</Label>
                   <div className="text-sm text-muted-foreground rounded-md border p-3">
-                    <div><span className="font-medium">Heat No:</span> {selectedStock.heatNo || "—"}</div>
-                    <div><span className="font-medium">Product:</span> {selectedStock.product || "—"} | {selectedStock.specification || "—"}</div>
-                    <div><span className="font-medium">Size:</span> {selectedStock.sizeLabel || "—"}</div>
+                    <div><span className="font-medium">Heat No:</span> {selectedStock.heatNo || "-"}</div>
+                    <div><span className="font-medium">Product:</span> {selectedStock.product || "-"} | {selectedStock.specification || "-"}</div>
+                    <div><span className="font-medium">Size:</span> {selectedStock.sizeLabel || "-"}</div>
                   </div>
                 </div>
               )}

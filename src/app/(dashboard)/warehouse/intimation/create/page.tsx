@@ -307,7 +307,7 @@ export default function CreateWarehouseIntimationPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>
-              SO Items — {soDetail.soNo}
+              SO Items: {soDetail.soNo}
               <span className="text-sm font-normal text-muted-foreground ml-2">
                 ({soDetail.customer.name})
               </span>

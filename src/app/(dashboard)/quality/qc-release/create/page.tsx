@@ -130,7 +130,7 @@ export default function CreateQCReleasePage() {
               <SelectContent>
                 {inspections.map((insp) => (
                   <SelectItem key={insp.id} value={insp.id}>
-                    {insp.inspectionNo} — Heat: {insp.inventoryStock?.heatNo || insp.grnItem?.heatNo || "N/A"}
+                    {insp.inspectionNo}: Heat: {insp.inventoryStock?.heatNo || insp.grnItem?.heatNo || "N/A"}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -161,18 +161,18 @@ export default function CreateQCReleasePage() {
                 </div>
                 <div>
                   <span className="text-sm text-muted-foreground">Heat No.</span>
-                  <p className="font-mono">{selectedInspection.inventoryStock?.heatNo || selectedInspection.grnItem?.heatNo || "—"}</p>
+                  <p className="font-mono">{selectedInspection.inventoryStock?.heatNo || selectedInspection.grnItem?.heatNo || "-"}</p>
                 </div>
               </div>
               {selectedInspection.inventoryStock && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2 border-t">
                   <div>
                     <span className="text-sm text-muted-foreground">Product</span>
-                    <p>{selectedInspection.inventoryStock.product || "—"}</p>
+                    <p>{selectedInspection.inventoryStock.product || "-"}</p>
                   </div>
                   <div>
                     <span className="text-sm text-muted-foreground">Size</span>
-                    <p>{selectedInspection.inventoryStock.sizeLabel || "—"}</p>
+                    <p>{selectedInspection.inventoryStock.sizeLabel || "-"}</p>
                   </div>
                   <div>
                     <span className="text-sm text-muted-foreground">Qty (Mtr)</span>

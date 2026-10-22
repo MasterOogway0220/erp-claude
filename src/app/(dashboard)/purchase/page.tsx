@@ -181,7 +181,7 @@ export default function PurchasePage() {
             </div>
           </div>
         ) : (
-          "—"
+          "-"
         ),
     },
     {
@@ -195,7 +195,7 @@ export default function PurchasePage() {
       cell: (row) =>
         row.requiredByDate
           ? formatDate(row.requiredByDate, "dd MMM yyyy")
-          : "—",
+          : "-",
     },
     {
       key: "status",
@@ -239,7 +239,7 @@ export default function PurchasePage() {
       key: "purchaseRequisition",
       header: "PR Reference",
       cell: (row) => (
-        <span className="font-mono text-sm">{row.purchaseRequisition?.prNo || "—"}</span>
+        <span className="font-mono text-sm">{row.purchaseRequisition?.prNo || "-"}</span>
       ),
     },
     {
@@ -251,7 +251,7 @@ export default function PurchasePage() {
       key: "submissionDeadline",
       header: "Deadline",
       cell: (row) =>
-        row.submissionDeadline ? formatDate(row.submissionDeadline, "dd MMM yyyy") : "—",
+        row.submissionDeadline ? formatDate(row.submissionDeadline, "dd MMM yyyy") : "-",
     },
     {
       key: "status",
@@ -288,13 +288,13 @@ export default function PurchasePage() {
     {
       key: "rfq",
       header: "RFQ Reference",
-      cell: (row) => <span className="font-mono text-sm">{row.rfq?.rfqNo || "—"}</span>,
+      cell: (row) => <span className="font-mono text-sm">{row.rfq?.rfqNo || "-"}</span>,
     },
     {
       key: "purchaseRequisition",
       header: "PR Reference",
       cell: (row) => (
-        <span className="font-mono text-sm">{row.purchaseRequisition?.prNo || "—"}</span>
+        <span className="font-mono text-sm">{row.purchaseRequisition?.prNo || "-"}</span>
       ),
     },
     {
@@ -309,7 +309,7 @@ export default function PurchasePage() {
     {
       key: "selectedVendor",
       header: "Selected Vendor",
-      cell: (row) => row.selectedVendor?.name || "—",
+      cell: (row) => row.selectedVendor?.name || "-",
     },
     {
       key: "actions",
@@ -355,7 +355,7 @@ export default function PurchasePage() {
       header: "SO Reference",
       cell: (row) => (
         <span className="font-mono text-sm">
-          {row.salesOrder?.soNo || "—"}
+          {row.salesOrder?.soNo || "-"}
         </span>
       ),
     },
@@ -374,7 +374,7 @@ export default function PurchasePage() {
       cell: (row) =>
         row.deliveryDate
           ? formatDate(row.deliveryDate, "dd MMM yyyy")
-          : "—",
+          : "-",
     },
     {
       key: "status",

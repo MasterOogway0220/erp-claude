@@ -117,7 +117,7 @@ function describeLog(log: AuditLog): string {
   const table = humanize(log.tableName);
   const change =
     log.fieldName && (log.oldValue || log.newValue)
-      ? ` — ${humanize(log.fieldName)}: "${truncate(log.oldValue || "—")}" → "${truncate(log.newValue || "—")}"`
+      ? `${humanize(log.fieldName)}: "${truncate(log.oldValue || "-")}" → "${truncate(log.newValue || "-")}"`
       : "";
   switch (log.action) {
     case "LOGIN":
@@ -881,17 +881,17 @@ export default function AdminPage() {
               <span className="text-muted-foreground">Record ID</span>
               <span className="font-mono break-all">{selectedLog.recordId}</span>
               <span className="text-muted-foreground">Field</span>
-              <span>{selectedLog.fieldName || "—"}</span>
+              <span>{selectedLog.fieldName || "-"}</span>
               <span className="text-muted-foreground">Old Value</span>
               <span className="whitespace-pre-wrap break-all max-h-40 overflow-y-auto rounded bg-muted px-2 py-1">
-                {selectedLog.oldValue || "—"}
+                {selectedLog.oldValue || "-"}
               </span>
               <span className="text-muted-foreground">New Value</span>
               <span className="whitespace-pre-wrap break-all max-h-40 overflow-y-auto rounded bg-muted px-2 py-1">
-                {selectedLog.newValue || "—"}
+                {selectedLog.newValue || "-"}
               </span>
               <span className="text-muted-foreground">IP Address</span>
-              <span>{selectedLog.ipAddress || "—"}</span>
+              <span>{selectedLog.ipAddress || "-"}</span>
             </div>
           )}
         </DialogContent>

@@ -526,7 +526,7 @@ function CreateMTCPage() {
                       <SelectItem value="NONE" disabled>Select Purchase Order</SelectItem>
                       {purchaseOrders.map((po: any) => (
                         <SelectItem key={po.id} value={po.id}>
-                          {po.poNo} — {po.vendor?.name || po.vendorName || ""}
+                          {po.poNo}: {po.vendor?.name || po.vendorName || ""}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -601,7 +601,7 @@ function CreateMTCPage() {
                         .filter((q: any) => !formData.customerId || q.customerId === formData.customerId)
                         .map((q: any) => (
                           <SelectItem key={q.id} value={q.id}>
-                            {q.quotationNo || q.id}{q.customer?.name ? ` — ${q.customer.name}` : ""}
+                            {q.quotationNo || q.id}{q.customer?.name ? `: ${q.customer.name}` : ""}
                           </SelectItem>
                         ))}
                     </SelectContent>
@@ -729,7 +729,7 @@ function CreateMTCPage() {
                   <div className="space-y-2">
                     <Label>Starting Material</Label>
                     <Input
-                      value={selectedSpec.startingMaterial || "—"}
+                      value={selectedSpec.startingMaterial || "-"}
                       readOnly
                       className="bg-muted"
                     />
@@ -737,7 +737,7 @@ function CreateMTCPage() {
                   <div className="space-y-2">
                     <Label>Heat Treatment</Label>
                     <Input
-                      value={selectedSpec.heatTreatment || "—"}
+                      value={selectedSpec.heatTreatment || "-"}
                       readOnly
                       className="bg-muted"
                     />
@@ -813,17 +813,17 @@ function CreateMTCPage() {
                             {item.description ||
                               item.itemDescription ||
                               item.product ||
-                              "—"}
+                              "-"}
                           </TableCell>
                           <TableCell className="text-sm">
                             {item.size ||
                               item.dimension ||
                               (item.sizeOD
                                 ? `${item.sizeOD}" x ${item.sizeWT || ""}`
-                                : "—")}
+                                : "-")}
                           </TableCell>
                           <TableCell className="text-sm">
-                            {item.quantity || item.qty || "—"}
+                            {item.quantity || item.qty || "-"}
                           </TableCell>
                         </TableRow>
                       );

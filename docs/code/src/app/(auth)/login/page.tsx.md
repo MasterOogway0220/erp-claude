@@ -74,3 +74,7 @@ a bad password.
 - `src/lib/auth/otp-client.ts` — the shared step 1.
 - `src/lib/auth.ts` — `authorize`.
 - `src/app/(auth)/superadmin/login/page.tsx` — the sibling.
+
+## Change (2026-10-22, frontend and API follow-up)
+
+Left panel is a solid navy colour (no gradient, no SVG pattern overlay). The three-item feature list with icons was removed, along with the `FeatureItem` helper.

@@ -205,7 +205,7 @@ export default function POAcceptanceDetailPage({
       if (response.ok) {
         toast.success(
           newStatus === "ISSUED"
-            ? "PO Acceptance issued — order moved to execution stage"
+            ? "PO Acceptance issued: order moved to execution stage"
             : "PO Acceptance cancelled"
         );
         invalidate(["po-acceptance", id]);
@@ -230,7 +230,7 @@ export default function POAcceptanceDetailPage({
       cpo.contactEmail || cpo.customer.email || acceptance.followUpEmail || ""
     );
     setEmailCc("");
-    setEmailSubject(`PO Acceptance — ${acceptance.acceptanceNo} | NPS Piping Solutions`);
+    setEmailSubject(`PO Acceptance: ${acceptance.acceptanceNo} | NPS Piping Solutions`);
     setEmailMessage("Please find below our Purchase Order Acceptance for your reference.");
     setShowEmailDialog(true);
   };
@@ -662,7 +662,7 @@ export default function POAcceptanceDetailPage({
       {/* Send Email Dialog */}
       {showEmailDialog && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowEmailDialog(false)}>
-          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-lg w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-card rounded-lg p-6 max-w-lg w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-semibold mb-4">Send PO Acceptance to Client</h3>
             <div className="space-y-4">
               <div className="space-y-2">

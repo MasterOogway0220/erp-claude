@@ -122,12 +122,12 @@ function StockRow({
 
   return (
     <TableRow>
-      <TableCell className="font-mono font-medium">{stock.heatNo || "—"}</TableCell>
-      <TableCell className="font-mono text-sm">{stock.mtcNo || "—"}</TableCell>
+      <TableCell className="font-mono font-medium">{stock.heatNo || "-"}</TableCell>
+      <TableCell className="font-mono text-sm">{stock.mtcNo || "-"}</TableCell>
       <TableCell>
-        {stock.mtcDate ? formatDate(stock.mtcDate, "dd MMM yyyy") : "—"}
+        {stock.mtcDate ? formatDate(stock.mtcDate, "dd MMM yyyy") : "-"}
       </TableCell>
-      <TableCell className="text-sm">{stock.make || "—"}</TableCell>
+      <TableCell className="text-sm">{stock.make || "-"}</TableCell>
       <TableCell className="text-right font-medium">
         {Number(stock.quantityMtr).toFixed(3)}
       </TableCell>
@@ -301,7 +301,7 @@ export function AllotmentStep({ order, onComplete }: AllotmentStepProps) {
       const data = await res.json();
       if (res.ok) {
         toast.success(
-          `Allotment confirmed${data.mprNo ? ` — MPR ${data.mprNo} created` : ""}${data.prNo ? ` — PR ${data.prNo} created` : ""}`
+          `Allotment confirmed${data.mprNo ? `: MPR ${data.mprNo} created` : ""}${data.prNo ? `: PR ${data.prNo} created` : ""}`
         );
         setEditingItemId(null);
         await fetchAnalysis();
@@ -341,7 +341,7 @@ export function AllotmentStep({ order, onComplete }: AllotmentStepProps) {
       const data = await res.json();
       if (res.ok) {
         toast.success(
-          `${pendingItems.length} item(s) allocated${data.mprNo ? ` — MPR ${data.mprNo}` : ""}${data.prNo ? ` — PR ${data.prNo}` : ""}`
+          `${pendingItems.length} item(s) allocated${data.mprNo ? `: MPR ${data.mprNo}` : ""}${data.prNo ? `: PR ${data.prNo}` : ""}`
         );
         setEditingItemId(null);
         await fetchAnalysis();
@@ -622,13 +622,13 @@ export function AllotmentStep({ order, onComplete }: AllotmentStepProps) {
                     <TableCell>{item.sNo}</TableCell>
                     <TableCell>
                       <div>
-                        <div className="font-medium">{item.product || "—"}</div>
+                        <div className="font-medium">{item.product || "-"}</div>
                         {item.material && (
                           <div className="text-xs text-muted-foreground">{item.material}</div>
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>{item.sizeLabel || "—"}</TableCell>
+                    <TableCell>{item.sizeLabel || "-"}</TableCell>
                     <TableCell className="text-right">{item.orderedQty}</TableCell>
                     <TableCell className="text-right">
                       <span
@@ -683,7 +683,7 @@ export function AllotmentStep({ order, onComplete }: AllotmentStepProps) {
                     {/* Stock Qty */}
                     <TableCell className="text-right">
                       {isAllocated ? (
-                        item.currentAllotment!.stockQty || "—"
+                        item.currentAllotment!.stockQty || "-"
                       ) : isEditing ? (
                         <Input
                           type="number"
@@ -696,7 +696,7 @@ export function AllotmentStep({ order, onComplete }: AllotmentStepProps) {
                         />
                       ) : (
                         <span className="text-muted-foreground">
-                          {item.suggestedStockQty || "—"}
+                          {item.suggestedStockQty || "-"}
                         </span>
                       )}
                     </TableCell>
@@ -704,7 +704,7 @@ export function AllotmentStep({ order, onComplete }: AllotmentStepProps) {
                     {/* Procurement Qty */}
                     <TableCell className="text-right">
                       {isAllocated ? (
-                        item.currentAllotment!.procurementQty || "—"
+                        item.currentAllotment!.procurementQty || "-"
                       ) : isEditing ? (
                         <Input
                           type="number"
@@ -717,7 +717,7 @@ export function AllotmentStep({ order, onComplete }: AllotmentStepProps) {
                         />
                       ) : (
                         <span className="text-muted-foreground">
-                          {item.suggestedProcurementQty || "—"}
+                          {item.suggestedProcurementQty || "-"}
                         </span>
                       )}
                     </TableCell>
@@ -913,10 +913,10 @@ export function AllotmentStep({ order, onComplete }: AllotmentStepProps) {
                               <TableRow key={res.id}>
                                 <TableCell>#{item.sNo}</TableCell>
                                 <TableCell className="font-mono font-medium">
-                                  {res.inventoryStock.heatNo || "—"}
+                                  {res.inventoryStock.heatNo || "-"}
                                 </TableCell>
                                 <TableCell className="font-mono text-sm">
-                                  {res.inventoryStock.mtcNo || "—"}
+                                  {res.inventoryStock.mtcNo || "-"}
                                 </TableCell>
                                 <TableCell className="text-right font-medium">
                                   {Number(res.reservedQtyMtr).toFixed(3)}

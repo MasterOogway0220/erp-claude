@@ -22,3 +22,7 @@ Renders the `/sales` screen. 470 lines.
 
 - [Module overview](README.md)
 - `src/components/shared/` — `DataTable`, `PageHeader`, `SmartCombobox`
+
+## Change (2026-10-22, frontend and API follow-up)
+
+KPI tiles have no coloured left strip. The `borderColor` prop is still accepted by callers but no longer used.

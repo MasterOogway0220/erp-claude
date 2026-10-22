@@ -101,12 +101,12 @@ export default function LabReportsPage() {
     {
       key: "itemCode",
       header: "Item Code",
-      cell: (row) => (row.itemCode as string) || "—",
+      cell: (row) => (row.itemCode as string) || "-",
     },
     {
       key: "labName",
       header: "Laboratory",
-      cell: (row) => (row.labName as string) || "—",
+      cell: (row) => (row.labName as string) || "-",
     },
     {
       key: "purchaseOrder",
@@ -117,7 +117,7 @@ export default function LabReportsPage() {
           <Link href={`/purchase/orders/${po.id}`} className="text-blue-600 hover:underline text-sm">
             {po.poNo}
           </Link>
-        ) : "—";
+        ) : "-";
       },
     },
     {
@@ -133,7 +133,7 @@ export default function LabReportsPage() {
       key: "testDate",
       header: "Test Date",
       cell: (row) =>
-        row.testDate ? format(new Date(row.testDate as string), "dd MMM yyyy") : "—",
+        row.testDate ? format(new Date(row.testDate as string), "dd MMM yyyy") : "-",
     },
     {
       key: "reportDate",
@@ -143,7 +143,7 @@ export default function LabReportsPage() {
     {
       key: "uploadedBy",
       header: "Uploaded By",
-      cell: (row) => (row.uploadedBy as any)?.name || "—",
+      cell: (row) => (row.uploadedBy as any)?.name || "-",
     },
   ];
 

@@ -57,7 +57,7 @@ export default function RFQListPage() {
       header: "PR Reference",
       cell: (row) => (
         <span className="font-mono text-sm">
-          {row.purchaseRequisition?.prNo || "—"}
+          {row.purchaseRequisition?.prNo || "-"}
         </span>
       ),
     },
@@ -74,7 +74,7 @@ export default function RFQListPage() {
       cell: (row) =>
         row.submissionDeadline
           ? formatDate(row.submissionDeadline, "dd MMM yyyy")
-          : "—",
+          : "-",
     },
     {
       key: "status",

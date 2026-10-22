@@ -290,11 +290,11 @@ export default function QuotationsPage() {
                   </TableCell>
                   <TableCell>
                     {tender.customer?.name || tender.organization || (
-                      <span className="text-muted-foreground">—</span>
+                      <span className="text-muted-foreground">-</span>
                     )}
                   </TableCell>
                   <TableCell>
-                    <span className="text-muted-foreground text-sm">—</span>
+                    <span className="text-muted-foreground text-sm">-</span>
                   </TableCell>
                   <TableCell>
                     <Badge>Tender</Badge>
@@ -307,11 +307,11 @@ export default function QuotationsPage() {
                         {tender.estimatedValue.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                       </>
                     ) : (
-                      <span className="text-muted-foreground">—</span>
+                      <span className="text-muted-foreground">-</span>
                     )}
                   </TableCell>
                   <TableCell className="text-sm">
-                    <span className="text-muted-foreground">—</span>
+                    <span className="text-muted-foreground">-</span>
                   </TableCell>
                   <TableCell className="text-sm">
                     {tender.closingDate ? (
@@ -320,13 +320,13 @@ export default function QuotationsPage() {
                         {formatDate(tender.closingDate, "dd MMM")}
                       </div>
                     ) : (
-                      <span className="text-muted-foreground">—</span>
+                      <span className="text-muted-foreground">-</span>
                     )}
                   </TableCell>
                   <TableCell>
-                    <span className="text-muted-foreground text-sm">—</span>
+                    <span className="text-muted-foreground text-sm">-</span>
                   </TableCell>
-                  <TableCell className="text-sm">—</TableCell>
+                  <TableCell className="text-sm">-</TableCell>
                   <TableCell>
                     <Badge variant={(statusColors[tender.status] as any) || "outline"}>
                       {tender.status.replace(/_/g, " ")}
@@ -387,7 +387,7 @@ export default function QuotationsPage() {
                     {getAmount(quotation).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                   </TableCell>
                   <TableCell className="text-sm">
-                    {quotation.dealOwner?.name || <span className="text-muted-foreground">—</span>}
+                    {quotation.dealOwner?.name || <span className="text-muted-foreground">-</span>}
                   </TableCell>
                   <TableCell className="text-sm">
                     {quotation.nextActionDate ? (
@@ -396,7 +396,7 @@ export default function QuotationsPage() {
                         {formatDate(quotation.nextActionDate, "dd MMM")}
                       </div>
                     ) : (
-                      <span className="text-muted-foreground">—</span>
+                      <span className="text-muted-foreground">-</span>
                     )}
                   </TableCell>
                   <TableCell>
@@ -406,11 +406,11 @@ export default function QuotationsPage() {
                         {quotation.salesOrders[0].soNo}
                       </div>
                     ) : (
-                      <span className="text-muted-foreground text-sm">—</span>
+                      <span className="text-muted-foreground text-sm">-</span>
                     )}
                   </TableCell>
                   <TableCell className="text-sm">
-                    {quotation.preparedBy?.name || "—"}
+                    {quotation.preparedBy?.name || "-"}
                   </TableCell>
                   <TableCell>
                     <Badge variant={statusColors[quotation.status] as any}>

@@ -794,7 +794,7 @@ function CreateClientPOPage() {
     );
     if (itemsMissingQtyRemark.length > 0) {
       toast.error(
-        `Qty remark is required for item ${itemsMissingQtyRemark[0].sNo} — the ordered qty differs from the quoted balance`
+        `Qty remark is required for item ${itemsMissingQtyRemark[0].sNo}: the ordered qty differs from the quoted balance`
       );
       return;
     }
@@ -1024,12 +1024,12 @@ function CreateClientPOPage() {
                       <SelectValue placeholder="Pick a saved contact" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="MANUAL">— Enter manually —</SelectItem>
+                      <SelectItem value="MANUAL">- Enter manually -</SelectItem>
                       {contacts.map((c) => (
                         <SelectItem key={c.id} value={c.id}>
                           {[c.contactName, c.designation, c.department]
                             .filter(Boolean)
-                            .join(" — ")}
+                            .join(": ")}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -1120,7 +1120,7 @@ function CreateClientPOPage() {
                 {!cddEdited && formData.committedDeliveryDate && (
                   <p className="text-xs text-muted-foreground">
                     Calculated from the delivery schedule, or else the latest
-                    item CDD — edit to override.
+                    item CDD: edit to override.
                   </p>
                 )}
               </div>
@@ -1178,10 +1178,10 @@ function CreateClientPOPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="NONE">Customer master address</SelectItem>
-                  <SelectItem value="MANUAL">— Enter manually —</SelectItem>
+                  <SelectItem value="MANUAL">- Enter manually -</SelectItem>
                   {dispatchAddresses.map((a) => (
                     <SelectItem key={a.id} value={a.id}>
-                      {[a.label, a.companyName, a.city, a.state].filter(Boolean).join(" — ") ||
+                      {[a.label, a.companyName, a.city, a.state].filter(Boolean).join(": ") ||
                         a.addressLine1 ||
                         "Unnamed address"}
                     </SelectItem>
@@ -1204,7 +1204,7 @@ function CreateClientPOPage() {
                     variant="outline"
                     size="sm"
                     className="float-right h-6 px-2 text-xs"
-                    title="Edit for this P.O. only — the saved address is not changed"
+                    title="Edit for this P.O. only: the saved address is not changed"
                     onClick={() => pickAddress("billing", "MANUAL")}
                   >
                     Edit
@@ -1292,10 +1292,10 @@ function CreateClientPOPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="NONE">Same as billing address</SelectItem>
-                  <SelectItem value="MANUAL">— Enter manually —</SelectItem>
+                  <SelectItem value="MANUAL">- Enter manually -</SelectItem>
                   {dispatchAddresses.map((a) => (
                     <SelectItem key={a.id} value={a.id}>
-                      {[a.label, a.companyName, a.city, a.state].filter(Boolean).join(" — ") ||
+                      {[a.label, a.companyName, a.city, a.state].filter(Boolean).join(": ") ||
                         a.addressLine1 ||
                         "Unnamed address"}
                     </SelectItem>
@@ -1305,7 +1305,7 @@ function CreateClientPOPage() {
               </Select>
               {formData.customerId && !dispatchAddressesLoading && dispatchAddresses.length === 0 && (
                 <p className="text-xs text-muted-foreground">
-                  No saved sites for this customer — save one with
+                  No saved sites for this customer: save one with
                   &quot;+ Add new address&quot;.
                 </p>
               )}
@@ -1324,7 +1324,7 @@ function CreateClientPOPage() {
                     variant="outline"
                     size="sm"
                     className="float-right h-6 px-2 text-xs"
-                    title="Edit for this P.O. only — the saved address is not changed"
+                    title="Edit for this P.O. only: the saved address is not changed"
                     onClick={() => pickAddress("dispatch", "MANUAL")}
                   >
                     Edit
@@ -1367,7 +1367,7 @@ function CreateClientPOPage() {
                     }
                   />
                   <span className="text-sm text-muted-foreground">
-                    {formData.isDomesticDelivery ? "Yes — delivery within India" : "No — international delivery"}
+                    {formData.isDomesticDelivery ? "Yes: delivery within India" : "No: international delivery"}
                   </span>
                 </div>
                 {formData.isDomesticDelivery && (
@@ -1511,7 +1511,7 @@ function CreateClientPOPage() {
                                   setBalanceItems(updated);
                                 }}
                                 className="h-8 w-[80px]"
-                                placeholder="—"
+                                placeholder="-"
                               />
                             </TableCell>
                             <TableCell>
@@ -1523,7 +1523,7 @@ function CreateClientPOPage() {
                                   setBalanceItems(updated);
                                 }}
                                 className="h-8 w-[110px]"
-                                placeholder="—"
+                                placeholder="-"
                               />
                             </TableCell>
                             <TableCell>
@@ -1634,7 +1634,7 @@ function CreateClientPOPage() {
                                   {" "}({item.unitRate !== 0 ? Math.abs(((item.unitRate - item.negotiatedRate) / item.unitRate) * 100).toFixed(1) : "0.0"}%)
                                 </span>
                               ) : (
-                                <span className="text-muted-foreground">—</span>
+                                <span className="text-muted-foreground">-</span>
                               )}
                             </TableCell>
 
@@ -1711,7 +1711,7 @@ function CreateClientPOPage() {
                                   : "No past quote for this customer + material"}
                                 {"  •  "}
                                 {materialHistory[item.id].lastPO
-                                  ? `Last PO: ₹${materialHistory[item.id].lastPO!.rate.toLocaleString("en-IN", { minimumFractionDigits: 2 })} (${materialHistory[item.id].lastPO!.poNo})${materialHistory[item.id].lastPO!.remark ? ` — ${materialHistory[item.id].lastPO!.remark}` : ""}`
+                                  ? `Last PO: ₹${materialHistory[item.id].lastPO!.rate.toLocaleString("en-IN", { minimumFractionDigits: 2 })} (${materialHistory[item.id].lastPO!.poNo})${materialHistory[item.id].lastPO!.remark ? `: ${materialHistory[item.id].lastPO!.remark}` : ""}`
                                   : "No past PO for this customer + material"}
                               </TableCell>
                             </TableRow>
@@ -1864,7 +1864,7 @@ function CreateClientPOPage() {
                                   {diff > 0 ? "+" : ""}{diff.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                                 </span>
                               ) : (
-                                <span className="text-muted-foreground">—</span>
+                                <span className="text-muted-foreground">-</span>
                               )}
                             </TableCell>
                             <TableCell className="text-right">
@@ -1873,7 +1873,7 @@ function CreateClientPOPage() {
                                   {diffPct > 0 ? "+" : ""}{diffPct.toFixed(2)}%
                                 </span>
                               ) : (
-                                <span className="text-muted-foreground">—</span>
+                                <span className="text-muted-foreground">-</span>
                               )}
                             </TableCell>
                             <TableCell>
@@ -2126,7 +2126,7 @@ function CreateClientPOPage() {
 
               {!commercials.gstApplies && (
                 <p className="text-sm text-muted-foreground">
-                  GST not applicable — international delivery (USD order, delivery outside India).
+                  GST not applicable: international delivery (USD order, delivery outside India).
                 </p>
               )}
 

@@ -279,13 +279,13 @@ export default function InspectionPrepDetailPage({
     ? `PO: ${prep.purchaseOrder.poNo}`
     : prep.warehouseIntimation
     ? `MPR: ${prep.warehouseIntimation.mprNo}`
-    : "—";
+    : "-";
 
   return (
     <div className="space-y-6">
       <PageHeader
         title={prep.prepNo}
-        description={`${poLabel} · Prepared by ${prep.preparedBy?.name ?? "—"} on ${format(new Date(prep.createdAt), "dd/MM/yyyy")}`}
+        description={`${poLabel} · Prepared by ${prep.preparedBy?.name ?? "-"} on ${format(new Date(prep.createdAt), "dd/MM/yyyy")}`}
         badge={prep.status}
         badgeVariant={prep.status === "OFFER_GENERATED" ? "default" : "secondary"}
       >
@@ -388,9 +388,9 @@ export default function InspectionPrepDetailPage({
                       return (
                         <TableRow key={item.id}>
                           <TableCell className="font-medium">
-                            {item.description || "—"}
+                            {item.description || "-"}
                           </TableCell>
-                          <TableCell>{item.sizeLabel || "—"}</TableCell>
+                          <TableCell>{item.sizeLabel || "-"}</TableCell>
                           <TableCell className="text-right">
                             {totalLength.toFixed(3)}
                           </TableCell>
@@ -445,7 +445,7 @@ export default function InspectionPrepDetailPage({
                 value={selectedCustomerId}
                 onChange={(e) => setSelectedCustomerId(e.target.value)}
               >
-                <option value="">— Select customer —</option>
+                <option value="">- Select customer -</option>
                 {customers.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
@@ -514,7 +514,7 @@ export default function InspectionPrepDetailPage({
                           {heat.heatNo}
                         </label>
                         <span className="text-xs text-muted-foreground">
-                          {heat.lengthMtr ? `${parseFloat(heat.lengthMtr).toFixed(3)} m` : "—"}
+                          {heat.lengthMtr ? `${parseFloat(heat.lengthMtr).toFixed(3)} m` : "-"}
                         </span>
                         {/* MTC tags */}
                         {heat.mtcDocuments.map((mtc) => (
@@ -692,10 +692,10 @@ function ItemHeatCard({
                       <TableRow key={heat.id}>
                         <TableCell className="font-mono">{heat.heatNo}</TableCell>
                         <TableCell className="text-right">
-                          {heat.lengthMtr ? parseFloat(heat.lengthMtr).toFixed(3) : "—"}
+                          {heat.lengthMtr ? parseFloat(heat.lengthMtr).toFixed(3) : "-"}
                         </TableCell>
-                        <TableCell className="text-right">{heat.pieces ?? "—"}</TableCell>
-                        <TableCell>{heat.make || "—"}</TableCell>
+                        <TableCell className="text-right">{heat.pieces ?? "-"}</TableCell>
+                        <TableCell>{heat.make || "-"}</TableCell>
                         <TableCell>
                           <Button
                             size="icon"
@@ -919,7 +919,7 @@ function MtcHeatBlock({ heat, prepId, itemId, isQA, onRefresh }: MtcHeatBlockPro
                 <TableCell className="py-1.5 text-sm">
                   {mtc.mtcDate
                     ? formatDate(mtc.mtcDate, "dd/MM/yyyy")
-                    : "—"}
+                    : "-"}
                 </TableCell>
                 {isQA && (
                   <TableCell className="py-1.5">

@@ -102,8 +102,8 @@ export function ClientItemsTab() {
   const columns: Column<ClientItem>[] = [
     { key: "customerName", header: "Customer", sortable: true },
     { key: "itemNo", header: "Item ID", sortable: true, cell: (r) => <span className="font-mono text-sm font-semibold text-primary">{r.itemNo}</span> },
-    { key: "description", header: "Description", cell: (r) => <span className="text-xs whitespace-pre-line line-clamp-3">{r.description || "—"}</span> },
-    { key: "unit", header: "Unit", cell: (r) => r.unit || "—" },
+    { key: "description", header: "Description", cell: (r) => <span className="text-xs whitespace-pre-line line-clamp-3">{r.description || "-"}</span> },
+    { key: "unit", header: "Unit", cell: (r) => r.unit || "-" },
     {
       key: "actions", header: "",
       cell: (r) => (
@@ -163,7 +163,7 @@ export function ClientItemsTab() {
               <Select value={form.unit || "__none__"} onValueChange={(v) => setForm((f) => ({ ...f, unit: v === "__none__" ? "" : v }))}>
                 <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__none__">—</SelectItem>
+                  <SelectItem value="__none__">-</SelectItem>
                   {units.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
                 </SelectContent>
               </Select>

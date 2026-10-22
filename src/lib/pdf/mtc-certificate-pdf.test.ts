@@ -1,4 +1,8 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
+
+// PDF rendering takes 1-1.5s per test alone and passes 5s easily alone, but the
+// suite runs in parallel and the 5s default is exceeded under load.
+vi.setConfig({ testTimeout: 20_000 });
 import React from "react";
 import { renderToBuffer } from "@react-pdf/renderer";
 import {

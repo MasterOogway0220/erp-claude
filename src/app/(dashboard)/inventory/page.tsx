@@ -182,7 +182,7 @@ export default function InventoryPage() {
           href={`/inventory/stock/${row.id}`}
           className="font-mono text-sm text-blue-600 hover:underline"
         >
-          {(row.heatNo as string) || "—"}
+          {(row.heatNo as string) || "-"}
         </Link>
       ),
     },
@@ -209,7 +209,7 @@ export default function InventoryPage() {
       header: "Warehouse",
       cell: (row) => {
         const wl = row.warehouseLocation as any;
-        if (!wl?.warehouse) return <span className="text-muted-foreground">—</span>;
+        if (!wl?.warehouse) return <span className="text-muted-foreground">-</span>;
         return (
           <div className="text-xs">
             <div className="font-medium">{wl.warehouse.code}</div>
@@ -227,12 +227,12 @@ export default function InventoryPage() {
       header: "Rack / Bay",
       cell: (row) => {
         const wl = row.warehouseLocation as any;
-        if (!wl) return row.rackNo || row.location || "—";
+        if (!wl) return row.rackNo || row.location || "-";
         const parts = [wl.rack, wl.bay, wl.shelf].filter(Boolean);
         return parts.length > 0 ? (
           <span className="font-mono text-xs">{parts.join(" / ")}</span>
         ) : (
-          "—"
+          "-"
         );
       },
     },
@@ -244,7 +244,7 @@ export default function InventoryPage() {
         return vendor?.name ? (
           <span className="text-xs">{vendor.name}</span>
         ) : (
-          <span className="text-muted-foreground">—</span>
+          <span className="text-muted-foreground">-</span>
         );
       },
     },
@@ -261,7 +261,7 @@ export default function InventoryPage() {
             {grnItem.grn.grnNo}
           </Link>
         ) : (
-          "—"
+          "-"
         );
       },
     },
@@ -288,12 +288,12 @@ export default function InventoryPage() {
     {
       key: "purchaseOrder",
       header: "PO No.",
-      cell: (row) => (row.purchaseOrder as any)?.poNo || "—",
+      cell: (row) => (row.purchaseOrder as any)?.poNo || "-",
     },
     {
       key: "vendor",
       header: "Vendor",
-      cell: (row) => (row.vendor as any)?.name || "—",
+      cell: (row) => (row.vendor as any)?.name || "-",
     },
     {
       key: "items",
@@ -303,7 +303,7 @@ export default function InventoryPage() {
     {
       key: "receivedBy",
       header: "Received By",
-      cell: (row) => (row.receivedBy as any)?.name || "—",
+      cell: (row) => (row.receivedBy as any)?.name || "-",
     },
   ];
 
@@ -335,12 +335,12 @@ export default function InventoryPage() {
     {
       key: "salesOrder",
       header: "SO No.",
-      cell: (row) => (row.salesOrder as any)?.soNo || "—",
+      cell: (row) => (row.salesOrder as any)?.soNo || "-",
     },
     {
       key: "customer",
       header: "Customer",
-      cell: (row) => (row.salesOrder as any)?.customer?.name || "—",
+      cell: (row) => (row.salesOrder as any)?.customer?.name || "-",
     },
     {
       key: "status",
@@ -359,7 +359,7 @@ export default function InventoryPage() {
     {
       key: "issuedBy",
       header: "Issued By",
-      cell: (row) => (row.issuedBy as any)?.name || "—",
+      cell: (row) => (row.issuedBy as any)?.name || "-",
     },
   ];
 
@@ -493,7 +493,7 @@ export default function InventoryPage() {
                         <SelectItem value="all">All Warehouses</SelectItem>
                         {warehouses.map((wh) => (
                           <SelectItem key={wh.id} value={wh.id}>
-                            {wh.code} — {wh.name}
+                            {wh.code}: {wh.name}
                             {!wh.isSelfStock ? " (Third-Party)" : ""}
                           </SelectItem>
                         ))}
@@ -665,7 +665,7 @@ export default function InventoryPage() {
 
         <TabsContent value="intimation">
           {/* Same list as the /warehouse/intimation route, minus its own page
-              header — this page already has one. */}
+              header: this page already has one. */}
           <WarehouseIntimationPanel embedded />
         </TabsContent>
       </Tabs>

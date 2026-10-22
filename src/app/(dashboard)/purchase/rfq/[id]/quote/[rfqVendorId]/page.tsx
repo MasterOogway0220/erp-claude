@@ -184,7 +184,7 @@ export default function EnterVendorQuotationPage() {
     <div className="space-y-6">
       <PageHeader
         title="Enter Vendor Quotation"
-        description={`${rfqVendor.vendor?.name ?? "Vendor"} — against ${rfq.rfqNo}`}
+        description={`${rfqVendor.vendor?.name ?? "Vendor"}: against ${rfq.rfqNo}`}
       >
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => router.push(`/purchase/rfq/${id}`)}>
@@ -337,14 +337,14 @@ export default function EnterVendorQuotationPage() {
               <TableBody>
                 {items.map((item, index) => (
                   <TableRow key={item.prItemId ?? index}>
-                    <TableCell className="font-medium">{item.label || "—"}</TableCell>
+                    <TableCell className="font-medium">{item.label || "-"}</TableCell>
                     <TableCell className="text-xs whitespace-pre-line">
                       {item.technicalRequirements || (
-                        <span className="text-muted-foreground">—</span>
+                        <span className="text-muted-foreground">-</span>
                       )}
                     </TableCell>
                     <TableCell className="text-right">{item.quantity}</TableCell>
-                    <TableCell>{item.unit || "—"}</TableCell>
+                    <TableCell>{item.unit || "-"}</TableCell>
                     <TableCell>
                       <Input
                         type="number"
@@ -357,7 +357,7 @@ export default function EnterVendorQuotationPage() {
                     <TableCell className="text-right font-medium">
                       {item.amount > 0
                         ? `₹${item.amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`
-                        : "—"}
+                        : "-"}
                     </TableCell>
                     <TableCell>
                       <Input
@@ -372,7 +372,7 @@ export default function EnterVendorQuotationPage() {
                       <Input
                         value={item.remarks}
                         onChange={(e) => updateItem(index, "remarks", e.target.value)}
-                        placeholder="—"
+                        placeholder="-"
                       />
                     </TableCell>
                   </TableRow>

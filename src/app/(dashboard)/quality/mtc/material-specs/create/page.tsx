@@ -138,7 +138,7 @@ function MaterialSpecCreateContent() {
     const spec = allSpecs.find((s: any) => s.id === specId);
     if (!spec) return;
     setForm({
-      materialSpec: "", // Leave blank — user fills in new spec name
+      materialSpec: "", // Leave blank: user fills in new spec name
       description: "",
       startingMaterial: spec.startingMaterial || "",
       heatTreatment: spec.heatTreatment || "",
@@ -635,7 +635,7 @@ function MaterialSpecCreateContent() {
           <div className="mt-3 p-3 rounded-md bg-muted/50 text-xs text-muted-foreground space-y-1">
             <p><strong>F1</strong> = Cu + Ni + Cr + Mo</p>
             <p><strong>CEQ</strong> = C + Mn/6 + (Cr + Mo + V)/5 + (Ni + Cu)/15</p>
-            <p className="text-xs italic">F1 and CEQ are derived/calculated values. Set their max values in the spec above — actual results will be auto-calculated from base elements during certificate generation.</p>
+            <p className="text-xs italic">F1 and CEQ are derived/calculated values. Set their max values in the spec above: actual results will be auto-calculated from base elements during certificate generation.</p>
           </div>
         </CardContent>
       </Card>

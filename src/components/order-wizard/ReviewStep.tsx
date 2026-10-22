@@ -591,7 +591,7 @@ export function ReviewStep({ order, onComplete, readOnly = false }: ReviewStepPr
               </div>
               <div>
                 <div className="text-sm text-muted-foreground">Customer PO Number</div>
-                <div className="font-mono">{detail.customerPoNo || "—"}</div>
+                <div className="font-mono">{detail.customerPoNo || "-"}</div>
               </div>
               {detail.customerPoDate && (
                 <div>

@@ -214,7 +214,7 @@ export default function InspectionDetailPage() {
               </div>
               <div>
                 <div className="text-sm text-muted-foreground">Inspector</div>
-                <div>{inspection.inspector?.name || "—"}</div>
+                <div>{inspection.inspector?.name || "-"}</div>
               </div>
               <div>
                 <div className="text-sm text-muted-foreground">Overall Result</div>
@@ -264,19 +264,19 @@ export default function InspectionDetailPage() {
               <>
                 <div>
                   <div className="text-sm text-muted-foreground">Heat No.</div>
-                  <div className="font-mono font-medium">{stock.heatNo || "—"}</div>
+                  <div className="font-mono font-medium">{stock.heatNo || "-"}</div>
                 </div>
                 <div>
                   <div className="text-sm text-muted-foreground">Product</div>
-                  <div>{stock.product || "—"}</div>
+                  <div>{stock.product || "-"}</div>
                 </div>
                 <div>
                   <div className="text-sm text-muted-foreground">Specification</div>
-                  <div>{stock.specification || "—"}</div>
+                  <div>{stock.specification || "-"}</div>
                 </div>
                 <div>
                   <div className="text-sm text-muted-foreground">Size</div>
-                  <div className="font-mono">{stock.sizeLabel || "—"}</div>
+                  <div className="font-mono">{stock.sizeLabel || "-"}</div>
                 </div>
                 <div>
                   <div className="text-sm text-muted-foreground">Quantity</div>
@@ -284,7 +284,7 @@ export default function InspectionDetailPage() {
                 </div>
                 <div>
                   <div className="text-sm text-muted-foreground">Make</div>
-                  <div>{stock.make || "—"}</div>
+                  <div>{stock.make || "-"}</div>
                 </div>
               </>
             ) : (
@@ -361,9 +361,9 @@ export default function InspectionDetailPage() {
                         {(param.parameterType || "PASS_FAIL").replace(/_/g, " ")}
                       </Badge>
                     </TableCell>
-                    <TableCell>{param.standardValue || "—"}</TableCell>
-                    <TableCell>{param.tolerance || "—"}</TableCell>
-                    <TableCell className="font-mono">{param.resultValue || "—"}</TableCell>
+                    <TableCell>{param.standardValue || "-"}</TableCell>
+                    <TableCell>{param.tolerance || "-"}</TableCell>
+                    <TableCell className="font-mono">{param.resultValue || "-"}</TableCell>
                     <TableCell>
                       <Badge
                         className={
@@ -374,10 +374,10 @@ export default function InspectionDetailPage() {
                               : "bg-gray-500"
                         }
                       >
-                        {param.result || "—"}
+                        {param.result || "-"}
                       </Badge>
                     </TableCell>
-                    <TableCell>{param.remarks || "—"}</TableCell>
+                    <TableCell>{param.remarks || "-"}</TableCell>
                   </TableRow>
                 ))
               ) : (

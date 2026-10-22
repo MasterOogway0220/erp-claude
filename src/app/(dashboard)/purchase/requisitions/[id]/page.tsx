@@ -192,7 +192,7 @@ export default function PRDetailPage({
               <div>
                 <p className="text-sm text-muted-foreground">Requested By</p>
                 <p className="font-medium">
-                  {pr.requestedBy?.name || "—"}
+                  {pr.requestedBy?.name || "-"}
                 </p>
               </div>
               <div>
@@ -269,11 +269,11 @@ export default function PRDetailPage({
                   <TableRow key={item.id}>
                     <TableCell>{item.sNo}</TableCell>
                     <TableCell className="font-medium">
-                      {item.product || "—"}
+                      {item.product || "-"}
                     </TableCell>
-                    <TableCell>{item.material || "—"}</TableCell>
+                    <TableCell>{item.material || "-"}</TableCell>
                     <TableCell className="font-mono text-sm">
-                      {item.sizeLabel || "—"}
+                      {item.sizeLabel || "-"}
                     </TableCell>
                     <TableCell className="text-right">
                       {Number(item.quantity).toFixed(3)}
@@ -281,11 +281,11 @@ export default function PRDetailPage({
                     <TableCell>{item.uom || "MTR"}</TableCell>
                     <TableCell className="text-xs whitespace-pre-line">
                       {item.technicalRequirements || (
-                        <span className="text-muted-foreground">—</span>
+                        <span className="text-muted-foreground">-</span>
                       )}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {item.remarks || "—"}
+                      {item.remarks || "-"}
                     </TableCell>
                   </TableRow>
                 ))}

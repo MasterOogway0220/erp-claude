@@ -72,7 +72,7 @@ export default function MTCListPage() {
       key: "heatNo",
       header: "Heat No.",
       cell: (row) => (
-        <span className="font-mono text-sm">{(row.heatNo as string) || "—"}</span>
+        <span className="font-mono text-sm">{(row.heatNo as string) || "-"}</span>
       ),
     },
     {
@@ -80,13 +80,13 @@ export default function MTCListPage() {
       header: "Product / Size",
       cell: (row) => {
         const stock = row.inventoryStock as any;
-        return stock ? `${stock.product || ""} ${stock.sizeLabel || ""}`.trim() || "—" : "—";
+        return stock ? `${stock.product || ""} ${stock.sizeLabel || ""}`.trim() || "-" : "-";
       },
     },
     {
       key: "vendor",
       header: "Vendor",
-      cell: (row) => (row.purchaseOrder as any)?.vendor?.name || "—",
+      cell: (row) => (row.purchaseOrder as any)?.vendor?.name || "-",
     },
     {
       key: "purchaseOrder",
@@ -98,7 +98,7 @@ export default function MTCListPage() {
             {po.poNo}
           </Link>
         ) : (
-          "—"
+          "-"
         );
       },
     },
@@ -112,7 +112,7 @@ export default function MTCListPage() {
             {grn.grnNo}
           </Link>
         ) : (
-          "—"
+          "-"
         );
       },
     },

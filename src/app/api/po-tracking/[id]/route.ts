@@ -131,7 +131,7 @@ export async function GET(
       details: `SO ${so.soNo} created for ${so.customer.name}`,
       items: [
         { label: "Order", value: so.soNo, href: `/sales/${so.id}` },
-        { label: "Customer PO", value: so.customerPoNo || "—" },
+        { label: "Customer PO", value: so.customerPoNo || "-" },
         { label: "Customer", value: so.customer.name },
       ],
     };
@@ -169,13 +169,13 @@ export async function GET(
       );
       if (allReceived) {
         stage3Status = "COMPLETED";
-        stage3Details = `All ${pos.length} PO(s) fully received — ${totalGRNs} GRN(s)`;
+        stage3Details = `All ${pos.length} PO(s) fully received: ${totalGRNs} GRN(s)`;
       } else {
         stage3Status = "IN_PROGRESS";
         const receivedCount = pos.filter(
           (po) => po.status === "FULLY_RECEIVED" || po.status === "CLOSED"
         ).length;
-        stage3Details = `${receivedCount}/${pos.length} PO(s) received — ${totalGRNs} GRN(s) created`;
+        stage3Details = `${receivedCount}/${pos.length} PO(s) received: ${totalGRNs} GRN(s) created`;
       }
     }
     const stage3: StageDetail = {
@@ -184,7 +184,7 @@ export async function GET(
       details: stage3Details,
       items: pos.map((po) => ({
         label: `PO ${po.poNo}`,
-        value: `${po.status.replace(/_/g, " ")} — ${po.vendor.name}`,
+        value: `${po.status.replace(/_/g, " ")}: ${po.vendor.name}`,
         href: `/purchase/orders/${po.id}`,
       })),
     };
@@ -204,7 +204,7 @@ export async function GET(
 
       if (allPassed && allQCReleases.length > 0) {
         stage4Status = "COMPLETED";
-        stage4Details = `All ${allInspections.length} inspection(s) passed — ${allQCReleases.length} QC release(s)`;
+        stage4Details = `All ${allInspections.length} inspection(s) passed: ${allQCReleases.length} QC release(s)`;
       } else {
         stage4Status = "IN_PROGRESS";
         stage4Details = `${passCount} passed, ${failCount} failed out of ${allInspections.length} inspection(s)`;
@@ -244,7 +244,7 @@ export async function GET(
       }
     } else if (allLabLetters.length > 0) {
       stage5Status = "IN_PROGRESS";
-      stage5Details = `${allLabLetters.length} lab letter(s) sent — awaiting reports`;
+      stage5Details = `${allLabLetters.length} lab letter(s) sent: awaiting reports`;
     } else if (stage4Status === "COMPLETED") {
       // Inspection done but no lab work — might not be required
       stage5Status = "COMPLETED";
@@ -262,7 +262,7 @@ export async function GET(
         })),
         ...allLabReports.slice(0, 5).map((lr: any) => ({
           label: `Report ${lr.reportNo}`,
-          value: `${lr.reportType} — ${lr.result || "PENDING"}`,
+          value: `${lr.reportType}: ${lr.result || "PENDING"}`,
         })),
       ],
     };
@@ -285,7 +285,7 @@ export async function GET(
     } else if (stage4Status === "COMPLETED") {
       // If inspection is done, documentation is at least in progress
       stage6Status = "IN_PROGRESS";
-      stage6Details = "Inspection complete — documentation in progress";
+      stage6Details = "Inspection complete: documentation in progress";
     }
 
     const stage6: StageDetail = {
@@ -307,7 +307,7 @@ export async function GET(
       stage7Details = `${so.dispatchNotes.length} dispatch note(s) created`;
     } else if (so.packingLists.length > 0) {
       stage7Status = "IN_PROGRESS";
-      stage7Details = `${so.packingLists.length} packing list(s) created — awaiting dispatch`;
+      stage7Details = `${so.packingLists.length} packing list(s) created: awaiting dispatch`;
     }
 
     const stage7: StageDetail = {
@@ -322,7 +322,7 @@ export async function GET(
         })),
         ...so.dispatchNotes.map((dn) => ({
           label: `DN ${dn.dnNo}`,
-          value: dn.vehicleNo || "—",
+          value: dn.vehicleNo || "-",
           href: `/dispatch?tab=dispatch-notes`,
         })),
       ],

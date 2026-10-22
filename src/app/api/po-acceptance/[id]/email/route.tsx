@@ -57,7 +57,7 @@ export async function POST(
     const letterHtml = generatePOAcceptanceLetterHtml(data, companyInfo);
 
     // Compose email
-    const emailSubject = subject || `PO Acceptance — ${acceptance.acceptanceNo} | ${(companyInfo as any).companyName || "NPS Piping Solutions"}`;
+    const emailSubject = subject || `PO Acceptance: ${acceptance.acceptanceNo} | ${(companyInfo as any).companyName || "NPS Piping Solutions"}`;
     const emailHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 700px; margin: 0 auto;">
         <h2 style="color: #1e293b;">PO Acceptance: ${acceptance.acceptanceNo}</h2>

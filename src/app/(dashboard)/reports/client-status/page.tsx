@@ -310,7 +310,7 @@ export default function ClientStatusReportPage() {
                 ) : (
                   filteredSOs.map((so) => (
                     <SelectItem key={so.id} value={so.id}>
-                      {so.soNo} — {so.customer.name}
+                      {so.soNo}: {so.customer.name}
                       {so.customerPoNo ? ` (PO: ${so.customerPoNo})` : ""}
                     </SelectItem>
                   ))

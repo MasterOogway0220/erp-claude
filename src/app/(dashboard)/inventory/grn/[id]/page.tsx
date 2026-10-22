@@ -94,7 +94,7 @@ export default function GRNDetailPage() {
                   <TableCell className="font-mono">{item.heatNo}</TableCell>
                   <TableCell className="text-right">{Number(item.receivedQtyMtr).toFixed(3)}</TableCell>
                   <TableCell className="text-right">{item.pieces}</TableCell>
-                  <TableCell>{item.mtcNo || "—"}</TableCell>
+                  <TableCell>{item.mtcNo || "-"}</TableCell>
                   <TableCell>
                     {item.inventoryStocks?.map((stock: any) => (
                       <Link key={stock.id} href={`/inventory/stock/${stock.id}`}>

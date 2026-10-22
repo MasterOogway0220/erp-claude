@@ -262,7 +262,7 @@ export function DispatchAddressSelect({
                     )}
                     <span>
                       {addr.label || addr.city || addr.addressLine1 || "Unnamed"}
-                      {addr.city && addr.label ? ` — ${addr.city}` : ""}
+                      {addr.city && addr.label ? `: ${addr.city}` : ""}
                       {addr.state ? `, ${addr.state}` : ""}
                     </span>
                   </div>

@@ -233,7 +233,7 @@ function StageCard({
       {/* Content */}
       <div className={`flex-1 pb-6 ${isLast ? "pb-0" : ""}`}>
         <div
-          className={`rounded-lg border-l-4 p-4 ${stageColors[stage.status]}`}
+          className={`rounded-lg border p-4 ${stageColors[stage.status]}`}
         >
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2">
@@ -328,7 +328,7 @@ export default function POTrackingDetailPage() {
     <div className="space-y-6">
       <PageHeader
         title={`Order Tracking: ${order.soNo}`}
-        description={`${order.customerName}${order.customerPoNo ? ` — PO: ${order.customerPoNo}` : ""}`}
+        description={`${order.customerName}${order.customerPoNo ? `: PO: ${order.customerPoNo}` : ""}`}
       >
         <Button variant="outline" onClick={() => router.push("/po-tracking")}>
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -356,7 +356,7 @@ export default function POTrackingDetailPage() {
               </div>
               <div>
                 <div className="text-xs text-muted-foreground">Customer PO</div>
-                <div className="font-mono font-medium">{order.customerPoNo || "—"}</div>
+                <div className="font-mono font-medium">{order.customerPoNo || "-"}</div>
               </div>
               <div>
                 <div className="text-xs text-muted-foreground">Customer</div>
@@ -482,9 +482,9 @@ export default function POTrackingDetailPage() {
                 {itemProgress.map((item) => (
                   <TableRow key={item.sNo}>
                     <TableCell className="text-muted-foreground">{item.sNo}</TableCell>
-                    <TableCell className="font-medium text-sm">{item.product || "—"}</TableCell>
-                    <TableCell className="text-sm">{item.material || "—"}</TableCell>
-                    <TableCell className="font-mono text-sm">{item.sizeLabel || "—"}</TableCell>
+                    <TableCell className="font-medium text-sm">{item.product || "-"}</TableCell>
+                    <TableCell className="text-sm">{item.material || "-"}</TableCell>
+                    <TableCell className="font-mono text-sm">{item.sizeLabel || "-"}</TableCell>
                     <TableCell className="text-right font-mono text-sm">
                       {item.ordered.toFixed(3)}
                     </TableCell>

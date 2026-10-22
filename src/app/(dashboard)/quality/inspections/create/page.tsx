@@ -477,9 +477,9 @@ function CreateInspectionForm() {
                 <div className="space-y-2">
                   <Label>Material Info</Label>
                   <div className="text-sm text-muted-foreground rounded-md border p-3">
-                    <div><span className="font-medium">Heat No:</span> {selectedStock.heatNo || "—"}</div>
-                    <div><span className="font-medium">Product:</span> {selectedStock.product || "—"} | {selectedStock.specification || "—"}</div>
-                    <div><span className="font-medium">Size:</span> {selectedStock.sizeLabel || "—"} | <span className="font-medium">Qty:</span> {Number(selectedStock.quantityMtr).toFixed(3)} Mtr, {selectedStock.pieces} Pcs</div>
+                    <div><span className="font-medium">Heat No:</span> {selectedStock.heatNo || "-"}</div>
+                    <div><span className="font-medium">Product:</span> {selectedStock.product || "-"} | {selectedStock.specification || "-"}</div>
+                    <div><span className="font-medium">Size:</span> {selectedStock.sizeLabel || "-"} | <span className="font-medium">Qty:</span> {Number(selectedStock.quantityMtr).toFixed(3)} Mtr, {selectedStock.pieces} Pcs</div>
                   </div>
                 </div>
               )}

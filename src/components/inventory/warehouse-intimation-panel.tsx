@@ -173,7 +173,7 @@ export function WarehouseIntimationPanel({ embedded = false }: { embedded?: bool
       ) : (
         <PageHeader
           title="Warehouse Intimation"
-          description="Material Preparation Requests — prepare and track material against Orders"
+          description="Material Preparation Requests: prepare and track material against Orders"
         >
           <Button onClick={() => router.push("/warehouse/intimation/create")}>
             <Plus className="w-4 h-4 mr-2" />
@@ -190,25 +190,25 @@ export function WarehouseIntimationPanel({ embedded = false }: { embedded?: bool
             <p className="text-2xl font-bold">{statusCounts.total}</p>
           </CardContent>
         </Card>
-        <Card className="cursor-pointer hover:bg-muted/50 border-l-4 border-l-yellow-500" onClick={() => setStatusFilter("PENDING")}>
+        <Card className="cursor-pointer hover:bg-muted/50" onClick={() => setStatusFilter("PENDING")}>
           <CardContent className="pt-4 pb-3">
             <p className="text-xs text-muted-foreground uppercase">Pending</p>
             <p className="text-2xl font-bold text-yellow-600">{statusCounts.pending}</p>
           </CardContent>
         </Card>
-        <Card className="cursor-pointer hover:bg-muted/50 border-l-4 border-l-blue-500" onClick={() => setStatusFilter("IN_PROGRESS")}>
+        <Card className="cursor-pointer hover:bg-muted/50" onClick={() => setStatusFilter("IN_PROGRESS")}>
           <CardContent className="pt-4 pb-3">
             <p className="text-xs text-muted-foreground uppercase">In Progress</p>
             <p className="text-2xl font-bold text-blue-600">{statusCounts.inProgress}</p>
           </CardContent>
         </Card>
-        <Card className="cursor-pointer hover:bg-muted/50 border-l-4 border-l-green-500" onClick={() => setStatusFilter("MATERIAL_READY")}>
+        <Card className="cursor-pointer hover:bg-muted/50" onClick={() => setStatusFilter("MATERIAL_READY")}>
           <CardContent className="pt-4 pb-3">
             <p className="text-xs text-muted-foreground uppercase">Material Ready</p>
             <p className="text-2xl font-bold text-green-600">{statusCounts.materialReady}</p>
           </CardContent>
         </Card>
-        <Card className="cursor-pointer hover:bg-muted/50 border-l-4 border-l-purple-500" onClick={() => setStatusFilter("DISPATCHED")}>
+        <Card className="cursor-pointer hover:bg-muted/50" onClick={() => setStatusFilter("DISPATCHED")}>
           <CardContent className="pt-4 pb-3">
             <p className="text-xs text-muted-foreground uppercase">Dispatched</p>
             <p className="text-2xl font-bold text-purple-600">{statusCounts.dispatched}</p>

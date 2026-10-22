@@ -141,7 +141,7 @@ export default function RFQDetailPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title={`RFQ: ${rfq.rfqNo || "—"}`}
+        title={`RFQ: ${rfq.rfqNo || "-"}`}
         description="Request for Quotation details"
       >
         <div className="flex gap-2">
@@ -175,26 +175,26 @@ export default function RFQDetailPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
               <p className="text-sm text-muted-foreground">RFQ Number</p>
-              <p className="font-mono font-medium">{rfq.rfqNo || "—"}</p>
+              <p className="font-mono font-medium">{rfq.rfqNo || "-"}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Date</p>
               <p>
                 {rfq.rfqDate
                   ? format(new Date(rfq.rfqDate), "dd MMM yyyy")
-                  : "—"}
+                  : "-"}
               </p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Status</p>
               <Badge className={statusColors[rfq.status] || "bg-gray-500"}>
-                {rfq.status?.replace(/_/g, " ") || "—"}
+                {rfq.status?.replace(/_/g, " ") || "-"}
               </Badge>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">PR Reference</p>
               <p className="font-mono">
-                {rfq.purchaseRequisition?.prNo || "—"}
+                {rfq.purchaseRequisition?.prNo || "-"}
               </p>
             </div>
             <div>
@@ -204,7 +204,7 @@ export default function RFQDetailPage() {
               <p>
                 {rfq.submissionDeadline
                   ? formatDate(rfq.submissionDeadline, "dd MMM yyyy")
-                  : "—"}
+                  : "-"}
               </p>
             </div>
             {rfq.remarks && (
@@ -254,18 +254,18 @@ export default function RFQDetailPage() {
                         {index + 1}
                       </TableCell>
                       <TableCell className="font-medium">
-                        {prItemFields(item).name || "—"}
+                        {prItemFields(item).name || "-"}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {prItemFields(item).spec || "—"}
+                        {prItemFields(item).spec || "-"}
                       </TableCell>
                       <TableCell className="text-right">
                         {item.quantity}
                       </TableCell>
-                      <TableCell>{prItemFields(item).unit || "—"}</TableCell>
+                      <TableCell>{prItemFields(item).unit || "-"}</TableCell>
                       <TableCell className="text-xs whitespace-pre-line">
                         {item.technicalRequirements || (
-                          <span className="text-muted-foreground">—</span>
+                          <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
                     </TableRow>
@@ -312,13 +312,13 @@ export default function RFQDetailPage() {
                   rfqVendors.map((rv) => (
                     <TableRow key={rv.id}>
                       <TableCell className="font-medium">
-                        {rv.vendor?.name || "—"}
+                        {rv.vendor?.name || "-"}
                       </TableCell>
-                      <TableCell>{rv.vendor?.city || "—"}</TableCell>
+                      <TableCell>{rv.vendor?.city || "-"}</TableCell>
                       <TableCell>
                         {rv.sentDate
                           ? formatDate(rv.sentDate, "dd MMM yyyy")
-                          : "—"}
+                          : "-"}
                       </TableCell>
                       <TableCell>
                         <Badge

@@ -270,7 +270,7 @@ function InfoField({ label, value, mono }: { label: string; value: string | null
     <div>
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className={`text-sm font-medium ${mono ? "font-mono" : ""}`}>
-        {value || "—"}
+        {value || "-"}
       </p>
     </div>
   );

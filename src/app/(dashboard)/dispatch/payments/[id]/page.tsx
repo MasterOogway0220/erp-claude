@@ -94,12 +94,12 @@ export default function PaymentDetailPage({
               <div>
                 <p className="text-sm text-muted-foreground">Reference No</p>
                 <p className="font-medium font-mono">
-                  {payment.referenceNo || "—"}
+                  {payment.referenceNo || "-"}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Bank Name</p>
-                <p className="font-medium">{payment.bankName || "—"}</p>
+                <p className="font-medium">{payment.bankName || "-"}</p>
               </div>
             </div>
             {payment.remarks && (
@@ -129,14 +129,14 @@ export default function PaymentDetailPage({
                       {payment.invoice.invoiceNo}
                     </Link>
                   ) : (
-                    "—"
+                    "-"
                   )}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Customer</p>
                 <p className="font-medium">
-                  {payment.customer?.name || "—"}
+                  {payment.customer?.name || "-"}
                 </p>
               </div>
               {payment.invoice?.salesOrder && (

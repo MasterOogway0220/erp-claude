@@ -354,7 +354,7 @@ export default function PurchaseOrderDetailPage() {
             Download PDF
           </Button>
           {/* Vendor-reported progress. Only the stages still ahead of this PO
-              are offered, and each is optional — a vendor who ships straight
+              are offered, and each is optional: a vendor who ships straight
               from stock never passes through production. */}
           {VENDOR_MILESTONES.filter((m) => isMilestoneAhead(po.status, m.status)).map((m) => (
             <Button
@@ -782,7 +782,7 @@ export default function PurchaseOrderDetailPage() {
           <CardContent className="space-y-2">
             <div>
               <div className="text-sm text-muted-foreground">Vendor City</div>
-              <div>{po.vendor.city || "—"}</div>
+              <div>{po.vendor.city || "-"}</div>
             </div>
             <div>
               <div className="text-sm text-muted-foreground">Vendor Name</div>
@@ -848,7 +848,7 @@ export default function PurchaseOrderDetailPage() {
                       <TableCell>
                         {item.deliveryDate
                           ? formatDate(item.deliveryDate, "dd MMM yyyy")
-                          : "—"}
+                          : "-"}
                       </TableCell>
                     </TableRow>
                   ))}

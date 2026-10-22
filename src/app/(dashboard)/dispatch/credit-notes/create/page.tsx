@@ -156,7 +156,7 @@ export default function CreateCreditNotePage() {
               <SelectContent>
                 {invoices.map((inv) => (
                   <SelectItem key={inv.id} value={inv.id}>
-                    {inv.invoiceNo} — {inv.customer?.name} — ₹{Number(inv.totalAmount).toFixed(2)}
+                    {inv.invoiceNo}: {inv.customer?.name}: ₹{Number(inv.totalAmount).toFixed(2)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -221,8 +221,8 @@ export default function CreateCreditNotePage() {
                             onChange={() => toggleItem(idx)}
                           />
                         </td>
-                        <td className="p-2">{item.description || "—"}</td>
-                        <td className="p-2 font-mono">{item.heatNo || "—"}</td>
+                        <td className="p-2">{item.description || "-"}</td>
+                        <td className="p-2 font-mono">{item.heatNo || "-"}</td>
                         <td className="p-2 text-right">{Number(item.quantity).toFixed(3)}</td>
                         <td className="p-2 text-right">₹{Number(item.amount).toFixed(2)}</td>
                         <td className="p-2">

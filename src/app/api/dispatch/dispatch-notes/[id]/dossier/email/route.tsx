@@ -90,7 +90,7 @@ export async function POST(
 
     const transporter = mailer();
 
-    const emailSubject = subject || `Dispatch Dossier — ${dispatchNote.dnNo} | NPS Piping Solutions`;
+    const emailSubject = subject || `Dispatch Dossier: ${dispatchNote.dnNo} | NPS Piping Solutions`;
 
     const emailHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 700px; margin: 0 auto;">

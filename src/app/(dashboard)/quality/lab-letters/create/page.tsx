@@ -240,7 +240,7 @@ export default function CreateLabLetterPage() {
                     <SelectItem value="NONE">None</SelectItem>
                     {stocks.map((stock) => (
                       <SelectItem key={stock.id} value={stock.id}>
-                        {stock.heatNo || "N/A"} — {stock.product || ""} {stock.sizeLabel || ""} ({stock.status})
+                        {stock.heatNo || "N/A"}: {stock.product || ""} {stock.sizeLabel || ""} ({stock.status})
                       </SelectItem>
                     ))}
                   </SelectContent>

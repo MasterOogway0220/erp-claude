@@ -306,7 +306,7 @@ export default function SalesOrderDetailPage() {
             </div>
             <div>
               <div className="text-sm text-muted-foreground">City</div>
-              <div>{salesOrder.customer.city || "—"}</div>
+              <div>{salesOrder.customer.city || "-"}</div>
             </div>
             {salesOrder.customer.address && (
               <div>
@@ -372,7 +372,7 @@ export default function SalesOrderDetailPage() {
                     <TableCell>
                       {item.deliveryDate
                         ? formatDate(item.deliveryDate, "dd MMM yyyy")
-                        : "—"}
+                        : "-"}
                     </TableCell>
                     {/* In the line's unit, counted the way the reserve API counts
                         (reserved quantity against the line quantity). */}

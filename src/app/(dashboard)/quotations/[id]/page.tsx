@@ -794,7 +794,7 @@ export default function QuotationDetailPage() {
                 )}
                 {quotation.rcmEnabled && (
                   <div className="flex justify-between py-px text-amber-600">
-                    <span>Tax — RCM (paid by buyer)</span>
+                    <span>Tax: RCM (paid by buyer)</span>
                     <span>₹0.00</span>
                   </div>
                 )}
@@ -987,7 +987,7 @@ export default function QuotationDetailPage() {
                             of presenting a pipe-only sum as the total */}
                         {totalWeight > 0
                           ? `${totalWeight.toFixed(4)} MT${quotation.items.some((it: any) => !parseFloat(it.totalWeightMT || 0)) ? " (pipe items)" : ""}`
-                          : "—"}
+                          : "-"}
                       </TableCell>
                     </>
                   )}

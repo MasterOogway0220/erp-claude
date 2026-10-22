@@ -38,35 +38,35 @@ export default function MaterialSpecsListPage() {
       key: "description",
       header: "Description",
       cell: (row) => (
-        <span className="text-sm">{row.description || "—"}</span>
+        <span className="text-sm">{row.description || "-"}</span>
       ),
     },
     {
       key: "startingMaterial",
       header: "Starting Material",
       cell: (row) => (
-        <span className="text-sm">{row.startingMaterial?.replace(/_/g, " ") || "—"}</span>
+        <span className="text-sm">{row.startingMaterial?.replace(/_/g, " ") || "-"}</span>
       ),
     },
     {
       key: "heatTreatment",
       header: "Heat Treatment",
       cell: (row) => (
-        <span className="text-sm">{row.heatTreatment || "—"}</span>
+        <span className="text-sm">{row.heatTreatment || "-"}</span>
       ),
     },
     {
       key: "constructionType",
       header: "Construction",
       cell: (row) => (
-        <Badge variant="outline">{row.constructionType?.replace(/_/g, " ") || "—"}</Badge>
+        <Badge variant="outline">{row.constructionType?.replace(/_/g, " ") || "-"}</Badge>
       ),
     },
     {
       key: "dimensionStandard",
       header: "Dimension Std",
       cell: (row) => (
-        <span className="text-sm">{row.dimensionStandard || "—"}</span>
+        <span className="text-sm">{row.dimensionStandard || "-"}</span>
       ),
     },
     {

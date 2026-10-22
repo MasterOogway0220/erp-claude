@@ -63,18 +63,18 @@ export default function NCRListPage() {
       key: "heatNo",
       header: "Heat No.",
       cell: (row) => (
-        <span className="font-mono text-sm">{(row.heatNo as string) || "—"}</span>
+        <span className="font-mono text-sm">{(row.heatNo as string) || "-"}</span>
       ),
     },
     {
       key: "nonConformanceType",
       header: "Type",
-      cell: (row) => (row.nonConformanceType as string)?.replace(/_/g, " ") || "—",
+      cell: (row) => (row.nonConformanceType as string)?.replace(/_/g, " ") || "-",
     },
     {
       key: "vendor",
       header: "Vendor",
-      cell: (row) => (row.vendor as any)?.name || "—",
+      cell: (row) => (row.vendor as any)?.name || "-",
     },
     {
       key: "status",

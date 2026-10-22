@@ -35,7 +35,7 @@ export default function CreateQuotationPage() {
           </CardHeader>
           <CardContent className="text-center">
             <p className="text-sm text-muted-foreground leading-relaxed">
-              For Pipes, Fittings, Flanges — items from masters with NPS,
+              For Pipes, Fittings, Flanges: items from masters with NPS,
               Schedule, OD, WT auto-fill
             </p>
             <Button variant="outline" className="mt-6 w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
@@ -57,7 +57,7 @@ export default function CreateQuotationPage() {
           </CardHeader>
           <CardContent className="text-center">
             <p className="text-sm text-muted-foreground leading-relaxed">
-              For all other items — free-text item description with structured
+              For all other items: free-text item description with structured
               fields
             </p>
             <Button variant="outline" className="mt-6 w-full group-hover:bg-orange-500 group-hover:text-white transition-colors">
@@ -79,7 +79,7 @@ export default function CreateQuotationPage() {
           </CardHeader>
           <CardContent className="text-center">
             <p className="text-sm text-muted-foreground leading-relaxed">
-              For tender submissions — capture tender reference, bid details,
+              For tender submissions: capture tender reference, bid details,
               and submission deadlines
             </p>
             <Button variant="outline" className="mt-6 w-full group-hover:bg-blue-600 group-hover:text-white transition-colors">

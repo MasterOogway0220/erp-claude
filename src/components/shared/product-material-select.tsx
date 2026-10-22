@@ -91,7 +91,7 @@ function fetchProducts(): Promise<ProductSpec[]> {
       const total = data.pagination?.total;
       if (typeof total === "number" && cachedProducts!.length < total) {
         console.error(
-          `[product master] only ${cachedProducts!.length} of ${total} rows loaded — ` +
+          `[product master] only ${cachedProducts!.length} of ${total} rows loaded: ` +
             `raise the limit, products are missing from the dropdowns`
         );
       }

@@ -262,24 +262,24 @@ export default function CSDetailPage() {
     {
       label: "Delivery (days)",
       key: "deliveryDays",
-      format: (v) => `${v || "—"} days`,
+      format: (v) => `${v || "-"} days`,
     },
     {
       label: "Payment Terms",
       key: "paymentTerms",
-      format: (v) => v || "—",
+      format: (v) => v || "-",
     },
     {
       label: "Price Basis",
       key: "priceBasis",
-      format: (v) => (v ? String(v).replace(/_/g, " ") : "—"),
+      format: (v) => (v ? String(v).replace(/_/g, " ") : "-"),
     },
   ];
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title={`Comparative Statement: ${cs.csNo || "—"}`}
+        title={`Comparative Statement: ${cs.csNo || "-"}`}
         description="Vendor comparison and selection"
       >
         <div className="flex gap-2">
@@ -314,31 +314,31 @@ export default function CSDetailPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
               <p className="text-sm text-muted-foreground">CS Number</p>
-              <p className="font-mono font-medium">{cs.csNo || "—"}</p>
+              <p className="font-mono font-medium">{cs.csNo || "-"}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Date</p>
               <p>
                 {cs.csDate
                   ? format(new Date(cs.csDate), "dd MMM yyyy")
-                  : "—"}
+                  : "-"}
               </p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Status</p>
               <Badge className={statusColors[cs.status] || "bg-gray-500"}>
-                {cs.status?.replace(/_/g, " ") || "—"}
+                {cs.status?.replace(/_/g, " ") || "-"}
               </Badge>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">PR Reference</p>
               <p className="font-mono">
-                {cs.purchaseRequisition?.prNo || "—"}
+                {cs.purchaseRequisition?.prNo || "-"}
               </p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">RFQ Reference</p>
-              <p className="font-mono">{cs.rfq?.rfqNo || "—"}</p>
+              <p className="font-mono">{cs.rfq?.rfqNo || "-"}</p>
             </div>
             {cs.selectedVendor && (
               <div>
@@ -376,7 +376,7 @@ export default function CSDetailPage() {
                     >
                       <div className="flex flex-col items-center gap-1">
                         <span className="font-semibold">
-                          {v.vendor?.name || "—"}
+                          {v.vendor?.name || "-"}
                         </span>
                         {v.rank === 1 && (
                           <Badge className="bg-green-500 text-xs">
@@ -459,7 +459,7 @@ export default function CSDetailPage() {
                 <SelectContent>
                   {sortedVendors.map((v) => (
                     <SelectItem key={v.vendor?.id} value={v.vendor?.id}>
-                      {v.vendor?.name} ({getRankLabel(v.rank)} — ₹
+                      {v.vendor?.name} ({getRankLabel(v.rank)}: ₹
                       {Number(v.totalLandedCost || 0).toFixed(2)})
                     </SelectItem>
                   ))}

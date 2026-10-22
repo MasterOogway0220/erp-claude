@@ -147,7 +147,7 @@ function StepIndicator({ currentStep, onStepClick }: StepIndicatorProps) {
 function ReviewStepBody({ order }: { order: WizardOrder }) {
   return (
     <div className="rounded-lg border border-dashed border-muted-foreground/40 p-10 text-center text-muted-foreground">
-      <p className="text-sm font-medium">Review step — Phase 3</p>
+      <p className="text-sm font-medium">Review step: Phase 3</p>
       <p className="text-xs mt-1">
         (Will render ReviewStep extracted from{" "}
         <code>sales/[id]/review/page.tsx</code>)
@@ -159,7 +159,7 @@ function ReviewStepBody({ order }: { order: WizardOrder }) {
 function ProcessStepBody({ order }: { order: WizardOrder }) {
   return (
     <div className="rounded-lg border border-dashed border-muted-foreground/40 p-10 text-center text-muted-foreground">
-      <p className="text-sm font-medium">Process step — Phase 5</p>
+      <p className="text-sm font-medium">Process step: Phase 5</p>
       <p className="text-xs mt-1">
         (Will render ProcessStep extracted from{" "}
         <code>sales/[id]/process/page.tsx</code>)
@@ -171,7 +171,7 @@ function ProcessStepBody({ order }: { order: WizardOrder }) {
 function AllotmentStepBody({ order }: { order: WizardOrder }) {
   return (
     <div className="rounded-lg border border-dashed border-muted-foreground/40 p-10 text-center text-muted-foreground">
-      <p className="text-sm font-medium">Allotment step — Phase 4</p>
+      <p className="text-sm font-medium">Allotment step: Phase 4</p>
       <p className="text-xs mt-1">
         (Will render AllotmentStep extracted from{" "}
         <code>sales/[id]/allotment/page.tsx</code> + reserve-stock panel)
@@ -183,7 +183,7 @@ function AllotmentStepBody({ order }: { order: WizardOrder }) {
 function ReadyStepBody({ order }: { order: WizardOrder }) {
   return (
     <div className="rounded-lg border border-dashed border-muted-foreground/40 p-10 text-center text-muted-foreground">
-      <p className="text-sm font-medium">Ready — order workspace complete</p>
+      <p className="text-sm font-medium">Ready: order workspace complete</p>
       <p className="text-xs mt-1">
         (Phase 3–5 will populate; will show downstream links: warehouse
         intimation, inspection, lab, dossier, status report.)
@@ -196,7 +196,7 @@ function ReadyStepBody({ order }: { order: WizardOrder }) {
 // Steps 1-3 keep placeholder bodies until Phases 4-5.
 const STEP_BODIES: Record<StepId, React.ComponentType<{ order: WizardOrder }>> =
   {
-    0: ReviewStepBody, // fallback only — renderStepBody() handles step 0 with ReviewStep
+    0: ReviewStepBody, // fallback only: renderStepBody() handles step 0 with ReviewStep
     1: ProcessStepBody,
     2: AllotmentStepBody,
     3: ReadyStepBody,

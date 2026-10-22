@@ -4,7 +4,7 @@ Companion explainers for every code file, mirroring the source tree. See
 [CONVENTIONS.md](./CONVENTIONS.md) for structure and depth, and the repo root
 `CLAUDE.md` for the standing rule that keeps them true.
 
-## Coverage: 517 / 517 ✅
+## Coverage: 518 / 518 ✅
 
 Every `.ts`, `.tsx` and `.prisma` file under `src/`, `prisma/` and `scripts/`
 has a doc at the mirrored path. Test files are covered by the doc for what they
@@ -100,6 +100,8 @@ authoritative, need maintaining, and teach nothing.
   a stock line and plans an Excel import; same heat on two racks is two lines.
 - [`inventory/stock-write.ts`](./src/lib/inventory/stock-write.ts.md) — duplicate
   lookup and insert shared by add and import.
+
+- [`pagination.ts`](./src/lib/pagination.ts.md) — `pageSize` to a row limit for list endpoints.
 
 ### Auth and access
 - [`auth/secret-equal.ts`](./src/lib/auth/secret-equal.ts.md) — constant-time

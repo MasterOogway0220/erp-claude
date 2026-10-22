@@ -55,7 +55,7 @@ export default function DashboardPage() {
   }, []);
 
   const formatCurrency = (val: number | null | undefined) => {
-    if (val == null) return "—";
+    if (val == null) return "-";
     if (val >= 10000000) return `₹${(val / 10000000).toFixed(2)} Cr`;
     if (val >= 100000) return `₹${(val / 100000).toFixed(2)} L`;
     return `₹${val.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
@@ -138,7 +138,7 @@ export default function DashboardPage() {
       value:
         metrics?.dispatchMetrics?.onTimeDeliveryPct != null
           ? `${metrics.dispatchMetrics.onTimeDeliveryPct}%`
-          : "—",
+          : "-",
       icon: <TrendingUp className="h-5 w-5 text-indigo-500" />,
     },
     {
@@ -156,7 +156,7 @@ export default function DashboardPage() {
       value:
         metrics?.inventoryMetrics?.acceptedTotalMtr != null
           ? `${Number(metrics.inventoryMetrics.acceptedTotalMtr).toFixed(1)} Mtr`
-          : "—",
+          : "-",
       icon: <PackageCheck className="h-5 w-5 text-violet-500" />,
     },
   ];
@@ -164,9 +164,9 @@ export default function DashboardPage() {
 
   // Quick stats for the summary bar
   const quickStats = [
-    { label: "Quotations", value: metrics?.salesMetrics?.quotationCount ?? "—" },
-    { label: "Orders", value: metrics?.salesMetrics?.orderCount ?? "—" },
-    { label: "Stock Items", value: metrics?.inventoryMetrics?.totalStock ?? "—" },
+    { label: "Quotations", value: metrics?.salesMetrics?.quotationCount ?? "-" },
+    { label: "Orders", value: metrics?.salesMetrics?.orderCount ?? "-" },
+    { label: "Stock Items", value: metrics?.inventoryMetrics?.totalStock ?? "-" },
   ];
 
   return (
@@ -199,7 +199,7 @@ export default function DashboardPage() {
         {heroCards.map((card) => (
           <Card
             key={card.title}
-            className={`border-l-[3px] ${card.borderAccent} shadow-sm hover:shadow transition-shadow`}
+            className="shadow-sm hover:shadow transition-shadow"
           >
             <CardContent className="p-5">
               <div className="flex items-start justify-between">
@@ -304,10 +304,10 @@ export default function DashboardPage() {
                   {metrics.lowStockAlerts.map((alert: any, i: number) => (
                     <TableRow key={i} className="h-10">
                       <TableCell className="py-2 font-medium text-sm">
-                        {alert.product || "—"}
+                        {alert.product || "-"}
                       </TableCell>
                       <TableCell className="py-2 font-mono text-xs text-muted-foreground">
-                        {alert.sizeLabel || "—"}
+                        {alert.sizeLabel || "-"}
                       </TableCell>
                       <TableCell className="py-2 text-right">
                         <span

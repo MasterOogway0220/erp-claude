@@ -22,3 +22,7 @@ Renders the `/po-tracking/[id]` screen. 537 lines.
 
 - [Module overview](../README.md)
 - `src/components/shared/` — `DataTable`, `PageHeader`, `SmartCombobox`
+
+## Change (2026-10-22, frontend and API follow-up)
+
+Stage boxes use a full 1px border in the stage colour instead of a 4px left strip.

@@ -234,7 +234,7 @@ export default function ClientPODetailPage({
     { label: "Testing Charges", amount: clientPO.testingCharges, taxApplicable: clientPO.testingTaxApplicable },
     { label: "Packing & Forwarding", amount: clientPO.packingForwarding, taxApplicable: clientPO.packingTaxApplicable },
     { label: "Insurance", amount: clientPO.insurance, taxApplicable: clientPO.insuranceTaxApplicable },
-    { label: clientPO.otherChargesDescription ? `Others — ${clientPO.otherChargesDescription}` : "Others", amount: clientPO.otherCharges, taxApplicable: clientPO.otherChargesTaxApplicable },
+    { label: clientPO.otherChargesDescription ? `Others: ${clientPO.otherChargesDescription}` : "Others", amount: clientPO.otherCharges, taxApplicable: clientPO.otherChargesTaxApplicable },
   ].filter((c) => c.amount && c.amount > 0);
 
   const hasCharges = additionalCharges.length > 0;
@@ -418,8 +418,8 @@ export default function ClientPODetailPage({
                 {clientPO.items.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell>{item.sNo}</TableCell>
-                    <TableCell>{item.poSlNo || "—"}</TableCell>
-                    <TableCell>{item.poItemCode || "—"}</TableCell>
+                    <TableCell>{item.poSlNo || "-"}</TableCell>
+                    <TableCell>{item.poItemCode || "-"}</TableCell>
                     <TableCell>
                       <div className="space-y-0.5">
                         <div className="font-medium text-sm">
@@ -703,7 +703,7 @@ export default function ClientPODetailPage({
       {/* Create Order Dialog */}
       {showCreateSODialog && clientPO && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowCreateSODialog(false)}>
-          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-card rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-semibold mb-2">Start Order Processing</h3>
             <p className="text-sm text-muted-foreground mb-4">
               An Order will be created with the following items from {clientPO.cpoNo}:
@@ -754,7 +754,7 @@ export default function ClientPODetailPage({
           onClick={() => setShowRevisionDialog(false)}
         >
           <div
-            className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-lg w-full mx-4 max-h-[80vh] overflow-y-auto"
+            className="bg-card rounded-lg p-6 max-w-lg w-full mx-4 max-h-[80vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-lg font-semibold mb-4">Rate Revision History</h3>

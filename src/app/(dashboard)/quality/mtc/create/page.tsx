@@ -181,7 +181,7 @@ export default function CreateMTCPage() {
                   <SelectContent>
                     {purchaseOrders.map((po) => (
                       <SelectItem key={po.id} value={po.id}>
-                        {po.poNo} — {po.vendor?.name || ""}
+                        {po.poNo}: {po.vendor?.name || ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -221,7 +221,7 @@ export default function CreateMTCPage() {
                 <SelectContent>
                   {stocks.map((stock) => (
                     <SelectItem key={stock.id} value={stock.id}>
-                      {stock.heatNo || "N/A"} — {stock.product || ""}{" "}
+                      {stock.heatNo || "N/A"}: {stock.product || ""}{" "}
                       {stock.sizeLabel || ""}
                     </SelectItem>
                   ))}

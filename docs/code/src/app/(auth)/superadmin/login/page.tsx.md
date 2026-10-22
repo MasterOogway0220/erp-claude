@@ -55,3 +55,7 @@ drifted apart once.
 - `src/lib/auth/otp-client.ts`
 - `src/lib/rbac.ts` — `getActiveCompanyId` and the company-switch cookie.
 - `src/middleware.ts` — redirects a super-admin with no active company.
+
+## Change (2026-10-22, frontend and API follow-up)
+
+Left panel is solid `#0f172a` (no gradient, no grid pattern overlay).

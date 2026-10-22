@@ -223,7 +223,7 @@ export async function POST(request: NextRequest) {
         companyId,
         type: "FAILED_INSPECTION",
         title: `Inspection FAILED: ${inspection.inspectionNo}`,
-        message: `Inspection ${inspection.inspectionNo} returned FAIL — NCR ${ncrNo} raised; re-inspection required.`,
+        message: `Inspection ${inspection.inspectionNo} returned FAIL: NCR ${ncrNo} raised; re-inspection required.`,
         severity: "HIGH",
         assignedToRole: "QC",
         relatedModule: "Inspection",

@@ -50,38 +50,38 @@ export default function LabLettersPage() {
       cell: (row) =>
         row.letterDate
           ? format(new Date(row.letterDate as string), "dd MMM yyyy")
-          : "—",
+          : "-",
     },
     {
       key: "labName",
       header: "Lab Name",
-      cell: (row) => (row.labName as string) || "—",
+      cell: (row) => (row.labName as string) || "-",
     },
     {
       key: "heatNo",
       header: "Heat No",
       cell: (row) => (
-        <span className="font-mono text-sm">{(row.heatNo as string) || "—"}</span>
+        <span className="font-mono text-sm">{(row.heatNo as string) || "-"}</span>
       ),
     },
     {
       key: "poNumber",
       header: "PO Number",
       cell: (row) => (
-        <span className="font-mono text-sm">{(row.poNumber as string) || "—"}</span>
+        <span className="font-mono text-sm">{(row.poNumber as string) || "-"}</span>
       ),
     },
     {
       key: "clientName",
       header: "Client",
-      cell: (row) => (row.clientName as string) || "—",
+      cell: (row) => (row.clientName as string) || "-",
     },
     {
       key: "testNames",
       header: "Tests",
       cell: (row) => {
         const tests = parseStringArray(row.testNames);
-        if (tests.length === 0) return "—";
+        if (tests.length === 0) return "-";
         return (
           <div className="flex flex-wrap gap-1">
             {tests.map((test: string, i: number) => (

@@ -45,7 +45,7 @@ export async function POST(
       companyId: acceptance.companyId,
       type: "MATERIAL_PREPARATION",
       title: `Quality requirements due: ${acceptance.acceptanceNo}`,
-      message: `PO accepted (${acceptance.acceptanceNo}) — define quality requirements (QAP).`,
+      message: `PO accepted (${acceptance.acceptanceNo}): define quality requirements (QAP).`,
       severity: "MEDIUM",
       assignedToRole: "QC",
       relatedModule: "POAcceptance",
@@ -55,7 +55,7 @@ export async function POST(
       companyId: acceptance.companyId,
       type: "MATERIAL_PREPARATION",
       title: `Order accepted: ${acceptance.acceptanceNo}`,
-      message: `PO accepted (${acceptance.acceptanceNo}) — begin material preparation.`,
+      message: `PO accepted (${acceptance.acceptanceNo}): begin material preparation.`,
       severity: "MEDIUM",
       assignedToRole: "STORES",
       relatedModule: "POAcceptance",
@@ -72,7 +72,7 @@ export async function POST(
     return NextResponse.json({
       pdfUrl: `/api/po-acceptance/${id}/pdf`,
       suggestedRecipient,
-      suggestedSubject: `P.O. Acceptance Letter — ${acceptance.acceptanceNo}`,
+      suggestedSubject: `P.O. Acceptance Letter: ${acceptance.acceptanceNo}`,
     });
   } catch (error) {
     console.error("finalize error:", error);

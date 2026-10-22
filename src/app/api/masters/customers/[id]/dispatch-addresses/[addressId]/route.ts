@@ -98,7 +98,7 @@ export async function DELETE(
 
     if (totalRefs > 0) {
       return NextResponse.json(
-        { error: `Cannot delete — address is referenced in ${totalRefs} document(s)` },
+        { error: `Cannot delete: address is referenced in ${totalRefs} document(s)` },
         { status: 400 }
       );
     }

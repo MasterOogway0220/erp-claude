@@ -301,7 +301,7 @@ export default function POTrackingPage() {
                       </TableCell>
                       <TableCell>
                         <span className="font-mono text-sm">
-                          {order.customerPoNo || "—"}
+                          {order.customerPoNo || "-"}
                         </span>
                       </TableCell>
                       <TableCell className="text-sm">

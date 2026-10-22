@@ -174,7 +174,7 @@ export async function GET(request: NextRequest) {
         companyId: item.salesOrder.companyId,
         type: "DELIVERY_DEADLINE",
         title: `Delivery ${isPast ? "Overdue" : "Due Soon"}: ${item.salesOrder.soNo}`,
-        message: `SO ${item.salesOrder.soNo} for ${item.salesOrder.customer?.name || "customer"} — ${item.product || "item"} ${item.sizeLabel || ""}: ${remaining} units remaining. ${isPast ? `Overdue by ${Math.abs(daysUntil)} days.` : `Due in ${daysUntil} days.`}`,
+        message: `SO ${item.salesOrder.soNo} for ${item.salesOrder.customer?.name || "customer"}: ${item.product || "item"} ${item.sizeLabel || ""}: ${remaining} units remaining. ${isPast ? `Overdue by ${Math.abs(daysUntil)} days.` : `Due in ${daysUntil} days.`}`,
         severity: isPast ? "CRITICAL" : daysUntil <= 2 ? "HIGH" : "MEDIUM",
         status: "UNREAD",
         relatedModule: "sales",

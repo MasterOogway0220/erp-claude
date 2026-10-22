@@ -84,7 +84,7 @@ export default function WarehouseEditPage() {
           return;
         }
 
-        setWarehouseLabel(`${wh.code} — ${wh.name}`);
+        setWarehouseLabel(`${wh.code}: ${wh.name}`);
         setForm({
           code: wh.code ?? "",
           name: wh.name ?? "",
