@@ -118,6 +118,7 @@ These patterns make a UI look generic and AI-generated. Do not use them on any U
 
 ### Icons & Decoration
 12. No Lucide icons by default. Use a different set, custom icons, or no icons.
+    Project exception (2026-10-22): Lucide stays the icon set for this internal ERP, a deliberate waiver of rule 12. Do not add another icon library.
 13. No sparkle icons.
 14. No animated arrows.
 15. No radial glow orbs in backgrounds.

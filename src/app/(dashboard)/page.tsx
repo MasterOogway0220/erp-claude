@@ -199,7 +199,7 @@ export default function DashboardPage() {
         {heroCards.map((card) => (
           <Card
             key={card.title}
-            className="shadow-sm hover:shadow transition-shadow"
+            className="transition-colors"
           >
             <CardContent className="p-5">
               <div className="flex items-start justify-between">
@@ -230,7 +230,7 @@ export default function DashboardPage() {
         {compactCards.map((card) => (
           <Card
             key={card.title}
-            className="shadow-sm hover:shadow transition-shadow"
+            className="transition-colors"
           >
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
