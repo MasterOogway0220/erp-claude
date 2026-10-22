@@ -5,6 +5,7 @@ import { createAuditLog } from "@/lib/audit";
 import { generatePOAcceptanceLetterHtml } from "@/lib/pdf/po-acceptance-template";
 import { LETTER_INCLUDE, letterData } from "@/lib/po-acceptance/letter";
 import nodemailer from "nodemailer";
+import type { SendMailOptions } from "nodemailer";
 import { mailFrom, mailer } from "@/lib/mailer";
 
 export const maxDuration = 30;
@@ -83,7 +84,7 @@ export async function POST(
     // Create transporter
     const transporter = mailer();
 
-    const mailOptions: nodemailer.SendMailOptions = {
+    const mailOptions: SendMailOptions = {
       from: mailFrom((companyInfo as any).companyName || "NPS Piping Solutions"),
       to,
       subject: emailSubject,

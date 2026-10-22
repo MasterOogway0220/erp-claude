@@ -97,7 +97,7 @@ describe("importing the module without a database", () => {
 // shipped to production with a green suite.
 const require_ = createRequire(import.meta.url);
 const { createPool } = require_(
-  require_.resolve("mariadb/promise", {
+  require_.resolve("mariadb", {
     paths: [require_.resolve("@prisma/adapter-mariadb")],
   })
 );

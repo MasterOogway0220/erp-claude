@@ -38,3 +38,7 @@ Operates on `invoice`, `companyMaster`.
 ## Security change (2026-10-22)
 
 Lookups by id now include the caller's company (directly, or through the parent record). A record that belongs to another company returns 404 `Not found`, so existence is not leaked.
+
+## Security change (2026-10-22, follow-up)
+
+Letterhead (company name, address, GSTIN) is read for the caller's company (`findUnique` by `companyId`), not the first company in the table. No company means the default letterhead.

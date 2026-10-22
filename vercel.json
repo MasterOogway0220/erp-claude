@@ -1,5 +1,7 @@
 {
-  "regions": ["bom1"],
+  "regions": [
+    "bom1"
+  ],
   "crons": [
     {
       "path": "/api/cron/rfq-reminders",
@@ -20,6 +22,62 @@
       "memory": 1024
     },
     "src/app/api/dispatch/dispatch-notes/[id]/bundle-pdf/route.tsx": {
+      "maxDuration": 60,
+      "memory": 1024
+    },
+    "src/app/api/dispatch/dispatch-notes/[id]/dossier/email/route.tsx": {
+      "maxDuration": 60,
+      "memory": 1024
+    },
+    "src/app/api/dispatch/dispatch-notes/[id]/dossier/route.tsx": {
+      "maxDuration": 60,
+      "memory": 1024
+    },
+    "src/app/api/dispatch/invoices/[id]/email/route.tsx": {
+      "maxDuration": 60,
+      "memory": 1024
+    },
+    "src/app/api/dispatch/invoices/[id]/pdf/route.tsx": {
+      "maxDuration": 60,
+      "memory": 1024
+    },
+    "src/app/api/dispatch/packing-lists/[id]/pdf/route.tsx": {
+      "maxDuration": 60,
+      "memory": 1024
+    },
+    "src/app/api/inventory/stock-issue/[id]/pdf/route.tsx": {
+      "maxDuration": 60,
+      "memory": 1024
+    },
+    "src/app/api/mtc/certificates/[id]/pdf/route.tsx": {
+      "maxDuration": 60,
+      "memory": 1024
+    },
+    "src/app/api/po-acceptance/[id]/email/route.tsx": {
+      "maxDuration": 60,
+      "memory": 1024
+    },
+    "src/app/api/po-acceptance/[id]/pdf/route.tsx": {
+      "maxDuration": 60,
+      "memory": 1024
+    },
+    "src/app/api/purchase/orders/[id]/pdf/route.tsx": {
+      "maxDuration": 60,
+      "memory": 1024
+    },
+    "src/app/api/quality/inspection-offers/[id]/pdf/route.tsx": {
+      "maxDuration": 60,
+      "memory": 1024
+    },
+    "src/app/api/quality/lab-letters/[id]/pdf/route.tsx": {
+      "maxDuration": 60,
+      "memory": 1024
+    },
+    "src/app/api/reports/client-status/[salesOrderId]/email/route.tsx": {
+      "maxDuration": 60,
+      "memory": 1024
+    },
+    "src/app/api/reports/client-status/[salesOrderId]/pdf/route.tsx": {
       "maxDuration": 60,
       "memory": 1024
     }

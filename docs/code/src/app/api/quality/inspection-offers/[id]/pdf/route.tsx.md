@@ -34,3 +34,7 @@ Operates on `inspectionOffer`, `companyMaster`, `qualityRequirement`.
 - `src/lib/rbac.ts`, `src/lib/prisma.ts`
 - `src/lib/pdf/render-pdf.ts`
 - [Module overview](../../../README.md)
+
+## Security change (2026-10-22, follow-up)
+
+Letterhead (company name, address, GSTIN) is read for the caller's company (`findUnique` by `companyId`), not the first company in the table. No company means the default letterhead.

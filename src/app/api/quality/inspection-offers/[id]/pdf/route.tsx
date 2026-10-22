@@ -26,7 +26,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { authorized, response } = await checkAccess("inspectionOffer", "read");
+    const { authorized, response, companyId } = await checkAccess("inspectionOffer", "read");
     if (!authorized) return response!;
 
     const { searchParams } = new URL(request.url);
@@ -45,7 +45,7 @@ export async function GET(
       return NextResponse.json({ error: "Inspection Offer not found" }, { status: 404 });
     }
 
-    const company = await prisma.companyMaster.findFirst();
+    const company = await prisma.companyMaster.findUnique({ where: { id: companyId ?? "" } });
     const companyInfo = company || DEFAULT_COMPANY;
 
     const offerData = {

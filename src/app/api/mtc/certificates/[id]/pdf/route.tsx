@@ -37,7 +37,7 @@ export async function GET(
       return NextResponse.json({ error: "Certificate not found" }, { status: 404 });
     }
 
-    const company = await prisma.companyMaster.findFirst();
+    const company = await prisma.companyMaster.findUnique({ where: { id: companyId ?? "" } });
 
     // Logos are stored as site-relative paths; react-pdf fetches images over
     // the network, so they have to be absolute. An unset logo falls back to

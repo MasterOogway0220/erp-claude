@@ -60,7 +60,7 @@ export async function GET(
       return NextResponse.json({ error: "Quotation not found" }, { status: 404 });
     }
 
-    const companyRow = await prisma.companyMaster.findFirst();
+    const companyRow = await prisma.companyMaster.findUnique({ where: { id: companyId ?? "" } });
     const company = companyRow || DEFAULT_COMPANY;
 
     // Convert relative logo URLs to absolute for react-pdf image fetching

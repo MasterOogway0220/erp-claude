@@ -5,6 +5,7 @@ import { DossierDocument } from "@/lib/pdf/dossier-pdf";
 import { buildDossierData } from "@/lib/pdf/dossier-data";
 import { DOSSIER_COMPANY } from "../route";
 import nodemailer from "nodemailer";
+import type { SendMailOptions } from "nodemailer";
 import { mailFrom, mailer } from "@/lib/mailer";
 
 export const maxDuration = 60;
@@ -111,7 +112,7 @@ export async function POST(
       </div>
     `;
 
-    const mailOptions: nodemailer.SendMailOptions = {
+    const mailOptions: SendMailOptions = {
       from: mailFrom("NPS Piping Solutions"),
       to: recipientTo,
       subject: emailSubject,

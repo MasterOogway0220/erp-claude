@@ -109,26 +109,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check for excess receipt
-    const existingGrns = await prisma.goodsReceiptNote.findMany({
-      where: { poId },
-      include: { items: { select: { receivedQtyMtr: true } } },
-    });
-    const previouslyReceived = existingGrns.reduce(
-      (sum, grn) => sum + grn.items.reduce((s, item) => s + Number(item.receivedQtyMtr), 0), 0
-    );
-    const currentReceiving = items.reduce(
-      (sum: number, item: any) => sum + (parseFloat(item.receivedQtyMtr) || 0), 0
-    );
-    const totalPOQty = po.items.reduce((sum, item) => sum + Number(item.quantity), 0);
-    if (previouslyReceived + currentReceiving > totalPOQty * 1.1) {
-      // Allow up to 10% excess, flag warning beyond that
-      console.warn(`Excess receipt detected for PO ${po.poNo}: Total received ${previouslyReceived + currentReceiving} vs PO qty ${totalPOQty}`);
-    }
-
     const grnNo = await generateDocumentNumber("GRN", companyId);
 
     const grn = await prisma.$transaction(async (tx) => {
+      // Lock the PO row so receipts against it are checked one at a time.
+      await tx.$queryRaw`SELECT id FROM PurchaseOrder WHERE id = ${poId} FOR UPDATE`;
+
+      // Check for excess receipt
+      const existingGrns = await tx.goodsReceiptNote.findMany({
+        where: { poId },
+        include: { items: { select: { receivedQtyMtr: true } } },
+      });
+      const previouslyReceived = existingGrns.reduce(
+        (sum, grn) => sum + grn.items.reduce((s, item) => s + Number(item.receivedQtyMtr), 0), 0
+      );
+      const currentReceiving = items.reduce(
+        (sum: number, item: any) => sum + (parseFloat(item.receivedQtyMtr) || 0), 0
+      );
+      const totalPOQty = po.items.reduce((sum, item) => sum + Number(item.quantity), 0);
+      if (previouslyReceived + currentReceiving > totalPOQty * 1.1) {
+        // Allow up to 10% excess, flag warning beyond that
+        console.warn(`Excess receipt detected for PO ${po.poNo}: Total received ${previouslyReceived + currentReceiving} vs PO qty ${totalPOQty}`);
+      }
+
       const createdGrn = await tx.goodsReceiptNote.create({
         data: {
           companyId,
@@ -207,11 +210,6 @@ export async function POST(request: NextRequest) {
       }
 
       // Update PO status
-      const totalPOQty = po.items.reduce(
-        (sum, item) => sum + Number(item.quantity),
-        0
-      );
-
       const allGrns = await tx.goodsReceiptNote.findMany({
         where: { poId },
         include: { items: { select: { receivedQtyMtr: true } } },

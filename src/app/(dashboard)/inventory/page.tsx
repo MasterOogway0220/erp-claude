@@ -93,6 +93,9 @@ export default function InventoryPage() {
   // Every filter is part of the key: React Query caches by key, so a filter
   // left out would serve another filter's rows from cache.
   const stockParams = new URLSearchParams();
+  // The API returns 50 rows by default; the table pages 10 at a time on the client,
+  // so request enough rows for the whole stock list.
+  stockParams.append("pageSize", "500");
   if (statusFilter !== "all") stockParams.append("status", statusFilter);
   if (warehouseId !== "all") stockParams.append("warehouseId", warehouseId);
   if (rack !== "all") stockParams.append("rack", rack);

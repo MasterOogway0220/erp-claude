@@ -23,7 +23,7 @@ export async function GET(
   { params }: { params: Promise<{ salesOrderId: string }> }
 ) {
   try {
-    const { authorized, response } = await checkAccess("salesOrder", "read");
+    const { authorized, response, companyId } = await checkAccess("salesOrder", "read");
     if (!authorized) return response!;
 
     const { salesOrderId } = await params;
@@ -47,7 +47,7 @@ export async function GET(
     const reportData = await dataRes.json();
 
     // Get company info
-    const company = await prisma.companyMaster.findFirst();
+    const company = await prisma.companyMaster.findUnique({ where: { id: companyId ?? "" } });
     const companyInfo = company || DEFAULT_COMPANY;
 
     const pdfBuffer = await renderToBuffer(

@@ -29,3 +29,7 @@ Operates on `goodsReceiptNote`, `purchaseOrder`.
 - `src/lib/rbac.ts`, `src/lib/prisma.ts`
 - `src/lib/document-numbering.ts`
 - [Module overview](../README.md)
+
+## Security change (2026-10-22, follow-up)
+
+The excess-receipt check now runs inside the transaction, after `SELECT ... FROM PurchaseOrder ... FOR UPDATE` on the PO row. Two receipts against the same PO are checked one after another. The warning behaviour is unchanged.

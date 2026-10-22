@@ -5,6 +5,7 @@ import { createAuditLog } from "@/lib/audit";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { InvoiceDocument } from "@/lib/pdf/invoice-pdf";
 import nodemailer from "nodemailer";
+import type { SendMailOptions } from "nodemailer";
 import { mailFrom, mailer } from "@/lib/mailer";
 
 const DEFAULT_COMPANY = {
@@ -62,7 +63,7 @@ export async function POST(
     }
 
     // Fetch company master
-    const company = await prisma.companyMaster.findFirst();
+    const company = await prisma.companyMaster.findUnique({ where: { id: companyId ?? "" } });
     const companyInfo = company || DEFAULT_COMPANY;
 
     // Generate PDF attachment
@@ -154,7 +155,7 @@ export async function POST(
     `;
 
     // Build mail options
-    const mailOptions: nodemailer.SendMailOptions = {
+    const mailOptions: SendMailOptions = {
       from: mailFrom(companyInfo.companyName),
       to,
       subject:

@@ -29,3 +29,7 @@ Operates on `stockIssue`.
 
 - `src/lib/rbac.ts`, `src/lib/prisma.ts`
 - [Module overview](../../README.md)
+
+## Security change (2026-10-22, follow-up)
+
+Authorize locks each stock row (`FOR UPDATE`) and requires it to still be ACCEPTED before dispatching it; otherwise 409 `Stock ... is no longer ACCEPTED`. Creating an issue does not reserve stock, so this check is the only guard against dispatching it twice.

@@ -54,7 +54,7 @@ export async function GET(
       });
     }
 
-    const company = await prisma.companyMaster.findFirst();
+    const company = await prisma.companyMaster.findUnique({ where: { id: companyId ?? "" } });
     const companyInfo = company || DEFAULT_COMPANY;
 
     const pdfBuffer = await renderToBuffer(

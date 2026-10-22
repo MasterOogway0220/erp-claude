@@ -46,7 +46,7 @@ export async function GET(
       return NextResponse.json({ error: "Stock issue not found" }, { status: 404 });
     }
 
-    const company = await prisma.companyMaster.findFirst();
+    const company = await prisma.companyMaster.findUnique({ where: { id: companyId ?? "" } });
     const companyInfo = company || DEFAULT_COMPANY;
 
     const html = generateIssueSlipHtml(stockIssue as any, companyInfo as any);

@@ -6,6 +6,7 @@ import { generateStandardQuotationHtml } from "@/lib/pdf/quotation-standard-temp
 import { generateNonStandardQuotationHtml } from "@/lib/pdf/quotation-nonstandard-template";
 import { cleanTermValue } from "@/lib/quotations/terms";
 import nodemailer from "nodemailer";
+import type { SendMailOptions } from "nodemailer";
 import { mailFrom, mailer } from "@/lib/mailer";
 
 // Vercel serverless: increase timeout for email send
@@ -81,7 +82,7 @@ export async function POST(
     }
 
     // Fetch company master
-    const company = await prisma.companyMaster.findFirst();
+    const company = await prisma.companyMaster.findUnique({ where: { id: companyId ?? "" } });
     const companyInfo = company || DEFAULT_COMPANY;
 
     const isNonStandard = quotation.quotationCategory === "NON_STANDARD";
@@ -148,7 +149,7 @@ export async function POST(
     `;
 
     // Build mail options
-    const mailOptions: nodemailer.SendMailOptions = {
+    const mailOptions: SendMailOptions = {
       from: mailFrom(companyInfo.companyName),
       to,
       subject:

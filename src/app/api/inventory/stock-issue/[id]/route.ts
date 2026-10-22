@@ -107,6 +107,14 @@ export async function PATCH(
 
         // Dispatch each stock item
         for (const item of stockIssue.items) {
+          // Lock the row and recheck: another issue may have dispatched this stock
+          // since this one was created, which only checked ACCEPTED at creation time.
+          const [locked] = await tx.$queryRaw<Array<{ status: string }>>`
+            SELECT status FROM InventoryStock WHERE id = ${item.inventoryStockId} FOR UPDATE
+          `;
+          if (!locked || locked.status !== "ACCEPTED") {
+            throw new Error(`Stock ${item.inventoryStockId} is no longer ACCEPTED; reissue the stock issue`);
+          }
           const stock = await tx.inventoryStock.findUnique({
             where: { id: item.inventoryStockId },
             select: { quantityMtr: true, pieces: true },
@@ -182,6 +190,9 @@ export async function PATCH(
     return NextResponse.json({ stockIssue: updated });
   } catch (error) {
     console.error("Error updating stock issue:", error);
+    if (error instanceof Error && error.message.includes("no longer ACCEPTED")) {
+      return NextResponse.json({ error: error.message }, { status: 409 });
+    }
     return NextResponse.json({ error: "Failed to update stock issue" }, { status: 500 });
   }
 }

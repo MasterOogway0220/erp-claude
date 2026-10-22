@@ -45,3 +45,7 @@ Operates on `quotation`, `companyMaster`, `quotationEmailLog`.
 ## Security change (2026-10-22)
 
 Refuses a second successful send to the same address and subject within 60s (409). Failed sends are not counted. Not atomic: two requests in the same instant can both pass.
+
+## Security change (2026-10-22, follow-up)
+
+Letterhead (company name, address, GSTIN) is read for the caller's company (`findUnique` by `companyId`), not the first company in the table. No company means the default letterhead.

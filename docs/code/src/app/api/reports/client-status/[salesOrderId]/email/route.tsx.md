@@ -37,3 +37,7 @@ Operates on `companyMaster`.
 - `src/lib/mailer.ts`
 - `src/lib/pdf/render-pdf.ts`
 - [Module overview](../../../README.md)
+
+## Security change (2026-10-22, follow-up)
+
+Letterhead (company name, address, GSTIN) is read for the caller's company (`findUnique` by `companyId`), not the first company in the table. No company means the default letterhead.
