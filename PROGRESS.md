@@ -24,6 +24,7 @@ Lint is not a gate until the debt is paid down. Rule for now: a touched file mus
 - RBAC is disabled by owner request (2026-07-16): every signed-in user can use every admin route except the new SUPER_ADMIN guards.
 - Enable Vercel Skew Protection (project setting) so tabs keep working across deploys.
 - Database host: Hostinger shared MySQL drops idle sockets at 20s and caps ~500 connects/hour, so most clicks after a pause open a new connection and a busy hour can lock the app out. Move to a host without a per-hour connect cap (managed MySQL or Hostinger VPS) to fix the remaining lag and outages.
+- 2026-11-18 Hostinger Node.js web app trial (owner's Business plan) shelved, code discarded. Next attempt needs: (1) build with `next build --webpack`, since Hostinger's build servers stall on Turbopack for Next 16.3.3+ (old glibc), and the panel's build-command field only offers `npm run build`; (2) a keep-alive started from `src/instrumentation.ts` must wrap its dynamic import in `if (process.env.NEXT_RUNTIME === "nodejs" ...)`, otherwise the webpack Edge build fails on mariadb's `node:` imports; (3) the webpack build was still failing on Hostinger, with the cause not seen (no log after "Creating an optimized production build"), so get the full log or the panel's AI analysis first.
 - Not done: ~56 unbounded list GETs, CI, error tracking, migration rollback notes, CSP, login rate limiting, rainbow icon colours, DataTable loading state.
 
 ## Audit 2026-11-18 (/security, /backend, /frontend). Fix order
