@@ -16,7 +16,14 @@ Operates on `invoice`, `customerMaster`.
 
 - Gated by `checkAccess("invoice", "read")`, `checkAccess("invoice", "write")`. **Authentication only** — role enforcement is disabled app-wide.
 - Company-scoped with `companyFilter(companyId)`.
-- Allocates a document number with `generateDocumentNumber()` (per company, per financial year).
+- Allocates the invoice number with `generateDocumentNumber(docType, companyId, tx)`
+  **inside the same `prisma.$transaction` as `invoice.create`**. The series is
+  `INVOICE_DOMESTIC` or `INVOICE_EXPORT` by `invoiceType`. A GST tax invoice
+  series must have no gaps in a financial year; previously the number was
+  taken before the create, so any failed create (validation, a bad foreign
+  key) burnt a number and left a hole an auditor would ask about. Now a failed
+  create rolls the counter back too. See
+  [document-numbering](../../../../lib/document-numbering.ts.md).
 - Writes an audit row. Audit failures are swallowed and never block the operation.
 
 ## Gotchas

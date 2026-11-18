@@ -23,6 +23,8 @@ another company's data.
 | `companyFilter(companyId)` | `{ companyId }` or `{}`, to spread into a `where`. |
 | `QA_ROLES`, `MANAGER_ROLES` | Role lists — currently every role. |
 | `MODULE_ACCESS` | The role matrix. Retained as documentation and restore path. |
+| `MIN_PASSWORD_LENGTH` | `12`. The one password minimum for every route that sets a password (same as `/api/auth/change-password`). |
+| `userWriteError(actorRole, targetRole, newRole?)` | Guard for any route that creates a user or changes a user's role or credentials. Returns an error string (the route answers **403**) or `null` when allowed. |
 
 Standard usage:
 
@@ -73,6 +75,31 @@ reads like an approval gate and is currently just a login check.
 Restoring one without the other gives a sidebar that hides what the API serves,
 or the reverse.
 
+### `userWriteError`: the one role check that still enforces
+
+Despite the matrix being off, this guard is live, because without it role
+escalation is trivial. The defect it closes: any ADMIN could open the user
+editor on the SUPER_ADMIN account, reset its password, log in as it and then
+switch into every company (see `getActiveCompanyId` below). An ADMIN could also
+simply create a new user with role `SUPER_ADMIN`.
+
+Rules, in order:
+
+1. `newRole` given (not `undefined`/`null`/`""`) and not a value of the Prisma
+   `UserRole` enum → `"Invalid role"`. Applies to everyone, SUPER_ADMIN
+   included; previously an arbitrary string reached Prisma and surfaced as a
+   500.
+2. Actor is `SUPER_ADMIN` → allowed.
+3. `newRole === "SUPER_ADMIN"` → refused (only a SUPER_ADMIN may grant it).
+4. `targetRole === "SUPER_ADMIN"` → refused (only a SUPER_ADMIN may edit, reset
+   or deactivate an existing SUPER_ADMIN account).
+
+`targetRole` is the **current** role of the user being changed, loaded by the
+caller from the database (pass `null` when creating). Never take it from the
+request body. Callers: `api/admin/users` (POST), `api/admin/users/[id]`
+(PATCH/PUT), `api/masters/employees` (POST) and `api/masters/employees/[id]`
+(PATCH, only when the body touches the linked login).
+
 ### `getActiveCompanyId`
 
 Normally the user's own `companyId`. **SUPER_ADMIN** may switch companies via
@@ -106,6 +133,10 @@ saying so.
 - `checkAccess` is async and hits `getServerSession` on every call; routes
   making several calls should destructure once.
 - Company isolation is per query, not enforced at the database.
+- A new route that creates users or changes roles/passwords must call
+  `userWriteError` and check `MIN_PASSWORD_LENGTH`; nothing does it for you.
+- The client-side forms also enforce 12 characters, but only as a convenience;
+  the server check is the real one.
 
 ## Related
 
@@ -114,3 +145,4 @@ saying so.
 - `src/middleware.ts` — route-level auth before a handler runs, and the
   sandbox marker the backstop above relies on.
 - `src/lib/sandbox/context.ts` — `currentSandbox()`.
+- `src/lib/rbac.user-write.test.ts` — unit tests for `userWriteError`.

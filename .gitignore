@@ -64,3 +64,6 @@ scripts/tmp-reset-admin.ts
 
 # graphify knowledge-graph cache (regenerated locally)
 .graphify/
+
+# local Claude settings hold machine-specific secrets
+.claude/settings.local.json

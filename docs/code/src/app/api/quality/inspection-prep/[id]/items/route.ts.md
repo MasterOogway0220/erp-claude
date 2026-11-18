@@ -9,18 +9,21 @@ See [../../../README.md](../../../README.md) for this module's shared behaviour,
 
 Operates on `inspectionPrepItem`.
 
-- **POST** — Create
+- **POST** — Add a line item to an inspection prep. **201** with the item; **404** `"Inspection prep not found"` if the prep is not in the caller's company; **500** `"Failed to add item"` on any other error.
 
 ## How it works
 
 - Gated by `checkAccess("inspectionPrep", "write")`. **Authentication only** — role enforcement is disabled app-wide.
-- **Not company-scoped.** Either catalogue data (deliberately global) or scoped via a parent record — verify which before changing.
+- **Company-scoped through the parent record.** The item table has no
+  `companyId`, so the route first loads the prep with
+  `{ id, ...companyFilter(companyId) }` and 404s if it is not there. Before
+  this, any logged-in user could add items to another company's inspection
+  prep by id.
 
 ## Gotchas
 
 - `params` is a `Promise` (Next.js 16) and must be awaited.
-- Confirm the company-scoping story before reusing this as a template.
-- Errors return `error.message`, so thrown text reaches the user's toast.
+- The 500 message is generic. It used to return `error.message`, which leaked Prisma internals (table and constraint names) to the browser; details now go to the server log only.
 
 ## Related
 

@@ -22,7 +22,16 @@ Operates on `salesOrder`, `salesOrderItem`, `inventoryStock`.
 ## Gotchas
 
 - `params` is a `Promise` (Next.js 16) and must be awaited.
-- Errors return `error.message`, so thrown text reaches the user's toast.
+- Error responses distinguish two kinds of failure. The route throws plain
+  `new Error("...")` for business-rule refusals (e.g. not enough stock); those
+  are detected with `error.constructor === Error` and returned as **400** with
+  their message. Anything else, including Prisma errors (which are `Error`
+  subclasses), returns a generic **500** (`"Failed to create reservation"` /
+  `"Failed to release reservation"`) with details only in the server log. It
+  used to send any `error.message` as a 400, which leaked database internals
+  and mislabelled server faults as user errors.
+- A new user-facing refusal must be thrown as a plain `Error`, not a subclass,
+  or it will show as the generic 500.
 
 ## Related
 

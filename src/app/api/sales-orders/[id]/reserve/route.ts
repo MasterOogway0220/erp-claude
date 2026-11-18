@@ -153,8 +153,11 @@ export async function POST(
   } catch (error: any) {
     console.error("Error creating reservation:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to create reservation" },
-      { status: error.message ? 400 : 500 }
+      // Only the plain Errors thrown above are meant for the user; database errors stay in the log
+      error?.constructor === Error
+        ? { error: error.message }
+        : { error: "Failed to create reservation" },
+      { status: error?.constructor === Error ? 400 : 500 }
     );
   }
 }
@@ -306,8 +309,11 @@ export async function DELETE(
   } catch (error: any) {
     console.error("Error releasing reservation:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to release reservation" },
-      { status: error.message ? 400 : 500 }
+      // Only the plain Errors thrown above are meant for the user; database errors stay in the log
+      error?.constructor === Error
+        ? { error: error.message }
+        : { error: "Failed to release reservation" },
+      { status: error?.constructor === Error ? 400 : 500 }
     );
   }
 }

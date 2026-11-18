@@ -13,15 +13,24 @@ Operates on `quotationItem`, `clientPOItem`.
 
 ## How it works
 
-- **Not company-scoped.** Either catalogue data (deliberately global) or scoped via a parent record — verify which before changing.
+- Gated by `checkAccess("masters", "read")` (authentication + company
+  resolution; role enforcement is disabled app-wide). It used to call
+  `getServerSession` directly, which skipped the company resolution and the
+  sandbox backstop in `rbac.ts`.
+- **Company-scoped**, on both lookups: the last quoted price
+  (`quotation: { ...companyFilter }`) and the last client-PO price
+  (`clientPurchaseOrder: { ...companyFilter }`). The material code itself is
+  shared catalogue data, but the prices are commercial data: before this any
+  session could read the rates another company quoted and won with a customer.
+  A customer that only traded with another company now shows no history.
+- `?customerId=` is required.
 - The last-quote lookup skips soft-deleted quotations (`deletedAt: null`,
   added 6 Oct 2026), so a deleted draft's rate is not shown as the last price.
 
 ## Gotchas
 
 - `params` is a `Promise` (Next.js 16) and must be awaited.
-- Confirm the company-scoping story before reusing this as a template.
-- Errors return `error.message`, so thrown text reaches the user's toast.
+- Errors return a generic `"Failed to fetch history"` (500); details go to the server log.
 
 ## Related
 

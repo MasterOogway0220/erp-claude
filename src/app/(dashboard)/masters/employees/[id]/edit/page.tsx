@@ -141,8 +141,8 @@ export default function EditEmployeePage() {
     if (!formData.name.trim()) { toast.error("Employee name is required"); return; }
     if (!formData.email.trim()) { toast.error("Email is required"); return; }
     if (!formData.mobile.trim()) { toast.error("Mobile is required"); return; }
-    if (formData.password && formData.password.length < 6) {
-      toast.error("Password must be at least 6 characters"); return;
+    if (formData.password && formData.password.length < 12) {
+      toast.error("Password must be at least 12 characters"); return;
     }
 
     setSaving(true);

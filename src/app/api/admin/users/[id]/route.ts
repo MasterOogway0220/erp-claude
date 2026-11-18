@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkAccess, companyFilter } from "@/lib/rbac";
+import { checkAccess, companyFilter, MIN_PASSWORD_LENGTH, userWriteError } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
@@ -56,10 +56,22 @@ export async function PATCH(
     // Verify user belongs to same company
     const targetUser = await prisma.user.findFirst({
       where: { id, ...companyFilter(companyId) },
-      select: { id: true },
+      select: { id: true, role: true },
     });
     if (!targetUser) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    const roleError = userWriteError(session.user.role, targetUser.role, role);
+    if (roleError) {
+      return NextResponse.json({ error: roleError }, { status: 403 });
+    }
+
+    if (password && password.length < MIN_PASSWORD_LENGTH) {
+      return NextResponse.json(
+        { error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters` },
+        { status: 400 }
+      );
     }
 
     // Cannot deactivate yourself
@@ -67,14 +79,6 @@ export async function PATCH(
       return NextResponse.json(
         { error: "You cannot deactivate your own account" },
         { status: 400 }
-      );
-    }
-
-    // ADMIN cannot escalate role to SUPER_ADMIN
-    if (session.user.role === "ADMIN" && role === "SUPER_ADMIN") {
-      return NextResponse.json(
-        { error: "You cannot assign Super Admin role" },
-        { status: 403 }
       );
     }
 

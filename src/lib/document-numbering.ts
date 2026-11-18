@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 
 export type DocumentType =
@@ -87,7 +88,10 @@ const QUOTATION_SERIES: DocumentType[] = ["QUOTATION", "TENDER"];
 
 export async function generateDocumentNumber(
   documentType: DocumentType,
-  companyId?: string | null
+  companyId?: string | null,
+  // Pass the caller's transaction so a failed save does not use up a number
+  // (GST invoices must be numbered without gaps).
+  db: Prisma.TransactionClient = prisma
 ): Promise<string> {
   const currentFY = getCurrentFinancialYear();
   const isQuotationSeries = QUOTATION_SERIES.includes(documentType);
@@ -97,20 +101,20 @@ export async function generateDocumentNumber(
   // Find sequence for this company+documentType. `?? null` matters: passing
   // `undefined` would drop the companyId filter entirely and let findFirst
   // return an arbitrary company's counter.
-  let sequence = await prisma.documentSequence.findFirst({
+  let sequence = await db.documentSequence.findFirst({
     where: { documentType: seriesType, companyId: companyId ?? null },
   });
 
   if (!sequence) {
     // Try legacy sequence without companyId
-    sequence = await prisma.documentSequence.findFirst({
+    sequence = await db.documentSequence.findFirst({
       where: { documentType: seriesType, companyId: null },
     });
   }
 
   if (!sequence) {
     // Auto-create sequence
-    sequence = await prisma.documentSequence.create({
+    sequence = await db.documentSequence.create({
       data: {
         documentType: seriesType,
         prefix,
@@ -121,23 +125,22 @@ export async function generateDocumentNumber(
     });
   }
 
-  let nextNumber: number;
+  let nextNumber: number | null = null;
 
   if (sequence.financialYear !== currentFY) {
-    // Financial year changed, reset counter
-    nextNumber = 1;
-    await prisma.documentSequence.update({
-      where: { id: sequence.id },
-      data: {
-        currentNumber: 1,
-        financialYear: currentFY,
-      },
+    // Financial year changed, reset counter. Compare-and-set on the old year:
+    // when two saves race at the rollover only one resets, the other increments.
+    const reset = await db.documentSequence.updateMany({
+      where: { id: sequence.id, financialYear: sequence.financialYear },
+      data: { currentNumber: 1, financialYear: currentFY },
     });
-  } else {
+    if (reset.count === 1) nextNumber = 1;
+  }
+  if (nextNumber === null) {
     // Increment in the database rather than writing back a number we read
     // earlier: two saves racing on the same counter would otherwise both be
     // handed the same document number and one would fail the unique index.
-    const updated = await prisma.documentSequence.update({
+    const updated = await db.documentSequence.update({
       where: { id: sequence.id },
       data: { currentNumber: { increment: 1 } },
       select: { currentNumber: true },

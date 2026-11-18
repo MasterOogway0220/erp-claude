@@ -17,6 +17,11 @@ Renders the `/masters/employees/create` screen. 279 lines.
 
 - Any `Select` needs a non-empty `SelectItem` value; the codebase uses a `"NONE"` sentinel mapped to `""`.
 - Role gating in the UI is cosmetic — the API is the boundary, and its role checks are currently disabled.
+- Client-side password minimum is **12** characters, matching
+  `MIN_PASSWORD_LENGTH` in `src/lib/rbac.ts` (it was 6). The check here is only
+  a convenience; the API enforces the same number, and also refuses (403) any
+  role change that `userWriteError` blocks, such as an ADMIN touching a
+  SUPER_ADMIN login.
 
 ## Related
 

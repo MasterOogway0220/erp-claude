@@ -1,16 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { authorized, response } = await checkAccess("inspectionPrep", "write");
+    const { authorized, response, companyId } = await checkAccess("inspectionPrep", "write");
     if (!authorized) return response!;
 
     const { id } = await params;
+    const prep = await prisma.inspectionPrep.findFirst({
+      where: { id, ...companyFilter(companyId) },
+      select: { id: true },
+    });
+    if (!prep) {
+      return NextResponse.json({ error: "Inspection prep not found" }, { status: 404 });
+    }
     const body = await request.json();
     const { poItemId, description, sizeLabel, uom, make } = body;
 
@@ -27,10 +34,10 @@ export async function POST(
     });
 
     return NextResponse.json(item, { status: 201 });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error adding prep item:", error);
     return NextResponse.json(
-      { error: error?.message || "Failed to add item" },
+      { error: "Failed to add item" },
       { status: 500 }
     );
   }

@@ -107,9 +107,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify invoice exists
-    const invoice = await prisma.invoice.findUnique({
-      where: { id: invoiceId },
+    // Verify invoice exists in the caller's company
+    const invoice = await prisma.invoice.findFirst({
+      where: { id: invoiceId, ...companyFilter(companyId) },
     });
 
     if (!invoice) {
@@ -118,22 +118,66 @@ export async function POST(request: NextRequest) {
         { status: 404 }
       );
     }
+    if (invoice.customerId !== customerId) {
+      return NextResponse.json(
+        { error: "Customer does not match the invoice" },
+        { status: 400 }
+      );
+    }
 
-    const receiptNo = await generateDocumentNumber("RECEIPT", companyId);
+    const amount = parseFloat(amountReceived);
+    const tds = tdsAmount ? parseFloat(tdsAmount) : 0;
 
-    const paymentReceipt = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
+      // Lock the invoice so two receipts for it are checked one after the other
+      await tx.$queryRaw`SELECT id FROM Invoice WHERE id = ${invoiceId} FOR UPDATE`;
+
+      const earlier = await tx.paymentReceipt.findMany({
+        where: { invoiceId },
+        select: { amountReceived: true, tdsAmount: true, referenceNo: true, createdAt: true },
+      });
+
+      // A double-click or retry sends the same receipt twice within seconds
+      const recentSame = earlier.some(
+        (p) => Number(p.amountReceived) === amount &&
+          (p.referenceNo || null) === (referenceNo || null) &&
+          Date.now() - p.createdAt.getTime() < 60_000
+      );
+      if (recentSame) return { error: "This payment was just recorded", status: 409 } as const;
+
+      if (referenceNo) {
+        const sameRef = await tx.paymentReceipt.findFirst({
+          where: { referenceNo, ...companyFilter(companyId) },
+          select: { receiptNo: true },
+        });
+        if (sameRef) {
+          return { error: `Reference ${referenceNo} is already on receipt ${sameRef.receiptNo}`, status: 409 } as const;
+        }
+      }
+
+      const paidBefore = earlier.reduce(
+        (sum, p) => sum + Number(p.amountReceived) + Number(p.tdsAmount), 0
+      );
+      const outstanding = Number(invoice.totalAmount) - paidBefore;
+      // 0.01 allows paisa rounding
+      if (amount + tds > outstanding + 0.01) {
+        return { error: `Amount exceeds the outstanding balance of ${outstanding.toFixed(2)}`, status: 400 } as const;
+      }
+
+      const receiptNo = await generateDocumentNumber("RECEIPT", companyId, tx);
+
       // Create the payment receipt
       const receipt = await tx.paymentReceipt.create({
         data: {
           receiptNo,
           invoiceId,
-          customerId,
+          customerId: invoice.customerId,
           ...(companyId && { companyId }),
-          amountReceived: parseFloat(amountReceived),
+          amountReceived: amount,
           paymentMode: paymentMode || "NEFT",
           referenceNo: referenceNo || null,
           bankName: bankName || null,
-          tdsAmount: tdsAmount ? parseFloat(tdsAmount) : 0,
+          tdsAmount: tds,
           chequeNo: chequeNo || null,
           chequeDate: chequeDate ? new Date(chequeDate) : null,
           remarks: remarks || null,
@@ -150,17 +194,7 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // Calculate total payments for this invoice
-      const allPayments = await tx.paymentReceipt.findMany({
-        where: { invoiceId },
-        select: { amountReceived: true, tdsAmount: true },
-      });
-
-      const totalPaid = allPayments.reduce(
-        (sum, payment) =>
-          sum + Number(payment.amountReceived) + Number(payment.tdsAmount),
-        0
-      );
+      const totalPaid = paidBefore + amount + tds;
 
       // Update invoice status based on total payments
       const invoiceTotalAmount = Number(invoice.totalAmount);
@@ -177,8 +211,13 @@ export async function POST(request: NextRequest) {
         data: { status: newStatus },
       });
 
-      return receipt;
+      return { receipt };
     });
+
+    if ("error" in result) {
+      return NextResponse.json({ error: result.error }, { status: result.status });
+    }
+    const paymentReceipt = result.receipt;
 
     createAuditLog({
       userId: session.user.id,

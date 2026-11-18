@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { authorized, response, companyId } = await checkAccess("masters", "read");
+  if (!authorized) return response!;
 
   const { id: materialCodeId } = await params;
   const customerId = req.nextUrl.searchParams.get("customerId");
@@ -25,7 +23,7 @@ export async function GET(
       where: {
         materialCodeId,
         // A soft-deleted quotation's price is not history.
-        quotation: { customerId, deletedAt: null },
+        quotation: { customerId, deletedAt: null, ...companyFilter(companyId) },
       },
       orderBy: { quotation: { quotationDate: "desc" } },
       include: {
@@ -38,7 +36,7 @@ export async function GET(
     const lastPOItem = await prisma.clientPOItem.findFirst({
       where: {
         quotationItem: { materialCodeId },
-        clientPurchaseOrder: { customerId },
+        clientPurchaseOrder: { customerId, ...companyFilter(companyId) },
       },
       orderBy: { clientPurchaseOrder: { cpoDate: "desc" } },
       include: {

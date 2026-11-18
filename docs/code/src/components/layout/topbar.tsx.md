@@ -23,6 +23,10 @@ Contains a document-type→route map for search results, duplicating one in
 ## Gotchas and constraints
 
 - **Keep the two route maps in step.**
+- The user menu's change-password dialog requires a new password of at least
+  **12** characters, matching `/api/auth/change-password` and
+  `MIN_PASSWORD_LENGTH` in `rbac.ts` (it was 6, so the dialog accepted
+  passwords the server then rejected).
 - The company switch takes effect on the next request; already-rendered data is
   stale until refetched.
 - **The alert indicator polls; it is not pushed, and the interval is a

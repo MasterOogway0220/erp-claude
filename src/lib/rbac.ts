@@ -362,3 +362,27 @@ export function companyFilter(companyId: string | null | undefined): Record<stri
   }
   return {};
 }
+
+/** Same minimum as /api/auth/change-password, for every route that sets a password. */
+export const MIN_PASSWORD_LENGTH = 12;
+
+/**
+ * Guard for every route that creates or changes a user's role or credentials.
+ * Only a SUPER_ADMIN may grant SUPER_ADMIN or touch an existing SUPER_ADMIN account,
+ * otherwise an ADMIN could reset the super admin's password and take the account.
+ * Returns an error message, or null when allowed.
+ */
+export function userWriteError(
+  actorRole: string | undefined,
+  targetRole: string | null,
+  newRole?: unknown
+): string | null {
+  if (newRole !== undefined && newRole !== null && newRole !== "" &&
+      !Object.values(UserRole).includes(newRole as UserRole)) {
+    return "Invalid role";
+  }
+  if (actorRole === "SUPER_ADMIN") return null;
+  if (newRole === "SUPER_ADMIN") return "You cannot assign the Super Admin role";
+  if (targetRole === "SUPER_ADMIN") return "You cannot change a Super Admin account";
+  return null;
+}

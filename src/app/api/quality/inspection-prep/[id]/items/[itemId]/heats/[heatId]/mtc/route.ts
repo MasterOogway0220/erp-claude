@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess, QA_ROLES } from "@/lib/rbac";
+import { checkAccess, companyFilter, QA_ROLES } from "@/lib/rbac";
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ heatId: string }> }
 ) {
   try {
-    const { authorized, session, response } = await checkAccess("inspectionPrep", "write");
+    const { authorized, session, response, companyId } = await checkAccess("inspectionPrep", "write");
     if (!authorized) return response!;
 
     if (!(QA_ROLES as readonly string[]).includes(session.user.role)) {
@@ -18,6 +18,13 @@ export async function POST(
     }
 
     const { heatId } = await params;
+    const heat = await prisma.heatEntry.findFirst({
+      where: { id: heatId, inspectionPrepItem: { inspectionPrep: companyFilter(companyId) } },
+      select: { id: true },
+    });
+    if (!heat) {
+      return NextResponse.json({ error: "Heat not found" }, { status: 404 });
+    }
     const body = await request.json();
     const { mtcNo, mtcDate, fileUrl } = body;
 
@@ -36,10 +43,10 @@ export async function POST(
     });
 
     return NextResponse.json(mtc, { status: 201 });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error adding MTC document:", error);
     return NextResponse.json(
-      { error: error?.message || "Failed to add MTC document" },
+      { error: "Failed to add MTC document" },
       { status: 500 }
     );
   }

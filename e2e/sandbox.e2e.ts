@@ -17,7 +17,7 @@ import { fakeSmtp, login, startServer, stopServer, type Api } from "./helpers";
 
 const DB_URL = process.env.E2E_DATABASE_URL;
 const SMTP_PORT = 2525;
-const AKASH = { email: "akash.sandbox@demo.local", password: "Akash@Sandbox#2026" };
+const AKASH = { email: "akash.sandbox@demo.local", password: process.env.SANDBOX_PASSWORD ?? "" };
 const ADMIN = { email: "admin@npipe.com", password: "Npipe@123" };
 
 describe.skipIf(!DB_URL)("sandbox login, end to end", () => {

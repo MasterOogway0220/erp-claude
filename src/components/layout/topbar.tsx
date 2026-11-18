@@ -177,8 +177,8 @@ export function TopBar() {
       setPwError("New passwords do not match");
       return;
     }
-    if (newPassword.length < 6) {
-      setPwError("New password must be at least 6 characters");
+    if (newPassword.length < 12) {
+      setPwError("New password must be at least 12 characters");
       return;
     }
     setPwLoading(true);

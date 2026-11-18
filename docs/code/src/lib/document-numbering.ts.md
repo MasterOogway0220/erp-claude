@@ -14,8 +14,9 @@ same race condition.
 
 ## What it does
 
-`generateDocumentNumber(documentType, companyId?)` → the next number as a
-string. Also exports `PREFIXES`, `getCurrentFinancialYear()`, and the
+`generateDocumentNumber(documentType, companyId?, db?)` → the next number as a
+string. `db` is an optional Prisma transaction client (`tx` inside
+`prisma.$transaction`); it defaults to the global `prisma`. Also exports `PREFIXES`, `getCurrentFinancialYear()`, and the
 `DocumentType` union of 28 types.
 
 Formats:
@@ -65,6 +66,32 @@ add one, write it back — hands the same number to two requests that overlap,
 and the second insert dies on the unique index. Under serverless concurrency
 that is not a rare case.
 
+### Passing the caller's transaction (no gaps in GST series)
+
+Indian GST law requires tax invoices to be numbered in one consecutive series
+per financial year; a missing number has to be explained to the auditor. When
+the counter is incremented outside the caller's transaction and the document
+insert then fails, the number is burnt and the series has a gap. Passing `tx`
+puts the increment and the document insert in one transaction: if the insert
+fails, the increment rolls back with it. A second effect is that the counter
+row stays locked by the increment until the caller commits, so concurrent
+saves of the same type queue behind each other for the length of the caller's
+transaction. Keep those transactions short.
+
+Callers that pass `tx` today: `api/dispatch/invoices` (tax invoices) and
+`api/dispatch/payments` (receipts). Every other caller still uses the default
+and can leave gaps on a failed save.
+
+### Financial-year rollover is compare-and-set
+
+The first save of a new FY resets the counter to 1. That reset is an
+`updateMany` conditioned on the row still holding the **old**
+`financialYear`. If two saves race at the rollover, only one sees
+`count === 1` and takes number 1; the other falls through to the normal
+in-database increment and gets 2. The earlier version wrote `currentNumber: 1`
+unconditionally, so both racing saves were handed `/00001` and one failed on
+the unique index.
+
 ### Company scoping
 
 ```ts
@@ -89,10 +116,14 @@ Do not change them casually — they are what people say on the phone.
 
 ## Gotchas and constraints
 
-- **Not transactional with the caller.** The counter increments, then the
-  caller inserts. If that insert fails, the number is burnt and the series has
-  a gap. Acceptable here; a gapless guarantee would need the whole thing inside
-  one transaction.
+- **Gapless only when the caller passes `tx`.** Without it the counter
+  increments, then the caller inserts; if that insert fails the number is
+  burnt. Any route issuing a GST document (invoice, credit/debit note) should
+  pass its transaction client.
+- The auto-create of a missing sequence row is not race-safe: if two
+  first-ever saves of a type overlap, the `@@unique([companyId, documentType])`
+  index fails the second one (and with a `null` companyId MySQL allows the
+  duplicate). Seeding sequences (`prisma/seed-production.ts`) avoids this.
 - **The FY reset is lazy** — triggered by the first document of the new year,
   not by a scheduled job. A type with no activity in April keeps last year's
   `financialYear` on the row until it is next used.
@@ -106,3 +137,5 @@ Do not change them casually — they are what people say on the phone.
 - `prisma/schema.prisma` → `DocumentSequence`.
 - `src/app/api/quotations/preview-number/route.ts` — the read-only peek.
 - `src/lib/quotations/listing.ts` — why tenders appear in the quotation list.
+- `src/app/api/dispatch/invoices/route.ts`, `src/app/api/dispatch/payments/route.ts`
+  — the callers that pass their transaction.

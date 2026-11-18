@@ -1,19 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { authorized, response } = await checkAccess("poAcceptance", "read");
+    const { authorized, response, companyId } = await checkAccess("poAcceptance", "read");
     if (!authorized) return response!;
 
     const { id } = await params;
 
     const logs = await prisma.pOAcceptanceEmailLog.findMany({
-      where: { poAcceptanceId: id },
+      where: { poAcceptanceId: id, poAcceptance: companyFilter(companyId) },
       include: {
         sentBy: { select: { name: true } },
       },

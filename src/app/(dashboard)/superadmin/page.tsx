@@ -139,8 +139,8 @@ export default function SuperAdminCompanyPicker() {
       toast.error("Name, email, and password are required");
       return;
     }
-    if (adminForm.password.length < 6) {
-      toast.error("Password must be at least 6 characters");
+    if (adminForm.password.length < 12) {
+      toast.error("Password must be at least 12 characters");
       return;
     }
     if (!adminForm.companyId) {

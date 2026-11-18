@@ -14,7 +14,7 @@
 
 - Sandbox SQL must never name a real table; enforced by the adapter wrapper (refuse, never pass through).
 - Normal users: zero behaviour change, zero extra DB queries.
-- Akash: name `Akash`, email `akash.sandbox@demo.local`, password `Akash@Sandbox#2026`, bcrypt 10 rounds, role `ADMIN`, company `cmmrs9ytr0001panemoxnq3gf` in production, `isSandbox = true`.
+- Akash: name `Akash`, email `akash.sandbox@demo.local`, password `<set via SANDBOX_PASSWORD env>`, bcrypt 10 rounds, role `ADMIN`, company `cmmrs9ytr0001panemoxnq3gf` in production, `isSandbox = true`.
 - Develop/verify only against local `mysql://root:localroot@127.0.0.1:3307/erp_local`. Nothing runs against the `.env` DATABASE_URL without the user's go-ahead.
 - No git commits unless the user asks.
 - Every added/changed code file gets its `docs/code/<path>.md`; new ones get an INDEX row. Graphify rebuild after code changes.

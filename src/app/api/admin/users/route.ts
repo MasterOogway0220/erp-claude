@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkAccess, companyFilter } from "@/lib/rbac";
+import { checkAccess, companyFilter, MIN_PASSWORD_LENGTH, userWriteError } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
@@ -63,21 +63,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (password.length < 6) {
+    if (password.length < MIN_PASSWORD_LENGTH) {
       return NextResponse.json(
-        { error: "Password must be at least 6 characters" },
+        { error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters` },
         { status: 400 }
       );
     }
 
     const userRole = session.user?.role;
 
-    // ADMIN cannot create SUPER_ADMIN users
-    if (userRole === "ADMIN" && role === "SUPER_ADMIN") {
-      return NextResponse.json(
-        { error: "You cannot create a Super Admin user" },
-        { status: 403 }
-      );
+    const roleError = userWriteError(userRole, null, role);
+    if (roleError) {
+      return NextResponse.json({ error: roleError }, { status: 403 });
     }
 
     // ADMIN must assign users to their own company

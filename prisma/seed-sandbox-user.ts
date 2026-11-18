@@ -12,7 +12,8 @@ import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import bcrypt from "bcryptjs";
 
 const EMAIL = "akash.sandbox@demo.local";
-const PASSWORD = "Akash@Sandbox#2026";
+const PASSWORD = process.env.SANDBOX_PASSWORD ?? "";
+if (!PASSWORD) throw new Error("SANDBOX_PASSWORD is not set");
 const COMPANY_ID = process.env.SANDBOX_COMPANY_ID ?? "cmmrs9ytr0001panemoxnq3gf";
 
 if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is not set (checked the environment and .env)");

@@ -14,13 +14,17 @@ Operates on `rateRevision`.
 ## How it works
 
 - Gated by `checkAccess("clientPO", "read")`. **Authentication only** — role enforcement is disabled app-wide.
-- **Not company-scoped.** Either catalogue data (deliberately global) or scoped via a parent record — verify which before changing.
+- **Company-scoped through the parent record.** A rate revision has no
+  `companyId`; the query reaches it through
+  `clientPOItem.clientPurchaseOrder: companyFilter(companyId)`. Before this,
+  any logged-in user could read another company's negotiated rate changes by
+  id. An id from another company now returns an **empty list** (200), not a
+  404. The optional `?itemId=` filter narrows within that scope.
 
 ## Gotchas
 
 - `params` is a `Promise` (Next.js 16) and must be awaited.
-- Confirm the company-scoping story before reusing this as a template.
-- Errors return `error.message`, so thrown text reaches the user's toast.
+- Errors return a generic `"Failed to fetch rate revisions"` (500); details go to the server log.
 
 ## Related
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkAccess, companyFilter } from "@/lib/rbac";
+import { checkAccess, companyFilter, MIN_PASSWORD_LENGTH, userWriteError } from "@/lib/rbac";
 import { cachedMasterRead } from "@/lib/cache/master-cache";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
@@ -77,8 +77,8 @@ export async function POST(request: NextRequest) {
     if (!body.email) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
     }
-    if (!body.password || body.password.length < 6) {
-      return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
+    if (!body.password || body.password.length < MIN_PASSWORD_LENGTH) {
+      return NextResponse.json({ error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters` }, { status: 400 });
     }
     // Derive system role from department name; default to SALES
     const DEPT_ROLE_MAP: Record<string, string> = {
@@ -93,6 +93,10 @@ export async function POST(request: NextRequest) {
     };
     const deptKey = (body.department || "").toLowerCase().trim();
     const derivedRole = body.role || DEPT_ROLE_MAP[deptKey] || "SALES";
+    const roleError = userWriteError(session.user?.role, null, derivedRole);
+    if (roleError) {
+      return NextResponse.json({ error: roleError }, { status: 403 });
+    }
 
     // Check if email already exists as a user
     const existingUser = await prisma.user.findUnique({ where: { email: body.email } });

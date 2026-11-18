@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkAccess, companyFilter } from "@/lib/rbac";
+import { checkAccess, companyFilter, MIN_PASSWORD_LENGTH, userWriteError } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 import { invalidateMasters } from "@/lib/cache/master-cache";
@@ -50,6 +50,25 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
 
+    // Check before writing anything: the linked login may be a SUPER_ADMIN
+    const current = await prisma.employeeMaster.findFirst({
+      where: { id, ...companyFilter(companyId) },
+      select: { linkedUser: { select: { role: true } } },
+    });
+    if (!current) {
+      return NextResponse.json({ error: "Employee not found" }, { status: 404 });
+    }
+    const touchesLogin = body.role || body.email || body.password || typeof body.isActive === "boolean";
+    if (touchesLogin) {
+      const roleError = userWriteError(session.user?.role, current.linkedUser?.role ?? null, body.role);
+      if (roleError) {
+        return NextResponse.json({ error: roleError }, { status: 403 });
+      }
+    }
+    if (body.password && body.password.length < MIN_PASSWORD_LENGTH) {
+      return NextResponse.json({ error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters` }, { status: 400 });
+    }
+
     // Update employee record
     const employee = await prisma.employeeMaster.update({
       where: { id, ...companyFilter(companyId) },
@@ -77,7 +96,7 @@ export async function PATCH(
       if (body.name) {
         userUpdate.name = body.name;
       }
-      if (body.password && body.password.length >= 6) {
+      if (body.password) {
         userUpdate.passwordHash = await bcrypt.hash(body.password, 10);
       }
       if (typeof body.isActive === "boolean") {

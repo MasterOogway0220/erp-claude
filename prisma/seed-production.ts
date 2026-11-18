@@ -31,7 +31,8 @@ async function seedProduction() {
   try {
     // 1. Create Admin User (idempotent)
     const adminEmail = 'admin@erp.com';
-    const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123';
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    if (!adminPassword) throw new Error('ADMIN_PASSWORD is not set');
 
     const existingAdmin = await prisma.user.findUnique({
       where: { email: adminEmail },
@@ -49,9 +50,6 @@ async function seedProduction() {
         },
       });
       console.log('✅ Admin user created:', adminEmail);
-      if (adminPassword === 'Admin@123') {
-        console.log('⚠️  WARNING: Using default password. Set ADMIN_PASSWORD env var for security.');
-      }
     } else {
       console.log('ℹ️  Admin user already exists:', adminEmail);
     }
@@ -254,7 +252,6 @@ async function seedProduction() {
     console.log('\n✅ Production seed completed successfully!');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('📧 Admin Email:', adminEmail);
-    console.log('🔑 Admin Password:', adminPassword === 'Admin@123' ? 'Admin@123 (default)' : '****** (custom)');
     console.log('📋 Document Sequences:', sequences.length);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('\n⚠️  IMPORTANT: Change admin password after first login!');

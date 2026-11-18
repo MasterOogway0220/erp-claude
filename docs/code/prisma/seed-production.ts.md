@@ -16,6 +16,10 @@ execute many times against a database that already has data.
 Creates or leaves alone: the admin user, the company record, and a
 `DocumentSequence` row per document type. `npm run seed:prod`.
 
+Requires `ADMIN_PASSWORD` in the environment; it throws `ADMIN_PASSWORD is not
+set` before touching the database otherwise. The admin email is fixed at
+`admin@erp.com`.
+
 ## How it works
 
 Upserts throughout — every write is keyed so a second run is a no-op. Exits
@@ -31,8 +35,14 @@ numbering).
 
 - **The header comment says "runs on Render"** — the app is on Vercel now. The
   script is still valid; the comment is stale.
-- **Creates an admin with a known default password.** Change it after first
-  login.
+- **No default password.** It used to fall back to `Admin@123` when
+  `ADMIN_PASSWORD` was unset, and printed which password it used. Since the
+  repo is public, any deployment seeded without the variable had a guessable
+  admin login. Now the variable is mandatory and the password is never logged.
+- The script does not check `ADMIN_PASSWORD` against the 12-character minimum
+  the app enforces (`MIN_PASSWORD_LENGTH` in `src/lib/rbac.ts`); choose one
+  that meets it. If the admin already exists, the variable is still required
+  but the existing password is left unchanged.
 - Safe to re-run, but it will not repair a sequence someone has edited by hand.
 
 ## Related

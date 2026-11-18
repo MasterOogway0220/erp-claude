@@ -109,7 +109,9 @@ authoritative, need maintaining, and teach nothing.
 - [`auth.ts`](./src/lib/auth.ts.md) — NextAuth config, 2FA hook, the JWT
   callbacks and the absolute session cap.
 - [`rbac.ts`](./src/lib/rbac.ts.md) — API gate and company scoping. **Role
-  enforcement is disabled by owner decision.**
+  enforcement is disabled by owner decision**, except `userWriteError`, which
+  stops non-SUPER_ADMINs granting or editing SUPER_ADMIN (tested by
+  `rbac.user-write.test.ts`).
 - [`access/module-access.ts`](./src/lib/access/module-access.ts.md) — grant
   parsing and sidebar visibility; same disablement.
 - [`auth/otp-policy.ts`](./src/lib/auth/otp-policy.ts.md) — the 2FA rules and

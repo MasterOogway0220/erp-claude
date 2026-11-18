@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, companyFilter } from "@/lib/rbac";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { authorized, response } = await checkAccess("clientPO", "read");
+    const { authorized, response, companyId } = await checkAccess("clientPO", "read");
     if (!authorized) return response!;
 
     const { id } = await params;
@@ -15,7 +15,10 @@ export async function GET(
     const itemId = searchParams.get("itemId");
 
     const where: any = {
-      clientPOItem: { clientPurchaseOrderId: id },
+      clientPOItem: {
+        clientPurchaseOrderId: id,
+        clientPurchaseOrder: companyFilter(companyId),
+      },
     };
     if (itemId) {
       where.clientPOItemId = itemId;

@@ -14,13 +14,17 @@ Operates on `pOAcceptanceEmailLog`.
 ## How it works
 
 - Gated by `checkAccess("poAcceptance", "read")`. **Authentication only** — role enforcement is disabled app-wide.
-- **Not company-scoped.** Either catalogue data (deliberately global) or scoped via a parent record — verify which before changing.
+- **Company-scoped through the parent record.** The email log has no
+  `companyId` of its own, so the query filters on
+  `poAcceptance: companyFilter(companyId)`. Before this, any logged-in user
+  could read another company's PO-acceptance email history (recipients,
+  subjects) by guessing an id. An id from another company now returns an
+  **empty list** (200), not a 404.
 
 ## Gotchas
 
 - `params` is a `Promise` (Next.js 16) and must be awaited.
-- Confirm the company-scoping story before reusing this as a template.
-- Errors return `error.message`, so thrown text reaches the user's toast.
+- Errors return a generic `"Failed to fetch email logs"` (500); details go to the server log.
 
 ## Related
 

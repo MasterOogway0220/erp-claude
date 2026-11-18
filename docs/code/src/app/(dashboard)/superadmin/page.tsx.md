@@ -17,6 +17,9 @@ Renders the `/superadmin` screen. 394 lines.
 
 - Any `Select` needs a non-empty `SelectItem` value; the codebase uses a `"NONE"` sentinel mapped to `""`.
 - Role gating in the UI is cosmetic — the API is the boundary, and its role checks are currently disabled.
+- The "create company admin" form checks the password is at least **12**
+  characters before posting, matching `MIN_PASSWORD_LENGTH` on the server (it
+  was 6). The server check is the real one.
 
 ## Related
 

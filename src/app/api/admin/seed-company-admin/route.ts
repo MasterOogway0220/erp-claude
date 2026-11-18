@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkAccess } from "@/lib/rbac";
+import { checkAccess, MIN_PASSWORD_LENGTH } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
@@ -9,8 +9,12 @@ import bcrypt from "bcryptjs";
  */
 export async function POST(request: NextRequest) {
   try {
-    const { authorized, response } = await checkAccess("admin", "write");
+    const { authorized, response, session } = await checkAccess("admin", "write");
     if (!authorized) return response!;
+    // companyId comes from the body, so only the cross-company role may call this
+    if (session.user?.role !== "SUPER_ADMIN") {
+      return NextResponse.json({ error: "Super Admin only" }, { status: 403 });
+    }
 
     const body = await request.json();
     const { companyId, name, email, password } = body;
@@ -22,9 +26,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (password.length < 6) {
+    if (password.length < MIN_PASSWORD_LENGTH) {
       return NextResponse.json(
-        { error: "Password must be at least 6 characters" },
+        { error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters` },
         { status: 400 }
       );
     }

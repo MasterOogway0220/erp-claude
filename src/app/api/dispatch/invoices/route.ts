@@ -174,7 +174,6 @@ export async function POST(request: NextRequest) {
     else if (invoiceType === "EXPORT") docType = "INVOICE_EXPORT";
     else docType = "INVOICE_DOMESTIC";
 
-    const invoiceNo = await generateDocumentNumber(docType, companyId);
 
     // Calculate subtotal from items
     const subtotal = items.reduce(
@@ -216,9 +215,10 @@ export async function POST(request: NextRequest) {
     // Auto-calculate amount in words if not provided
     const computedAmountInWords = amountInWords || numberToWords(totalAmount, effectiveCurrency);
 
-    const invoice = await prisma.invoice.create({
+    // Number and invoice commit together, so a failed save leaves no gap in the GST series.
+    const invoice = await prisma.$transaction(async (tx) => tx.invoice.create({
       data: {
-        invoiceNo,
+        invoiceNo: await generateDocumentNumber(docType, companyId, tx),
         invoiceType: invoiceType || "DOMESTIC",
         dispatchNoteId: dispatchNoteId || null,
         salesOrderId,
@@ -265,7 +265,7 @@ export async function POST(request: NextRequest) {
         customer: true,
         items: true,
       },
-    });
+    }));
 
     createAuditLog({
       userId: session.user.id,

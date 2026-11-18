@@ -16,6 +16,17 @@ Lint is not a gate until the debt is paid down. Rule for now: a touched file mus
 ## Done
 - [x] Kickoff: PLAN.md, PROGRESS.md, DECISIONS.md, GLOSSARY.md; graphify rebuilt from HEAD; baseline above.
 
+## Audit 2026-11-18 (/security, /backend, /frontend). Fix order
+- 🔴 CRITICAL, user action: `.claude/settings.local.json` is tracked in a PUBLIC repo with 3 `mysql://` credential URLs (lines 13, 217, 219; since 6c809ca). Rotate DB passwords, untrack and gitignore, purge history.
+- 🔴 `prisma/seed-sandbox-user.ts:15` hardcoded sandbox ADMIN password (public repo); `prisma/seed-production.ts:34` default admin password fallback, logged at :257.
+- 🔴 `api/admin/seed-company-admin` allows any ADMIN (not just SUPER_ADMIN) to create an admin in any company (companyId from body).
+- 🔴 `api/admin/users/[id]` PATCH: ADMIN can reset/demote a SUPER_ADMIN; role not allowlisted; password min 6 (also users POST and seed-company-admin).
+- 🟠 `api/dispatch/payments` POST: invoice looked up by id only (no companyFilter, :110), customerId not matched; no lock, no balance cap, no idempotency.
+- 🟠 IDOR, role-only: po-acceptance/[id]/emails, client-purchase-orders/[id]/rate-revisions, quality/inspection-prep/[id]/items (write), .../heats/[heatId]/mtc (write), masters/material-codes/[id]/customer-history.
+- 🟠 Invoice number generated outside a transaction (dispatch/invoices/route.ts:177); FY-rollover reset in document-numbering.ts:126-134 not compare-and-set.
+- 🟡 No login/OTP rate limit (admins are password-only); no CSP; next and zod advisories; ~56 unbounded list GETs; no CI, no error tracking, no migration rollback notes or backup doc; reserve route leaks error.message.
+- UI: rule 25 (PageLoading spinner on 69 pages, Skeleton unused, DataTable no loading state); rule 2/4 rainbow and purple icon colours (dashboard, sidebar, reports); hover lift on quotations/create cards.
+
 ## Next (open backlog, from commit notes 1898acb, b2682c1, f7a0036)
 1. Dependency bump: next ≥16.4.5 and zod ≥4.6.6 (security, clears the build gate). Low risk; verify tsc, tests, build.
 2. OTP and password rate limiting: the store is not chosen yet (DB table vs Upstash/Vercel KV). Needs a decision.
