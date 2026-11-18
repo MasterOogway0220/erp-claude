@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { takeFrom } from "@/lib/pagination";
 import { prisma } from "@/lib/prisma";
 import { checkAccess, companyFilter } from "@/lib/rbac";
 import { generateDocumentNumber } from "@/lib/document-numbering";
@@ -34,6 +35,7 @@ export async function GET(request: NextRequest) {
     }
 
     const quotations = await prisma.supplierQuotation.findMany({
+      take: takeFrom(request.nextUrl.searchParams),
       where,
       include: {
         vendor: { select: { id: true, name: true, city: true } },

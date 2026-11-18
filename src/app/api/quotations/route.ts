@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { takeFrom } from "@/lib/pagination";
 import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
 import { numberToWords } from "@/lib/amount-in-words";
@@ -84,6 +85,7 @@ export async function GET(request: NextRequest) {
     }
 
     const allRevisions = await prisma.quotation.findMany({
+      take: takeFrom(request.nextUrl.searchParams),
       where,
       include: {
         customer: summaryOnly ? { select: { id: true, name: true } } : true,
@@ -113,6 +115,7 @@ export async function GET(request: NextRequest) {
         tenderWhere.OR = tenderSearchWhere(search);
       }
       const tenders = await prisma.tender.findMany({
+        take: takeFrom(request.nextUrl.searchParams),
         where: tenderWhere,
         include: {
           customer: { select: { name: true } },

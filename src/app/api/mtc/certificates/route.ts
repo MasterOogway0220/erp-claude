@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { takeFrom } from "@/lib/pagination";
 import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/lib/audit";
 import { generateDocumentNumber } from "@/lib/document-numbering";
@@ -36,6 +37,7 @@ export async function GET(request: NextRequest) {
     }
 
     const certificates = await prisma.mTCCertificate.findMany({
+      take: takeFrom(request.nextUrl.searchParams),
       where,
       include: {
         customer: {

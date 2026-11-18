@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { takeFrom } from "@/lib/pagination";
 import { prisma } from "@/lib/prisma";
 import { StockStatus } from "@prisma/client";
 import { createAuditLog } from "@/lib/audit";
@@ -22,6 +23,7 @@ export async function GET(request: NextRequest) {
     }
 
     const qcReleases = await prisma.qCRelease.findMany({
+      take: takeFrom(request.nextUrl.searchParams),
       where,
       include: {
         inspection: {

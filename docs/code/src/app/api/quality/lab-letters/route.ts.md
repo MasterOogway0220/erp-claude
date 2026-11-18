@@ -35,3 +35,7 @@ write and read back through `parseStringArray`.
 - `src/lib/rbac.ts`, `src/lib/prisma.ts`
 - `src/lib/document-numbering.ts`
 - [Module overview](../README.md)
+
+## Change (2026-11-18, row cap)
+
+The list GET takes `pageSize` (default and cap 500) via `takeFrom` in `src/lib/pagination.ts`, newest first. Callers that pass no pageSize get the newest 500 rows. There is no offset yet, so a screen that filters in the browser cannot reach rows past the newest 500; server-side paging is the upgrade when a table nears that size.

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { takeFrom } from "@/lib/pagination";
 import { prisma } from "@/lib/prisma";
 import { checkAccess } from "@/lib/rbac";
 
@@ -25,6 +26,7 @@ export async function GET(request: NextRequest) {
     if (grnId) where.grnId = grnId;
 
     const mtcDocuments = await prisma.mTCDocument.findMany({
+      take: takeFrom(request.nextUrl.searchParams),
       where,
       include: {
         purchaseOrder: {

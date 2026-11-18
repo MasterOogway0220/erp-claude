@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { takeFrom } from "@/lib/pagination";
 import { prisma } from "@/lib/prisma";
 import { checkAccess, companyFilter } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
@@ -32,6 +33,7 @@ export async function GET(request: NextRequest) {
     }
 
     const labLetters = await prisma.labLetter.findMany({
+      take: takeFrom(request.nextUrl.searchParams),
       where,
       include: {
         generatedBy: {
