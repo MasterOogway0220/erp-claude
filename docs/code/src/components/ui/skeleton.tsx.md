@@ -9,3 +9,7 @@ composing them through `cn()` so a caller's `className` wins.
 
 Changes here affect every screen. Before editing, check the README — in
 particular the `Select` empty-value rule, which the whole codebase depends on.
+
+Project change: the pulse is switched off under `prefers-reduced-motion`
+(`motion-reduce:animate-none`). `PageLoading` renders on most screens, so an
+always-on pulse would be the most frequent motion in the app.

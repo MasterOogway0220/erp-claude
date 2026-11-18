@@ -102,6 +102,8 @@ authoritative, need maintaining, and teach nothing.
   lookup and insert shared by add and import.
 
 - [`pagination.ts`](./src/lib/pagination.ts.md) — `pageSize` to a row limit for list endpoints.
+- [`stale-build.ts`](./src/lib/stale-build.ts.md) — recognises a tab running the previous deployment, so the error screen can reload it.
+- [`stale-build.ts`](./src/lib/stale-build.ts.md) — recognises a tab running the previous deployment, so the error screen can reload it.
 
 ### Auth and access
 - [`auth/secret-equal.ts`](./src/lib/auth/secret-equal.ts.md) — constant-time

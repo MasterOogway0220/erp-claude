@@ -15,6 +15,8 @@ Renders the `/masters/customers/[id]/edit` screen. 1104 lines.
 
 ## Gotchas
 
+- International addresses: countries and states come from `country-state-city/lib/country` and `/lib/state`, imported per file on purpose. Importing the package index (`from "country-state-city"`) also bundles the 8 MB world city list into this page. Cities for the chosen state come from `/api/geo/cities` through `useReferenceQuery`.
+
 - Large file (1104 lines). Read the section you are changing rather than pattern-matching from a sibling.
 - Any `Select` needs a non-empty `SelectItem` value; the codebase uses a `"NONE"` sentinel mapped to `""`.
 - Role gating in the UI is cosmetic — the API is the boundary, and its role checks are currently disabled.

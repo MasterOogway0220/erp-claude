@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { isStaleBuildError } from "@/lib/stale-build";
 
 /**
  * The app-wide error boundary. Next.js renders this in place of any page whose
@@ -32,6 +33,21 @@ export default function Error({
 
   useEffect(() => {
     console.error("Unhandled error:", error);
+    // After a deploy, a tab opened earlier asks for JavaScript files the new
+    // build no longer has. "Try Again" re-requests the same missing file, so
+    // only a full reload (fetching the new build) fixes it. Do that for the
+    // user, at most once per 30s so a genuinely broken page cannot loop.
+    if (isStaleBuildError(error)) {
+      try {
+        const last = Number(sessionStorage.getItem("erp:stale-build-reload") || 0);
+        if (Date.now() - last > 30_000) {
+          sessionStorage.setItem("erp:stale-build-reload", String(Date.now()));
+          window.location.reload();
+        }
+      } catch {
+        // Storage blocked: skip the auto-reload rather than risk a loop.
+      }
+    }
   }, [error]);
 
   // `pathname` rather than the router, because this component renders outside

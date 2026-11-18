@@ -50,6 +50,13 @@ throw while reporting a throw.
 
 ## Gotchas and constraints
 
+- **Reloads the page by itself for a stale build.** After a deploy, a tab opened
+  earlier can fail to load a code file the new deployment no longer serves
+  (`isStaleBuildError` in `src/lib/stale-build.ts`). "Try Again" cannot fix
+  that, so the boundary calls `window.location.reload()`, at most once per 30s
+  per tab (timestamp in `sessionStorage` under `erp:stale-build-reload`), so a
+  page that is genuinely broken shows this screen instead of looping. If
+  `sessionStorage` is blocked, it does not reload.
 - **Does not catch errors in the root layout** — a throw there needs
   `global-error.tsx`, which this project does not have.
 - **Does not catch API route errors.** Those are caught by each route's own

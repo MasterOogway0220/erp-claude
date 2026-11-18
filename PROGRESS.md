@@ -15,6 +15,16 @@ Lint is not a gate until the debt is paid down. Rule for now: a touched file mus
 
 ## Done
 - [x] Kickoff: PLAN.md, PROGRESS.md, DECISIONS.md, GLOSSARY.md; graphify rebuilt from HEAD; baseline above.
+- [x] 2026-11-18 Security batch (f2fc4eb): admin takeover guards, tenant scoping on 5 routes, payments lock/cap/dup guard, invoice number in transaction, FY rollover CAS, seed passwords from env, settings.local.json untracked. Deps next 16.4.6, zod 4.6.7, audit 0 (2c92242). Verified: tsc ✅, 392 tests ✅, build ✅.
+- [x] 2026-11-18 Speed batch: error screen auto-reloads a tab left on the previous deploy (the "hard refresh" bug); customer forms no longer ship the 8.7 MB world city list (cities via /api/geo/cities; static chunks 16 MB → 7.5 MB); PageLoading is a skeleton on ~70 pages. Verified: tsc ✅, 394 tests ✅, build ✅, local server: cities route 401 unauthenticated.
+
+## Open after 2026-11-18 (needs the user)
+- Rotate the Hostinger DB passwords (were in public git history). History purge = force-push, only on explicit go-ahead.
+- Check production `admin@npipe.com` does not still use the dev-seed password in `prisma/seed.ts`.
+- RBAC is disabled by owner request (2026-07-16): every signed-in user can use every admin route except the new SUPER_ADMIN guards.
+- Enable Vercel Skew Protection (project setting) so tabs keep working across deploys.
+- Database host: Hostinger shared MySQL drops idle sockets at 20s and caps ~500 connects/hour, so most clicks after a pause open a new connection and a busy hour can lock the app out. Move to a host without a per-hour connect cap (managed MySQL or Hostinger VPS) to fix the remaining lag and outages.
+- Not done: ~56 unbounded list GETs, CI, error tracking, migration rollback notes, CSP, login rate limiting, rainbow icon colours, DataTable loading state.
 
 ## Audit 2026-11-18 (/security, /backend, /frontend). Fix order
 - 🔴 CRITICAL, user action: `.claude/settings.local.json` is tracked in a PUBLIC repo with 3 `mysql://` credential URLs (lines 13, 217, 219; since 6c809ca). Rotate DB passwords, untrack and gitignore, purge history.

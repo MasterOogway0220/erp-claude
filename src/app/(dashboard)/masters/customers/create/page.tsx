@@ -18,7 +18,10 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Save, MapPin, Plus, X, Loader2, ListChecks } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Country, State, City } from "country-state-city";
+// Subpath imports: the package index also pulls in the 8 MB world city list.
+import Country from "country-state-city/lib/country";
+import State from "country-state-city/lib/state";
+import { useReferenceQuery } from "@/hooks/use-api-query";
 
 const INDIAN_STATES = [
   "Andhra Pradesh",
@@ -220,8 +223,11 @@ export default function CustomerCreatePage() {
   const intlStates = selectedCountryObj ? State.getStatesOfCountry(selectedCountryObj.isoCode) : [];
   const selectedStateObj = selectedCountryObj && formData.state
     ? intlStates.find((s) => s.name === formData.state) : null;
-  const intlCities = selectedCountryObj && selectedStateObj
-    ? City.getCitiesOfState(selectedCountryObj.isoCode, selectedStateObj.isoCode) : [];
+  const { data: intlCities = [] } = useReferenceQuery<{ name: string }[]>(
+    ["geo-cities", selectedCountryObj?.isoCode, selectedStateObj?.isoCode],
+    `/api/geo/cities?country=${selectedCountryObj?.isoCode}&state=${selectedStateObj?.isoCode}`,
+    { enabled: !!(selectedCountryObj && selectedStateObj) }
+  );
   useEffect(() => {
     const cat = formData.companyType === "SUPPLIER" ? "VENDOR" : "CUSTOMER";
     fetch(`/api/masters/industry-segments?category=${cat}`)
