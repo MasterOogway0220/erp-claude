@@ -294,3 +294,11 @@ export async function readStockSheet(buf: Buffer, fileName = ""): Promise<Record
   });
   return rows;
 }
+
+// The rack a stock line is filed under in the warehouse master. The sheet's
+// Location column is free text and a line split across racks reads "5 & 8" or
+// "9, 21"; it is filed under the first rack, and the full text stays in rackNo.
+export function primaryRack(rackNo: string | null | undefined): string | null {
+  const first = (rackNo ?? "").split(/&|,|\/|\band\b/i)[0].trim();
+  return first || null;
+}

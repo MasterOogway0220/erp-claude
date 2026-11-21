@@ -25,6 +25,11 @@ Operates on `inventoryStock`, `nCR`.
 - `params` is a `Promise` (Next.js 16) and must be awaited.
 - Errors return `error.message`, so thrown text reaches the user's toast.
 
+## Change (Nov 2026)
+
+GET also returns `warehouseLocation` (rack, bay, shelf, and the warehouse's
+code and name). The stock page shows the warehouse from it.
+
 ## Related
 
 - `src/lib/rbac.ts`, `src/lib/prisma.ts`

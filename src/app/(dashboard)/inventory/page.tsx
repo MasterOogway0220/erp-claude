@@ -204,30 +204,17 @@ export default function InventoryPage() {
         </Badge>
       ),
     },
-    {
-      key: "warehouseLocation",
-      header: "Warehouse",
-      cell: (row) => {
-        const wl = row.warehouseLocation as any;
-        if (!wl?.warehouse) return <span className="text-muted-foreground">-</span>;
-        return (
-          <div className="text-xs">
-            <div className="font-medium">{wl.warehouse.code}</div>
-            {wl.warehouse.isSelfStock ? (
-              <Badge variant="outline" className="text-[10px] px-1 py-0">Self</Badge>
-            ) : (
-              <Badge variant="secondary" className="text-[10px] px-1 py-0">Vendor</Badge>
-            )}
-          </div>
-        );
-      },
-    },
+    // No Warehouse column: all stock sits in the one warehouse (Taloja) today.
+    // The Warehouse filter above stays, for when a second warehouse is added.
     {
       key: "rackLocation",
       header: "Rack / Bay",
       cell: (row) => {
         const wl = row.warehouseLocation as any;
-        if (!wl) return row.rackNo || row.location || "-";
+        // The typed rack text is the full truth ("5 & 8"); the linked master
+        // location holds only the first rack.
+        if (row.rackNo) return <span className="font-mono text-xs">{row.rackNo as string}</span>;
+        if (!wl) return row.location || "-";
         const parts = [wl.rack, wl.bay, wl.shelf].filter(Boolean);
         return parts.length > 0 ? (
           <span className="font-mono text-xs">{parts.join(" / ")}</span>
@@ -236,18 +223,29 @@ export default function InventoryPage() {
         );
       },
     },
+    { key: "make", header: "Make", cell: (row) => (row.make as string) || "-" },
+    // MTC = mill test certificate: the manufacturer's test report for the heat.
+    // 3.1 is signed by the mill; 3.2 is also witnessed by a third-party inspector.
     {
-      key: "vendor",
-      header: "Vendor",
-      cell: (row) => {
-        const vendor = (row.grnItem as any)?.grn?.vendor;
-        return vendor?.name ? (
-          <span className="text-xs">{vendor.name}</span>
-        ) : (
-          <span className="text-muted-foreground">-</span>
-        );
-      },
+      key: "mtcNo",
+      header: "MTC No.",
+      cell: (row) =>
+        row.mtcNo ? <span className="font-mono text-xs">{row.mtcNo as string}</span> : "-",
     },
+    {
+      key: "mtcDate",
+      header: "MTC Date",
+      cell: (row) => (row.mtcDate ? format(new Date(row.mtcDate as string), "dd MMM yyyy") : "-"),
+    },
+    {
+      key: "mtcType",
+      header: "MTC Type",
+      cell: (row) =>
+        row.mtcType === "MTC_3_1" ? "3.1" : row.mtcType === "MTC_3_2" ? "3.2" : "-",
+    },
+    { key: "tpiAgency", header: "TPI", cell: (row) => (row.tpiAgency as string) || "-" },
+    // Vendor is shown on the stock's own page (Heat No. link), not here; the
+    // Vendor filter above stays.
     {
       key: "grnItem",
       header: "GRN",

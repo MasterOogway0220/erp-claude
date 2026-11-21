@@ -28,6 +28,31 @@ written once, so the two entry paths cannot drift apart.
 - `createMany` is one statement. A failure rolls back the whole insert on MySQL,
   so a file never lands half-written.
 
+## Warehouse filing (Nov 2026)
+
+`createStockRows` now files every new line in a warehouse through
+`stockLocationIds(companyId, rackNos)`. Before this, hand-entered and
+imported stock carried only free-text `rackNo` and no `warehouseLocationId`,
+so the inventory page's Warehouse filter hid all of it.
+
+- **The company has one active warehouse (Taloja today).** Each line goes
+  under the bare rack location (no bay/shelf) matching `primaryRack(rackNo)`.
+  The rack is added to the warehouse master if missing. A line with no rack
+  goes under a `GENERAL` location, which is created once.
+- **More than one active warehouse.** A sheet row can't say which warehouse
+  it is in, so the map is empty and the stock stays unlinked. A warehouse
+  picker in Add Stock / Import Excel is needed when a second warehouse is
+  added.
+- The full rack text (e.g. "5 & 8") always stays in `rackNo`, because the
+  master location only holds the first rack.
+
+On 21 Nov 2026 the 72 existing stock lines were backfilled the same way. That
+added racks 4, 5, 7, 8, 9, 10, 11, 17, 18, 21 and 22 to Taloja (TLJ-WH), and
+each link is audit-logged (`fieldName` `warehouseLocationId`). The same day,
+all 70 `UNDER_INSPECTION` lines were set to `ACCEPTED` at the business's
+request (audit-logged as `status`). New stock still enters as
+`UNDER_INSPECTION`.
+
 ## Gotchas and constraints
 
 - `createMany` skips relations and does not return the created rows, only the count.

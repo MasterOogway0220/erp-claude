@@ -91,6 +91,13 @@ Types: `StockRow`, `ImportPlan`, `ImportIssue`, `MtcType` (`"MTC_3_1" | "MTC_3_2
 - `stockKey` lower-cases, so `1557p` and `1557P` are the same heat for duplicates.
   The stored value keeps the original case.
 
+## primaryRack
+
+`primaryRack(rackNo)` returns the rack a line is filed under in the
+warehouse master. The sheet's Location column can list a line split across
+racks ("5 & 8", "9, 21"); the line is filed under the first rack. Blank gives
+`null`.
+
 ## Related
 
 - `stock-rows.test.ts` - one case per edge above, plus the duplicate rule.

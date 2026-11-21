@@ -45,6 +45,9 @@ export async function GET(
           orderBy: { inspectionDate: "desc" },
         },
         mtcDocuments: true,
+        warehouseLocation: {
+          select: { rack: true, bay: true, shelf: true, warehouse: { select: { code: true, name: true } } },
+        },
         ncrs: {
           orderBy: { ncrDate: "desc" },
         },

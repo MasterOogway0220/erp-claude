@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { normalizeStockRow, planStockImport, parseLooseDate, stockKey } from "./stock-rows";
+import { normalizeStockRow, planStockImport, parseLooseDate, primaryRack, stockKey } from "./stock-rows";
 
 const base = {
   product: "C.S. SEAMLESS PIPE",
@@ -125,5 +125,18 @@ describe("planStockImport", () => {
     expect(plan.issues).toEqual([{ line: 2, error: "Heat number is required" }]);
     expect(plan.toCreate).toHaveLength(1);
     expect(plan.toCreate[0].rackNo).toBe("9");
+  });
+});
+
+describe("primaryRack", () => {
+  it("files a line split across racks under the first one", () => {
+    expect(primaryRack("5 & 8")).toBe("5");
+    expect(primaryRack("9, 21")).toBe("9");
+    expect(primaryRack("17")).toBe("17");
+  });
+  it("is null when there is no rack", () => {
+    expect(primaryRack("")).toBeNull();
+    expect(primaryRack(null)).toBeNull();
+    expect(primaryRack("  ")).toBeNull();
   });
 });

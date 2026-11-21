@@ -13,6 +13,15 @@ Renders the `/inventory/stock/[id]` screen. 516 lines.
 - `"use client"` — runs in the browser.
 - Calls: `/api/inventory/stock/${id}`, `/api/inventory/stock/${params.id}`, `/api/inventory/stock/${params.id}/pipe-details`.
 
+### Details shown (Nov 2026)
+
+- **Stock Details** has MTC No., **MTC Date**, MTC Type (shown as 3.1 / 3.2),
+  TPI Agency and **Vendor**. Vendor is who we bought from: the GRN's vendor,
+  else the PO's, else "-". It moved here from the inventory table. **Make**,
+  the mill, is a separate field.
+- **Location & Status** has **Warehouse**, the name of the linked warehouse
+  location's warehouse, from the detail API's `warehouseLocation`.
+
 ## Gotchas
 
 - Any `Select` needs a non-empty `SelectItem` value; the codebase uses a `"NONE"` sentinel mapped to `""`.

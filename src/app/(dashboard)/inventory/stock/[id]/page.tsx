@@ -285,8 +285,11 @@ export default function StockDetailPage() {
             <Separator />
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               <div><div className="text-sm text-muted-foreground">MTC No.</div><div>{stock.mtcNo || "-"}</div></div>
-              <div><div className="text-sm text-muted-foreground">MTC Type</div><div>{stock.mtcType?.replace(/_/g, " ") || "-"}</div></div>
+              <div><div className="text-sm text-muted-foreground">MTC Date</div><div>{stock.mtcDate ? format(new Date(stock.mtcDate), "dd MMM yyyy") : "-"}</div></div>
+              <div><div className="text-sm text-muted-foreground">MTC Type</div><div>{stock.mtcType === "MTC_3_1" ? "3.1" : stock.mtcType === "MTC_3_2" ? "3.2" : "-"}</div></div>
               <div><div className="text-sm text-muted-foreground">TPI Agency</div><div>{stock.tpiAgency || "-"}</div></div>
+              {/* Vendor = who we bought it from (via its GRN / PO); Make is the mill. */}
+              <div><div className="text-sm text-muted-foreground">Vendor</div><div>{grn?.vendor?.name || po?.vendor?.name || "-"}</div></div>
             </div>
           </CardContent>
         </Card>
@@ -294,6 +297,7 @@ export default function StockDetailPage() {
           <CardHeader><CardTitle>Location & Status</CardTitle></CardHeader>
           <CardContent className="space-y-4">
             <div><div className="text-sm text-muted-foreground">Status</div><Badge className={`${stockStatusColors[stock.status] || "bg-gray-500"} mt-1`}>{stock.status.replace(/_/g, " ")}</Badge></div>
+            <div><div className="text-sm text-muted-foreground">Warehouse</div><div>{stock.warehouseLocation?.warehouse?.name || "Not assigned"}</div></div>
             <div><div className="text-sm text-muted-foreground">Location</div><div>{stock.location || "Not assigned"}</div></div>
             <div><div className="text-sm text-muted-foreground">Rack No.</div><div>{stock.rackNo || "Not assigned"}</div></div>
             {stock.notes && <div><div className="text-sm text-muted-foreground">Notes</div><div className="text-sm mt-1">{stock.notes}</div></div>}
