@@ -51,6 +51,13 @@ and OFFER TERMS. It is trimmed and stored as `null` when blank, so an untouched
 textarea never persists `""`. Per-item `remark` is a different column (the
 "Remark/Material Code" cell).
 
+### Line mapping
+
+POST stores the lines through `quotationItemRows` in
+[`src/lib/quotations/item-rows.ts`](../../../lib/quotations/item-rows.ts.md),
+the same mapping a tender's order quotation uses when its lines are typed on
+the client PO screen.
+
 ### Customer item IDs
 
 After a **non-standard** quotation is created, `rememberClientItems`

@@ -3,6 +3,11 @@
 import { useState, useEffect, Suspense, useCallback, useMemo, Fragment } from "react";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { useCustomers } from "@/hooks/use-masters";
+import {
+  StandardItemsEditor,
+  emptyItem,
+  type QuotationItem as QuotationLineDraft,
+} from "@/components/quotations/standard-items-editor";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -70,7 +75,26 @@ interface Quotation {
   quotationNo: string;
   customerId: string;
   customer: { name: string };
+  // Set on a quotation raised from a tender, incl. a tender's order quotation.
+  sourceTenderId?: string | null;
 }
+
+// A tender quotation the client can order against (GET /api/tenders/for-client).
+interface ClientTender {
+  id: string;
+  tenderNo: string;
+  tenderRef: string | null;
+  organization: string | null;
+  status: string;
+  currency: string;
+  itemCount: number;
+  // Set once the tender has a quotation a PO uses; that quotation is listed
+  // itself, so the tender row is hidden.
+  orderQuotationId: string | null;
+}
+
+// Select values for tender rows, kept apart from quotation ids.
+const TENDER_VALUE_PREFIX = "tender:";
 
 const INDIAN_STATES = [
   "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
@@ -215,7 +239,7 @@ function CreateClientPOPage() {
   const [loading, setLoading] = useState(false);
   const customers = useCustomers<Customer>();
   // Keyed by the status filter, so each form's slice is its own entry.
-  const { data: quotationData } = useApiQuery<{ quotations: Quotation[] }>(
+  const { data: quotationData, refetch: refetchQuotations } = useApiQuery<{ quotations: Quotation[] }>(
     ["quotations-list", "APPROVED,SENT,WON"],
     "/api/quotations?status=APPROVED,SENT,WON"
   );
@@ -264,6 +288,19 @@ function CreateClientPOPage() {
     exchangeRate: null as number | null,
     committedDeliveryDate: "",
   });
+
+  // Tender quotations are the third kind of quotation a PO can come against.
+  const { data: tenderData, refetch: refetchTenders } = useApiQuery<{ tenders: ClientTender[] }>(
+    ["tenders-for-client", formData.customerId],
+    `/api/tenders/for-client?customerId=${formData.customerId}`,
+    { enabled: !!formData.customerId }
+  );
+  const [preparingTender, setPreparingTender] = useState(false);
+  // A tender quotation picked while it has no lines: its items are typed in
+  // here with the quotation item editor, then saved onto the tender and its
+  // order quotation before the PO lines load.
+  const [tenderEntry, setTenderEntry] = useState<{ id: string; tenderNo: string; currency: string } | null>(null);
+  const [tenderLines, setTenderLines] = useState<QuotationLineDraft[]>([{ ...emptyItem }]);
 
   const [contacts, setContacts] = useState<CustomerContact[]>([]);
   // Once the user edits the CDD by hand, stop overwriting it from the schedule.
@@ -500,9 +537,67 @@ function CreateClientPOPage() {
     }
   }, [formData.currency]);
 
-  const handleQuotationChange = (quotationId: string) => {
-    setFormData((prev) => ({ ...prev, quotationId }));
-    fetchQuotationBalance(quotationId);
+  // Get (or have the server build, once) the quotation a PO on this tender is
+  // registered against, then carry on exactly as if it had been picked.
+  // `lines` is sent only for a tender that has none of its own.
+  const loadTenderQuotation = async (tenderId: string, lines?: QuotationLineDraft[]) => {
+    setPreparingTender(true);
+    try {
+      const res = await fetch(`/api/tenders/${tenderId}/order-quotation`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customerId: formData.customerId, ...(lines ? { items: lines } : {}) }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.quotationId) {
+        toast.error(data?.error || "Could not load the tender quotation");
+        return;
+      }
+      // The quotation must be in the list before it is selected, or the
+      // Select has no row to show for its value.
+      await Promise.all([refetchQuotations(), refetchTenders()]);
+      setTenderEntry(null);
+      setFormData((prev) => ({ ...prev, quotationId: data.quotationId }));
+      fetchQuotationBalance(data.quotationId);
+    } catch {
+      toast.error("Could not load the tender quotation");
+    } finally {
+      setPreparingTender(false);
+    }
+  };
+
+  const handleQuotationChange = (value: string) => {
+    if (!value.startsWith(TENDER_VALUE_PREFIX)) {
+      setTenderEntry(null);
+      setFormData((prev) => ({ ...prev, quotationId: value }));
+      fetchQuotationBalance(value);
+      return;
+    }
+    const tenderId = value.slice(TENDER_VALUE_PREFIX.length);
+    const tender = tenderData?.tenders.find((t) => t.id === tenderId);
+    if (tender && tender.itemCount === 0 && !tender.orderQuotationId) {
+      // Nothing to order against yet: open the item editor instead.
+      setTenderEntry({ id: tender.id, tenderNo: tender.tenderNo, currency: tender.currency || formData.currency });
+      setTenderLines([{ ...emptyItem }]);
+      setFormData((prev) => ({ ...prev, quotationId: "" }));
+      setBalanceItems([]);
+      setQuotationMeta(null);
+      return;
+    }
+    loadTenderQuotation(tenderId);
+  };
+
+  const saveTenderLines = () => {
+    if (!tenderEntry) return;
+    if (tenderLines.some((l) => !(parseFloat(l.quantity) > 0))) {
+      toast.error("Please fill quantity for all items");
+      return;
+    }
+    if (tenderLines.some((l) => !l.product.trim())) {
+      toast.error("Please pick a product for all items");
+      return;
+    }
+    loadTenderQuotation(tenderEntry.id, tenderLines);
   };
 
   const handleCustomerChange = (customerId: string) => {
@@ -531,6 +626,7 @@ function CreateClientPOPage() {
     setBalanceItems([]);
     setQuotationMeta(null);
     setMaterialHistory({});
+    setTenderEntry(null);
 
     // Try to auto-fill client state from customer
     if (selectedCustomer?.state) {
@@ -939,21 +1035,34 @@ function CreateClientPOPage() {
               <div className="space-y-2">
                 <Label>Reference Quotation No. *</Label>
                 <Select
-                  value={formData.quotationId}
+                  value={formData.quotationId || (tenderEntry ? `${TENDER_VALUE_PREFIX}${tenderEntry.id}` : "")}
                   onValueChange={handleQuotationChange}
-                  disabled={!formData.customerId && filteredQuotations.length === 0}
+                  disabled={preparingTender || (!formData.customerId && filteredQuotations.length === 0)}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select Quotation" />
+                    <SelectValue placeholder={preparingTender ? "Loading tender..." : "Select Quotation"} />
                   </SelectTrigger>
                   <SelectContent>
                     {(formData.customerId ? filteredQuotations : quotations).map(
                       (q) => (
                         <SelectItem key={q.id} value={q.id}>
                           {q.quotationNo} - {q.customer?.name}
+                          {q.sourceTenderId ? " (Tender)" : ""}
                         </SelectItem>
                       )
                     )}
+                    {/* The client's tender quotations not yet ordered against.
+                        Once a tender has its order quotation, that quotation is
+                        listed above and the tender row drops out. */}
+                    {formData.customerId &&
+                      (tenderData?.tenders ?? [])
+                        .filter((t) => !t.orderQuotationId || !filteredQuotations.some((q) => q.id === t.orderQuotationId))
+                        .map((t) => (
+                          <SelectItem key={t.id} value={`${TENDER_VALUE_PREFIX}${t.id}`}>
+                            {t.tenderNo} - Tender{t.organization ? ` (${t.organization})` : ""}
+                            {t.itemCount === 0 ? " - no items yet" : ""}
+                          </SelectItem>
+                        ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -1397,7 +1506,32 @@ function CreateClientPOPage() {
           </CardContent>
         </Card>
 
-        {/* Section 2: Quotation Items Selection */}
+        {/* Section 2 (tender with no lines): type the items in, with the same
+            fields as a quotation, before the PO lines can be picked. */}
+        {tenderEntry ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>Add Tender Items</CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                Tender {tenderEntry.tenderNo} has no items yet. Add them here as on a
+                quotation. They are saved to the tender, then loaded below for this PO.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <StandardItemsEditor
+                items={tenderLines}
+                setItems={setTenderLines}
+                customerId={formData.customerId}
+                currency={tenderEntry.currency}
+              />
+              <div className="flex justify-end">
+                <Button type="button" onClick={saveTenderLines} disabled={preparingTender}>
+                  {preparingTender ? "Saving items..." : "Save Items & Continue"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
         <Card>
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -1744,6 +1878,7 @@ function CreateClientPOPage() {
             )}
           </CardContent>
         </Card>
+        )}
 
         {/* Section 2b: Rate Negotiation Summary */}
         {getSelectedItems().length > 0 && (

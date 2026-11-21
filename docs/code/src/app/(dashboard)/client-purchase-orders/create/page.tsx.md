@@ -12,7 +12,7 @@ Renders the `/client-purchase-orders/create` screen. 1,922 lines.
 
 - `"use client"` — runs in the browser.
 - Reads `useSearchParams`, so it **must sit inside a `<Suspense>` boundary** — Next.js 16 fails the build otherwise.
-- Calls: `/api/client-purchase-orders`, `/api/fx/rate`, `/api/masters/customers`, `/api/masters/customers/${formData.customerId}/dispatch-addresses` (GET, and POST from "+ Add new address"), `/api/masters/material-codes/${item.materialCodeId}/customer-history`, `/api/quotations`, `/api/quotations/${quotationId}/balance`.
+- Calls: `/api/client-purchase-orders`, `/api/fx/rate`, `/api/masters/customers`, `/api/masters/customers/${formData.customerId}/dispatch-addresses` (GET, and POST from "+ Add new address"), `/api/masters/material-codes/${item.materialCodeId}/customer-history`, `/api/quotations`, `/api/quotations/${quotationId}/balance`, `/api/tenders/for-client`, `/api/tenders/${id}/order-quotation`.
 
 ## What registration captures beyond the obvious
 
@@ -29,6 +29,31 @@ Renders the `/client-purchase-orders/create` screen. 1,922 lines.
   **latest line CDD** of the lines being ordered, so the order still carries a
   CDD and the P.O. acceptance (which reads `committedDeliveryDate ??
   deliveryDate`) picks it up without anyone typing a date.
+- **Tender quotations in the quotation list.** A tender is one of the three
+  kinds of quotation (standard, non-standard, tender). Once a client is
+  picked, the dropdown also lists that client's tenders, read from
+  `/api/tenders/for-client` and shown as "NPS/… - Tender (Organisation)". A
+  tender counts as the client's when its client field is this client, or when
+  it has no client and its organisation names this client. Picking one calls
+  `/api/tenders/[id]/order-quotation`, which returns (building it once) the
+  tender's **order quotation**. The screen refetches the lists so that
+  quotation has a row, then loads it like any other quotation. From then on
+  the tender row drops out and the quotation shows as "… (Tender)". The
+  Select is disabled while this runs.
+- **A tender with no items yet** is listed as "… - no items yet". Picking it
+  replaces "Select Quotation Items" with **Add Tender Items**, which is the
+  standard quotation's own item editor
+  ([`StandardItemsEditor`](../../../../components/quotations/standard-items-editor.tsx.md))
+  with the same fields, in the tender's currency.
+  - **Save Items & Continue** checks every line has a product and a qty.
+  - It then sends the lines as `items` to the order-quotation route, which
+    saves them on the tender and builds the order quotation from them.
+  - The page then loads that quotation's lines into the normal table, to
+    pick quantities and negotiate rates.
+
+  Changing the client or picking another quotation drops the unsaved lines.
+  See
+  [`lib/tenders/order-quotation.ts`](../../../../lib/tenders/order-quotation.ts.md).
 - **Line CDDs from the quoted delivery.** Each quotation line carries its own
   quoted delivery period (`delivery`, e.g. "84 Days", "6 To 8 Weeks"). A line's
   Item CDD is that period counted from the P.O. date (`itemCdd`, the same

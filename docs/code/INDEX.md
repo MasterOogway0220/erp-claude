@@ -81,6 +81,7 @@ authoritative, need maintaining, and teach nothing.
 **Other** — [UI primitives](./src/components/ui/README.md) ·
 [PDF templates](./src/lib/pdf/README.md) ·
 [order wizard](./src/components/order-wizard/README.md) ·
+[quotation item editor](./src/components/quotations/standard-items-editor.tsx.md) ·
 [migrations](./prisma/migrations.md)
 
 ---
@@ -143,8 +144,16 @@ authoritative, need maintaining, and teach nothing.
   term lists for storage on a client PO or a tender.
 - [`tenders/items.ts`](./src/lib/tenders/items.ts.md) — BOQ line rows for
   tender create and tender edit.
+- [`tenders/order-quotation.ts`](./src/lib/tenders/order-quotation.ts.md) —
+  registering a client PO against a tender quotation: client matching and the
+  order quotation built from the tender.
 - [`quotations/pricing.ts`](./src/lib/quotations/pricing.ts.md) — the price
   gate.
+- [`quotations/item-rows.ts`](./src/lib/quotations/item-rows.ts.md) — the
+  one mapping from editor lines to `QuotationItem` rows.
+- [`quotations/past-quote-match.ts`](./src/lib/quotations/past-quote-match.ts.md)
+  — when an earlier quotation counts as a line's past quote: given to the
+  client, and same product / material / spec / size.
 
 ### Masters and calculation
 - [`masters/spec-import.ts`](./src/lib/masters/spec-import.ts.md) — the

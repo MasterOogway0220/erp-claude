@@ -14,7 +14,7 @@ Renders the `/quotations/create/standard` screen. 2295 lines.
 - Fetches with TanStack Query (`useQuery`); server state is not duplicated into local state.
 - Writes with `useMutation`, invalidating the affected query keys on success.
 - Reads `useSearchParams`, so it **must sit inside a `<Suspense>` boundary** — Next.js 16 fails the build otherwise.
-- Calls: `/api/masters/buyers`, `/api/masters/customers`, `/api/masters/customers/${formData.customerId}/terms`, `/api/masters/lengths`, `/api/masters/material-codes`, `/api/masters/material-codes/${dup.id}`, `/api/masters/material-codes/check-duplicate`, `/api/masters/sizes`, `/api/offer-term-templates`.
+- Calls: `/api/masters/buyers`, `/api/masters/customers`, `/api/masters/customers/${formData.customerId}/terms`, `/api/masters/lengths`, `/api/masters/material-codes`, `/api/masters/material-codes/${dup.id}`, `/api/masters/material-codes/check-duplicate`, `/api/masters/sizes`, `/api/offer-term-templates`, `/api/quotations/material-history`, `/api/quotations/past-prices`.
 - Master dropdowns (customers, sizes, lengths, buyers, item codes) read through `useReferenceQuery` (ten minutes) rather than a hand-rolled `useQuery` (60 seconds). The form shares `["customers"]`, `["sizes"]` and `["lengths"]` with the app-wide hooks, so the shorter window had been forcing refetches for every other screen as well. Buyers and item codes keep the customer id and quotation category in their key — those remain a per-customer list, and must never be pointed at a fetch-everything hook.
 - Under the read-only customer **Address**, the selected customer's **GSTIN**
   (GST registration number) is shown when the master has one, so the person
@@ -127,6 +127,50 @@ and it is what identifies the line being regretted.
 
 `updateItem` therefore takes `string | boolean`; the `sizeId` branch narrows
 with `typeof value === "string"` before using it as a lookup key.
+
+### Line items
+
+The item editor (every line field, the past-quote lookup, Copy From, material-code
+recording) lives in the shared
+[`StandardItemsEditor`](../../../../../components/quotations/standard-items-editor.tsx.md)
+(moved out in Nov 2026 so client PO registration can use the same fields). This page
+owns the `items` array, the totals block, saving, edit-load and the tender prefill,
+and passes `historyReady={!editId || editLoadedRef.current}`.
+
+### Past Quote / Past PO
+
+Each line shows the price we last quoted this client for **the same item**,
+so the salesperson can stay consistent with what the client has already seen.
+The rule lives in `src/lib/quotations/past-quote-match.ts`; two gates apply:
+
+1. **We actually gave this client a quote.** Only standard quotations for the
+   same client (customer rows with the same name) count, and only ones that
+   reached the client. Drafts, quotations pending approval, internally
+   rejected ones and cancelled ones are skipped. The quotation being edited
+   is excluded so it never matches itself.
+2. **Same item.** Product, material, additional spec and size must all
+   match, ignoring case and extra spaces. A blank spec matches only a blank
+   spec.
+
+How it is wired (inside the shared editor):
+
+- A debounced effect (400 ms) re-runs the lookup
+  (`/api/quotations/material-history?customerId=&product=&material=&additionalSpec=&size=`)
+  whenever a line's four fields or the client change. It does not refetch on
+  unrelated edits (qty, rate). A line that no longer matches anything gets
+  Past Quote#, its price, Past PO# and its price **cleared**, because a past
+  price for a different item is worse than none.
+- Picking a material code no longer triggers the lookup by itself. It fills
+  product/material/spec/size, and the effect takes it from there.
+- On edit, the loaded lines count as already looked up, so opening a saved
+  quotation never rewrites its stored past quote. Only an edit to one of the
+  four fields does.
+- The **Past Quote#** dropdown is disabled until product, material and size
+  are filled in. It lists only past quotes that pass both gates. The item
+  picker dialog shows only that quote's matching lines, so the price can't
+  come from a different item on the same quote.
+- Stale responses are dropped: a result is applied only if the row still has
+  the same four-field key it was requested for.
 
 ## Gotchas
 

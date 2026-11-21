@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkAccess, companyFilter } from "@/lib/rbac";
+import {
+  NOT_GIVEN_QUOTATION_STATUSES,
+  isMatchable,
+} from "@/lib/quotations/past-quote-match";
 
 // GET /api/quotations/material-history?customerId=...&materialCodeId=...
 //   or ...?customerId=...&label=...
@@ -9,6 +13,13 @@ import { checkAccess, companyFilter } from "@/lib/rbac";
 // (standard quotations); `label` matches the identifier text on the line —
 // how a non-standard quotation's customer item ID is stored — so history
 // works for IDs that were typed rather than picked.
+//
+//   or ...?customerId=...&product=...&material=...&additionalSpec=...&size=...
+//      [&excludeQuotationId=...]
+// The standard-quotation mode. A past quote counts only if it was actually
+// given to this client (not a draft / pending / rejected / cancelled one) AND
+// its line has the same product, material, additional spec and size. See
+// src/lib/quotations/past-quote-match.ts for the rule.
 export async function GET(request: NextRequest) {
   const { authorized, response, companyId } = await checkAccess("quotation", "read");
   if (!authorized) return response;
@@ -18,14 +29,51 @@ export async function GET(request: NextRequest) {
     const customerId = searchParams.get("customerId")?.trim();
     const materialCodeId = searchParams.get("materialCodeId")?.trim();
     const label = searchParams.get("label")?.trim();
+    const product = searchParams.get("product")?.trim();
+    const excludeQuotationId = searchParams.get("excludeQuotationId")?.trim();
+    const itemFields = {
+      product,
+      material: searchParams.get("material")?.trim(),
+      additionalSpec: searchParams.get("additionalSpec")?.trim() ?? "",
+      sizeLabel: searchParams.get("size")?.trim(),
+    };
+    const byItemFields = product !== undefined;
 
-    if (!customerId || (!materialCodeId && !label)) {
+    if (!customerId || (!materialCodeId && !label && !byItemFields)) {
       return NextResponse.json(
-        { error: "customerId and materialCodeId or label are required" },
+        { error: "customerId and materialCodeId, label, or product/material/size are required" },
         { status: 400 }
       );
     }
-    const codeMatch = materialCodeId ? { materialCodeId } : { materialCodeLabel: label };
+    if (byItemFields && !isMatchable(itemFields)) {
+      return NextResponse.json(
+        { error: "product, material and size are all required" },
+        { status: 400 }
+      );
+    }
+
+    // Line filter. In item-field mode the four fields must match (the DB
+    // collation is case-insensitive; a blank spec matches only a blank spec)
+    // and the quotation must be a standard one that reached the client.
+    const codeMatch = byItemFields
+      ? {
+          product: itemFields.product,
+          material: itemFields.material,
+          sizeLabel: itemFields.sizeLabel,
+          ...(itemFields.additionalSpec
+            ? { additionalSpec: itemFields.additionalSpec }
+            : { OR: [{ additionalSpec: null }, { additionalSpec: "" }] }),
+        }
+      : materialCodeId
+        ? { materialCodeId }
+        : { materialCodeLabel: label };
+    const quotationGate = byItemFields
+      ? {
+          quotationCategory: "STANDARD" as const,
+          status: { notIn: [...NOT_GIVEN_QUOTATION_STATUSES] },
+          ...(excludeQuotationId ? { id: { not: excludeQuotationId } } : {}),
+        }
+      : {};
 
     // Find all customers from the same company
     const selectedCustomer = await prisma.customerMaster.findUnique({
@@ -56,6 +104,7 @@ export async function GET(request: NextRequest) {
           ...companyFilter(companyId),
           // A soft-deleted quotation's price is not history.
           deletedAt: null,
+          ...quotationGate,
         },
       },
       select: {
@@ -104,6 +153,7 @@ export async function GET(request: NextRequest) {
           quotation: {
             customerId: { in: customerIds },
             ...companyFilter(companyId),
+            ...quotationGate,
           },
         },
       },
